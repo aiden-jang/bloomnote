@@ -69,6 +69,15 @@ export default function Composer() {
   const [flowers, setFlowers] = useState<FlowerSpec[]>([])
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  // Web Share API is mobile + modern desktop Safari only. We detect on
+  // mount and conditionally render — never show a button that won't
+  // work. Detection runs in an effect because typeof navigator can
+  // throw under some SSR pre-renders; this keeps the initial render
+  // safe.
+  const [canShare, setCanShare] = useState(false)
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
+  }, [])
 
   // Auto-focus the message textarea on remix mount — From/To are
   // pre-filled, so the natural cursor target is the empty note field.
@@ -187,6 +196,25 @@ export default function Composer() {
       setTimeout(() => setCopied(false), 2500)
     })
   }, [shareUrl])
+
+  // Native share — opens the OS share sheet on mobile (iMessage, WhatsApp,
+  // Slack, etc.) or desktop Safari. AbortError is a user cancellation,
+  // not a failure; swallow it. Any other error falls through silently
+  // and the user still has the Copy button.
+  const handleShare = useCallback(async () => {
+    if (!shareUrl) return
+    const data: ShareData = {
+      title: 'Blossom',
+      text: recipient.trim() ? `A garden for ${recipient.trim()}` : 'A garden for you',
+      url: shareUrl,
+    }
+    try {
+      await navigator.share(data)
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      // Otherwise no-op — the Copy button is still there as fallback.
+    }
+  }, [shareUrl, recipient])
 
   return (
     <div className={styles.wrap}>
@@ -313,7 +341,15 @@ export default function Composer() {
               <span className={styles.urlText}>{shareUrl}</span>
             </div>
             <div className={styles.shareActions}>
-              <button className={styles.copyBtn} onClick={handleCopy}>
+              {canShare && (
+                <button className={styles.shareBtn} onClick={handleShare}>
+                  Share…
+                </button>
+              )}
+              <button
+                className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
+                onClick={handleCopy}
+              >
                 {copied ? 'Copied!' : 'Copy link'}
               </button>
               <button className={styles.resetBtn} onClick={handleStartOver}>
