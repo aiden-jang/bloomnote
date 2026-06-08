@@ -1,85 +1,59 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-  <!-- Sky background — matches the in-app garden scene -->
-  <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FAF5EC"/>
-      <stop offset="100%" stop-color="#EFF5E0"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#sky)"/>
+  <!-- Brand identity:
+       - Cream paper (#FAF5EC)
+       - Pink 6-petal flower with yellow center
+       - Fraunces serif wordmark in deep green
+       - DM Sans tagline in soft green
 
-  <!-- Ground at the bottom -->
-  <rect x="0" y="520" width="1200" height="110" fill="#8b5e3c"/>
-  <rect x="0" y="520" width="1200" height="10" fill="#a0714f"/>
+       The flower shape mirrors the favicon (public/favicon.svg) — same
+       6-circle arrangement, same color values — scaled up so the
+       favicon and OG image read as the same identity. The product's
+       in-app gardens use whatever colors the AI invents; the brand
+       surfaces (favicon, OG, marketing) stay anchored to pink. -->
+  <rect width="1200" height="630" fill="#FAF5EC"/>
 
-  <!-- Three flowers, off to the right, like a small bouquet -->
-  <!-- Each flower: 8 petals around a center, simplified silhouette -->
-
-  <!-- Pink rose-ish -->
-  <g transform="translate(900, 360)">
-    <line x1="0" y1="0" x2="0" y2="160" stroke="#3d6b32" stroke-width="6" stroke-linecap="round"/>
-    <ellipse cx="-14" cy="80" rx="14" ry="7" fill="#3d6b32" transform="rotate(-30, -14, 80)" opacity="0.9"/>
-    <ellipse cx="14" cy="110" rx="14" ry="7" fill="#3d6b32" transform="rotate(30, 14, 110)" opacity="0.9"/>
-    <g>
-      <circle cx="0" cy="-30" r="22" fill="#FF8FA3"/>
-      <circle cx="20" cy="-15" r="22" fill="#FF8FA3"/>
-      <circle cx="22" cy="10" r="22" fill="#FF8FA3"/>
-      <circle cx="0" cy="20" r="22" fill="#FF8FA3"/>
-      <circle cx="-22" cy="10" r="22" fill="#FF8FA3"/>
-      <circle cx="-20" cy="-15" r="22" fill="#FF8FA3"/>
-      <circle cx="0" cy="-5" r="15" fill="#FFD700"/>
-    </g>
+  <!-- Flower on the right -->
+  <g transform="translate(960, 315)">
+    <!-- Six petals — same arrangement as the favicon's 32×32 grid,
+         scaled and spaced for poster size. Hand-tuned center offsets
+         to keep the petal cluster compact without overlap. -->
+    <circle cx="0"   cy="-110" r="82" fill="#FF8FA3"/>
+    <circle cx="95"  cy="-55"  r="82" fill="#FF8FA3"/>
+    <circle cx="95"  cy="55"   r="82" fill="#FF8FA3"/>
+    <circle cx="0"   cy="110"  r="82" fill="#FF8FA3"/>
+    <circle cx="-95" cy="55"   r="82" fill="#FF8FA3"/>
+    <circle cx="-95" cy="-55"  r="82" fill="#FF8FA3"/>
+    <!-- Yellow center, plus inner shadow tint for depth -->
+    <circle cx="0" cy="0" r="72" fill="#FFD700"/>
+    <circle cx="0" cy="0" r="34" fill="#FFA500" opacity="0.4"/>
+    <!-- Subtle pollen specks for texture -->
+    <circle cx="-20" cy="-25" r="3" fill="#FFFFFF" opacity="0.45"/>
+    <circle cx="22"  cy="-12" r="3" fill="#FFFFFF" opacity="0.45"/>
+    <circle cx="0"   cy="20"  r="3" fill="#FFFFFF" opacity="0.45"/>
   </g>
 
-  <!-- White daisy -->
-  <g transform="translate(1010, 380)">
-    <line x1="0" y1="0" x2="0" y2="140" stroke="#5a8c4e" stroke-width="6" stroke-linecap="round"/>
-    <ellipse cx="-12" cy="60" rx="12" ry="6" fill="#5a8c4e" transform="rotate(-30, -12, 60)" opacity="0.9"/>
-    <g>
-      <ellipse cx="0" cy="-28" rx="8" ry="22" fill="#ffffff"/>
-      <ellipse cx="22" cy="-12" rx="8" ry="22" fill="#ffffff" transform="rotate(45, 22, -12)"/>
-      <ellipse cx="22" cy="14" rx="8" ry="22" fill="#ffffff" transform="rotate(90, 22, 14)"/>
-      <ellipse cx="0" cy="22" rx="8" ry="22" fill="#ffffff" transform="rotate(135, 0, 22)"/>
-      <ellipse cx="-22" cy="14" rx="8" ry="22" fill="#ffffff" transform="rotate(180, -22, 14)"/>
-      <ellipse cx="-22" cy="-12" rx="8" ry="22" fill="#ffffff" transform="rotate(225, -22, -12)"/>
-      <circle cx="0" cy="-3" r="12" fill="#FBBF24"/>
-    </g>
-  </g>
-
-  <!-- Lavender / purple -->
-  <g transform="translate(1110, 370)">
-    <line x1="0" y1="0" x2="0" y2="150" stroke="#5b7c52" stroke-width="6" stroke-linecap="round"/>
-    <g>
-      <circle cx="-15" cy="-20" r="13" fill="#C4B5FD"/>
-      <circle cx="15" cy="-20" r="13" fill="#C4B5FD"/>
-      <circle cx="-15" cy="5" r="13" fill="#C4B5FD"/>
-      <circle cx="15" cy="5" r="13" fill="#C4B5FD"/>
-      <circle cx="0" cy="-30" r="13" fill="#A78BFA"/>
-      <circle cx="0" cy="15" r="13" fill="#A78BFA"/>
-      <circle cx="0" cy="-8" r="10" fill="#7C3AED"/>
-    </g>
-  </g>
-
-  <!-- Wordmark + tagline -->
+  <!-- Wordmark — large, serif, deep green. Uses Fraunces if the
+       rendering surface has it; falls back to Playfair then Georgia. -->
   <text
     x="100"
     y="295"
     font-family="Fraunces, 'Playfair Display', Georgia, 'Times New Roman', serif"
-    font-size="160"
+    font-size="180"
     font-weight="500"
     fill="#2D5A1B"
-    letter-spacing="-3">
+    letter-spacing="-4">
     blossom
   </text>
 
+  <!-- Tagline below the wordmark, matching the in-app subtitle copy. -->
   <text
     x="105"
-    y="370"
+    y="365"
     font-family="DM Sans, -apple-system, BlinkMacSystemFont, sans-serif"
-    font-size="34"
+    font-size="36"
     font-weight="400"
     fill="#7a8f6b"
     letter-spacing="-0.5">
-    Write a note. We grow them a garden from it.
+    write a note. we grow them a garden.
   </text>
 </svg>
