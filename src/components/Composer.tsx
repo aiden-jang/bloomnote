@@ -173,6 +173,9 @@ export default function Composer() {
         message: message.trim(),
         from: from.trim(),
         to: recipient.trim(),
+        // Stamp when the sender hit "Grow their garden" — shows up
+        // on the recipient's view as a card-like "Grown {date}" line.
+        createdAt: new Date().toISOString(),
         previous: remixSeed ?? undefined,
       }
       const longUrl = buildShareUrl(data)

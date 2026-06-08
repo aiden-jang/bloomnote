@@ -3,6 +3,7 @@ import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import { buildRemixUrl, type GardenData } from '../garden'
+import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
 import styles from './RecipientView.module.css'
 
@@ -13,7 +14,8 @@ interface Props {
 type Phase = 'waiting' | 'blooming'
 
 export default function RecipientView({ gardenData }: Props) {
-  const { flowers, message, from, to, bouquetNote, previous } = gardenData
+  const { flowers, message, from, to, bouquetNote, previous, createdAt } = gardenData
+  const grownOn = formatGardenDate(createdAt)
   const [phase, setPhase] = useState<Phase>('waiting')
   const [msgVisible, setMsgVisible] = useState(false)
 
@@ -66,6 +68,7 @@ export default function RecipientView({ gardenData }: Props) {
             A little garden, just for you.
           </p>
         ) : null}
+        {grownOn && <p className={styles.grownOn}>Grown {grownOn}</p>}
       </div>
 
       <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>

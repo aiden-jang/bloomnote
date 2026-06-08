@@ -39,6 +39,12 @@ export interface GardenData {
   /** Recipient name. */
   to?: string
   /**
+   * ISO 8601 timestamp of when the sender hit "Grow their garden." Optional
+   * because pre-existing share URLs (from before this field shipped)
+   * decode without it; we just don't show the "Grown on …" line in that case.
+   */
+  createdAt?: string
+  /**
    * The previous garden in the thread, if this is a reply. Depth-capped
    * to 1: a `previous` never has its own `previous`, so the URL stays
    * bounded even after many back-and-forths. The user sees current +
@@ -71,6 +77,7 @@ interface WireGarden {
   m: string                // message
   fr: string               // from
   t?: string               // to (recipient name)
+  ca?: string              // createdAt (ISO 8601)
   pr?: WireGarden          // previous garden (depth-capped, no pr.pr)
   v: 2                     // schema version
 }
@@ -110,6 +117,7 @@ function toWire(data: GardenData, includePrevious: boolean): WireGarden {
     fr: data.from,
   }
   if (data.to) wire.t = data.to
+  if (data.createdAt) wire.ca = data.createdAt
   // Strip second-level nesting: when we encode `previous`, we encode it
   // WITHOUT its own `previous`. That's the depth cap.
   if (includePrevious && data.previous) {
@@ -126,6 +134,7 @@ function fromWire(wire: WireGarden): GardenData {
     from: wire.fr ?? '',
   }
   if (wire.t) data.to = wire.t
+  if (wire.ca) data.createdAt = wire.ca
   if (wire.pr) data.previous = fromWire(wire.pr)
   return data
 }
