@@ -253,16 +253,34 @@
   border-color: rgba(255, 255, 255, 0.65);
 }
 
-/* Author credit at the very bottom of the page. Quiet, no marketing
-   voice, lowercase to match the rest of the copy. */
+/* Footer block — privacy disclosure on top, author credit below.
+   The block as a whole owns the top border separator from the rest
+   of the page; the two lines inside it just have a small gap. */
+.footer {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--green-pale);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Privacy disclosure. Even quieter than the credit because it's
+   functional info, not branding. */
+.disclosure {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-light);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+/* Author credit. Lowercase to match the rest of the copy. */
 .credit {
   text-align: center;
   font-size: 11px;
   color: var(--text-light);
   letter-spacing: 0.04em;
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--green-pale);
 }
 
 .credit a {
@@ -632,7 +650,7 @@
   .error,
   .shareCard,
   .shareDivider,
-  .credit {
+  .footer {
     display: none !important;
   }
 }

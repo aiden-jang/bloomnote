@@ -532,16 +532,27 @@ export default function Composer() {
         </>
       )}
 
-      {/* Author credit. TODO: swap the href below for your portfolio
-          URL once it's live (e.g. https://aidenjang.com). Keeping `#`
-          as a deliberate placeholder so it doesn't 404 on a guessed
-          GitHub handle in the meantime. */}
-      <p className={styles.credit}>
-        made by{' '}
-        <a href="#" target="_blank" rel="noreferrer">
-          aiden jang
-        </a>
-      </p>
+      {/* Footer block — privacy disclosure + author credit. The
+          privacy line is the honest thing to say given that (a) the
+          user's note is processed by a third-party model and (b) the
+          full note ends up inside the share URL, where anyone holding
+          the link can read it. Direct, lowercase, no legalese — same
+          register as the rest of the UI copy. */}
+      <div className={styles.footer}>
+        <p className={styles.disclosure}>
+          your note is sent to gemini and encoded in the share link.
+        </p>
+        {/* TODO: swap the href below for your portfolio URL once it's
+            live (e.g. https://aidenjang.com). Keeping `#` as a
+            deliberate placeholder so it doesn't 404 on a guessed
+            GitHub handle in the meantime. */}
+        <p className={styles.credit}>
+          made by{' '}
+          <a href="#" target="_blank" rel="noreferrer">
+            aiden jang
+          </a>
+        </p>
+      </div>
     </div>
   )
 }
