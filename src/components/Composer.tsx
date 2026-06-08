@@ -476,12 +476,29 @@ export default function Composer() {
   )
 }
 
+// On-brand loading indicator. Stem grows up, a small leaf unfurls at
+// the top, both retract, loops. Way more "Blossom" than a generic
+// rotating arc. Two simple keyframe animations with offset timing
+// give it a breathing rhythm.
 function Spinner() {
   return (
     <span className={styles.spinner} aria-hidden>
-      <svg width="18" height="18" viewBox="0 0 18 18">
-        <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.2" />
-        <path d="M9 2 A7 7 0 0 1 16 9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <svg width="20" height="26" viewBox="0 0 20 26" fill="none">
+        <line
+          x1="10"
+          y1="26"
+          x2="10"
+          y2="10"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className={styles.sproutStem}
+        />
+        <path
+          d="M 10 14 Q 17 9, 14 16 Q 11 15, 10 14"
+          fill="currentColor"
+          className={styles.sproutLeaf}
+        />
       </svg>
     </span>
   )

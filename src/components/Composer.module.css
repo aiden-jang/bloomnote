@@ -218,11 +218,31 @@
 .spinner {
   display: inline-flex;
   color: var(--green-mid);
-  animation: spin 0.9s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* Stem grows from the base (y=26), reaches full height around 35%
+   into the cycle, holds until 75%, then retracts. */
+.sproutStem {
+  transform-origin: 10px 26px;
+  animation: sproutStem 2.4s ease-in-out infinite;
+}
+
+/* Leaf unfurls after the stem has visibly grown. transform-origin
+   sits at the leaf's base (where it meets the stem) so it scales
+   outward, not from its centroid. */
+.sproutLeaf {
+  transform-origin: 10px 14px;
+  animation: sproutLeaf 2.4s ease-in-out infinite;
+}
+
+@keyframes sproutStem {
+  0%, 100% { transform: scaleY(0); }
+  35%, 75% { transform: scaleY(1); }
+}
+
+@keyframes sproutLeaf {
+  0%, 30%, 80%, 100% { opacity: 0; transform: scale(0); }
+  50%, 70%           { opacity: 1; transform: scale(1); }
 }
 
 .progressDots {
