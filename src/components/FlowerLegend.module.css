@@ -30,6 +30,22 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  opacity: 0;
+  animation: itemReveal 0.5s ease forwards;
+  /* animation-delay is applied inline per-row (see FlowerLegend.tsx)
+     so each row can match the bloom timing of its corresponding
+     flower above. */
+}
+
+@keyframes itemReveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Three small dots showing the petal gradient — small enough not to

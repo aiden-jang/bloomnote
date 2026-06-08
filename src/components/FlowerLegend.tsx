@@ -22,7 +22,16 @@ export default function FlowerLegend({ flowers }: Props) {
       <p className={styles.heading}>What each flower means</p>
       <ul className={styles.items}>
         {flowers.map((f, i) => (
-          <li key={`${i}-${f.name}`} className={styles.item}>
+          <li
+            key={`${i}-${f.name}`}
+            className={styles.item}
+            // Per-row stagger matches the GardenScene's per-flower
+            // bloom timing (i * 380ms). In the Composer's designed
+            // state the rows fade in as their corresponding flower
+            // blooms above — the visual link between flower and
+            // meaning becomes motion, not just spatial proximity.
+            style={{ animationDelay: `${i * 380}ms` }}
+          >
             <span className={styles.swatchStack} aria-hidden>
               {f.petalColors.map((c, j) => (
                 <span key={j} className={styles.swatch} style={{ background: c }} />
