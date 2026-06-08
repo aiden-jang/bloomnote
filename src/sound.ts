@@ -40,6 +40,27 @@ export function playBloom(index: number = 0): void {
 	playTone({ freq: freq * 1.5, type: 'sine', duration: 0.4, gain: 0.05, delay: 0.05 })
 }
 
+// Brief haptic pulse alongside the bloom chime. Android Chrome,
+// Samsung Internet, and Chrome OS support navigator.vibrate; iOS
+// Safari and desktop browsers silently no-op (Apple doesn't expose
+// the API at all). 25ms is the threshold where the device buzz
+// reads as a percussive accent without becoming intrusive.
+//
+// Failing silently is the correct behavior here — a missing haptic
+// shouldn't break the experience, it just means the user is on
+// hardware that doesn't support it.
+export function pulse(): void {
+	if (typeof navigator === 'undefined') return
+	if (typeof navigator.vibrate !== 'function') return
+	try {
+		navigator.vibrate(25)
+	} catch {
+		// Some browsers gate vibrate behind a user gesture or HTTPS
+		// requirement and will throw rather than no-op. Either way:
+		// don't surface the error, just skip the buzz.
+	}
+}
+
 export function playChime(): void {
 	const chord = [523, 659, 784]
 	chord.forEach((freq, i) => {
