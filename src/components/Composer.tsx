@@ -9,6 +9,7 @@ import {
   type GardenData,
 } from '../garden'
 import { designGarden, type DesignResult } from '../lib/designGarden'
+import { loadDraft, saveDraft } from '../lib/draft'
 import { shortenUrl } from '../lib/shorten'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
@@ -45,13 +46,38 @@ export default function Composer() {
 
   const [phase, setPhase] = useState<Phase>('idle')
 
-  // Inputs — pre-filled from the remix seed if present. Sender becomes
-  // the original recipient ("to"); recipient becomes the original
-  // sender ("from"). Falls back to empty strings when the seed lacks
-  // those fields.
-  const [from, setFrom] = useState(() => remixSeed?.to ?? '')
-  const [recipient, setRecipient] = useState(() => remixSeed?.from ?? '')
-  const [message, setMessage] = useState('')
+  // Initial input values are computed once at mount. Precedence:
+  //   1. Remix seed (URL-driven, most authoritative — we're answering
+  //      a specific person)
+  //   2. localStorage draft (the user's in-progress work from last
+  //      visit)
+  //   3. Empty
+  // The message field never inherits from the seed; only From/To do.
+  // In remix mode the draft is ignored entirely so a stale draft about
+  // a different recipient doesn't bleed into the reply.
+  const initialInputs = useMemo(() => {
+    if (remixSeed) {
+      return { from: remixSeed.to ?? '', recipient: remixSeed.from ?? '', message: '' }
+    }
+    const draft = loadDraft()
+    return {
+      from: draft?.from ?? '',
+      recipient: draft?.recipient ?? '',
+      message: draft?.message ?? '',
+    }
+  }, [remixSeed])
+
+  const [from, setFrom] = useState(initialInputs.from)
+  const [recipient, setRecipient] = useState(initialInputs.recipient)
+  const [message, setMessage] = useState(initialInputs.message)
+
+  // Autosave on every change. localStorage writes are sync but fast for
+  // strings this small; no debounce needed. Skipped in remix mode (see
+  // comment on `initialInputs` above).
+  useEffect(() => {
+    if (remixSeed) return
+    saveDraft({ from, recipient, message })
+  }, [from, recipient, message, remixSeed])
   const [placeholder] = useState(
     () => MESSAGE_PLACEHOLDERS[Math.floor(Math.random() * MESSAGE_PLACEHOLDERS.length)],
   )
