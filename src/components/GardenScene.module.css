@@ -1,0 +1,48 @@
+.scene {
+  width: 100%;
+  height: 260px;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--green-pale);
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #d4eeff 0%, #e8f5d0 100%);
+}
+
+.garden {
+  position: absolute;
+  bottom: 52px;
+  left: 0;
+  right: 0;
+  height: 200px;
+}
+
+.flowerSlot {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+}
+
+.ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.groundTop {
+  height: 10px;
+  background: #a0714f;
+  border-radius: 5px 5px 0 0;
+}
+
+.groundBase {
+  height: 42px;
+  background: #8b5e3c;
+}

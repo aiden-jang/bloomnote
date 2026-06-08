@@ -1,0 +1,327 @@
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  text-align: center;
+  padding-top: 1rem;
+}
+
+.title {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--green-deep);
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.5;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+/* From + To live on the same row so the framing reads as one
+   addressed-note rather than two unrelated fields. */
+.nameRow {
+  display: flex;
+  gap: 12px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.textarea {
+  width: 100%;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: white;
+  resize: none;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+
+.textarea:focus {
+  border-color: var(--green-mid);
+}
+
+.helperRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.helper {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.charCount {
+  font-size: 11px;
+  color: var(--text-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.input {
+  width: 100%;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: white;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: var(--green-mid);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.generateBtn {
+  flex: 1;
+  padding: 14px 24px;
+  border-radius: 26px;
+  border: none;
+  background: var(--green-mid);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.generateBtn:hover:not(:disabled) {
+  background: var(--green-deep);
+}
+
+.generateBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.escape {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.escape a {
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.escape a:hover {
+  color: var(--green-mid);
+}
+
+.error {
+  font-size: 13px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #7f1d1d;
+}
+
+/* Designing state */
+.designingPanel {
+  background: white;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  animation: fadeUp 0.3s ease forwards;
+}
+
+.designingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--green-deep);
+  font-weight: 500;
+}
+
+.spinner {
+  display: inline-flex;
+  color: var(--green-mid);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.progressDots {
+  display: flex;
+  gap: 8px;
+}
+
+.progressDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  transition: background 0.25s, transform 0.25s;
+}
+
+.progressDotActive {
+  background: var(--green-mid);
+  transform: scale(1.2);
+}
+
+.cancelBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cancelBtn:hover {
+  color: var(--text-mid);
+}
+
+/* Designed state — bouquet note + inline share card */
+.bouquetNote {
+  background: #fbf8f0;
+  border: 1px solid #e6dfc6;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeUp 0.4s ease forwards;
+}
+
+.bouquetNoteLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8a6914;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.bouquetNote p {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-dark);
+  font-style: italic;
+}
+
+.shareCard {
+  background: white;
+  border: 1px solid var(--green-pale);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeUp 0.4s ease forwards;
+}
+
+.shareTitle {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--green-deep);
+  font-weight: 400;
+}
+
+.urlBox {
+  background: #f5f9f2;
+  border: 1px solid var(--green-pale);
+  border-radius: 10px;
+  padding: 10px 14px;
+  overflow: hidden;
+}
+
+.urlText {
+  font-size: 12px;
+  color: var(--text-mid);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.shareActions {
+  display: flex;
+  gap: 10px;
+}
+
+.copyBtn {
+  flex: 2;
+  padding: 11px 20px;
+  border-radius: 22px;
+  background: var(--green-mid);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  transition: background 0.15s;
+}
+
+.copyBtn:hover {
+  background: var(--green-deep);
+}
+
+.resetBtn {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 22px;
+  border: 1.5px solid var(--green-pale);
+  background: white;
+  color: var(--text-mid);
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.resetBtn:hover {
+  border-color: var(--green-light);
+  background: #f5fbf0;
+}
