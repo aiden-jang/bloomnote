@@ -76,3 +76,16 @@ textarea, input {
   66%  { transform: translateX(-3px) translateY(2px); }
   100% { transform: translateX(0px) translateY(0px); }
 }
+
+/* View Transitions API styling.
+   Browser default is ~250ms snap fade. We slow it slightly with a
+   softer easing so phase changes feel deliberate. Gated on
+   prefers-reduced-motion so accessibility users get the default
+   (instant) behavior. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 420ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
