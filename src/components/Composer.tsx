@@ -9,7 +9,7 @@ import {
   type GardenData,
 } from '../garden'
 import { designGarden, type DesignResult } from '../lib/designGarden'
-import { loadDraft, saveDraft } from '../lib/draft'
+import { clearDraft, loadDraft, saveDraft, type Draft } from '../lib/draft'
 import { formatGardenDate } from '../lib/formatDate'
 import { DEFAULT_OCCASION, OCCASIONS, OCCASION_VALUES } from '../lib/occasions'
 import { shortenUrl } from '../lib/shorten'
@@ -99,10 +99,14 @@ export default function Composer() {
   )
 
   // Streaming progress.
-  const [progress, setProgress] = useState<number>(0)
   const [statusText, setStatusText] = useState<string>('')
   const [errorText, setErrorText] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+
+  // Clear-draft undo. When the user clears, we keep a snapshot for a
+  // few seconds so they can undo without confirmation dialogs.
+  const [undoDraft, setUndoDraft] = useState<Draft | null>(null)
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Design result + share state. The scene starts empty — we don't
   // preview placeholder flowers anymore, because they set the wrong
@@ -138,7 +142,6 @@ export default function Composer() {
     withViewTransition(() => {
       setPhase('designing')
       setErrorText(null)
-      setProgress(0)
       setStatusText('reading…')
     })
 
@@ -157,12 +160,6 @@ export default function Composer() {
         {
           signal: ctrl.signal,
           onThinking: () => setStatusText('thinking…'),
-          onProgress: count => {
-            setProgress(count)
-            if (count === 0) setStatusText('sketching…')
-            else if (count === 1) setStatusText('picking colors…')
-            else setStatusText(`${count} done…`)
-          },
         },
       )
       setGarden(result)
@@ -240,13 +237,52 @@ export default function Composer() {
       setGarden(null)
       setFlowers([])
       setShareUrl(null)
-      setProgress(0)
       setErrorText(null)
     })
     // Inputs are intentionally NOT cleared on "Make another" — if you
     // want a totally fresh note you can edit them; if you want to tweak
     // and regenerate, your text is still there.
   }, [])
+
+  // Only show the clear link when there's something to clear. Trimmed
+  // so "  " in a field doesn't count as draft content.
+  const hasDraft =
+    from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0
+
+  const handleClear = useCallback(() => {
+    // Snapshot before wiping so undo works. If a previous undo was
+    // pending, cancel its timer — the new clear takes precedence.
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+
+    const snapshot: Draft = { from, recipient, message, occasion }
+
+    // Clearing is a quick local action; no view transition needed.
+    // React batches these updates automatically in an event handler.
+    setFrom('')
+    setRecipient('')
+    setMessage('')
+    setOccasion(DEFAULT_OCCASION)
+    setUndoDraft(snapshot)
+    clearDraft()
+
+    undoTimerRef.current = setTimeout(() => {
+      setUndoDraft(null)
+      undoTimerRef.current = null
+    }, 8000)
+  }, [from, recipient, message, occasion])
+
+  const handleUndoClear = useCallback(() => {
+    if (!undoDraft) return
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = null
+    }
+    setFrom(undoDraft.from)
+    setRecipient(undoDraft.recipient)
+    setMessage(undoDraft.message)
+    setOccasion(undoDraft.occasion || DEFAULT_OCCASION)
+    setUndoDraft(null)
+  }, [undoDraft])
 
   const handleCopy = useCallback(() => {
     if (!shareUrl) return
@@ -379,6 +415,21 @@ export default function Composer() {
               </a>
             </p>
           )}
+
+          {/* Clear-draft link. Only shows when there's actually
+              something to clear so it doesn't sit there as a dead
+              control on a fresh form. */}
+          {!remixSeed && hasDraft && (
+            <p className={styles.escape}>
+              <button
+                type="button"
+                className={styles.clearBtn}
+                onClick={handleClear}
+              >
+                clear draft
+              </button>
+            </p>
+          )}
         </>
       )}
 
@@ -388,9 +439,17 @@ export default function Composer() {
             <Spinner />
             <span>{statusText || 'designing…'}</span>
           </div>
-          <ProgressDots count={progress} total={5} />
           <button className={styles.cancelBtn} onClick={handleCancel}>
             cancel
+          </button>
+        </div>
+      )}
+
+      {undoDraft && (
+        <div className={styles.undoToast} role="status" aria-live="polite">
+          <span>draft cleared</span>
+          <button type="button" className={styles.undoBtn} onClick={handleUndoClear}>
+            undo
           </button>
         </div>
       )}
@@ -504,15 +563,3 @@ function Spinner() {
   )
 }
 
-function ProgressDots({ count, total }: { count: number; total: number }) {
-  return (
-    <div className={styles.progressDots} aria-hidden>
-      {Array.from({ length: total }).map((_, i) => (
-        <span
-          key={i}
-          className={`${styles.progressDot} ${i < count ? styles.progressDotActive : ''}`}
-        />
-      ))}
-    </div>
-  )
-}

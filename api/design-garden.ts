@@ -246,12 +246,6 @@ export default async function handler(req: Request): Promise<Response> {
           return
         }
 
-        // Emit progress retroactively so the dots animate to full
-        // before "complete" lands — small UI nicety, no extra cost.
-        for (let i = 1; i <= garden.flowers.length; i++) {
-          send('progress', { designed: i })
-        }
-
         send('complete', {
           garden: {
             bouquet_note: garden.bouquet_note,

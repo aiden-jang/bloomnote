@@ -32,7 +32,6 @@ interface ServerPayload {
 export interface DesignCallbacks {
   onStart?: () => void
   onThinking?: () => void
-  onProgress?: (designedCount: number) => void
   onComplete?: (result: DesignResult) => void
   onError?: (message: string) => void
   signal?: AbortSignal
@@ -105,11 +104,6 @@ export async function designGarden(
           break
         case 'thinking':
           callbacks.onThinking?.()
-          break
-        case 'progress':
-          if (typeof event.data?.designed === 'number') {
-            callbacks.onProgress?.(event.data.designed)
-          }
           break
         case 'complete':
           if (event.data?.garden) {
