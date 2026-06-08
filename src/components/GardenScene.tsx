@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import FlowerSVG from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
-import { playBloom } from '../sound'
+import { playBloom, pulse } from '../sound'
 import styles from './GardenScene.module.css'
 
 interface Placement {
@@ -76,6 +76,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed }: Props)
     placed.forEach((_, i) => {
       const t = setTimeout(() => {
         playBloom(i)
+        pulse()
         setBloomedCount(prev => {
           const next = prev + 1
           if (next === placed.length && onAllBloomed) {
