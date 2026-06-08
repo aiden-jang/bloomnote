@@ -275,6 +275,61 @@
   color: var(--green-mid);
 }
 
+/* Mobile responsive — primary breakpoint at 480px (between large
+   phone landscape and tablet portrait). Catches iPhone 12/13/14/15
+   widths (390px), Pixel widths (393px), and most Android phones. */
+@media (max-width: 480px) {
+  .wrap {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  /* Wordmark dominates the page at desktop size; bring it down on
+     small viewports so it doesn't take a full screen-height to
+     display "blossom." */
+  .title {
+    font-size: 36px;
+    letter-spacing: -0.5px;
+  }
+
+  /* Share actions: three buttons (Share, Copy, Make another) don't
+     reliably fit horizontally at narrow widths — "make another" alone
+     is 12 characters and the button padding doesn't shrink that small.
+     Stack them vertically; primary action on top, secondaries below. */
+  .shareActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .shareBtn,
+  .copyBtn,
+  .copyBtnSecondary,
+  .resetBtn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* Helper row: wrap freely. The char counter slides under the
+     helper text on narrow widths instead of overlapping it. */
+  .helperRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .charCount {
+    align-self: flex-end;
+  }
+}
+
+/* Very narrow phones (< 360px): also stack the From/To row so each
+   field gets its full breathing room. */
+@media (max-width: 360px) {
+  .nameRow {
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
 .error {
   font-size: 13px;
   background: #fef2f2;
