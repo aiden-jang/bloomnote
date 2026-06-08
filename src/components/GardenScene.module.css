@@ -98,3 +98,19 @@
     display: none;
   }
 }
+
+/* Mobile: scale the scene down so 5 flowers don't visually crowd
+   each other at narrow widths. Scaled, not re-laid out — keeps the
+   bloom + sway geometry stable. */
+@media (max-width: 480px) {
+  .scene {
+    height: 220px;
+  }
+
+  .garden {
+    bottom: 44px;
+    height: 170px;
+    transform: scale(0.85);
+    transform-origin: bottom center;
+  }
+}
