@@ -136,7 +136,7 @@ export default function Composer() {
     setPhase('designing')
     setErrorText(null)
     setProgress(0)
-    setStatusText('Reading your note…')
+    setStatusText('reading…')
 
     const ctrl = new AbortController()
     abortRef.current = ctrl
@@ -152,12 +152,12 @@ export default function Composer() {
         },
         {
           signal: ctrl.signal,
-          onThinking: () => setStatusText('Thinking about who they are…'),
+          onThinking: () => setStatusText('thinking…'),
           onProgress: count => {
             setProgress(count)
-            if (count === 0) setStatusText('Sketching the first flower…')
-            else if (count === 1) setStatusText('Picking the next palette…')
-            else setStatusText(`Designed ${count} flower${count === 1 ? '' : 's'}…`)
+            if (count === 0) setStatusText('sketching…')
+            else if (count === 1) setStatusText('picking colors…')
+            else setStatusText(`${count} done…`)
           },
         },
       )
@@ -187,7 +187,7 @@ export default function Composer() {
       // URL flash on screen and then change. We cap the shortener wait
       // at 3 seconds — past that, we go with the long URL rather than
       // hanging the share UI on a flaky third-party.
-      setStatusText('Shortening link…')
+      setStatusText('shortening link…')
 
       const SHORTEN_TIMEOUT_MS = 3000
       let finalUrl = longUrl
@@ -267,8 +267,8 @@ export default function Composer() {
         <h1 className={styles.title}>blossom</h1>
         <p className={styles.subtitle}>
           {remixSeed
-            ? `Write ${remixSeed.from || 'them'} back. Their note grows them a garden.`
-            : 'Write someone a note. We grow them a garden from it.'}
+            ? `write ${remixSeed.from || 'them'} back.`
+            : 'write a note. we grow them a garden.'}
         </p>
       </header>
 
@@ -284,7 +284,7 @@ export default function Composer() {
       {phase === 'idle' && remixSeed && (
         <RemixContext
           previous={remixSeed}
-          label={remixSeed.from ? `Replying to ${remixSeed.from}` : 'Replying'}
+          label={remixSeed.from ? `replying to ${remixSeed.from}` : 'replying'}
         />
       )}
 
@@ -340,7 +340,7 @@ export default function Composer() {
             />
             <div className={styles.helperRow}>
               <span className={styles.helper}>
-                Be specific — a memory, a quirk, what they mean to you. The garden is designed from this.
+                quirks beat vibes. the more specific, the better the bouquet.
               </span>
               <span className={styles.charCount}>{message.length}/400</span>
             </div>
@@ -354,14 +354,14 @@ export default function Composer() {
               onClick={handleDesign}
               disabled={!canSubmit}
             >
-              {remixSeed ? 'Grow them one back' : 'Grow their garden'}
+              {remixSeed ? 'grow one back' : 'grow their garden'}
             </button>
           </div>
 
           {remixSeed && (
             <p className={styles.escape}>
               <a href={window.location.origin + window.location.pathname}>
-                Start fresh instead
+                or start fresh
               </a>
             </p>
           )}
@@ -372,11 +372,11 @@ export default function Composer() {
         <div className={styles.designingPanel}>
           <div className={styles.designingRow}>
             <Spinner />
-            <span>{statusText || 'Designing…'}</span>
+            <span>{statusText || 'designing…'}</span>
           </div>
           <ProgressDots count={progress} total={5} />
           <button className={styles.cancelBtn} onClick={handleCancel}>
-            Cancel
+            cancel
           </button>
         </div>
       )}
@@ -390,8 +390,8 @@ export default function Composer() {
               doesn't have to wonder "is this what they'll see?" */}
           <p className={styles.previewLabel}>
             {recipient.trim()
-              ? `Here's what ${recipient.trim()} will see`
-              : "Here's what they'll see"}
+              ? `what ${recipient.trim()} sees`
+              : 'what they see'}
           </p>
 
           <p className={styles.previewSenderLine}>
@@ -409,7 +409,7 @@ export default function Composer() {
 
           {garden.bouquetNote && (
             <div className={styles.bouquetNote}>
-              <span className={styles.bouquetNoteLabel}>Note</span>
+              <span className={styles.bouquetNoteLabel}>note</span>
               <p>{garden.bouquetNote}</p>
             </div>
           )}
@@ -421,7 +421,7 @@ export default function Composer() {
                 <p className={styles.previewSig}>— {from.trim()}</p>
               )}
               <p className={styles.previewGrownOn}>
-                Grown {formatGardenDate(new Date().toISOString())}
+                grown {formatGardenDate(new Date().toISOString())}
               </p>
             </div>
           )}
@@ -433,7 +433,7 @@ export default function Composer() {
 
           <div className={styles.shareCard}>
             <p className={styles.shareTitle}>
-              {recipient ? `${recipient}'s garden is ready` : 'Their garden is ready'}
+              {recipient ? `${recipient}'s garden is ready` : 'ready to send'}
             </p>
             <div className={styles.urlBox}>
               <span className={styles.urlText}>{shareUrl}</span>
@@ -441,17 +441,17 @@ export default function Composer() {
             <div className={styles.shareActions}>
               {canShare && (
                 <button className={styles.shareBtn} onClick={handleShare}>
-                  Share…
+                  share
                 </button>
               )}
               <button
                 className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
                 onClick={handleCopy}
               >
-                {copied ? 'Copied!' : 'Copy link'}
+                {copied ? 'copied' : 'copy link'}
               </button>
               <button className={styles.resetBtn} onClick={handleStartOver}>
-                Make another
+                make another
               </button>
             </div>
           </div>
