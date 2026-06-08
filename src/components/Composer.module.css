@@ -105,6 +105,29 @@
   border-color: var(--green-mid);
 }
 
+/* Select shares input styling, plus a chevron rendered via background
+   image so we don't depend on the OS-native dropdown chrome (which
+   varies wildly across platforms). */
+.select {
+  width: 100%;
+  border: 1.5px solid var(--green-pale);
+  border-radius: 12px;
+  padding: 10px 36px 10px 14px;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: white url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%237a8f6b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 14px center;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.select:focus {
+  border-color: var(--green-mid);
+  outline: none;
+}
+
 .actions {
   display: flex;
   gap: 10px;

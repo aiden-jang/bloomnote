@@ -10,6 +10,7 @@ import {
 } from '../garden'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { loadDraft, saveDraft } from '../lib/draft'
+import { DEFAULT_OCCASION, OCCASIONS, OCCASION_VALUES } from '../lib/occasions'
 import { shortenUrl } from '../lib/shorten'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
@@ -57,27 +58,40 @@ export default function Composer() {
   // a different recipient doesn't bleed into the reply.
   const initialInputs = useMemo(() => {
     if (remixSeed) {
-      return { from: remixSeed.to ?? '', recipient: remixSeed.from ?? '', message: '' }
+      return {
+        from: remixSeed.to ?? '',
+        recipient: remixSeed.from ?? '',
+        message: '',
+        // Reset occasion per remix — replies are new conversations,
+        // not continuations of an occasion.
+        occasion: DEFAULT_OCCASION,
+      }
     }
     const draft = loadDraft()
     return {
       from: draft?.from ?? '',
       recipient: draft?.recipient ?? '',
       message: draft?.message ?? '',
+      // Honor a saved occasion only if it's still a known value;
+      // otherwise default. Defends against future renamings.
+      occasion: draft?.occasion && OCCASION_VALUES.has(draft.occasion)
+        ? draft.occasion
+        : DEFAULT_OCCASION,
     }
   }, [remixSeed])
 
   const [from, setFrom] = useState(initialInputs.from)
   const [recipient, setRecipient] = useState(initialInputs.recipient)
   const [message, setMessage] = useState(initialInputs.message)
+  const [occasion, setOccasion] = useState(initialInputs.occasion)
 
   // Autosave on every change. localStorage writes are sync but fast for
   // strings this small; no debounce needed. Skipped in remix mode (see
   // comment on `initialInputs` above).
   useEffect(() => {
     if (remixSeed) return
-    saveDraft({ from, recipient, message })
-  }, [from, recipient, message, remixSeed])
+    saveDraft({ from, recipient, message, occasion })
+  }, [from, recipient, message, occasion, remixSeed])
   const [placeholder] = useState(
     () => MESSAGE_PLACEHOLDERS[Math.floor(Math.random() * MESSAGE_PLACEHOLDERS.length)],
   )
@@ -133,6 +147,7 @@ export default function Composer() {
           message: message.trim(),
           recipient: recipient.trim(),
           from: from.trim() || undefined,
+          occasion,
         },
         {
           signal: ctrl.signal,
@@ -293,6 +308,20 @@ export default function Composer() {
               />
             </section>
           </div>
+
+          <section className={styles.section}>
+            <label className={styles.label} htmlFor="occasion-select">Occasion</label>
+            <select
+              id="occasion-select"
+              className={styles.select}
+              value={occasion}
+              onChange={e => setOccasion(e.target.value)}
+            >
+              {OCCASIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </section>
 
           <section className={styles.section}>
             <label className={styles.label}>Your message</label>
