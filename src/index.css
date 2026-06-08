@@ -100,6 +100,50 @@ textarea, input {
   100% { transform: translateX(0px) translateY(0px); }
 }
 
+/* Print stylesheet.
+ *
+ * Cmd+P from the recipient view renders the garden as a real card —
+ * no grain texture, no UI chrome, no CTAs. The per-component module
+ * CSS files own their own component-level print rules (they can't be
+ * referenced from here because CSS-modules hash class names).
+ *
+ * The catch with animated-in elements: bloom / fadeUp / itemReveal
+ * keyframes don't play during print snapshots, so any element that
+ * starts at opacity:0 would print invisibly. Forcing every element
+ * to opacity 1, no transform, no animation is the simple fix.
+ */
+@media print {
+  /* Keep all backgrounds + colors instead of being stripped (the
+     browser default for ink-saving) — the cream paper, sky gradient,
+     and ground bar are the card. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force every animated/transitioned element to its visible end
+     state. */
+  *, *::before, *::after {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  body::after {
+    /* Grain overlay off — paper-on-paper, not paper-on-effect-on-paper. */
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}
+
 /* View Transitions API styling.
    Browser default is ~250ms snap fade. We slow it slightly with a
    softer easing so phase changes feel deliberate. Gated on

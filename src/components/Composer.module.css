@@ -463,3 +463,27 @@
   border-color: var(--green-light);
   background: #f5fbf0;
 }
+
+/* Print: hide everything that's screen-only (form inputs, the
+   designing spinner, the share card with its URL and buttons, the
+   helper hints). What stays visible — when printed from the designed
+   state — is the preview itself: the sender line, bouquet note,
+   personal message, and flower legend. Together with the GardenScene
+   above (which is always rendered), that's a clean printable card.
+   Printing from idle/designing just produces an empty page with the
+   wordmark; harmless. */
+@media print {
+  .header,
+  .nameRow,
+  .section,
+  .helperRow,
+  .actions,
+  .designingPanel,
+  .escape,
+  .hint,
+  .error,
+  .shareCard,
+  .shareDivider {
+    display: none !important;
+  }
+}
