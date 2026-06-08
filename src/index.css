@@ -32,6 +32,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Subtle paper-grain overlay.
+ *
+ * Sits above all content with `mix-blend-mode: multiply` so the grain
+ * tints the page like a printed object rather than sitting on top of
+ * it as a separate layer. ~4% opacity is the sweet spot — felt, not
+ * seen. pointer-events: none so it never intercepts a click.
+ *
+ * The SVG is inline as a data URI: a small grayscale fractal-noise
+ * turbulence tile. `stitchTiles='stitch'` makes the edges match so
+ * the repeat is invisible. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 240px 240px;
+  background-repeat: repeat;
+  mix-blend-mode: multiply;
+}
+
 button {
   font-family: var(--sans);
   cursor: pointer;
