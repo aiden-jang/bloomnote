@@ -14,11 +14,16 @@
 
 .title {
   font-family: var(--serif);
-  font-size: 36px;
-  font-weight: 400;
+  font-size: 44px;
+  font-weight: 500;
   color: var(--green-deep);
   margin-bottom: 6px;
-  letter-spacing: -0.5px;
+  letter-spacing: -1px;
+  /* Fraunces variable axes — opsz unlocks the display optical size at
+     this point size; the small SOFT + WONK values give the wordmark
+     the slight wobble that Fraunces is known for without going
+     full-novelty. */
+  font-variation-settings: 'opsz' 96, 'SOFT' 60, 'WONK' 0;
 }
 
 .subtitle {
