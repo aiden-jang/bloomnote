@@ -1,10 +1,14 @@
 // Frontend client for the /api/design-garden SSE endpoint.
 //
-// We use the streaming protocol mainly so the model's adaptive thinking
-// + tool generation don't show up as one long pause to the user. As
-// chunks arrive we surface a coarse progress count (how many flowers
-// we've seen names for so far), which is enough to make the wait feel
-// alive without exposing raw deltas.
+// The streaming protocol mainly buys us HTTP-timeout safety while the
+// model thinks — the SSE events `start` / `thinking` / `complete` let
+// us surface "something is happening" without pretending to track
+// real per-token progress.
+//
+// All thrown errors are translated through `friendlyError()` before
+// leaving this module so the Composer never has to show "[Google-
+// GenerativeAI Error]: ..." or a 200-character stack trace to the
+// user. The original message is logged to console for debugging.
 
 import type { FlowerSpec } from '../garden'
 
@@ -47,81 +51,163 @@ interface DesignRequest {
 
 /**
  * POST the request to /api/design-garden and parse the SSE stream.
- * Returns the final result; the callbacks fire as events arrive. If the
- * stream errors, we throw a useful message rather than leaking SSE
- * mechanics into UI code.
+ * Returns the final result; the callbacks fire as events arrive.
+ * Thrown errors carry user-friendly messages (see friendlyError) —
+ * the original failure is still console.error'd for debugging.
  */
 export async function designGarden(
   req: DesignRequest,
   callbacks: DesignCallbacks = {},
 ): Promise<DesignResult> {
-  const res = await fetch('/api/design-garden', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(req),
-    signal: callbacks.signal,
-  })
+  try {
+    const res = await fetch('/api/design-garden', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+      signal: callbacks.signal,
+    })
 
-  if (!res.ok) {
-    // Non-200s come back as JSON error envelopes — try to surface the
-    // server's message rather than just the status code.
-    let message = `Request failed (${res.status})`
-    try {
-      const body = await res.json()
-      if (body && typeof body.error === 'string') message = body.error
-    } catch {
-      // Body wasn't JSON — keep the default.
+    if (!res.ok) {
+      // Non-200s come back as JSON error envelopes — try to surface the
+      // server's message rather than just the status code.
+      let message = `Request failed (${res.status})`
+      try {
+        const body = await res.json()
+        if (body && typeof body.error === 'string') message = body.error
+      } catch {
+        // Body wasn't JSON — keep the default.
+      }
+      throw new Error(message)
     }
-    throw new Error(message)
-  }
 
-  if (!res.body) throw new Error('No response body.')
+    if (!res.body) throw new Error('No response body.')
 
-  const reader = res.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-  let result: DesignResult | null = null
-  let errorMessage: string | null = null
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let result: DesignResult | null = null
+    let errorMessage: string | null = null
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
 
-    // SSE frames are separated by a blank line.
-    let frameBoundary = buffer.indexOf('\n\n')
-    while (frameBoundary !== -1) {
-      const frame = buffer.slice(0, frameBoundary)
-      buffer = buffer.slice(frameBoundary + 2)
-      frameBoundary = buffer.indexOf('\n\n')
+      // SSE frames are separated by a blank line.
+      let frameBoundary = buffer.indexOf('\n\n')
+      while (frameBoundary !== -1) {
+        const frame = buffer.slice(0, frameBoundary)
+        buffer = buffer.slice(frameBoundary + 2)
+        frameBoundary = buffer.indexOf('\n\n')
 
-      const event = parseFrame(frame)
-      if (!event) continue
+        const event = parseFrame(frame)
+        if (!event) continue
 
-      switch (event.event) {
-        case 'start':
-          callbacks.onStart?.()
-          break
-        case 'thinking':
-          callbacks.onThinking?.()
-          break
-        case 'complete':
-          if (event.data?.garden) {
-            result = normalize(event.data.garden as ServerPayload)
-            callbacks.onComplete?.(result)
-          }
-          break
-        case 'error':
-          errorMessage = typeof event.data?.error === 'string' ? event.data.error : 'Unknown error.'
-          callbacks.onError?.(errorMessage)
-          break
+        switch (event.event) {
+          case 'start':
+            callbacks.onStart?.()
+            break
+          case 'thinking':
+            callbacks.onThinking?.()
+            break
+          case 'complete':
+            if (event.data?.garden) {
+              result = normalize(event.data.garden as ServerPayload)
+              callbacks.onComplete?.(result)
+            }
+            break
+          case 'error':
+            errorMessage = typeof event.data?.error === 'string' ? event.data.error : 'Unknown error.'
+            callbacks.onError?.(errorMessage)
+            break
+        }
       }
     }
+
+    if (errorMessage) throw new Error(errorMessage)
+    if (!result) throw new Error('Stream ended without a garden.')
+    return result
+  } catch (err) {
+    // User cancellations propagate as-is — Composer's catch checks
+    // signal.aborted and handles them silently.
+    if (err instanceof Error && err.name === 'AbortError') throw err
+
+    // Everything else gets translated. Keep the original on the
+    // console so a curious developer can dig in via DevTools.
+    const raw = err instanceof Error ? err.message : String(err)
+    // eslint-disable-next-line no-console
+    console.error('[designGarden] underlying error:', err)
+    throw new Error(friendlyError(raw))
+  }
+}
+
+/**
+ * Map a raw error message (from our backend, from Gemini, or from the
+ * platform like "Failed to fetch") to a short conversational line in
+ * the same nonchalant lowercase voice as the rest of the UI.
+ *
+ * Messages that already came from our backend's own validation
+ * (e.g. "write something first.", "who is this for?") pass through
+ * unchanged — they're already in the right register.
+ *
+ * Order matters: more-specific patterns first. The default case at
+ * the bottom is the conservative fallback for short messages we
+ * couldn't classify.
+ */
+export function friendlyError(raw: string): string {
+  // Rate limiting — our IP cap and Gemini's quota both surface as
+  // some flavor of "rate limit" / 429.
+  if (/rate.?limit|\b429\b|too.?many.?requests/i.test(raw)) {
+    return "the demo's rate limit kicked in. give it about a minute and try again."
   }
 
-  if (errorMessage) throw new Error(errorMessage)
-  if (!result) throw new Error('Stream ended without a garden.')
-  return result
+  // Gemini quota exhausted (free tier, daily cap, etc.)
+  if (/quota.?exceeded|generate.?content.?free.?tier|resource.?exhausted/i.test(raw)) {
+    return 'the demo has used up its daily gemini quota. try again tomorrow, or clone the repo and run it locally with your own free key.'
+  }
+
+  // Model not found (e.g. a deprecated model id) / API endpoint issues
+  if (/\b404\b|not.?found.?for.?api.?version|model.+not.+found/i.test(raw)) {
+    return "the AI model isn't responding right now. try again shortly."
+  }
+
+  // Network drop / offline / DNS / CORS
+  if (/failed.?to.?fetch|networkerror|network.?request.?failed|err_network/i.test(raw)) {
+    return "couldn't reach the server. check your connection and try again."
+  }
+
+  // Server config missing — we shipped without an API key set
+  if (/gemini_api_key|missing.+api.?key/i.test(raw)) {
+    return "the demo isn't configured with an api key right now. (try cloning the repo + adding your own to run locally.)"
+  }
+
+  // Post-AI validation failed — the model returned a garden that
+  // didn't pass validateGarden() (out-of-range petal count, bad hex,
+  // wrong array length, etc.)
+  if (/invalid garden|invalid.+payload|content_sha256/i.test(raw)) {
+    return 'the AI got confused on that one. mind trying again — maybe with a slightly different note?'
+  }
+
+  // Stream ended without a complete event, or the model didn't call
+  // the design_garden function as required
+  if (/did.?not.?return.?a.?garden|stream.?ended.?without.?a.?garden/i.test(raw)) {
+    return "the AI didn't return a garden. try again, ideally with a slightly longer or more specific note."
+  }
+
+  // Generic 5xx from our own backend or Gemini's
+  if (/^request failed \(5\d{2}\)|\b5\d{2}\b|internal.?server.?error|bad.?gateway/i.test(raw)) {
+    return 'something broke on our end. try again in a moment.'
+  }
+
+  // Long or stack-trace-shaped — definitely not user-readable, fall
+  // back to a generic message rather than dumping it on screen
+  if (raw.length > 160 || /\bstack:\s|exception|\bat\s+\w+\s*\(/i.test(raw)) {
+    return 'something went wrong. try again, and if it keeps happening let me know.'
+  }
+
+  // Default: short, looks human-readable already (e.g. our backend's
+  // own validation messages). Pass through.
+  return raw
 }
 
 interface ParsedEvent {
