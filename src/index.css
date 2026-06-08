@@ -12,7 +12,11 @@
   --text-dark:   #1e3a10;
   --text-mid:    #4a6741;
   --text-light:  #7a9e72;
-  --serif: 'Playfair Display', Georgia, serif;
+  /* Fraunces is a variable serif with personality — slight wobble in
+     the heavier weights that reads as "deliberately set." Playfair
+     stays in the stack as a graceful fallback if Fraunces ever fails
+     to load. */
+  --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
   --sans:  'DM Sans', system-ui, sans-serif;
 }
 
