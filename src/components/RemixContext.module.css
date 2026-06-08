@@ -1,0 +1,59 @@
+.panel {
+  background: #f5f9f2;
+  border: 1px solid var(--green-pale);
+  border-radius: 14px;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeUp 0.4s ease forwards;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Mini flower strip — a small, non-animated re-render of the previous
+   garden's flowers, scaled down so the thread context doesn't dominate
+   the page. We use transform: scale rather than re-implementing
+   FlowerSVG at a smaller size so all the SVG geometry stays
+   pixel-accurate. */
+.miniGarden {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 4px;
+  height: 110px;
+  overflow: hidden;
+}
+
+.miniSlot {
+  display: inline-flex;
+  align-items: flex-end;
+  transform: scale(0.55);
+  transform-origin: bottom center;
+  margin: 0 -8px;
+}
+
+.message {
+  font-size: 13px;
+  color: var(--text-dark);
+  line-height: 1.55;
+  font-style: italic;
+  padding: 8px 10px;
+  background: white;
+  border-radius: 8px;
+  border-left: 2px solid var(--green-light);
+}
+
+.bouquet {
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.5;
+  font-style: italic;
+}

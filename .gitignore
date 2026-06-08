@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.local
+.vercel
+.DS_Store
+*.log
+
+# Local dev scaffolding (not project source)
+.claude/
