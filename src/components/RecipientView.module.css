@@ -55,6 +55,19 @@
   font-style: italic;
 }
 
+/* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
+   the foot of the message card the way a date would on a physical
+   greeting card. */
+.grownOn {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--green-pale);
+  font-size: 11px;
+  color: var(--text-light);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
 .bouquetNote {
   font-family: var(--serif);
   font-size: 16px;

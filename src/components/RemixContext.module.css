@@ -17,6 +17,15 @@
   letter-spacing: 0.1em;
 }
 
+.labelDate {
+  font-weight: 400;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-light);
+  margin-left: 2px;
+}
+
 /* Mini flower strip — a small, non-animated re-render of the previous
    garden's flowers, scaled down so the thread context doesn't dominate
    the page. We use transform: scale rather than re-implementing

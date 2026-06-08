@@ -1,5 +1,6 @@
 import FlowerSVG from './FlowerSVG'
 import type { GardenData } from '../garden'
+import { formatGardenDate } from '../lib/formatDate'
 import styles from './RemixContext.module.css'
 
 interface Props {
@@ -20,9 +21,13 @@ interface Props {
  * is purely "here's the thread."
  */
 export default function RemixContext({ previous, label }: Props) {
+  const grownOn = formatGardenDate(previous.createdAt)
   return (
     <aside className={styles.panel} aria-label={label}>
-      <p className={styles.label}>{label}</p>
+      <p className={styles.label}>
+        {label}
+        {grownOn && <span className={styles.labelDate}> · {grownOn}</span>}
+      </p>
       <div className={styles.miniGarden}>
         {previous.flowers.map((flower, i) => (
           <span key={`${i}-${flower.name}`} className={styles.miniSlot}>
