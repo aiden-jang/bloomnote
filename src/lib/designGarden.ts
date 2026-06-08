@@ -42,6 +42,8 @@ interface DesignRequest {
   message: string
   recipient: string
   from?: string
+  /** One of the keys from src/lib/occasions.ts → OCCASIONS. */
+  occasion?: string
 }
 
 /**

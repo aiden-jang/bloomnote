@@ -75,6 +75,22 @@ interface RequestBody {
   message: string
   recipient: string
   from?: string
+  /** Occasion key — one of the values defined in src/lib/occasions.ts. */
+  occasion?: string
+}
+
+// Mirror of src/lib/occasions.ts → OCCASIONS values. Duplicated here
+// rather than imported so the backend doesn't reach into the
+// frontend tree — they're not bundled together. If the list changes,
+// update both.
+const KNOWN_OCCASIONS: Record<string, string> = {
+  'just-because': 'Just because',
+  'birthday': 'Birthday',
+  'thank-you': 'Thank you',
+  'anniversary': 'Anniversary',
+  'congrats': 'Congratulations',
+  'get-well': 'Get well soon',
+  'sympathy': 'Sympathy',
 }
 
 function validateBody(raw: unknown): { ok: true; body: RequestBody } | { ok: false; error: string } {
@@ -86,7 +102,11 @@ function validateBody(raw: unknown): { ok: true; body: RequestBody } | { ok: fal
   const recipient = typeof body.recipient === 'string' ? body.recipient.trim().slice(0, 60) : ''
   if (recipient.length < 1) return { ok: false, error: 'Who is this for?' }
   const from = typeof body.from === 'string' ? body.from.trim().slice(0, 60) : undefined
-  return { ok: true, body: { message, recipient, from: from || undefined } }
+  // Occasion is optional + must be a known key. Unknown values fall
+  // back silently to no-occasion rather than 400ing — defensive.
+  const occasionRaw = typeof body.occasion === 'string' ? body.occasion : undefined
+  const occasion = occasionRaw && occasionRaw in KNOWN_OCCASIONS ? occasionRaw : undefined
+  return { ok: true, body: { message, recipient, from: from || undefined, occasion } }
 }
 
 // --- SSE helpers ---------------------------------------------------------
@@ -161,10 +181,14 @@ export default async function handler(req: Request): Promise<Response> {
   })
 
   // The user wrote a real note. Hand it to the AI exactly as written;
-  // let the model do the inference. `from` is included when present so
-  // the bouquet note can be written naturally in the sender's voice.
+  // let the model do the inference. `from` and `occasion` are
+  // included when present so the bouquet note can be written naturally
+  // in the sender's voice and the tone can match the moment.
   const fromLine = parsed.body.from ? `From: ${parsed.body.from}\n` : ''
-  const userPrompt = `${fromLine}To: ${parsed.body.recipient}\n\nTheir note:\n${parsed.body.message}`
+  const occasionLine = parsed.body.occasion
+    ? `Occasion: ${KNOWN_OCCASIONS[parsed.body.occasion]}\n`
+    : ''
+  const userPrompt = `${fromLine}To: ${parsed.body.recipient}\n${occasionLine}\nTheir note:\n${parsed.body.message}`
 
   // Stream Gemini's response and forward progress events to the client
   // via SSE. We close the stream as soon as we have the validated tool

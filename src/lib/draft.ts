@@ -15,9 +15,10 @@ export interface Draft {
   from: string
   recipient: string
   message: string
+  occasion: string
 }
 
-const EMPTY: Draft = { from: '', recipient: '', message: '' }
+const EMPTY: Draft = { from: '', recipient: '', message: '', occasion: '' }
 
 export function loadDraft(): Draft | null {
   try {
@@ -29,9 +30,11 @@ export function loadDraft(): Draft | null {
       from: typeof parsed.from === 'string' ? parsed.from : '',
       recipient: typeof parsed.recipient === 'string' ? parsed.recipient : '',
       message: typeof parsed.message === 'string' ? parsed.message : '',
+      occasion: typeof parsed.occasion === 'string' ? parsed.occasion : '',
     }
     // Don't return a draft that's entirely empty — saves one branch on
-    // the consumer side.
+    // the consumer side. (Occasion isn't checked: it always has a
+    // default, so its presence doesn't mean the user has done anything.)
     if (draft.from === '' && draft.recipient === '' && draft.message === '') return null
     return draft
   } catch {
@@ -41,8 +44,10 @@ export function loadDraft(): Draft | null {
 
 export function saveDraft(draft: Draft): void {
   try {
-    // Optimization: if all fields are empty, clear instead of writing
-    // an empty object. Keeps the storage tidy.
+    // Optimization: if the user-typed fields are all empty, clear
+    // instead of writing. Occasion isn't checked because it always
+    // has a default — its presence alone shouldn't keep the storage
+    // populated.
     if (draft.from === '' && draft.recipient === '' && draft.message === '') {
       localStorage.removeItem(DRAFT_KEY)
       return
