@@ -97,6 +97,17 @@ export default function RecipientView({ gardenData }: Props) {
           or <a href={window.location.origin + window.location.pathname} className={styles.ctaSubLink}>start one for someone new</a>
         </p>
       </div>
+
+      {/* Author credit. Quieter than Composer's because this is the
+          recipient's emotional moment — they shouldn't feel watermarked.
+          Hidden in print so a physical card doesn't carry attribution.
+          TODO: swap the href below for your portfolio URL once live. */}
+      <p className={styles.credit}>
+        made by{' '}
+        <a href="#" target="_blank" rel="noreferrer">
+          aiden jang
+        </a>
+      </p>
     </div>
   )
 }
