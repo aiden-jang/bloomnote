@@ -1,0 +1,85 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sky background — matches the in-app garden scene -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAF5EC"/>
+      <stop offset="100%" stop-color="#EFF5E0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#sky)"/>
+
+  <!-- Ground at the bottom -->
+  <rect x="0" y="520" width="1200" height="110" fill="#8b5e3c"/>
+  <rect x="0" y="520" width="1200" height="10" fill="#a0714f"/>
+
+  <!-- Three flowers, off to the right, like a small bouquet -->
+  <!-- Each flower: 8 petals around a center, simplified silhouette -->
+
+  <!-- Pink rose-ish -->
+  <g transform="translate(900, 360)">
+    <line x1="0" y1="0" x2="0" y2="160" stroke="#3d6b32" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="-14" cy="80" rx="14" ry="7" fill="#3d6b32" transform="rotate(-30, -14, 80)" opacity="0.9"/>
+    <ellipse cx="14" cy="110" rx="14" ry="7" fill="#3d6b32" transform="rotate(30, 14, 110)" opacity="0.9"/>
+    <g>
+      <circle cx="0" cy="-30" r="22" fill="#FF8FA3"/>
+      <circle cx="20" cy="-15" r="22" fill="#FF8FA3"/>
+      <circle cx="22" cy="10" r="22" fill="#FF8FA3"/>
+      <circle cx="0" cy="20" r="22" fill="#FF8FA3"/>
+      <circle cx="-22" cy="10" r="22" fill="#FF8FA3"/>
+      <circle cx="-20" cy="-15" r="22" fill="#FF8FA3"/>
+      <circle cx="0" cy="-5" r="15" fill="#FFD700"/>
+    </g>
+  </g>
+
+  <!-- White daisy -->
+  <g transform="translate(1010, 380)">
+    <line x1="0" y1="0" x2="0" y2="140" stroke="#5a8c4e" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="-12" cy="60" rx="12" ry="6" fill="#5a8c4e" transform="rotate(-30, -12, 60)" opacity="0.9"/>
+    <g>
+      <ellipse cx="0" cy="-28" rx="8" ry="22" fill="#ffffff"/>
+      <ellipse cx="22" cy="-12" rx="8" ry="22" fill="#ffffff" transform="rotate(45, 22, -12)"/>
+      <ellipse cx="22" cy="14" rx="8" ry="22" fill="#ffffff" transform="rotate(90, 22, 14)"/>
+      <ellipse cx="0" cy="22" rx="8" ry="22" fill="#ffffff" transform="rotate(135, 0, 22)"/>
+      <ellipse cx="-22" cy="14" rx="8" ry="22" fill="#ffffff" transform="rotate(180, -22, 14)"/>
+      <ellipse cx="-22" cy="-12" rx="8" ry="22" fill="#ffffff" transform="rotate(225, -22, -12)"/>
+      <circle cx="0" cy="-3" r="12" fill="#FBBF24"/>
+    </g>
+  </g>
+
+  <!-- Lavender / purple -->
+  <g transform="translate(1110, 370)">
+    <line x1="0" y1="0" x2="0" y2="150" stroke="#5b7c52" stroke-width="6" stroke-linecap="round"/>
+    <g>
+      <circle cx="-15" cy="-20" r="13" fill="#C4B5FD"/>
+      <circle cx="15" cy="-20" r="13" fill="#C4B5FD"/>
+      <circle cx="-15" cy="5" r="13" fill="#C4B5FD"/>
+      <circle cx="15" cy="5" r="13" fill="#C4B5FD"/>
+      <circle cx="0" cy="-30" r="13" fill="#A78BFA"/>
+      <circle cx="0" cy="15" r="13" fill="#A78BFA"/>
+      <circle cx="0" cy="-8" r="10" fill="#7C3AED"/>
+    </g>
+  </g>
+
+  <!-- Wordmark + tagline -->
+  <text
+    x="100"
+    y="295"
+    font-family="Playfair Display, Georgia, 'Times New Roman', serif"
+    font-size="160"
+    font-weight="400"
+    fill="#2D5A1B"
+    letter-spacing="-3">
+    blossom
+  </text>
+
+  <text
+    x="105"
+    y="370"
+    font-family="DM Sans, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="34"
+    font-weight="400"
+    fill="#7a8f6b"
+    letter-spacing="-0.5">
+    Write a note. We grow them a garden from it.
+  </text>
+</svg>
