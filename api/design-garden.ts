@@ -97,10 +97,10 @@ function validateBody(raw: unknown): { ok: true; body: RequestBody } | { ok: fal
   if (!raw || typeof raw !== 'object') return { ok: false, error: 'Body must be JSON.' }
   const body = raw as Record<string, unknown>
   const message = typeof body.message === 'string' ? body.message.trim() : ''
-  if (message.length < 4) return { ok: false, error: 'Write a note first — even a short one.' }
-  if (message.length > 400) return { ok: false, error: 'Please keep your note under 400 characters.' }
+  if (message.length < 4) return { ok: false, error: 'write something first.' }
+  if (message.length > 400) return { ok: false, error: 'keep it under 400 chars.' }
   const recipient = typeof body.recipient === 'string' ? body.recipient.trim().slice(0, 60) : ''
-  if (recipient.length < 1) return { ok: false, error: 'Who is this for?' }
+  if (recipient.length < 1) return { ok: false, error: 'who is this for?' }
   const from = typeof body.from === 'string' ? body.from.trim().slice(0, 60) : undefined
   // Occasion is optional + must be a known key. Unknown values fall
   // back silently to no-occasion rather than 400ing — defensive.

@@ -42,7 +42,7 @@ export default function RecipientView({ gardenData }: Props) {
           </p>
         ) : (
           <p className={styles.fromText}>
-            Someone grew {to ? to : 'you'} a garden
+            someone grew {to ? to : 'you'} a garden
           </p>
         )}
       </div>
@@ -65,10 +65,10 @@ export default function RecipientView({ gardenData }: Props) {
           </>
         ) : !bouquetNote ? (
           <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
-            A little garden, just for you.
+            a garden, for you.
           </p>
         ) : null}
-        {grownOn && <p className={styles.grownOn}>Grown {grownOn}</p>}
+        {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
       </div>
 
       <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
@@ -83,15 +83,15 @@ export default function RecipientView({ gardenData }: Props) {
         <div className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}>
           <RemixContext
             previous={previous}
-            label={`You wrote this to ${previous.to || from || 'them'}`}
+            label={`you wrote this to ${previous.to || from || 'them'}`}
           />
         </div>
       )}
 
       <div className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}>
-        <p className={styles.ctaText}>Want to grow one back?</p>
+        <p className={styles.ctaText}>grow one back?</p>
         <a href={remixHref} className={styles.ctaBtn}>
-          Grow {from ? `${from} a garden` : 'one back'}
+          {from ? `grow ${from} a garden` : 'grow one back'}
         </a>
         <p className={styles.ctaSub}>
           or <a href={window.location.origin + window.location.pathname} className={styles.ctaSubLink}>start one for someone new</a>

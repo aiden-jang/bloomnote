@@ -12,14 +12,20 @@ export interface Occasion {
   label: string
 }
 
+// Display labels are intentionally lowercase + conversational. The wire
+// `value` stays stable so existing drafts and the backend's
+// canonical-label map (api/design-garden.ts → KNOWN_OCCASIONS) keep
+// working — the AI still receives the proper "Birthday" / "Sympathy"
+// tone signal even though the user sees "happy bday" / "thinking of
+// you" in the dropdown.
 export const OCCASIONS: readonly Occasion[] = [
-  { value: 'just-because', label: 'Just because' },
-  { value: 'birthday',     label: 'Birthday' },
-  { value: 'thank-you',    label: 'Thank you' },
-  { value: 'anniversary',  label: 'Anniversary' },
-  { value: 'congrats',     label: 'Congratulations' },
-  { value: 'get-well',     label: 'Get well soon' },
-  { value: 'sympathy',     label: 'Sympathy' },
+  { value: 'just-because', label: 'no reason' },
+  { value: 'birthday',     label: 'happy bday' },
+  { value: 'thank-you',    label: 'thanks' },
+  { value: 'anniversary',  label: 'still here' },
+  { value: 'congrats',     label: 'you did it' },
+  { value: 'get-well',     label: 'feel better' },
+  { value: 'sympathy',     label: 'thinking of you' },
 ] as const
 
 export const DEFAULT_OCCASION: Occasion['value'] = 'just-because'

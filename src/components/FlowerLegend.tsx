@@ -19,7 +19,7 @@ interface Props {
 export default function FlowerLegend({ flowers }: Props) {
   return (
     <section className={styles.list} aria-label="What each flower means">
-      <p className={styles.heading}>What each flower means</p>
+      <p className={styles.heading}>why these</p>
       <ul className={styles.items}>
         {flowers.map((f, i) => (
           <li
