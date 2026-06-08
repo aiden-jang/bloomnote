@@ -13,6 +13,7 @@ import { loadDraft, saveDraft } from '../lib/draft'
 import { formatGardenDate } from '../lib/formatDate'
 import { DEFAULT_OCCASION, OCCASIONS, OCCASION_VALUES } from '../lib/occasions'
 import { shortenUrl } from '../lib/shorten'
+import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
 
@@ -133,10 +134,13 @@ export default function Composer() {
 
   const handleDesign = useCallback(async () => {
     if (!canSubmit) return
-    setPhase('designing')
-    setErrorText(null)
-    setProgress(0)
-    setStatusText('reading…')
+    // Cross-fade form → designing panel via View Transitions API.
+    withViewTransition(() => {
+      setPhase('designing')
+      setErrorText(null)
+      setProgress(0)
+      setStatusText('reading…')
+    })
 
     const ctrl = new AbortController()
     abortRef.current = ctrl
@@ -201,18 +205,25 @@ export default function Composer() {
         // Shortener failed — fall back to long URL.
       }
 
-      setShareUrl(finalUrl)
-      setStatusText('')
-      setPhase('designed')
+      // Cross-fade designing panel → designed preview. playSuccess
+      // stays outside the transition so the chime plays at the start
+      // of the visual change, not after it.
       playSuccess()
+      withViewTransition(() => {
+        setShareUrl(finalUrl)
+        setStatusText('')
+        setPhase('designed')
+      })
     } catch (err) {
       if (ctrl.signal.aborted) {
-        setPhase('idle')
+        withViewTransition(() => setPhase('idle'))
         return
       }
       const msg = err instanceof Error ? err.message : 'Something went wrong.'
-      setErrorText(msg)
-      setPhase('idle')
+      withViewTransition(() => {
+        setErrorText(msg)
+        setPhase('idle')
+      })
     } finally {
       abortRef.current = null
     }
@@ -223,12 +234,15 @@ export default function Composer() {
   }, [])
 
   const handleStartOver = useCallback(() => {
-    setPhase('idle')
-    setGarden(null)
-    setFlowers([])
-    setShareUrl(null)
-    setProgress(0)
-    setErrorText(null)
+    // Cross-fade designed view → fresh idle form.
+    withViewTransition(() => {
+      setPhase('idle')
+      setGarden(null)
+      setFlowers([])
+      setShareUrl(null)
+      setProgress(0)
+      setErrorText(null)
+    })
     // Inputs are intentionally NOT cleared on "Make another" — if you
     // want a totally fresh note you can edit them; if you want to tweak
     // and regenerate, your text is still there.
