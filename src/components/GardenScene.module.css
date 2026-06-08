@@ -46,3 +46,55 @@
   height: 42px;
   background: #8b5e3c;
 }
+
+/* Drift layer. Sits over the whole scene; petals enter from above
+   the visible area and fall diagonally past the flowers. The scene
+   already has overflow:hidden, so petals exiting at the bottom or
+   horizontally are clipped cleanly. */
+.petalLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Individual petal — an asymmetric border-radius shape gives it a
+   teardrop / almond silhouette without needing an inline SVG. All
+   the variable values (color, position, delay, duration, etc.) come
+   from inline-style CSS custom properties set in the JSX. */
+.driftPetal {
+  position: absolute;
+  top: -24px;
+  left: var(--start-x);
+  width: var(--size);
+  height: calc(var(--size) * 1.4);
+  background: var(--color);
+  /* Wider top, narrower bottom — petal-ish. */
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  opacity: 0;
+  transform: rotate(var(--rotate));
+  animation: petalDrift var(--duration) cubic-bezier(0.3, 0.4, 0.5, 0.95) var(--delay) forwards;
+}
+
+/* Diagonal fall with a soft rotation. 280px is enough vertical
+   travel to leave even the tallest scene at the bottom. The final
+   rotation adds 270° on top of the starting --rotate so the petal
+   spins three-quarters of a turn during its fall. */
+@keyframes petalDrift {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(var(--rotate)); }
+  12%  { opacity: 0.85; }
+  85%  { opacity: 0.85; }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift-x), 280px) rotate(calc(var(--rotate) + 270deg));
+  }
+}
+
+/* Accessibility — no drift if the user has reduced motion enabled.
+   The bloom animation in FlowerSVG isn't gated; just the additional
+   ambient motion gets removed. */
+@media (prefers-reduced-motion: reduce) {
+  .driftPetal {
+    display: none;
+  }
+}
