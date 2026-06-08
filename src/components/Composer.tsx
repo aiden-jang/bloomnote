@@ -10,6 +10,7 @@ import {
 } from '../garden'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { loadDraft, saveDraft } from '../lib/draft'
+import { formatGardenDate } from '../lib/formatDate'
 import { DEFAULT_OCCASION, OCCASIONS, OCCASION_VALUES } from '../lib/occasions'
 import { shortenUrl } from '../lib/shorten'
 import { playSuccess, playWhoosh } from '../sound'
@@ -382,6 +383,30 @@ export default function Composer() {
 
       {phase === 'designed' && garden && shareUrl && (
         <>
+          {/* Preview section — together with the GardenScene above,
+              this renders exactly what the recipient will see when
+              they open the share link, minus their own CTAs. The
+              labeled header sets expectation explicitly so the user
+              doesn't have to wonder "is this what they'll see?" */}
+          <p className={styles.previewLabel}>
+            {recipient.trim()
+              ? `Here's what ${recipient.trim()} will see`
+              : "Here's what they'll see"}
+          </p>
+
+          <p className={styles.previewSenderLine}>
+            {from.trim() ? (
+              <>
+                <span className={styles.previewFromName}>{from.trim()}</span>
+                {' grew '}
+                {recipient.trim() || 'them'}
+                {' a garden'}
+              </>
+            ) : (
+              `Someone grew ${recipient.trim() || 'them'} a garden`
+            )}
+          </p>
+
           {garden.bouquetNote && (
             <div className={styles.bouquetNote}>
               <span className={styles.bouquetNoteLabel}>Note</span>
@@ -389,7 +414,22 @@ export default function Composer() {
             </div>
           )}
 
+          {message.trim() && (
+            <div className={styles.previewMessage}>
+              <p className={styles.previewMessageText}>{message.trim()}</p>
+              {from.trim() && (
+                <p className={styles.previewSig}>— {from.trim()}</p>
+              )}
+              <p className={styles.previewGrownOn}>
+                Grown {formatGardenDate(new Date().toISOString())}
+              </p>
+            </div>
+          )}
+
           <FlowerLegend flowers={garden.flowers} />
+
+          {/* Divider separating "what they'll see" from "how you share it." */}
+          <hr className={styles.shareDivider} aria-hidden />
 
           <div className={styles.shareCard}>
             <p className={styles.shareTitle}>
