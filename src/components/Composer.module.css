@@ -294,6 +294,8 @@
   gap: 10px;
 }
 
+/* Default Copy — primary action when there's no Share button (desktop
+   without Web Share API support). */
 .copyBtn {
   flex: 2;
   padding: 11px 20px;
@@ -308,6 +310,42 @@
 
 .copyBtn:hover {
   background: var(--green-deep);
+}
+
+/* Share button — primary action on mobile / Safari, where native
+   share is the more natural mobile flow than copy-then-paste. */
+.shareBtn {
+  flex: 2;
+  padding: 11px 20px;
+  border-radius: 22px;
+  background: var(--green-mid);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  transition: background 0.15s;
+}
+
+.shareBtn:hover {
+  background: var(--green-deep);
+}
+
+/* Copy demoted to secondary when Share is the primary action. Same
+   shape, lighter visual weight so it doesn't compete. */
+.copyBtnSecondary {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 22px;
+  background: white;
+  color: var(--green-mid);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid var(--green-mid);
+  transition: all 0.15s;
+}
+
+.copyBtnSecondary:hover {
+  background: #f0fae8;
 }
 
 .resetBtn {
