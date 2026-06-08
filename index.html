@@ -3,7 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>blossom</title>
+    <title>blossom — write a note, grow a garden</title>
+
+    <!-- Description shows up in Google results + as fallback in some share previews. -->
+    <meta
+      name="description"
+      content="Tiny AI gardens you grow for people you care about. Write a note; we turn it into a custom bouquet you can send."
+    />
+
+    <!-- Open Graph — drives the rich-link previews in iMessage, Slack,
+         Discord, Facebook, LinkedIn, etc. The image is /og.svg in the
+         repo; on most modern platforms SVG previews fine. If you ever
+         find one that doesn't (some older platforms convert lazily),
+         export og.svg → og.png and swap the og:image / twitter:image
+         paths. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="blossom — write a note, grow a garden" />
+    <meta
+      property="og:description"
+      content="Tiny AI gardens you grow for people you care about. Write a note; we turn it into a custom bouquet you can send."
+    />
+    <meta property="og:image" content="/og.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="blossom — a garden of three illustrated flowers next to the wordmark" />
+
+    <!-- Twitter Card — almost the same data, in Twitter's preferred format. -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="blossom — write a note, grow a garden" />
+    <meta
+      name="twitter:description"
+      content="Tiny AI gardens you grow for people you care about. Write a note; we turn it into a custom bouquet you can send."
+    />
+    <meta name="twitter:image" content="/og.svg" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
