@@ -35,8 +35,8 @@ The rest of the project is about doing that well: a streaming UX that doesn't fe
 ## Architecture
 
 ```
-┌────────────────────┐    POST /api/design-garden    ┌──────────────────────┐
-│ React (Vite)       │ ────────────────────────────▶ │ Vercel Edge function │
+┌────────────────────┐    POST /api/design-garden     ┌──────────────────────┐
+│ React (Vite)       │ ────────────────────────────▶  │ Vercel Edge function │
 │  Composer.tsx      │                                │  api/design-garden.ts│
 │  GardenScene.tsx   │ ◀── text/event-stream ──────── │                      │
 │  FlowerLegend.tsx  │   start | thinking | complete  │  Google Gen AI SDK   │
