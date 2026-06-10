@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
@@ -12,21 +12,23 @@ interface Props {
   gardenData: GardenData
 }
 
-type Phase = 'waiting' | 'blooming'
+type Phase = 'sealed' | 'blooming'
 
 export default function RecipientView({ gardenData }: Props) {
   const { flowers, message, from, to, bouquetNote, previous, createdAt } = gardenData
   const grownOn = formatGardenDate(createdAt)
-  const [phase, setPhase] = useState<Phase>('waiting')
+  // The page lands in 'sealed' state — the garden plot is empty, a
+  // "open the garden" button sits below it. Tapping the button
+  // transitions to 'blooming' AND fires playChime() from inside the
+  // gesture handler, so browser autoplay restrictions don't suppress
+  // the chime + per-flower bloom sounds.
+  const [phase, setPhase] = useState<Phase>('sealed')
   const [msgVisible, setMsgVisible] = useState(false)
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setPhase('blooming')
-      playChime()
-    }, 600)
-    return () => clearTimeout(t)
-  }, [])
+  const handleOpen = (): void => {
+    setPhase('blooming')
+    playChime()
+  }
 
   function handleAllBloomed(): void {
     setTimeout(() => setMsgVisible(true), 300)
@@ -54,6 +56,17 @@ export default function RecipientView({ gardenData }: Props) {
         onAllBloomed={handleAllBloomed}
         key="recipient"
       />
+
+      {/* "Open the garden" tap target. The bloom is gated on this
+          click so the chime + per-flower sounds fire from inside a
+          user gesture — otherwise the browser blocks AudioContext
+          playback. Also makes the moment feel deliberate, like
+          opening an envelope. The button hides once tapped. */}
+      {phase === 'sealed' && (
+        <button type="button" className={styles.openBtn} onClick={handleOpen}>
+          open the garden
+        </button>
+      )}
 
       <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
         {bouquetNote && (
@@ -113,11 +126,10 @@ export default function RecipientView({ gardenData }: Props) {
 
       {/* Author credit. Quieter than Composer's because this is the
           recipient's emotional moment — they shouldn't feel watermarked.
-          Hidden in print so a physical card doesn't carry attribution.
-          TODO: swap the href below for your portfolio URL once live. */}
+          Hidden in print so a physical card doesn't carry attribution. */}
       <p className={styles.credit}>
         made by{' '}
-        <a href="#" target="_blank" rel="noreferrer">
+        <a href="https://www.aidenjang.com" target="_blank" rel="noreferrer">
           aiden jang
         </a>
       </p>
