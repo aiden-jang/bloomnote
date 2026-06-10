@@ -96,7 +96,7 @@ If the model returns a `petalCount` of 23 or a non-hex `centerColor`, the fronte
 
 A "happy birthday" message and a "thinking of you" sympathy message can have identical word patterns — the AI can't always tell from the note alone what tone is appropriate. So the user picks an occasion (`birthday`, `thank-you`, `anniversary`, `congrats`, `get-well`, `sympathy`, `just-because`) and the system prompt translates that into concrete tone guidance ("sympathy gardens are quiet whites and pale blues; birthday gardens are warm yellows and pinks"). One dropdown → meaningful output quality shift.
 
-The wire-format `value` is decoupled from the displayed `label`, so the casual UI labels ("happy bday", "thinking of you") can change without invalidating drafts in localStorage or breaking the backend's tone-mapping.
+The wire-format `value` is decoupled from the displayed `label`, so the casual UI labels ("happy bday", "thinking of you") can change without breaking the backend's tone-mapping.
 
 ### Streaming for timeout safety, not progress UX
 
@@ -120,9 +120,11 @@ Without the cap, a five-message thread would produce a 5× nested encoded URL. W
 
 `navigator.share` is feature-detected at mount. When available (iOS Safari, Android Chrome, modern desktop Safari), a "share" button appears as the primary action — opens the OS share sheet for iMessage, WhatsApp, Slack, etc. with the URL + a contextual title pre-filled. When absent (Chrome desktop, Firefox), the button isn't rendered and Copy stays primary. No broken affordance on any platform.
 
-### Autosave + clear with undo
+### Clear with undo, no persistence
 
-The composer's `From`, `To`, `message`, and `occasion` autosave to `localStorage` on every keystroke. A clear-draft link appears only when there's content to clear; clicking it wipes the form and shows a floating "draft cleared / undo" toast for 8 seconds. No destructive confirm dialog — speed matters, and undo is the modern alternative.
+A clear-draft link appears below the form only when there's actual content to clear. Clicking it wipes the form and shows a floating "draft cleared / undo" toast for 8 seconds. No destructive confirm dialog — speed matters, and undo is the modern alternative.
+
+The form deliberately does **not** persist to `localStorage`. Refresh = empty form. The tradeoff: typing a long note and accidentally hitting reload loses your work. The win: every visit starts on a clean canvas without stale "old recipient, old note" state bleeding in. For a card-writing app where most sessions are one-and-done, fresh-on-refresh is the right default.
 
 ### View Transitions API for phase changes
 
@@ -218,7 +220,6 @@ src/
   lib/
     designGarden.ts      # Fetches /api/design-garden and parses SSE
     shorten.ts           # Fetches /api/shorten
-    draft.ts             # localStorage autosave (load / save / clear)
     formatDate.ts        # Intl.DateTimeFormat wrapper for "Grown {date}"
     occasions.ts         # Occasion list (value + label)
     viewTransition.ts    # withViewTransition helper (flushSync + startViewTransition)

@@ -9,9 +9,8 @@ import {
   type GardenData,
 } from '../garden'
 import { designGarden, type DesignResult } from '../lib/designGarden'
-import { clearDraft, loadDraft, saveDraft, type Draft } from '../lib/draft'
 import { formatGardenDate } from '../lib/formatDate'
-import { DEFAULT_OCCASION, OCCASIONS, OCCASION_VALUES } from '../lib/occasions'
+import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
 import { shortenUrl } from '../lib/shorten'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
@@ -21,6 +20,15 @@ import styles from './Composer.module.css'
 // share link are the output. No second-phase "now add a message" step,
 // because the message is already there.
 type Phase = 'idle' | 'designing' | 'designed'
+
+// Snapshot shape used by the clear-draft undo toast. Session-local
+// only — the form deliberately doesn't persist across refresh.
+interface Draft {
+  from: string
+  recipient: string
+  message: string
+  occasion: string
+}
 
 const MESSAGE_PLACEHOLDERS = [
   "Happy birthday, Maya. You're the only person I know who keeps a tide journal AND laughs too loudly at her own jokes. You'd drive six hours to see a sunset and somehow always rope me in. So glad you exist.",
@@ -57,51 +65,30 @@ export default function Composer() {
 
   const [phase, setPhase] = useState<Phase>('idle')
 
-  // Initial input values are computed once at mount. Precedence:
-  //   1. Remix seed (URL-driven, most authoritative — we're answering
-  //      a specific person)
-  //   2. localStorage draft (the user's in-progress work from last
-  //      visit)
-  //   3. Empty
-  // The message field never inherits from the seed; only From/To do.
-  // In remix mode the draft is ignored entirely so a stale draft about
-  // a different recipient doesn't bleed into the reply.
+  // Initial input values are computed once at mount.
+  //   - In remix mode, pre-fill From/To from the inverse of the seed
+  //     (we're replying, so the original sender becomes our recipient).
+  //   - Otherwise, blank slate.
+  // The form is deliberately ephemeral: refreshing the page wipes
+  // whatever was typed. Recovery from accidental refresh is the
+  // tradeoff; in exchange the user always lands on a fresh form
+  // without stale drafts cluttering it.
   const initialInputs = useMemo(() => {
     if (remixSeed) {
       return {
         from: remixSeed.to ?? '',
         recipient: remixSeed.from ?? '',
         message: '',
-        // Reset occasion per remix — replies are new conversations,
-        // not continuations of an occasion.
         occasion: DEFAULT_OCCASION,
       }
     }
-    const draft = loadDraft()
-    return {
-      from: draft?.from ?? '',
-      recipient: draft?.recipient ?? '',
-      message: draft?.message ?? '',
-      // Honor a saved occasion only if it's still a known value;
-      // otherwise default. Defends against future renamings.
-      occasion: draft?.occasion && OCCASION_VALUES.has(draft.occasion)
-        ? draft.occasion
-        : DEFAULT_OCCASION,
-    }
+    return { from: '', recipient: '', message: '', occasion: DEFAULT_OCCASION }
   }, [remixSeed])
 
   const [from, setFrom] = useState(initialInputs.from)
   const [recipient, setRecipient] = useState(initialInputs.recipient)
   const [message, setMessage] = useState(initialInputs.message)
   const [occasion, setOccasion] = useState(initialInputs.occasion)
-
-  // Autosave on every change. localStorage writes are sync but fast for
-  // strings this small; no debounce needed. Skipped in remix mode (see
-  // comment on `initialInputs` above).
-  useEffect(() => {
-    if (remixSeed) return
-    saveDraft({ from, recipient, message, occasion })
-  }, [from, recipient, message, occasion, remixSeed])
   const [placeholder] = useState(
     () => MESSAGE_PLACEHOLDERS[Math.floor(Math.random() * MESSAGE_PLACEHOLDERS.length)],
   )
@@ -279,7 +266,6 @@ export default function Composer() {
     setMessage('')
     setOccasion(DEFAULT_OCCASION)
     setUndoDraft(snapshot)
-    clearDraft()
 
     undoTimerRef.current = setTimeout(() => {
       setUndoDraft(null)
