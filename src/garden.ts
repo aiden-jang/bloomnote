@@ -163,14 +163,19 @@ export function decodeGarden(encoded: string): GardenData | null {
   }
 }
 
+// Always anchor share URLs at the origin root. Assumes the app is
+// deployed at a domain root (e.g. blossom.aidenjang.com/) rather than
+// in a subdirectory (e.g. example.com/blossom/). Path-based routing
+// (/g/<...>, /r/<...>) doesn't compose with subdirectory deployments
+// — if that ever becomes a requirement, this function and the route
+// matchers in App.tsx and Composer.tsx all need to learn about the
+// base path together.
 function buildAppUrl(): string {
-  const base = window.location.origin
-  const path = window.location.pathname === '/' ? '' : window.location.pathname
-  return `${base}${path}`
+  return window.location.origin
 }
 
 export function buildShareUrl(data: GardenData): string {
-  return `${buildAppUrl()}?garden=${encodeGarden(data)}`
+  return `${buildAppUrl()}/g/${encodeGarden(data)}`
 }
 
 /**
@@ -186,7 +191,7 @@ export function buildRemixUrl(data: GardenData): string {
   // along, because the reply's `previous` will be the current garden,
   // and we don't want to nest deeper.
   const seed: GardenData = { ...data, previous: undefined }
-  return `${buildAppUrl()}?remix=${encodeGarden(seed)}`
+  return `${buildAppUrl()}/r/${encodeGarden(seed)}`
 }
 
 // --- Example / fallback garden ------------------------------------------
