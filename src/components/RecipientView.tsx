@@ -110,7 +110,7 @@ export default function RecipientView({ gardenData }: Props) {
         <p className={styles.ctaSub}>
           or{' '}
           <a
-            href={window.location.origin + window.location.pathname}
+            href="/"
             className={styles.ctaSubLink}
             // Wipe the localStorage draft synchronously before the
             // navigation kicks in — so when the composer mounts on
