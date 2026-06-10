@@ -231,17 +231,25 @@ export default function Composer() {
   }, [])
 
   const handleStartOver = useCallback(() => {
-    // Cross-fade designed view → fresh idle form.
+    // Cross-fade designed view → fresh, empty idle form. "Make another"
+    // means "I'm done with this garden, start me clean" — re-typing
+    // is the right default. If you want to tweak the same note and
+    // regenerate, the clear-draft / undo flow is the explicit path.
+    //
+    // The autosave effect picks up the cleared state and removes the
+    // localStorage entry automatically (saveDraft skips writes when
+    // all fields are empty).
     withViewTransition(() => {
       setPhase('idle')
       setGarden(null)
       setFlowers([])
       setShareUrl(null)
       setErrorText(null)
+      setFrom('')
+      setRecipient('')
+      setMessage('')
+      setOccasion(DEFAULT_OCCASION)
     })
-    // Inputs are intentionally NOT cleared on "Make another" — if you
-    // want a totally fresh note you can edit them; if you want to tweak
-    // and regenerate, your text is still there.
   }, [])
 
   // Only show the clear link when there's something to clear. Trimmed
