@@ -126,6 +126,45 @@
   background: var(--green-deep);
 }
 
+/* "Open the garden" — the gesture that unlocks audio + triggers
+   bloom. Sized to be unmissable but not louder than the bouquet
+   note that follows. Sits centered, just below the empty garden
+   plot. Subtle pulse animation hints "tap me" without being
+   aggressive. */
+.openBtn {
+  align-self: center;
+  padding: 14px 32px;
+  border-radius: 28px;
+  background: var(--green-mid);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  animation: openBtnPulse 2.4s ease-in-out infinite;
+}
+
+.openBtn:hover {
+  background: var(--green-deep);
+  animation: none;
+}
+
+.openBtn:active {
+  transform: scale(0.97);
+}
+
+@keyframes openBtnPulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0    rgba(74, 124, 63, 0.5); }
+  50%      { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(74, 124, 63, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .openBtn {
+    animation: none;
+  }
+}
+
 .ctaSub {
   font-size: 12px;
   color: var(--text-light);

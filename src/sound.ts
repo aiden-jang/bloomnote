@@ -1,9 +1,43 @@
 let ctx: AudioContext | null = null
+let unlockInstalled = false
 
 function getCtx(): AudioContext {
 	if (!ctx) ctx = new AudioContext()
 	return ctx
 }
+
+/**
+ * Browsers block AudioContext playback until a user gesture happens
+ * on the current page. This installs one-shot listeners on click,
+ * touchstart, and keydown — the first one fires, we resume the
+ * context, then we remove the listeners. After this, all sound
+ * functions in this module will actually be audible.
+ *
+ * Safe to call multiple times — the `unlockInstalled` flag dedupes.
+ */
+export function unlockAudio(): void {
+	if (unlockInstalled || typeof window === 'undefined') return
+	unlockInstalled = true
+	const unlock = () => {
+		const ac = getCtx()
+		if (ac.state === 'suspended') {
+			ac.resume().catch(() => {
+				// Some browsers throw if resume is called from a non-gesture
+				// context. Falling back silently — next gesture will retry.
+			})
+		}
+		window.removeEventListener('click', unlock)
+		window.removeEventListener('touchstart', unlock)
+		window.removeEventListener('keydown', unlock)
+	}
+	window.addEventListener('click', unlock)
+	window.addEventListener('touchstart', unlock)
+	window.addEventListener('keydown', unlock)
+}
+
+// Install the global unlock listener at module load — it's harmless on
+// pages that allow autoplay already.
+unlockAudio()
 
 interface ToneOptions {
 	freq?: number

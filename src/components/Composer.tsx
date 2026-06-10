@@ -550,13 +550,9 @@ export default function Composer() {
         <p className={styles.disclosure}>
           your note is sent to gemini and encoded in the share link.
         </p>
-        {/* TODO: swap the href below for your portfolio URL once it's
-            live (e.g. https://aidenjang.com). Keeping `#` as a
-            deliberate placeholder so it doesn't 404 on a guessed
-            GitHub handle in the meantime. */}
         <p className={styles.credit}>
           made by{' '}
-          <a href="#" target="_blank" rel="noreferrer">
+          <a href="https://www.aidenjang.com" target="_blank" rel="noreferrer">
             aiden jang
           </a>
         </p>
