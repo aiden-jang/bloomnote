@@ -329,6 +329,17 @@
   .charCount {
     align-self: flex-end;
   }
+
+  /* iOS Safari auto-zooms when you focus a form input whose
+     font-size is below 16px — it tries to enlarge the text for
+     readability and ends up zooming the whole viewport in. The fix
+     is to make the input text at least 16px on mobile. Visual
+     difference from 14px is minimal; it just prevents the zoom. */
+  .input,
+  .textarea,
+  .select {
+    font-size: 16px;
+  }
 }
 
 /* Very narrow phones (< 360px): also stack the From/To row so each
