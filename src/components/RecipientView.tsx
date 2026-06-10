@@ -3,6 +3,7 @@ import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import { buildRemixUrl, type GardenData } from '../garden'
+import { clearDraft } from '../lib/draft'
 import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
 import styles from './RecipientView.module.css'
@@ -94,7 +95,19 @@ export default function RecipientView({ gardenData }: Props) {
           {from ? `grow ${from} a garden` : 'grow one back'}
         </a>
         <p className={styles.ctaSub}>
-          or <a href={window.location.origin + window.location.pathname} className={styles.ctaSubLink}>start one for someone new</a>
+          or{' '}
+          <a
+            href={window.location.origin + window.location.pathname}
+            className={styles.ctaSubLink}
+            // Wipe the localStorage draft synchronously before the
+            // navigation kicks in — so when the composer mounts on
+            // the next page, loadDraft() returns null and the form
+            // is empty. "Start one for someone new" should feel
+            // genuinely fresh.
+            onClick={() => clearDraft()}
+          >
+            start one for someone new
+          </a>
         </p>
       </div>
 
