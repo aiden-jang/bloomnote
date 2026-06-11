@@ -100,24 +100,26 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       )}
 
       <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
-        {bouquetNote && (
-          <p className={styles.bouquetNote}>{bouquetNote}</p>
-        )}
         {message ? (
           <>
             <p className={styles.messageText}>{message}</p>
             {from && <p className={styles.sig}>— {from}</p>}
           </>
-        ) : !bouquetNote ? (
+        ) : (
           <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
             a garden, for you.
           </p>
-        ) : null}
+        )}
         {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
       </div>
 
       <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
-        <FlowerLegend flowers={flowers} />
+        {/* Bouquet rationale lives behind the "?" disclosure on the
+            legend — see FlowerLegend.tsx. Consolidating it there keeps
+            the AI's reasoning in one place instead of splitting the
+            overall rationale (here) from the per-flower meanings
+            (below). */}
+        <FlowerLegend flowers={flowers} bouquetNote={bouquetNote} />
       </div>
 
       {/* Thread context — when this garden is itself a reply, show the

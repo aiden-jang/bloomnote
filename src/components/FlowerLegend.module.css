@@ -9,12 +9,89 @@
   animation: fadeUp 0.4s ease forwards;
 }
 
+/* Heading row holds the "why these" label and the optional "?"
+   rationale toggle side-by-side. */
+.headingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .heading {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-mid);
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+/* The "?" button is a small circle that opens the AI's rationale.
+   Deliberately quiet — it's an enrichment, not a primary action.
+   Aim for "you can find more here" not "click me." */
+.rationaleToggle {
+  background: none;
+  border: 1.5px solid var(--green-pale);
+  color: var(--text-mid);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.rationaleToggle:hover {
+  background: var(--green-pale);
+  color: var(--green-deep);
+}
+
+.rationaleToggle[aria-expanded="true"] {
+  background: var(--green-mid);
+  color: white;
+  border-color: var(--green-mid);
+}
+
+.rationaleToggleIcon {
+  font-family: var(--serif);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+/* Rationale text. Animated open/close so it feels like a deliberate
+   reveal rather than a popup. max-height transition handles unknown
+   content length without measuring. */
+.rationale {
+  max-height: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-deep);
+  font-style: italic;
+  margin: 0;
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.3s ease;
+  opacity: 0;
+}
+
+.rationaleOpen {
+  max-height: 240px;
+  opacity: 1;
+  margin: -4px 0 2px;
+}
+
+/* Print: always show the rationale when printing — paper doesn't
+   have tap targets, and someone printing the card wants the full
+   context. */
+@media print {
+  .rationaleToggle { display: none; }
+  .rationale {
+    max-height: none;
+    opacity: 1;
+    margin: 0 0 6px;
+  }
 }
 
 .items {
