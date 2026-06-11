@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Composer from './components/Composer'
 import RecipientView from './components/RecipientView'
+import SealedView from './components/SealedView'
 import { fetchGarden, isShortId, type GardenData } from './garden'
 
 /**
@@ -97,9 +98,48 @@ export default function App() {
   if (route.kind === 'loading') return <LoadingShell />
   if (route.kind === 'notfound') return <NotFoundShell />
   if (route.kind === 'recipient') {
-    return <RecipientView gardenData={route.garden} gardenId={route.gardenId} />
+    return (
+      <RecipientGateway
+        garden={route.garden}
+        gardenId={route.gardenId}
+      />
+    )
   }
   return <Composer remixSeed={route.seed} />
+}
+
+/**
+ * Time-capsule gate. If the garden has an `unlockAt` in the future,
+ * render SealedView and swap to RecipientView once the clock crosses
+ * the unlock moment. Otherwise render RecipientView immediately.
+ *
+ * Lives here (not inside RecipientView) so RecipientView stays a pure
+ * "given a garden, render it" component — the gating concern is
+ * routing-adjacent, not recipient-rendering.
+ */
+function RecipientGateway({ garden, gardenId }: { garden: GardenData; gardenId: string }) {
+  const isSealed = (unlockAt?: string): boolean => {
+    if (!unlockAt) return false
+    const t = new Date(unlockAt).getTime()
+    return Number.isFinite(t) && t > Date.now()
+  }
+
+  const [sealed, setSealed] = useState(() => isSealed(garden.unlockAt))
+
+  // The SealedView's own clock ticks and calls onUnlock when the
+  // moment arrives. We just flip our flag and let RecipientView take
+  // over. A page refresh after unlock skips the sealed path entirely.
+  if (sealed && garden.unlockAt) {
+    return (
+      <SealedView
+        from={garden.from}
+        to={garden.to}
+        unlockAt={garden.unlockAt}
+        onUnlock={() => setSealed(false)}
+      />
+    )
+  }
+  return <RecipientView gardenData={garden} gardenId={gardenId} />
 }
 
 // Minimal loading state — kept dependency-free so it can render
