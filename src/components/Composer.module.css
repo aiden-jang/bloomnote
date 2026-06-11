@@ -48,6 +48,20 @@
   gap: 12px;
 }
 
+/* Occasion + Mood two-up row. Mirrors .nameRow so the two paired
+   selects feel like one logical control. On narrow screens both
+   wrap to full width; the section's existing flex behavior handles
+   that without an explicit media query. */
+.pickerRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pickerRow > section {
+  flex: 1 1 140px;
+}
+
 .label {
   font-size: 12px;
   font-weight: 500;
