@@ -46,14 +46,14 @@ The rest of the project is about doing that well: a streaming UX that doesn't fe
          │  POST /api/shorten
          ├──────────────────────────────▶ TinyURL (server-side proxy)
          │
-         │  ?garden=…  share URL with the whole garden encoded
+         │  /g/<encoded>   share URL with the whole garden encoded
          │
          ▼
 ┌────────────────────┐
 │ RecipientView      │
 │  Watches the bloom │
 │  Hits "grow back"  │
-│  → /?remix=…       │
+│  → /r/<encoded>    │
 └────────────────────┘
 ```
 

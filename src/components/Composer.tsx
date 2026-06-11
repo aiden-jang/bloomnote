@@ -40,19 +40,10 @@ const MESSAGE_PLACEHOLDERS = [
  * Read the remix seed from the URL once at mount and decode it.
  * Returns null if missing or malformed — Composer treats that as
  * "fresh composition."
- *
- * Routing precedence:
- *   1. /r/<encoded>     — current path-based route
- *   2. ?remix=<encoded> — legacy query-string route (backwards
- *      compatible with any TinyURLs already in circulation)
  */
 function readRemixSeed(): GardenData | null {
   const pathMatch = window.location.pathname.match(/^\/r\/(.+)$/)
   if (pathMatch) return decodeGarden(pathMatch[1])
-
-  const encoded = new URLSearchParams(window.location.search).get('remix')
-  if (encoded) return decodeGarden(encoded)
-
   return null
 }
 
