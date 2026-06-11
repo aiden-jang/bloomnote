@@ -84,6 +84,18 @@ export function trackShareLinkShared(): void {
   emit('share_link_shared')
 }
 
+/**
+ * User downloaded the card image. `surface` tells us whether they
+ * grabbed it from the composer (sender side, fresh garden) or from
+ * the recipient view (someone who received it) — meaningful split
+ * because senders are more likely to post the image on social and
+ * drive new acquisition, while recipient downloads are usually for
+ * personal keepsake.
+ */
+export function trackCardDownloaded(surface: 'composer' | 'recipient'): void {
+  emit('card_downloaded', { surface })
+}
+
 /** User clicked "make another" after a successful design. */
 export function trackMakeAnother(): void {
   emit('make_another')

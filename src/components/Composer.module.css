@@ -736,6 +736,33 @@
   background: #f5fbf0;
 }
 
+/* Save-as-image — styled as a button but it's an anchor underneath so
+   right-click → "save link as" also works. Matches the visual weight
+   of resetBtn (tertiary action), not the primary share/copy buttons. */
+.downloadBtn {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 22px;
+  border: 1.5px solid var(--green-pale);
+  background: white;
+  color: var(--text-mid);
+  font-size: 14px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.15s;
+  /* Inherit the row's flex layout so it shares space with siblings. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.downloadBtn:hover {
+  border-color: var(--green-light);
+  background: #f5fbf0;
+  color: var(--text-deep);
+}
+
 /* Print: hide everything that's screen-only (form inputs, the
    designing spinner, the share card with its URL and buttons, the
    helper hints). What stays visible — when printed from the designed
