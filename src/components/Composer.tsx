@@ -107,6 +107,18 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     () => MESSAGE_PLACEHOLDERS[Math.floor(Math.random() * MESSAGE_PLACEHOLDERS.length)],
   )
 
+  // Time capsule: opt-in scheduled delivery. The UI is collapsed by
+  // default ("send now") so first-time users aren't asked to think
+  // about scheduling. When expanded, the datetime-local input lets
+  // them pick a future moment — we validate it's at least a minute
+  // ahead so a misclick doesn't ship an already-unlocked capsule.
+  //
+  // Value stored as local-datetime string (the format <input
+  // type="datetime-local"> emits, e.g. "2026-09-15T14:30"). We
+  // convert to ISO 8601 UTC at submit time.
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [unlockLocal, setUnlockLocal] = useState('')
+
   // Streaming progress.
   const [statusText, setStatusText] = useState<string>('')
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -196,6 +208,18 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       const seedForPrevious = remixSeed
         ? { ...remixSeed, previous: undefined }
         : undefined
+      // Convert the optional schedule input to a UTC ISO string. We
+      // also clamp out values that are in the past (e.g. user picked a
+      // time, then sat on the page until it passed) — sending an
+      // already-unlocked capsule would be a confusing no-op.
+      let unlockAt: string | undefined
+      if (scheduleOpen && unlockLocal) {
+        const t = new Date(unlockLocal).getTime()
+        if (Number.isFinite(t) && t > Date.now() + 30_000) {
+          unlockAt = new Date(t).toISOString()
+        }
+      }
+
       const data: GardenData = {
         flowers: result.flowers,
         bouquetNote: result.bouquetNote,
@@ -205,6 +229,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         // Stamp when the sender hit "Grow their garden" — shows up
         // on the recipient's view as a card-like "Grown {date}" line.
         createdAt: new Date().toISOString(),
+        unlockAt,
         previous: seedForPrevious,
       }
 
@@ -268,7 +293,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     } finally {
       abortRef.current = null
     }
-  }, [canSubmit, from, message, occasion, recipient, remixSeed])
+  }, [canSubmit, from, message, occasion, recipient, remixSeed, scheduleOpen, unlockLocal])
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort()
@@ -446,6 +471,46 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </div>
           </section>
 
+          {/* Time capsule: opt-in scheduled delivery. Collapsed by
+              default so first-time users aren't asked to make a
+              scheduling decision. */}
+          <section className={styles.schedule}>
+            {!scheduleOpen ? (
+              <button
+                type="button"
+                className={styles.scheduleToggle}
+                onClick={() => setScheduleOpen(true)}
+              >
+                or schedule for later →
+              </button>
+            ) : (
+              <div className={styles.scheduleOpen}>
+                <label className={styles.scheduleLabel}>
+                  opens on
+                </label>
+                <input
+                  type="datetime-local"
+                  className={styles.scheduleInput}
+                  value={unlockLocal}
+                  onChange={e => setUnlockLocal(e.target.value)}
+                  // Lower bound: 1 minute from now. Avoids silent
+                  // "scheduled to open in the past" footguns.
+                  min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                />
+                <button
+                  type="button"
+                  className={styles.scheduleClear}
+                  onClick={() => {
+                    setScheduleOpen(false)
+                    setUnlockLocal('')
+                  }}
+                >
+                  cancel
+                </button>
+              </div>
+            )}
+          </section>
+
           {errorText && <div className={styles.error}>{errorText}</div>}
 
           <div className={styles.actions}>
@@ -531,12 +596,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             )}
           </p>
 
-          {garden.bouquetNote && (
-            <div className={styles.bouquetNote}>
-              <span className={styles.bouquetNoteLabel}>note</span>
-              <p>{garden.bouquetNote}</p>
-            </div>
-          )}
+          {/* bouquetNote moved into FlowerLegend's "?" disclosure
+              below — consolidates the AI's rationale into one place
+              instead of splitting overall (here) vs per-flower (below). */}
 
           {message.trim() && (
             <div className={styles.previewMessage}>
@@ -550,7 +612,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </div>
           )}
 
-          <FlowerLegend flowers={garden.flowers} />
+          <FlowerLegend flowers={garden.flowers} bouquetNote={garden.bouquetNote} />
 
           {/* Divider separating "what they'll see" from "how you share it." */}
           <hr className={styles.shareDivider} aria-hidden />
@@ -559,6 +621,22 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <p className={styles.shareTitle}>
               {recipient ? `${recipient}'s garden is ready` : 'ready to send'}
             </p>
+            {/* Schedule confirmation. Only shown when the user opted
+                in — the sender should know their card is time-capsuled
+                before they hit share, not learn it later from the
+                recipient asking why the URL doesn't bloom. */}
+            {scheduleOpen && unlockLocal && (
+              <p className={styles.scheduleConfirm}>
+                will open on{' '}
+                {new Date(unlockLocal).toLocaleString(undefined, {
+                  weekday: 'long',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </p>
+            )}
             <div className={styles.urlBox}>
               <span className={styles.urlText}>{shareUrl}</span>
             </div>

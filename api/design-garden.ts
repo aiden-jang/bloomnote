@@ -42,27 +42,16 @@ import {
   type FunctionCall,
 } from '@google/generative-ai'
 import { FLOWER_DESIGN_FUNCTION, SYSTEM_PROMPT, validateGarden } from './prompt'
+import { getClientIp, rateLimit } from './_lib/rateLimit'
 
 export const config = { runtime: 'edge' }
 
-// --- Rate limiting -------------------------------------------------------
-
+// Per-IP request budget for the model call. 8 / minute is generous
+// for a human (you'd compose ~1 garden per minute at most) but tight
+// enough that a script can't burn through the Gemini free tier in
+// seconds. The shared rateLimit() helper is backed by Redis so this
+// budget survives cold starts — see api/_lib/rateLimit.ts.
 const RATE_LIMIT_PER_MINUTE = 8
-const rateBuckets = new Map<string, { count: number; resetAt: number }>()
-
-function rateLimit(ip: string): { allowed: boolean; retryAfter: number } {
-  const now = Date.now()
-  const bucket = rateBuckets.get(ip)
-  if (!bucket || bucket.resetAt < now) {
-    rateBuckets.set(ip, { count: 1, resetAt: now + 60_000 })
-    return { allowed: true, retryAfter: 0 }
-  }
-  if (bucket.count >= RATE_LIMIT_PER_MINUTE) {
-    return { allowed: false, retryAfter: Math.ceil((bucket.resetAt - now) / 1000) }
-  }
-  bucket.count++
-  return { allowed: true, retryAfter: 0 }
-}
 
 // --- Request body --------------------------------------------------------
 //
@@ -122,12 +111,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response('Method not allowed', { status: 405 })
   }
 
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown'
-
-  const rl = rateLimit(ip)
+  const rl = await rateLimit('design', getClientIp(req), RATE_LIMIT_PER_MINUTE)
   if (!rl.allowed) {
     return new Response(
       JSON.stringify({ error: `Rate limit reached. Try again in ${rl.retryAfter}s.` }),

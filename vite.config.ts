@@ -77,8 +77,19 @@ function apiPlugin(): Plugin {
             body: body && req.method !== 'GET' && req.method !== 'HEAD' ? body : undefined,
           })
 
-          const handlerPath = `/api/${name}.ts`
-          const mod = await server.ssrLoadModule(handlerPath)
+          // Try both `.ts` and `.tsx` — handlers that use JSX (like
+          // api/og.tsx via @vercel/og) need the .tsx extension; others
+          // stay .ts. Vercel resolves both automatically in prod, so
+          // dev should too.
+          let mod
+          let handlerPath: string
+          try {
+            handlerPath = `/api/${name}.ts`
+            mod = await server.ssrLoadModule(handlerPath)
+          } catch {
+            handlerPath = `/api/${name}.tsx`
+            mod = await server.ssrLoadModule(handlerPath)
+          }
           const handler = mod.default
           if (typeof handler !== 'function') {
             throw new Error(`No default export from ${handlerPath}`)

@@ -26,6 +26,7 @@
 // keeps the developer experience friction-free.
 
 import { Redis } from '@upstash/redis'
+import { getClientIp, rateLimit } from './_lib/rateLimit'
 
 export const config = { runtime: 'edge' }
 
@@ -67,27 +68,11 @@ function generateId(): string {
   return id
 }
 
-// Per-IP in-memory rate limit for create requests. Same pattern as
-// design-garden.ts. Doesn't survive function cold starts — for a
-// production system you'd back this with Redis (we already have one
-// connected) but design-garden's quota is the tighter bottleneck:
-// you can't create more gardens than the model generates anyway.
+// Per-IP request budget for create. Looser than the model endpoint
+// because writes here are cheap (one Redis SETNX, no LLM call). The
+// shared rateLimit() helper is Redis-backed so this survives cold
+// starts — see api/_lib/rateLimit.ts.
 const CREATE_LIMIT_PER_MINUTE = 12
-const rateBuckets = new Map<string, { count: number; resetAt: number }>()
-
-function rateLimit(ip: string): { allowed: boolean; retryAfter: number } {
-  const now = Date.now()
-  const bucket = rateBuckets.get(ip)
-  if (!bucket || bucket.resetAt < now) {
-    rateBuckets.set(ip, { count: 1, resetAt: now + 60_000 })
-    return { allowed: true, retryAfter: 0 }
-  }
-  if (bucket.count >= CREATE_LIMIT_PER_MINUTE) {
-    return { allowed: false, retryAfter: Math.ceil((bucket.resetAt - now) / 1000) }
-  }
-  bucket.count++
-  return { allowed: true, retryAfter: 0 }
-}
 
 function jsonError(message: string, status: number): Response {
   return new Response(JSON.stringify({ error: message }), {
@@ -110,12 +95,6 @@ function jsonOk(body: unknown): Response {
         : {}),
     },
   })
-}
-
-function getClientIp(req: Request): string {
-  // Vercel forwards the real client IP in x-forwarded-for. Take the
-  // first hop (the originating client) — subsequent values are proxies.
-  return (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim()
 }
 
 // Cheap structural validation. The endpoint accepts whatever the client
@@ -164,8 +143,7 @@ async function handleGet(req: Request, redis: Redis): Promise<Response> {
 }
 
 async function handlePost(req: Request, redis: Redis): Promise<Response> {
-  const ip = getClientIp(req)
-  const rl = rateLimit(ip)
+  const rl = await rateLimit('garden', getClientIp(req), CREATE_LIMIT_PER_MINUTE)
   if (!rl.allowed) {
     return new Response(
       JSON.stringify({ error: `Rate limited. Try again in ${rl.retryAfter}s.` }),
