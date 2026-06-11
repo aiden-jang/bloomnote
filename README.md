@@ -43,8 +43,9 @@ The rest of the project is about doing that well: a streaming UX that doesn't fe
 │  RecipientView.tsx │                                │  Gemini 2.5 Flash    │
 └────────────────────┘                                └──────────────────────┘
          │
-         │  POST /api/shorten
-         ├──────────────────────────────▶ TinyURL (server-side proxy)
+         │  POST /api/garden
+         ├──────────────────────────────▶ Upstash Redis (KV store)
+         │      stores garden → 6-char short ID
          │
          │  /g/<encoded>   share URL with the whole garden encoded
          │
@@ -58,7 +59,7 @@ The rest of the project is about doing that well: a streaming UX that doesn't fe
 ```
 
 - **Frontend** (`src/`) is a plain Vite React app. `useState` / `useEffect` / CSS modules / SVG — no exotic dependencies.
-- **Backend** (`api/design-garden.ts`, `api/shorten.ts`) is two Edge functions. The design endpoint validates the request, rate-limits by IP, then streams a Gemini function-call back as Server-Sent Events. The shorten endpoint proxies to TinyURL so the share URL stays short.
+- **Backend** (`api/design-garden.ts`, `api/garden.ts`) is two Edge functions. The design endpoint validates the request, rate-limits by IP, then streams a Gemini function-call back as Server-Sent Events. The garden endpoint is a tiny KV-backed shortener: POST a garden, get back a 6-char ID; GET `?id=xxx`, get back the garden. Backed by Upstash Redis on the free tier.
 - **Shared schema** (`src/garden.ts` + `api/prompt.ts`) defines the flower type once. The same shape is the SVG renderer's input, the URL-encoded garden payload, *and* Gemini's function-call schema.
 
 The handler in `api/design-garden.ts` is written against the Web-standard `Request`/`Response` types, not Express or Next-specific shims. A small adapter in `vite.config.ts` runs the exact same file under Vite's dev server — so dev/prod parity is total. Adding a new `/api/<name>` endpoint requires zero config changes; the adapter generically resolves the path.
@@ -102,19 +103,34 @@ The wire-format `value` is decoupled from the displayed `label`, so the casual U
 
 Gemini 2.5 Flash returns this whole response in 3–8 seconds. With streaming I get **no HTTP timeouts** under any backend's connection limits. I emit `start` → `thinking` → `complete` SSE events. I don't fake per-flower progress — Gemini returns function-call args assembled rather than as streaming deltas, so there's nothing to genuinely report mid-stream. The on-brand sprout-grows-and-retracts spinner does the work of "something is happening" without lying about progress.
 
+### Self-hosted short URLs at our own domain
+
+Earlier versions of this app used TinyURL to shorten the share link. Two problems with that:
+
+1. **Branding.** A recipient who clicks `tinyurl.com/2x9y` is on a third-party domain with no trust context. A recipient who clicks `blossom.aidenjang.com/g/abc123` knows where they are.
+2. **Ads.** TinyURL injects an interstitial for some traffic patterns. That breaks the "open with a garden" emotional moment.
+
+So I replaced TinyURL with a tiny KV-backed shortener that runs on the same Vercel deployment. Architecture:
+
+- `POST /api/garden` accepts a garden JSON, generates a 6-char base62 ID (using the curated alphabet `a-z A-Z 2-9` minus `0/O/1/l/I` for typability), writes it to Upstash Redis with SETNX, returns the ID.
+- `GET /api/garden?id=abc123` reads the garden back. Response carries `Cache-Control: public, max-age=31536000, immutable` because once a garden is written, its contents never change — both the browser and Vercel's CDN can cache it forever, so viral links don't repeatedly hit Redis.
+- The share URL becomes `/g/abc123` and the reply URL becomes `/r/abc123`. Same KV record serves both views — `App.tsx` does one fetch and routes to RecipientView or Composer-with-seed depending on the path prefix. **One write, two views.**
+
+Why a KV store instead of a relational table: a URL shortener is the canonical KV use case. The short ID *is* the primary key; there's no other field to query on. There's no "table" — just `g:abc123 → {"flowers":[...],"message":"...",...}`. Postgres would work and would add a column for `created_at`, but you'd pay setup complexity for capability you don't use.
+
 ### Streaming, but no URL flicker
 
-The share card is gated on the *short* URL arriving, not the long URL. After the design lands, the frontend stays in the designing phase (status: "shortening link…") until either TinyURL responds or a 3-second timeout fires. Whichever URL ends up on screen is the only one the user ever sees. No flash of long-URL-then-it-changes.
+The share card is gated on the short URL arriving. After the design lands, the frontend stays in the designing phase (status: "preparing link…") until the `POST /api/garden` round-trip completes — usually <200ms because it runs on the same Edge network as the model call. If the shortener fails, the user sees a clear error rather than a degraded long-URL fallback: the garden the user just spent 5 seconds designing being thrown away on failure is unfortunate, but a broken share experience is worse.
 
 ### Rendering arbitrary AI palettes
 
 The original code drew flowers from a hardcoded 8-flower table. Now `FlowerSVG.tsx` takes a `FlowerSpec` directly — any combination of palette, petal shape (one of 5: round, elongated, bell, small, star), petal count (5–14), and stem height the model invents will render. Adding the `star` shape was a single switch arm and a points table.
 
-### The remix loop, with depth-capped URL state
+### The remix loop, with depth-capped thread state
 
-When the recipient hits "grow one back," they're taken to the composer with their reply's `from`/`to` prefilled and the original sender's garden visible as thread context. The reply's encoded URL contains both gardens — but the URL is **depth-capped at 1**, so the *next* reply doesn't accumulate a third turn into the URL.
+When the recipient hits "grow one back," they're taken to the composer with their reply's `from`/`to` prefilled and the original sender's garden visible as thread context. The reply's stored record contains both gardens (new on top, original as `previous`) — but the chain is **depth-capped at 1**: when the composer attaches a remix seed as `previous`, it strips that seed's own `previous` first.
 
-Without the cap, a five-message thread would produce a 5× nested encoded URL. With the cap, each share is at most "current garden + the one it replied to" — exactly enough context for the human to follow the conversation, never enough state to balloon URL length.
+Without the cap, a five-message thread would produce a 5×-nested chain in storage. With the cap, each record carries at most "current garden + the one it replied to." The recipient view only renders one level back anyway; deeper history would be wasted storage and would slow the fetch with no UX upside.
 
 ### Native share, with a Copy fallback
 
@@ -141,6 +157,14 @@ In-memory per-IP rate limiting (8 requests/min) on top of Gemini's free-tier quo
 ### One handler, dev and prod
 
 `vite.config.ts` includes a small `apiPlugin()` that adapts Node's `IncomingMessage` to a Web `Request`, calls the handler in `/api/<name>.ts`, then pipes the streaming `Response.body` back. Same files run under `npm run dev` and under Vercel's Edge runtime — no mock backend, no dev-only Express server, no `if (process.env.NODE_ENV)` branches. Adding a new endpoint is literally a new file; the route is auto-resolved.
+
+### Funnel-shaped analytics, not pageviews
+
+The interesting question on a send-a-garden product isn't "how many people opened the homepage" — it's "did the link actually get sent, opened, *and* replied to?" So instead of generic pageview analytics I instrumented the product funnel explicitly:
+
+`composer_opened` → `garden_generated` → `share_link_copied` → `garden_opened` → `garden_bloomed` → `reply_started`
+
+All events are defined as typed functions in `src/lib/analytics.ts`, so the dashboard can never split between `garden_generated` and `garden_genrated`. Event props carry structural metadata (occasion, flower count, whether the user supplied a from-name, whether the garden is part of a reply thread) — but the note text, sender, and recipient never leave the client. Vercel Analytics is cookie-less by design, so no consent banner is required.
 
 ---
 
@@ -180,13 +204,24 @@ vercel
 # set GEMINI_API_KEY in the project settings
 ```
 
-`vercel.json` pins `api/design-garden.ts` and `api/shorten.ts` to the Edge runtime.
+`vercel.json` pins `api/design-garden.ts` and `api/garden.ts` to the Edge runtime.
+
+**Set up Upstash Redis (required for share URLs):**
+
+1. Sign up at https://upstash.com (free, no credit card)
+2. Create a new Redis database — global is fine, the free tier covers it
+3. Copy the **REST URL** and **REST Token** (NOT the TCP credentials — Edge functions can't use those)
+4. Add as Vercel environment variables: `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+
+Without Upstash configured, the composer surfaces a clear error after a garden is generated rather than degrading silently — a broken share experience is worse than a clear failure.
 
 ---
 
 ## Privacy note
 
-The note you write is sent to Google's Gemini servers for processing. Anyone with the share URL can read the note (it's encoded directly into the URL). Don't put anything in the message you wouldn't want a recipient to forward — they can.
+The note you write is sent to Google's Gemini servers for processing and stored in Upstash Redis keyed by the short ID. Anyone with the share URL can fetch the note. The IDs are random 6-char base62 (≈56 billion possible values), so they're not enumerable by guessing — but the URL itself is the access token, so don't put anything in the message you wouldn't want a recipient to forward.
+
+**Analytics:** Cookie-less Vercel Analytics is enabled. Pageviews and a handful of structural product events (`garden_generated`, `share_link_copied`, `garden_opened`, `garden_bloomed`, `reply_started`) are reported with metadata only — flower count, occasion, whether a from-name was provided, etc. The note text, sender name, and recipient name are never sent to analytics. The typed event surface lives in `src/lib/analytics.ts`.
 
 ---
 
@@ -210,16 +245,16 @@ The frontend, SSE protocol, validation layer, and rendering code don't need to c
 api/
   design-garden.ts       # Edge function: SSE proxy to Gemini with function calling
   prompt.ts              # System prompt + function schema + post-hoc validator
-  shorten.ts             # Edge function: TinyURL proxy
+  garden.ts              # Edge function: KV-backed short-URL shortener (POST create, GET read)
 
 src/
-  App.tsx                # Routes between composer and recipient view
-  garden.ts              # Schema, URL encoding (depth-capped), example garden
+  App.tsx                # URL router — fetches garden by short ID, routes to composer / recipient / 404
+  garden.ts              # Schema, URL encoding (depth-capped), short-URL client helpers
   sound.ts               # Web Audio API + haptic helper
   index.css              # CSS vars, base styles, grain overlay, view-transition + print blocks
   lib/
     designGarden.ts      # Fetches /api/design-garden and parses SSE
-    shorten.ts           # Fetches /api/shorten
+    analytics.ts         # Typed wrappers around Vercel Analytics's track()
     formatDate.ts        # Intl.DateTimeFormat wrapper for "Grown {date}"
     occasions.ts         # Occasion list (value + label)
     viewTransition.ts    # withViewTransition helper (flushSync + startViewTransition)

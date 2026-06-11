@@ -1,19 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import { buildRemixUrl, type GardenData } from '../garden'
+import {
+  trackGardenBloomed,
+  trackGardenOpened,
+  trackReplyStarted,
+} from '../lib/analytics'
 import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
 import styles from './RecipientView.module.css'
 
 interface Props {
   gardenData: GardenData
+  /**
+   * The 6-char short ID that identified this garden. Used to build the
+   * matching `/r/<id>` reply URL — same KV record, two views. No
+   * duplicate writes when someone taps "grow one back."
+   */
+  gardenId: string
 }
 
 type Phase = 'sealed' | 'blooming'
 
-export default function RecipientView({ gardenData }: Props) {
+export default function RecipientView({ gardenData, gardenId }: Props) {
   const { flowers, message, from, to, bouquetNote, previous, createdAt } = gardenData
   const grownOn = formatGardenDate(createdAt)
   // The page lands in 'sealed' state — the garden plot is empty, a
@@ -24,16 +35,37 @@ export default function RecipientView({ gardenData }: Props) {
   const [phase, setPhase] = useState<Phase>('sealed')
   const [msgVisible, setMsgVisible] = useState(false)
 
+  // Funnel event: garden_opened. Fired once per mount — this is the
+  // "delivery confirmed" signal that pairs with `share_link_copied`
+  // on the sender side. Structural metadata only; no names, no note.
+  useEffect(() => {
+    trackGardenOpened({
+      flowerCount: flowers.length,
+      hasFromName: !!from,
+      hasThread: !!previous,
+    })
+  }, [flowers.length, from, previous])
+
   const handleOpen = (): void => {
     setPhase('blooming')
     playChime()
+    trackGardenBloomed()
+  }
+
+  const handleReplyClick = (): void => {
+    trackReplyStarted()
+    // We don't preventDefault — let the anchor navigate as usual.
+    // Analytics is fire-and-forget via sendBeacon under the hood, so
+    // it survives the navigation.
   }
 
   function handleAllBloomed(): void {
     setTimeout(() => setMsgVisible(true), 300)
   }
 
-  const remixHref = buildRemixUrl(gardenData)
+  // The reply URL points at the SAME short ID — `/g/abc123` and
+  // `/r/abc123` are two views of one KV record. No duplicate writes.
+  const remixHref = buildRemixUrl(gardenId)
 
   return (
     <div className={styles.wrap}>
@@ -103,7 +135,7 @@ export default function RecipientView({ gardenData }: Props) {
 
       <div className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}>
         <p className={styles.ctaText}>grow one back?</p>
-        <a href={remixHref} className={styles.ctaBtn}>
+        <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
           {from ? `grow ${from} a garden` : 'grow one back'}
         </a>
         <p className={styles.ctaSub}>
