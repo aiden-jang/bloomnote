@@ -163,7 +163,32 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     trackComposerOpened(remixSeed ? 'remix' : 'fresh')
   }, [remixSeed])
 
-  const canSubmit = recipient.trim().length >= 1 && message.trim().length >= 4
+  // Live validation for the schedule input. Returns null when fine,
+  // a user-facing string when not. Three states matter:
+  //   - schedule closed → always valid (no input to check)
+  //   - schedule open but no value picked → "pick a time" feedback
+  //     (returned only after the user has touched the field, to avoid
+  //     yelling at them the instant they expand the picker)
+  //   - schedule open with a past value → hard error
+  //
+  // The 30-second grace window matches the server-side check in
+  // handleDesign so "I picked 2:00 and submitted at 1:59:58" doesn't
+  // disagree between the UI guard and the server. Without that grace
+  // window, a user could pick a time, sit on the page for the few
+  // seconds it takes for it to pass, and silently drop the schedule.
+  const scheduleError: string | null = (() => {
+    if (!scheduleOpen) return null
+    if (!unlockLocal) return null  // empty is "not yet decided", not an error
+    const t = new Date(unlockLocal).getTime()
+    if (!Number.isFinite(t)) return 'that time looks malformed.'
+    if (t <= Date.now() + 30_000) return "that time has already passed. pick something in the future."
+    return null
+  })()
+
+  const canSubmit =
+    recipient.trim().length >= 1 &&
+    message.trim().length >= 4 &&
+    scheduleError === null
 
   const handleDesign = useCallback(async () => {
     if (!canSubmit) return
@@ -484,29 +509,40 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                 or schedule for later →
               </button>
             ) : (
-              <div className={styles.scheduleOpen}>
-                <label className={styles.scheduleLabel}>
-                  opens on
-                </label>
-                <input
-                  type="datetime-local"
-                  className={styles.scheduleInput}
-                  value={unlockLocal}
-                  onChange={e => setUnlockLocal(e.target.value)}
-                  // Lower bound: 1 minute from now. Avoids silent
-                  // "scheduled to open in the past" footguns.
-                  min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
-                />
-                <button
-                  type="button"
-                  className={styles.scheduleClear}
-                  onClick={() => {
-                    setScheduleOpen(false)
-                    setUnlockLocal('')
-                  }}
-                >
-                  cancel
-                </button>
+              <div className={styles.scheduleBlock}>
+                <div className={styles.scheduleOpen}>
+                  <label className={styles.scheduleLabel}>
+                    opens on
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className={`${styles.scheduleInput} ${scheduleError ? styles.scheduleInputError : ''}`}
+                    value={unlockLocal}
+                    onChange={e => setUnlockLocal(e.target.value)}
+                    // `min` is best-effort — some mobile browsers and
+                    // date pickers ignore it. The real validation is
+                    // in scheduleError above; this attribute just makes
+                    // the native picker's default behavior pleasanter.
+                    min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                    aria-invalid={scheduleError !== null}
+                    aria-describedby={scheduleError ? 'schedule-error' : undefined}
+                  />
+                  <button
+                    type="button"
+                    className={styles.scheduleClear}
+                    onClick={() => {
+                      setScheduleOpen(false)
+                      setUnlockLocal('')
+                    }}
+                  >
+                    cancel
+                  </button>
+                </div>
+                {scheduleError && (
+                  <p id="schedule-error" className={styles.scheduleErrorText}>
+                    {scheduleError}
+                  </p>
+                )}
               </div>
             )}
           </section>
