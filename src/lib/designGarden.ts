@@ -162,6 +162,20 @@ export async function designGarden(
  * couldn't classify.
  */
 export function friendlyError(raw: string): string {
+  // Gemini-specific overload / high-demand 503s. Distinct from a
+  // generic 5xx because the cause is clearly upstream — Google's
+  // model is busy, not our backend. Naming Gemini explicitly so the
+  // user understands the issue isn't with our app. Matched BEFORE
+  // the generic 5xx pattern (which also catches \b503\b) so this
+  // more-specific copy wins.
+  if (
+    /high.?demand|model.+is.+currently|model.+overloaded|spikes.+in.+demand|googlegenerativeai.+error|generativelanguage\.googleapis/i.test(
+      raw,
+    )
+  ) {
+    return "gemini's a little overwhelmed right now. give it a sec and try again."
+  }
+
   // Rate limiting — our IP cap and Gemini's quota both surface as
   // some flavor of "rate limit" / 429.
   if (/rate.?limit|\b429\b|too.?many.?requests/i.test(raw)) {
