@@ -29,6 +29,76 @@
   align-items: flex-end;
 }
 
+/* Ghost sprout — empty-state teaser. Centered in the plot, color
+   drawn from the green-mid token so it harmonizes with the eventual
+   garden palette without committing to any specific flower. */
+.ghostSprout {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 60px;
+  color: var(--green-mid);
+  opacity: 0.55;
+}
+
+.ghostSproutSvg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Stem grows from 0 → full → 0 on a slow loop. The stroke-dasharray
+   trick lets us animate the line drawing itself, not just opacity —
+   the stem visibly extends upward, which reads as growth. */
+.ghostStem {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: ghostStemGrow 4.5s ease-in-out infinite;
+}
+
+@keyframes ghostStemGrow {
+  0%   { stroke-dashoffset: 40; }
+  40%  { stroke-dashoffset: 0; }
+  70%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 40; }
+}
+
+/* Leaf unfurls after the stem starts growing, then folds back in
+   before the stem retracts. The offset keyframes give it that
+   sequenced "stem first, then leaf" feel. */
+.ghostLeaf {
+  transform-origin: 10px 28px;
+  transform: scale(0);
+  animation: ghostLeafUnfurl 4.5s ease-in-out infinite;
+}
+
+@keyframes ghostLeafUnfurl {
+  0%, 25% { transform: scale(0) rotate(-20deg); }
+  45%     { transform: scale(1) rotate(0deg); }
+  65%     { transform: scale(1) rotate(0deg); }
+  85%     { transform: scale(0) rotate(15deg); }
+  100%    { transform: scale(0) rotate(15deg); }
+}
+
+/* Respect users who've asked their OS for less motion. Skip the loop
+   entirely; just show a static partially-grown sprout so the empty
+   state still reads correctly. */
+@media (prefers-reduced-motion: reduce) {
+  .ghostStem,
+  .ghostLeaf {
+    animation: none;
+  }
+  .ghostStem { stroke-dashoffset: 10; }
+  .ghostLeaf { transform: scale(1); }
+}
+
+/* Print: the empty teaser doesn't need to appear on paper. */
+@media print {
+  .ghostSprout { display: none; }
+}
+
 .ground {
   position: absolute;
   bottom: 0;

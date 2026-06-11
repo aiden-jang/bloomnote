@@ -54,6 +54,35 @@ const PETAL_DRIFTERS = [
   { startX: 55, driftX: -30, delay: 2200, duration: 4000, size:  9, rotate: -65 },
 ] as const
 
+/**
+ * Empty-plot teaser. A single ground-anchored sprout that grows up,
+ * unfurls a leaf, then retracts on a slow loop. Hints at the bloom
+ * to come without committing to any specific flower aesthetic.
+ *
+ * Pure CSS — no React state, no setInterval, no rerenders. The
+ * animation runs entirely off the GPU once the layer is composited.
+ */
+function GhostSprout() {
+  return (
+    <div className={styles.ghostSprout} aria-hidden>
+      <svg viewBox="0 0 20 60" className={styles.ghostSproutSvg}>
+        <line
+          x1="10" y1="60" x2="10" y2="20"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          className={styles.ghostStem}
+        />
+        <path
+          d="M 10 28 Q 18 22, 15 30 Q 12 29, 10 28"
+          fill="currentColor"
+          className={styles.ghostLeaf}
+        />
+      </svg>
+    </div>
+  )
+}
+
 export default function GardenScene({ flowers, autoBloom, onAllBloomed }: Props) {
   const [bloomedCount, setBloomedCount] = useState(0)
   const placed = placeFlowers(flowers)
@@ -105,10 +134,18 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed }: Props)
       })
     : []
 
+  // Empty-state teaser: a single sprout that grows and retracts on a
+  // gentle loop. Sits in the same plot the eventual flowers will fill,
+  // so the visual story is "this place is waiting for something"
+  // instead of "loading" → "boom flowers." Hidden as soon as real
+  // flowers arrive.
+  const showGhostSprout = flowers.length === 0
+
   return (
     <div className={styles.scene}>
       <div className={styles.sky} />
       <div className={styles.garden}>
+        {showGhostSprout && <GhostSprout />}
         {placed.map((p, i) => (
           <div
             key={placementKey(p.spec, i)}
