@@ -133,6 +133,79 @@
   outline: none;
 }
 
+/* Schedule (time capsule) — collapsed link, expanded row.
+   Sits between message + actions so it's visible but not the first
+   thing a new user has to think about. */
+.schedule {
+  margin: 6px 0 4px;
+}
+
+.scheduleToggle {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-mid);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.scheduleToggle:hover {
+  color: var(--green-deep);
+}
+
+.scheduleOpen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
+  font-size: 13px;
+}
+
+.scheduleLabel {
+  color: var(--text-mid);
+}
+
+.scheduleInput {
+  flex: 1;
+  min-width: 180px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: white;
+  color: var(--text-deep, inherit);
+  /* iOS auto-zoom prevention — same fix as our text inputs. */
+  font-size: max(14px, 1rem);
+}
+
+@media (max-width: 480px) {
+  .scheduleInput {
+    font-size: 16px;
+  }
+}
+
+.scheduleClear {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text-light);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.scheduleClear:hover {
+  color: var(--text-deep);
+}
+
 .actions {
   display: flex;
   gap: 10px;
@@ -541,6 +614,13 @@
   font-size: 18px;
   color: var(--green-deep);
   font-weight: 400;
+}
+
+.scheduleConfirm {
+  font-size: 13px;
+  color: var(--text-mid);
+  margin-top: -2px;
+  letter-spacing: 0.01em;
 }
 
 .urlBox {

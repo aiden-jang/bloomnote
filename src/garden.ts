@@ -45,6 +45,17 @@ export interface GardenData {
    */
   createdAt?: string
   /**
+   * ISO 8601 timestamp before which the garden stays sealed (time-capsule
+   * mode). The recipient sees a countdown until this moment, then the
+   * garden becomes openable. Omit for immediate delivery.
+   *
+   * Clock skew note: comparison is recipient-clock vs server-stored UTC.
+   * A determined recipient can spoof their device clock and unlock early,
+   * which is acceptable for a "moment of joy" product — this is not a
+   * security boundary, it's a UX choreography.
+   */
+  unlockAt?: string
+  /**
    * The previous garden in the thread, if this is a reply. Depth-capped
    * to 1: a `previous` never has its own `previous`, so the URL stays
    * bounded even after many back-and-forths. The user sees current +
