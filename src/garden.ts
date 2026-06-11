@@ -53,115 +53,12 @@ export interface GardenData {
   previous?: GardenData
 }
 
-// --- URL encoding --------------------------------------------------------
+// --- Short URLs ---------------------------------------------------------
 //
-// We pack the garden into a URL query param so the recipient can open the
-// link without any server roundtrip. To stay under typical 2KB URL caps
-// even with 5 fully-described flowers and a thread, we use short field
-// names in the wire format and strip the second level of nesting.
-
-interface WireFlower {
-  n: string                // name
-  m: string                // meaning
-  p: [string, string, string] // petalColors
-  c: string                // centerColor
-  s: string                // stemColor
-  sh: PetalShape           // petalShape
-  pc: number               // petalCount
-  sht: number              // stemHeight
-}
-
-interface WireGarden {
-  f: WireFlower[]
-  b: string                // bouquetNote
-  m: string                // message
-  fr: string               // from
-  t?: string               // to (recipient name)
-  ca?: string              // createdAt (ISO 8601)
-  pr?: WireGarden          // previous garden (depth-capped, no pr.pr)
-  v: 2                     // schema version
-}
-
-function toWireFlower(fl: FlowerSpec): WireFlower {
-  return {
-    n: fl.name,
-    m: fl.meaning,
-    p: fl.petalColors,
-    c: fl.centerColor,
-    s: fl.stemColor,
-    sh: fl.petalShape,
-    pc: fl.petalCount,
-    sht: fl.stemHeight,
-  }
-}
-
-function fromWireFlower(fl: WireFlower): FlowerSpec {
-  return {
-    name: fl.n,
-    meaning: fl.m,
-    petalColors: fl.p,
-    centerColor: fl.c,
-    stemColor: fl.s,
-    petalShape: fl.sh,
-    petalCount: fl.pc,
-    stemHeight: fl.sht,
-  }
-}
-
-function toWire(data: GardenData, includePrevious: boolean): WireGarden {
-  const wire: WireGarden = {
-    v: 2,
-    f: data.flowers.map(toWireFlower),
-    b: data.bouquetNote,
-    m: data.message,
-    fr: data.from,
-  }
-  if (data.to) wire.t = data.to
-  if (data.createdAt) wire.ca = data.createdAt
-  // Strip second-level nesting: when we encode `previous`, we encode it
-  // WITHOUT its own `previous`. That's the depth cap.
-  if (includePrevious && data.previous) {
-    wire.pr = toWire(data.previous, false)
-  }
-  return wire
-}
-
-function fromWire(wire: WireGarden): GardenData {
-  const data: GardenData = {
-    flowers: (wire.f ?? []).map(fromWireFlower),
-    bouquetNote: wire.b ?? '',
-    message: wire.m ?? '',
-    from: wire.fr ?? '',
-  }
-  if (wire.t) data.to = wire.t
-  if (wire.ca) data.createdAt = wire.ca
-  if (wire.pr) data.previous = fromWire(wire.pr)
-  return data
-}
-
-function encodeBase64Url(s: string): string {
-  return btoa(encodeURIComponent(s))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
-}
-
-function decodeBase64Url(s: string): string {
-  return decodeURIComponent(atob(s.replace(/-/g, '+').replace(/_/g, '/')))
-}
-
-export function encodeGarden(data: GardenData): string {
-  return encodeBase64Url(JSON.stringify(toWire(data, true)))
-}
-
-export function decodeGarden(encoded: string): GardenData | null {
-  try {
-    const wire = JSON.parse(decodeBase64Url(encoded)) as WireGarden
-    return fromWire(wire)
-  } catch {
-    return null
-  }
-}
+// Gardens are stored in Upstash Redis keyed by a 6-character base62 ID.
+// The share URL is `/g/<id>` and the reply URL is `/r/<id>` — same
+// record, two views. No URL-encoded payloads; all garden data lives
+// server-side.
 
 // Always anchor share URLs at the origin root. Assumes the app is
 // deployed at a domain root (e.g. blossom.aidenjang.com/) rather than
@@ -174,24 +71,81 @@ function buildAppUrl(): string {
   return window.location.origin
 }
 
-export function buildShareUrl(data: GardenData): string {
-  return `${buildAppUrl()}/g/${encodeGarden(data)}`
+/**
+ * Short IDs are 6 characters from a curated base62 alphabet (no 0/O,
+ * no 1/l/I). The pattern is shared with the server's generator in
+ * api/garden.ts; if you change one, change both.
+ */
+const SHORT_ID_PATTERN = /^[A-HJ-NP-Za-km-z2-9]{6}$/
+
+export function isShortId(value: string): boolean {
+  return SHORT_ID_PATTERN.test(value)
 }
 
 /**
- * The "grow one back" URL. Encodes the current garden as a remix seed
- * — when the recipient opens it, the composer pre-fills From/To from
- * the inverse of this garden and shows the original note as context.
- *
- * Like the encoded garden itself, the seed is depth-capped to 1 so the
- * URL doesn't accumulate every previous turn of the thread.
+ * Create a short-URL record for this garden by POSTing it to
+ * /api/garden. Returns the short ID on success; returns null on any
+ * failure. The composer surfaces the failure to the user — there's no
+ * silent fallback to a self-contained URL anymore.
  */
-export function buildRemixUrl(data: GardenData): string {
-  // The seed is just the current garden — we don't bring its `previous`
-  // along, because the reply's `previous` will be the current garden,
-  // and we don't want to nest deeper.
-  const seed: GardenData = { ...data, previous: undefined }
-  return `${buildAppUrl()}/r/${encodeGarden(seed)}`
+export async function createShortGarden(
+  data: GardenData,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  try {
+    const resp = await fetch('/api/garden', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal,
+    })
+    if (!resp.ok) return null
+    const json = (await resp.json()) as { id?: string }
+    return typeof json.id === 'string' ? json.id : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Fetch a garden by short ID. Returns null on 404 or any other
+ * failure — the caller decides how to render the missing state.
+ *
+ * The response is aggressively cacheable (the server sets
+ * `Cache-Control: immutable`) so repeat opens of the same link from
+ * the same browser don't hit Redis or the CDN twice.
+ */
+export async function fetchGarden(
+  id: string,
+  signal?: AbortSignal,
+): Promise<GardenData | null> {
+  try {
+    const resp = await fetch(`/api/garden?id=${encodeURIComponent(id)}`, {
+      signal,
+    })
+    if (!resp.ok) return null
+    const json = (await resp.json()) as { garden?: unknown }
+    // Upstash auto-parses JSON on read, so what we get back is already
+    // a GardenData-shaped object. No re-validation here — the garden
+    // was already validated by the model + post-hoc validator when it
+    // was created.
+    return (json.garden ?? null) as GardenData | null
+  } catch {
+    return null
+  }
+}
+
+export function buildShareUrl(id: string): string {
+  return `${buildAppUrl()}/g/${id}`
+}
+
+/**
+ * The "grow one back" URL. Points at the same short ID as the share
+ * URL — one storage record serves both views. The composer fetches
+ * the same garden by ID, then uses it as a remix seed.
+ */
+export function buildRemixUrl(id: string): string {
+  return `${buildAppUrl()}/r/${id}`
 }
 
 // --- Example / fallback garden ------------------------------------------

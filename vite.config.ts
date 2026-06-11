@@ -44,7 +44,14 @@ function apiPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next) => {
         const url = req.url ?? ''
-        const match = handlerFileRegex.exec(url)
+        // Strip the query string before matching — otherwise a request
+        // to /api/garden?id=xxx falls through the regex (because `?`
+        // isn't a `/` or end-of-string), and Vite happily serves the
+        // transpiled source file instead of running the handler. The
+        // query string is preserved on the Request we build below, so
+        // the handler still sees the params.
+        const pathname = url.split('?')[0]
+        const match = handlerFileRegex.exec(pathname)
         if (!match) {
           next()
           return

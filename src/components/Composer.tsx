@@ -4,14 +4,22 @@ import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import {
   buildShareUrl,
-  decodeGarden,
+  createShortGarden,
   type FlowerSpec,
   type GardenData,
 } from '../garden'
+import {
+  trackComposerOpened,
+  trackGardenCanceled,
+  trackGardenError,
+  trackGardenGenerated,
+  trackMakeAnother,
+  trackShareLinkCopied,
+  trackShareLinkShared,
+} from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { formatGardenDate } from '../lib/formatDate'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
-import { shortenUrl } from '../lib/shorten'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
@@ -30,29 +38,44 @@ interface Draft {
   occasion: string
 }
 
+/**
+ * Coarse bucket for analytics. Raw error messages can carry pieces of
+ * the model's output (and indirectly, the user's note), so we map to
+ * a small set of stable labels here and only ever log the label.
+ */
+function classifyError(err: unknown): string {
+  if (!(err instanceof Error)) return 'unknown'
+  const m = err.message.toLowerCase()
+  if (m.includes('abort')) return 'aborted'
+  if (m.includes('rate')) return 'rate_limited'
+  if (m.includes('timeout') || m.includes('timed out')) return 'timeout'
+  if (m.includes('network') || m.includes('fetch')) return 'network'
+  if (m.includes('validation') || m.includes('invalid')) return 'validation'
+  return 'model'
+}
+
 const MESSAGE_PLACEHOLDERS = [
   "Happy birthday, Maya. You're the only person I know who keeps a tide journal AND laughs too loudly at her own jokes. You'd drive six hours to see a sunset and somehow always rope me in. So glad you exist.",
   "Mom — 60 years. You raised three kids on your own while finishing your degree at night, taught me how to garden, and still call every Sunday. I don't say thank you enough.",
   "Theo — the night I was applying to grad school, you stayed up making sure I ate. The pour-over was the best part. I think about that a lot. Happy birthday, friend.",
 ]
 
-/**
- * Read the remix seed from the URL once at mount and decode it.
- * Returns null if missing or malformed — Composer treats that as
- * "fresh composition."
- */
-function readRemixSeed(): GardenData | null {
-  const pathMatch = window.location.pathname.match(/^\/r\/(.+)$/)
-  if (pathMatch) return decodeGarden(pathMatch[1])
-  return null
+interface ComposerProps {
+  /**
+   * Optional remix seed. When provided, the composer renders in
+   * "replying to X" mode: From/To are pre-filled from the inverse of
+   * the seed, the original note is shown as thread context, and the
+   * generated garden carries `previous` so the recipient sees the
+   * conversation.
+   *
+   * URL parsing for `/r/<id>` (including async fetch for short IDs)
+   * lives in App.tsx; the seed is fully resolved by the time we get
+   * it here.
+   */
+  remixSeed?: GardenData
 }
 
-export default function Composer() {
-  // Read the remix seed exactly once at mount. We intentionally use
-  // useMemo (not useState) because the seed should never change during
-  // a single Composer lifetime — switching threads requires a full
-  // navigation.
-  const remixSeed = useMemo(readRemixSeed, [])
+export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const [phase, setPhase] = useState<Phase>('idle')
 
@@ -120,6 +143,14 @@ export default function Composer() {
     }
   }, [remixSeed])
 
+  // Analytics: composer opened. Fired once per mount so we get an
+  // accurate "fresh vs remix landing" split. StrictMode double-mounts
+  // in dev would inflate this by 2x — that's tolerable noise because
+  // production doesn't double-mount.
+  useEffect(() => {
+    trackComposerOpened(remixSeed ? 'remix' : 'fresh')
+  }, [remixSeed])
+
   const canSubmit = recipient.trim().length >= 1 && message.trim().length >= 4
 
   const handleDesign = useCallback(async () => {
@@ -133,6 +164,10 @@ export default function Composer() {
 
     const ctrl = new AbortController()
     abortRef.current = ctrl
+
+    // Captured at the start of the request so we can report total
+    // perceived design latency (model + validation + shortener).
+    const startedAt = performance.now()
 
     try {
       playWhoosh()
@@ -151,10 +186,16 @@ export default function Composer() {
       setGarden(result)
       setFlowers(result.flowers)
 
-      // The share URL bundles the new garden AND (if this is a reply)
-      // the original garden as `previous`. The depth cap in
-      // encodeGarden means we never accumulate more than one round of
-      // history in the URL.
+      // The garden record bundles the new garden AND (if this is a
+      // reply) the original garden as `previous`. Depth-capped at 1:
+      // we strip `previous` from the seed before attaching it, so a
+      // five-message thread doesn't accumulate five nested gardens.
+      // The recipient view only renders one level back anyway —
+      // deeper history would be wasted storage and would slow the
+      // fetch with no UX upside.
+      const seedForPrevious = remixSeed
+        ? { ...remixSeed, previous: undefined }
+        : undefined
       const data: GardenData = {
         flowers: result.flowers,
         bouquetNote: result.bouquetNote,
@@ -164,29 +205,30 @@ export default function Composer() {
         // Stamp when the sender hit "Grow their garden" — shows up
         // on the recipient's view as a card-like "Grown {date}" line.
         createdAt: new Date().toISOString(),
-        previous: remixSeed ?? undefined,
+        previous: seedForPrevious,
       }
-      const longUrl = buildShareUrl(data)
 
-      // We stay in 'designing' phase until the shortener resolves (or
-      // times out). The cost is ~1 extra second on the perceived
-      // design latency; the win is that the user never sees the long
-      // URL flash on screen and then change. We cap the shortener wait
-      // at 3 seconds — past that, we go with the long URL rather than
-      // hanging the share UI on a flaky third-party.
-      setStatusText('shortening link…')
+      // POST the garden to our own /api/garden endpoint to get a short
+      // ID back. We stay in 'designing' phase until the round-trip
+      // completes — usually <200ms because the endpoint runs on the
+      // same Edge network as the model call we just made.
+      //
+      // If the shortener fails (Upstash down, missing creds, network),
+      // we surface a clear error rather than degrading silently to a
+      // 450-char URL. The garden the user just spent 5 seconds
+      // designing is wasted in that scenario, which is unfortunate —
+      // but a broken share experience is worse than a clear failure.
+      setStatusText('preparing link…')
 
       const SHORTEN_TIMEOUT_MS = 3000
-      let finalUrl = longUrl
-      try {
-        const result = await Promise.race([
-          shortenUrl(longUrl, ctrl.signal),
-          new Promise<null>(resolve => setTimeout(() => resolve(null), SHORTEN_TIMEOUT_MS)),
-        ])
-        if (typeof result === 'string') finalUrl = result
-      } catch {
-        // Shortener failed — fall back to long URL.
+      const shortId = await Promise.race([
+        createShortGarden(data, ctrl.signal),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), SHORTEN_TIMEOUT_MS)),
+      ])
+      if (!shortId) {
+        throw new Error("couldn't save your garden. try again?")
       }
+      const finalUrl = buildShareUrl(shortId)
 
       // Cross-fade designing panel → designed preview. playSuccess
       // stays outside the transition so the chime plays at the start
@@ -197,9 +239,21 @@ export default function Composer() {
         setStatusText('')
         setPhase('designed')
       })
+
+      // Funnel event: garden_generated. Includes structural metadata
+      // (occasion, flower count, whether the user provided a name)
+      // but NEVER the note text or names themselves.
+      trackGardenGenerated({
+        occasion,
+        flowerCount: result.flowers.length,
+        hasFromName: from.trim().length > 0,
+        isRemix: !!remixSeed,
+        durationMs: Math.round(performance.now() - startedAt),
+      })
     } catch (err) {
       if (ctrl.signal.aborted) {
         withViewTransition(() => setPhase('idle'))
+        trackGardenCanceled()
         return
       }
       const msg = err instanceof Error ? err.message : 'Something went wrong.'
@@ -207,10 +261,14 @@ export default function Composer() {
         setErrorText(msg)
         setPhase('idle')
       })
+      // Coarse error bucket. We classify by error shape rather than
+      // logging the raw message — raw model error text can include
+      // bits of the user's note or internal prompt details.
+      trackGardenError(classifyError(err))
     } finally {
       abortRef.current = null
     }
-  }, [canSubmit, from, message, recipient, remixSeed])
+  }, [canSubmit, from, message, occasion, recipient, remixSeed])
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort()
@@ -221,10 +279,6 @@ export default function Composer() {
     // means "I'm done with this garden, start me clean" — re-typing
     // is the right default. If you want to tweak the same note and
     // regenerate, the clear-draft / undo flow is the explicit path.
-    //
-    // The autosave effect picks up the cleared state and removes the
-    // localStorage entry automatically (saveDraft skips writes when
-    // all fields are empty).
     withViewTransition(() => {
       setPhase('idle')
       setGarden(null)
@@ -236,6 +290,7 @@ export default function Composer() {
       setMessage('')
       setOccasion(DEFAULT_OCCASION)
     })
+    trackMakeAnother()
   }, [])
 
   // Only show the clear link when there's something to clear. Trimmed
@@ -283,6 +338,7 @@ export default function Composer() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
     })
+    trackShareLinkCopied()
   }, [shareUrl])
 
   // Native share — opens the OS share sheet on mobile (iMessage, WhatsApp,
@@ -298,6 +354,7 @@ export default function Composer() {
     }
     try {
       await navigator.share(data)
+      trackShareLinkShared()
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return
       // Otherwise no-op — the Copy button is still there as fallback.
@@ -534,7 +591,8 @@ export default function Composer() {
           register as the rest of the UI copy. */}
       <div className={styles.footer}>
         <p className={styles.disclosure}>
-          your note is sent to gemini and encoded in the share link.
+          your note is sent to gemini and stored behind your share link.
+          anonymous usage stats only — no note text, no names.
         </p>
         <p className={styles.credit}>
           made by{' '}
