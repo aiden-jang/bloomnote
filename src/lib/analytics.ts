@@ -47,11 +47,14 @@ export function trackComposerOpened(mode: 'fresh' | 'remix'): void {
 
 /**
  * AI returned a valid garden. The structural props let us answer
- * questions like "do users typically include a from name?" or
- * "which occasion is most popular?" without ever logging note text.
+ * questions like "do users typically include a from name?", "which
+ * occasion is most popular?", or "which mood drives the highest
+ * share rate?" — without ever logging note text.
  */
 export function trackGardenGenerated(props: {
   occasion: string
+  /** One of the mood keys defined in src/lib/moods.ts, or 'none'. */
+  mood: string
   flowerCount: number
   hasFromName: boolean
   isRemix: boolean

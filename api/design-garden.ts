@@ -66,6 +66,8 @@ interface RequestBody {
   from?: string
   /** Occasion key — one of the values defined in src/lib/occasions.ts. */
   occasion?: string
+  /** Mood key — one of the values defined in src/lib/moods.ts. */
+  mood?: string
 }
 
 // Mirror of src/lib/occasions.ts → OCCASIONS values. Duplicated here
@@ -82,6 +84,23 @@ const KNOWN_OCCASIONS: Record<string, string> = {
   'sympathy': 'Sympathy',
 }
 
+// Mirror of src/lib/moods.ts → MOODS promptHints. Same duplication
+// rationale as KNOWN_OCCASIONS above. Each value is the directive
+// string we splice into the user prompt; 'none' has no entry because
+// the absence-of-mood case is handled by the missing key.
+const KNOWN_MOODS: Record<string, string> = {
+  tender:
+    'Tone is tender — affection, intimacy, quiet warmth. Soft pastels: pale pinks, ivories, washed lavenders. Petal shapes lean round and small. Bouquet note reads like a held breath.',
+  playful:
+    'Tone is playful — joy, mischief, inside jokes. Brighter palettes: warm yellows, coral pinks, unexpected pops of color. Petal shapes can mix (star + round + elongated). Bouquet note has the energy of a wink.',
+  wistful:
+    'Tone is wistful — missing someone, sentimental, slightly bittersweet. Muted palettes: dusty blues, faded mauves, soft sages. Petal shapes lean elongated and bell. Bouquet note feels like the moment before remembering.',
+  celebratory:
+    'Tone is celebratory — joy, achievement, big energy. Vivid palettes: golden yellows, deep magentas, hot oranges. Higher petal counts, taller stems. Bouquet note has lift to it, like raising a glass.',
+  steady:
+    'Tone is steady — solidarity, quiet support, "I am here." Grounded palettes: forest greens, terracotta, deep cream. Petal shapes are round and consistent across the bouquet. Bouquet note reads like a hand on the shoulder.',
+}
+
 function validateBody(raw: unknown): { ok: true; body: RequestBody } | { ok: false; error: string } {
   if (!raw || typeof raw !== 'object') return { ok: false, error: 'Body must be JSON.' }
   const body = raw as Record<string, unknown>
@@ -95,7 +114,10 @@ function validateBody(raw: unknown): { ok: true; body: RequestBody } | { ok: fal
   // back silently to no-occasion rather than 400ing — defensive.
   const occasionRaw = typeof body.occasion === 'string' ? body.occasion : undefined
   const occasion = occasionRaw && occasionRaw in KNOWN_OCCASIONS ? occasionRaw : undefined
-  return { ok: true, body: { message, recipient, from: from || undefined, occasion } }
+  // Mood follows the same defensive validation: known key or undefined.
+  const moodRaw = typeof body.mood === 'string' ? body.mood : undefined
+  const mood = moodRaw && moodRaw in KNOWN_MOODS ? moodRaw : undefined
+  return { ok: true, body: { message, recipient, from: from || undefined, occasion, mood } }
 }
 
 // --- SSE helpers ---------------------------------------------------------
@@ -165,14 +187,23 @@ export default async function handler(req: Request): Promise<Response> {
   })
 
   // The user wrote a real note. Hand it to the AI exactly as written;
-  // let the model do the inference. `from` and `occasion` are
-  // included when present so the bouquet note can be written naturally
-  // in the sender's voice and the tone can match the moment.
+  // let the model do the inference. `from`, `occasion`, and `mood`
+  // are included when present so the bouquet can match the sender's
+  // voice, the calendar moment, and the emotional register.
+  //
+  // Mood is rendered as a "Mood guidance:" block (full directive)
+  // rather than a one-word label because mood needs to bias palette,
+  // petal shapes, and prose tone — a single token isn't enough signal.
+  // The occasion stays a label because its semantics are well-known
+  // to the model already (it knows what a "birthday" should look like).
   const fromLine = parsed.body.from ? `From: ${parsed.body.from}\n` : ''
   const occasionLine = parsed.body.occasion
     ? `Occasion: ${KNOWN_OCCASIONS[parsed.body.occasion]}\n`
     : ''
-  const userPrompt = `${fromLine}To: ${parsed.body.recipient}\n${occasionLine}\nTheir note:\n${parsed.body.message}`
+  const moodLine = parsed.body.mood
+    ? `Mood guidance: ${KNOWN_MOODS[parsed.body.mood]}\n`
+    : ''
+  const userPrompt = `${fromLine}To: ${parsed.body.recipient}\n${occasionLine}${moodLine}\nTheir note:\n${parsed.body.message}`
 
   // Stream Gemini's response and forward progress events to the client
   // via SSE. We close the stream as soon as we have the validated tool

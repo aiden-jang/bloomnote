@@ -47,6 +47,13 @@ interface DesignRequest {
   from?: string
   /** One of the keys from src/lib/occasions.ts → OCCASIONS. */
   occasion?: string
+  /**
+   * One of the keys from src/lib/moods.ts → MOODS. 'none' / undefined
+   * = no mood guidance to the model. Mood is orthogonal to occasion:
+   * a birthday garden can be tender OR playful and will render
+   * differently for each.
+   */
+  mood?: string
 }
 
 /**

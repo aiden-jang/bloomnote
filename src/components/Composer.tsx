@@ -20,6 +20,7 @@ import {
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { formatGardenDate } from '../lib/formatDate'
+import { DEFAULT_MOOD, MOODS } from '../lib/moods'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
@@ -37,6 +38,7 @@ interface Draft {
   recipient: string
   message: string
   occasion: string
+  mood: string
 }
 
 /**
@@ -89,21 +91,23 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // tradeoff; in exchange the user always lands on a fresh form
   // without stale drafts cluttering it.
   const initialInputs = useMemo(() => {
+    const base = { occasion: DEFAULT_OCCASION, mood: DEFAULT_MOOD }
     if (remixSeed) {
       return {
+        ...base,
         from: remixSeed.to ?? '',
         recipient: remixSeed.from ?? '',
         message: '',
-        occasion: DEFAULT_OCCASION,
       }
     }
-    return { from: '', recipient: '', message: '', occasion: DEFAULT_OCCASION }
+    return { ...base, from: '', recipient: '', message: '' }
   }, [remixSeed])
 
   const [from, setFrom] = useState(initialInputs.from)
   const [recipient, setRecipient] = useState(initialInputs.recipient)
   const [message, setMessage] = useState(initialInputs.message)
   const [occasion, setOccasion] = useState(initialInputs.occasion)
+  const [mood, setMood] = useState(initialInputs.mood)
   const [placeholder] = useState(
     () => MESSAGE_PLACEHOLDERS[Math.floor(Math.random() * MESSAGE_PLACEHOLDERS.length)],
   )
@@ -221,6 +225,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           recipient: recipient.trim(),
           from: from.trim() || undefined,
           occasion,
+          // 'none' (default) tells the server not to inject any mood
+          // guidance — we send it through verbatim and let the server's
+          // validation decide what to do. Keeps the wire format honest.
+          mood,
         },
         {
           signal: ctrl.signal,
@@ -303,6 +311,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       // but NEVER the note text or names themselves.
       trackGardenGenerated({
         occasion,
+        mood,
         flowerCount: result.flowers.length,
         hasFromName: from.trim().length > 0,
         isRemix: !!remixSeed,
@@ -326,7 +335,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     } finally {
       abortRef.current = null
     }
-  }, [canSubmit, from, message, occasion, recipient, remixSeed, scheduleOpen, unlockLocal])
+  }, [canSubmit, from, message, mood, occasion, recipient, remixSeed, scheduleOpen, unlockLocal])
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort()
@@ -348,6 +357,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setRecipient('')
       setMessage('')
       setOccasion(DEFAULT_OCCASION)
+      setMood(DEFAULT_MOOD)
     })
     trackMakeAnother()
   }, [])
@@ -362,7 +372,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     // pending, cancel its timer — the new clear takes precedence.
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
 
-    const snapshot: Draft = { from, recipient, message, occasion }
+    const snapshot: Draft = { from, recipient, message, occasion, mood }
 
     // Clearing is a quick local action; no view transition needed.
     // React batches these updates automatically in an event handler.
@@ -370,13 +380,14 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setRecipient('')
     setMessage('')
     setOccasion(DEFAULT_OCCASION)
+    setMood(DEFAULT_MOOD)
     setUndoDraft(snapshot)
 
     undoTimerRef.current = setTimeout(() => {
       setUndoDraft(null)
       undoTimerRef.current = null
     }, 8000)
-  }, [from, recipient, message, occasion])
+  }, [from, recipient, message, occasion, mood])
 
   const handleUndoClear = useCallback(() => {
     if (!undoDraft) return
@@ -388,6 +399,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setRecipient(undoDraft.recipient)
     setMessage(undoDraft.message)
     setOccasion(undoDraft.occasion || DEFAULT_OCCASION)
+    setMood(undoDraft.mood || DEFAULT_MOOD)
     setUndoDraft(null)
   }, [undoDraft])
 
@@ -472,19 +484,39 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </section>
           </div>
 
-          <section className={styles.section}>
-            <label className={styles.label} htmlFor="occasion-select">Occasion</label>
-            <select
-              id="occasion-select"
-              className={styles.select}
-              value={occasion}
-              onChange={e => setOccasion(e.target.value)}
-            >
-              {OCCASIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </section>
+          {/* Occasion + Mood — two-up so it's clear they're a paired
+              control. Occasion is *when* (calendar), mood is *how*
+              (emotional register). Both optional from the user's
+              perspective (mood defaults to "no mood"), but always sent
+              so the AI gets the full signal. */}
+          <div className={styles.pickerRow}>
+            <section className={styles.section}>
+              <label className={styles.label} htmlFor="occasion-select">Occasion</label>
+              <select
+                id="occasion-select"
+                className={styles.select}
+                value={occasion}
+                onChange={e => setOccasion(e.target.value)}
+              >
+                {OCCASIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </section>
+            <section className={styles.section}>
+              <label className={styles.label} htmlFor="mood-select">Mood</label>
+              <select
+                id="mood-select"
+                className={styles.select}
+                value={mood}
+                onChange={e => setMood(e.target.value)}
+              >
+                {MOODS.map(m => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </section>
+          </div>
 
           <section className={styles.section}>
             <label className={styles.label}>Your message</label>
