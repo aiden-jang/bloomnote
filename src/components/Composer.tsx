@@ -9,6 +9,7 @@ import {
   type GardenData,
 } from '../garden'
 import {
+  trackCardDownloaded,
   trackComposerOpened,
   trackGardenCanceled,
   trackGardenError,
@@ -135,6 +136,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [garden, setGarden] = useState<DesignResult | null>(null)
   const [flowers, setFlowers] = useState<FlowerSpec[]>([])
   const [shareUrl, setShareUrl] = useState<string | null>(null)
+  // The short ID is also captured separately because the "save as
+  // image" button needs to build `/api/card?id=<id>` independently of
+  // the (potentially shortened) display URL. Could be derived by
+  // parsing shareUrl, but a dedicated piece of state is clearer than
+  // a regex inside the JSX.
+  const [gardenId, setGardenId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   // Web Share API is mobile + modern desktop Safari only. We detect on
   // mount and conditionally render — never show a button that won't
@@ -286,6 +293,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       playSuccess()
       withViewTransition(() => {
         setShareUrl(finalUrl)
+        setGardenId(shortId)
         setStatusText('')
         setPhase('designed')
       })
@@ -334,6 +342,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setGarden(null)
       setFlowers([])
       setShareUrl(null)
+      setGardenId(null)
       setErrorText(null)
       setFrom('')
       setRecipient('')
@@ -688,6 +697,22 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               >
                 {copied ? 'copied' : 'copy link'}
               </button>
+              {/* Save-as-image — renders /api/card?id=<id>&download=1
+                  into a square PNG and triggers a browser download.
+                  Uses a real anchor (not onClick) so right-click "save
+                  link as" also works and so screenreaders announce it
+                  as a link, which is the more honest semantic — clicking
+                  it produces a file, not an in-app side effect. */}
+              {gardenId && (
+                <a
+                  href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
+                  download
+                  className={styles.downloadBtn}
+                  onClick={() => trackCardDownloaded('composer')}
+                >
+                  save as image
+                </a>
+              )}
               <button className={styles.resetBtn} onClick={handleStartOver}>
                 make another
               </button>

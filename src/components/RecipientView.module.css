@@ -181,6 +181,31 @@
   color: var(--green-mid);
 }
 
+/* Save-as-image — sits below the primary CTA and the "start fresh"
+   link as a tertiary affordance. Quieter on purpose: recipients who
+   want to keep the garden are a minority of viewers, and a louder
+   button here would compete visually with "grow one back," which is
+   the action we most want them to take. Quiet doesn't mean hidden —
+   underline + spacing keep it discoverable. */
+.downloadLink {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  letter-spacing: 0.01em;
+}
+
+.downloadLink:hover {
+  color: var(--text-mid);
+}
+
+/* Print: a save-link doesn't belong on a physical card. */
+@media print {
+  .downloadLink { display: none; }
+}
+
 .threadWrap {
   opacity: 0;
   transform: translateY(8px);

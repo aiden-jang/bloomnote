@@ -4,6 +4,7 @@ import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import { buildRemixUrl, type GardenData } from '../garden'
 import {
+  trackCardDownloaded,
   trackGardenBloomed,
   trackGardenOpened,
   trackReplyStarted,
@@ -146,6 +147,21 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             start one for someone new
           </a>
         </p>
+        {/* Save-as-image — only show if we have a short ID (always do
+            for KV-backed gardens). Recipient downloads typically end up
+            as personal keepsakes or screenshots; we still track the
+            event because spikes here are a signal that "the bloom is
+            beautiful enough to capture," which informs design choices. */}
+        {gardenId && (
+          <a
+            href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
+            download
+            className={styles.downloadLink}
+            onClick={() => trackCardDownloaded('recipient')}
+          >
+            save as image
+          </a>
+        )}
       </div>
 
       {/* Author credit. Quieter than Composer's because this is the
