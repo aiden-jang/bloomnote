@@ -153,14 +153,25 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             event because spikes here are a signal that "the bloom is
             beautiful enough to capture," which informs design choices. */}
         {gardenId && (
-          <a
-            href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
-            download
-            className={styles.downloadLink}
-            onClick={() => trackCardDownloaded('recipient')}
-          >
-            save as image
-          </a>
+          <p className={styles.downloadRow}>
+            <a
+              href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
+              download
+              className={styles.downloadLink}
+              onClick={() => trackCardDownloaded('recipient', 'square')}
+            >
+              save as image
+            </a>
+            <span className={styles.downloadSep} aria-hidden>·</span>
+            <a
+              href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
+              download
+              className={styles.downloadLink}
+              onClick={() => trackCardDownloaded('recipient', 'story')}
+            >
+              save as story
+            </a>
+          </p>
         )}
       </div>
 

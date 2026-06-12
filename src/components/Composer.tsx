@@ -945,14 +945,27 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   as a link, which is the more honest semantic — clicking
                   it produces a file, not an in-app side effect. */}
               {gardenId && !isRerolling && (
-                <a
-                  href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
-                  download
-                  className={styles.downloadBtn}
-                  onClick={() => trackCardDownloaded('composer')}
-                >
-                  save as image
-                </a>
+                <>
+                  <a
+                    href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
+                    download
+                    className={styles.downloadBtn}
+                    onClick={() => trackCardDownloaded('composer', 'square')}
+                  >
+                    save as image
+                  </a>
+                  {/* Vertical 1080×1920 export for Instagram Stories /
+                      TikTok. Same KV record, different layout — see
+                      api/story.tsx for the design rationale. */}
+                  <a
+                    href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
+                    download
+                    className={styles.downloadBtn}
+                    onClick={() => trackCardDownloaded('composer', 'story')}
+                  >
+                    save as story
+                  </a>
+                </>
               )}
               <button
                 className={styles.resetBtn}
