@@ -62,19 +62,20 @@ function ExampleCard({
         onClick={() => onSelect(garden)}
         aria-label={`try the ${garden.mood} example: from ${garden.from} to ${garden.to}`}
       >
-        {/* Mini garden preview. autoBloom={true} via the static prop
-            isn't right here — these flowers should bloom on the user's
-            view so the card feels alive. FlowerSVG's `bloomed` prop is
-            what we need; set true so the flowers render in their final
-            shape immediately (no animation), keeping the card calm. */}
+        {/* Mini garden preview. autoBloom is irrelevant here — these
+            flowers render in their final bloomed state immediately via
+            FlowerSVG's `bloomed` prop so the card feels calm, not
+            animating-while-the-user-is-trying-to-read. Capped at 3
+            flowers because at the narrow card width that's all that
+            fits cleanly. */}
         <div className={styles.miniGarden} aria-hidden>
-          {garden.flowers.slice(0, 4).map((f, i) => (
+          {garden.flowers.slice(0, 3).map((f, i) => (
             <div
               key={i}
               className={styles.miniSlot}
               // Stagger the heights slightly so the row looks like a
               // garden, not a chart bar graph.
-              style={{ ['--slot-rotate' as string]: `${(i - 1.5) * 1.5}deg` }}
+              style={{ ['--slot-rotate' as string]: `${(i - 1) * 2}deg` }}
             >
               <FlowerSVG flower={f} index={i} bloomed swayDelay={i} />
             </div>
@@ -88,7 +89,6 @@ function ExampleCard({
             <span className={styles.toName}>{garden.to}</span>
           </p>
           <p className={styles.snippet}>{snippet}</p>
-          <p className={styles.tryCta}>try this →</p>
         </div>
       </button>
     </li>
