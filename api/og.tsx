@@ -23,6 +23,7 @@
 import { ImageResponse } from '@vercel/og'
 import { Redis } from '@upstash/redis'
 import type { GardenData, FlowerSpec } from '../src/garden'
+import { getFraunces } from './_lib/fonts'
 
 export const config = { runtime: 'edge' }
 
@@ -68,7 +69,8 @@ export default async function handler(req: Request): Promise<Response> {
   return renderForGarden(garden)
 }
 
-function renderForGarden(g: GardenData): Response {
+async function renderForGarden(g: GardenData): Promise<Response> {
+  const fonts = await getFraunces()
   const senderLine = g.from
     ? `${g.from} grew ${g.to || 'you'} a garden`
     : `someone grew ${g.to || 'you'} a garden`
@@ -88,7 +90,9 @@ function renderForGarden(g: GardenData): Response {
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '70px 80px',
-          fontFamily: 'serif',
+          // Default to Fraunces for the whole canvas. Per-element
+          // styles can still override (e.g. italic via fontStyle).
+          fontFamily: 'Fraunces',
         }}
       >
         {/* Top: sender line + wordmark */}
@@ -146,6 +150,14 @@ function renderForGarden(g: GardenData): Response {
     {
       width: OG_WIDTH,
       height: OG_HEIGHT,
+      // Register Fraunces in both styles so the JSX above can use
+      // fontFamily: 'Fraunces' for headers and fontStyle: 'italic'
+      // for the bouquet note. satori picks the right registration
+      // based on style.
+      fonts: [
+        { name: 'Fraunces', data: fonts.regular, style: 'normal', weight: 400 },
+        { name: 'Fraunces', data: fonts.italic, style: 'italic', weight: 400 },
+      ],
       // Cache forever per garden — the contents never change, so the
       // image is safe to cache at every CDN edge. Crawlers will only
       // hit our origin once per share, then it's edge-cached.
@@ -156,7 +168,8 @@ function renderForGarden(g: GardenData): Response {
   )
 }
 
-function renderGeneric(): Response {
+async function renderGeneric(): Promise<Response> {
+  const fonts = await getFraunces()
   return new ImageResponse(
     (
       <div
@@ -168,13 +181,13 @@ function renderGeneric(): Response {
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'column',
-          fontFamily: 'serif',
+          fontFamily: 'Fraunces',
         }}
       >
         <span style={{ fontSize: 96, color: '#3d6b32', letterSpacing: '-0.02em' }}>
           blossom
         </span>
-        <span style={{ fontSize: 36, color: '#5b6f4f', marginTop: '14px' }}>
+        <span style={{ fontSize: 36, color: '#5b6f4f', marginTop: '14px', fontStyle: 'italic' }}>
           write a note. we grow them a garden.
         </span>
       </div>
@@ -182,6 +195,10 @@ function renderGeneric(): Response {
     {
       width: OG_WIDTH,
       height: OG_HEIGHT,
+      fonts: [
+        { name: 'Fraunces', data: fonts.regular, style: 'normal', weight: 400 },
+        { name: 'Fraunces', data: fonts.italic, style: 'italic', weight: 400 },
+      ],
       // Generic image is shorter-cached — if we ever change the
       // wordmark or tagline, we want crawlers to pick it up within
       // a day. Per-garden images cache forever (immutable above).
