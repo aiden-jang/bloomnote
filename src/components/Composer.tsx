@@ -62,8 +62,8 @@ function classifyError(err: unknown): string {
 
 const MESSAGE_PLACEHOLDERS = [
   "Happy birthday, Maya. You're the only person I know who keeps a tide journal AND laughs too loudly at her own jokes. You'd drive six hours to see a sunset and somehow always rope me in. So glad you exist.",
-  "Mom — 60 years. You raised three kids on your own while finishing your degree at night, taught me how to garden, and still call every Sunday. I don't say thank you enough.",
-  "Theo — the night I was applying to grad school, you stayed up making sure I ate. The pour-over was the best part. I think about that a lot. Happy birthday, friend.",
+  "Mom, 60 years. You raised three kids on your own while finishing your degree at night, taught me how to garden, and still call every Sunday. I don't say thank you enough.",
+  "Theo, the night I was applying to grad school you stayed up making sure I ate. The pour-over was the best part. I think about that a lot. Happy birthday, friend.",
 ]
 
 interface ComposerProps {
@@ -1002,8 +1002,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           register as the rest of the UI copy. */}
       <div className={styles.footer}>
         <p className={styles.disclosure}>
-          your note is sent to gemini and stored behind your share link.
-          anonymous usage stats only — no note text, no names.
+          your note goes to gemini and sits behind your share link.
+          i don't track what you wrote or who you sent it to.
         </p>
         <p className={styles.credit}>
           made by{' '}

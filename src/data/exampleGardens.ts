@@ -46,7 +46,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     flowers: [
       {
         name: 'Marigold',
-        meaning: 'for the friend who keeps laughing at her own jokes — the brightness that makes a room.',
+        meaning: 'for the friend who keeps laughing at her own jokes.',
         petalColors: ['#FFD93D', '#FFC53D', '#FFB845'],
         centerColor: '#D97706',
         stemColor: '#65A30D',
@@ -66,7 +66,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Sunflower',
-        meaning: 'someone who turns toward you the way these turn toward light.',
+        meaning: 'someone who turns toward you, like these turn toward light.',
         petalColors: ['#FFE66D', '#FFC53D', '#FFB845'],
         centerColor: '#92400E',
         stemColor: '#3D6B32',
@@ -76,7 +76,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Cosmos',
-        meaning: 'for the tide journal — for paying attention to small, repeating things.',
+        meaning: 'for the tide journal. for noticing small things that repeat.',
         petalColors: ['#F472B6', '#FB7185', '#F9A8D4'],
         centerColor: '#FBBF24',
         stemColor: '#5A8C4E',
@@ -88,7 +88,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
   },
   {
     id: 'wistful-jamie',
-    from: 'Aiden',
+    from: 'Casey',
     to: 'Jamie',
     message:
       "saw a kite on the beach today and immediately thought of that windy afternoon in half moon bay. hope LA is treating you well.",
@@ -97,7 +97,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     flowers: [
       {
         name: 'Bluebell',
-        meaning: 'the color of the sky that windy afternoon — quiet, a little distant, still beautiful.',
+        meaning: 'the color of the sky that windy afternoon.',
         petalColors: ['#94A3B8', '#A8B5C5', '#B8C5D3'],
         centerColor: '#475569',
         stemColor: '#5B7C52',
@@ -117,7 +117,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Sage Bloom',
-        meaning: 'a quieter color for the long distances between people who used to be close.',
+        meaning: 'for the long distance between people who used to be close.',
         petalColors: ['#9CA38C', '#B0B7A2', '#C2C9B7'],
         centerColor: '#5B6F4F',
         stemColor: '#3D6B32',
@@ -138,7 +138,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     flowers: [
       {
         name: 'Terracotta Rose',
-        meaning: 'grounded warmth — the kind of teaching that makes a hard thing solid.',
+        meaning: 'for teaching that makes a hard thing solid.',
         petalColors: ['#C2825D', '#D4956F', '#E0A883'],
         centerColor: '#92400E',
         stemColor: '#3D6B32',
@@ -148,7 +148,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Forest Bloom',
-        meaning: 'steady the way a mentor is steady — present, unhurried, available.',
+        meaning: 'steady the way a good mentor is steady.',
         petalColors: ['#7C9A6E', '#8DAD7D', '#9EBE8C'],
         centerColor: '#4A5E40',
         stemColor: '#3D6B32',
@@ -158,7 +158,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Cream Peony',
-        meaning: "for the click — the moment something difficult becomes simple.",
+        meaning: 'for the click. when something hard finally fits.',
         petalColors: ['#F0E4D0', '#F5EAD8', '#FAF1E3'],
         centerColor: '#92400E',
         stemColor: '#5A8C4E',
