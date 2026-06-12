@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
+import { type ExampleGarden } from '../data/exampleGardens'
 import {
   buildShareUrl,
   createShortGarden,
@@ -367,6 +369,28 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const hasDraft =
     from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0
 
+  // Example-carousel pick. Pre-fills every input so the user can hit
+  // "grow their garden" immediately and experience the bloom moment
+  // without typing. Scrolls the message textarea into focus afterward
+  // — they can edit if they want, but the path of least resistance is
+  // already prepared for them.
+  const handleExampleSelect = useCallback((g: ExampleGarden) => {
+    setFrom(g.from)
+    setRecipient(g.to)
+    setMessage(g.message)
+    setOccasion(g.occasion)
+    setMood(g.mood)
+    // Defer focus to next tick so the value-change DOM updates flush
+    // first. Some browsers refuse to set focus on an element that's
+    // mid-controlled-update.
+    setTimeout(() => {
+      messageRef.current?.focus()
+      // Move cursor to end so they can append/edit naturally.
+      const t = messageRef.current
+      if (t) t.setSelectionRange(t.value.length, t.value.length)
+    }, 0)
+  }, [])
+
   const handleClear = useCallback(() => {
     // Snapshot before wiping so undo works. If a previous undo was
     // pending, cancel its timer — the new clear takes precedence.
@@ -457,6 +481,15 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           previous={remixSeed}
           label={remixSeed.from ? `replying to ${remixSeed.from}` : 'replying'}
         />
+      )}
+
+      {/* Onboarding carousel — only shown when (a) the composer is
+          idle, (b) this is a fresh visit (no remix seed), and (c) the
+          user hasn't started typing yet. The moment any of those
+          change, the carousel hides itself so we're not occupying
+          screen space with discovery affordances during composition. */}
+      {phase === 'idle' && !remixSeed && !hasDraft && (
+        <ExampleCarousel onSelect={handleExampleSelect} />
       )}
 
       {phase === 'idle' && (
