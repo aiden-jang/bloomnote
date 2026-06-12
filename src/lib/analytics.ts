@@ -88,15 +88,23 @@ export function trackShareLinkShared(): void {
 }
 
 /**
- * User downloaded the card image. `surface` tells us whether they
- * grabbed it from the composer (sender side, fresh garden) or from
- * the recipient view (someone who received it) — meaningful split
- * because senders are more likely to post the image on social and
- * drive new acquisition, while recipient downloads are usually for
- * personal keepsake.
+ * User downloaded a garden image.
+ *
+ *   `surface` — composer (sender side, fresh garden) vs recipient
+ *     view (someone who received it). Sender downloads are more
+ *     likely to drive new acquisition (posted on social); recipient
+ *     downloads are usually personal keepsakes.
+ *
+ *   `format` — which dimension they grabbed. 'square' is the 1080×1080
+ *     iMessage-friendly one; 'story' is the 1080×1920 Instagram-Stories
+ *     vertical. Watching this split tells us which surface is actually
+ *     driving the downloads — useful product signal.
  */
-export function trackCardDownloaded(surface: 'composer' | 'recipient'): void {
-  emit('card_downloaded', { surface })
+export function trackCardDownloaded(
+  surface: 'composer' | 'recipient',
+  format: 'square' | 'story',
+): void {
+  emit('card_downloaded', { surface, format })
 }
 
 /** User clicked "make another" after a successful design. */
