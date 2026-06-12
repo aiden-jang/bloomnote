@@ -90,15 +90,15 @@ const KNOWN_OCCASIONS: Record<string, string> = {
 // the absence-of-mood case is handled by the missing key.
 const KNOWN_MOODS: Record<string, string> = {
   tender:
-    'Tone is tender — affection, intimacy, quiet warmth. Soft pastels: pale pinks, ivories, washed lavenders. Petal shapes lean round and small. Bouquet note reads like a held breath.',
+    'Tender tone. Affection, intimacy, quiet warmth. Use soft pastels (pale pinks, ivories, washed lavenders). Petal shapes should lean round and small. The bouquet note should read like a held breath.',
   playful:
-    'Tone is playful — joy, mischief, inside jokes. Brighter palettes: warm yellows, coral pinks, unexpected pops of color. Petal shapes can mix (star + round + elongated). Bouquet note has the energy of a wink.',
+    'Playful tone. Joy, mischief, inside jokes. Use brighter palettes (warm yellows, coral pinks, unexpected pops of color). Petal shapes can mix (star, round, elongated). The bouquet note should have the energy of a wink.',
   wistful:
-    'Tone is wistful — missing someone, sentimental, slightly bittersweet. Muted palettes: dusty blues, faded mauves, soft sages. Petal shapes lean elongated and bell. Bouquet note feels like the moment before remembering.',
+    'Wistful tone. Missing someone, sentimental, slightly bittersweet. Use muted palettes (dusty blues, faded mauves, soft sages). Petal shapes should lean elongated and bell. The bouquet note should feel like the moment before remembering.',
   celebratory:
-    'Tone is celebratory — joy, achievement, big energy. Vivid palettes: golden yellows, deep magentas, hot oranges. Higher petal counts, taller stems. Bouquet note has lift to it, like raising a glass.',
+    'Celebratory tone. Joy, achievement, big energy. Use vivid palettes (golden yellows, deep magentas, hot oranges). Higher petal counts, taller stems. The bouquet note should have lift to it, like raising a glass.',
   steady:
-    'Tone is steady — solidarity, quiet support, "I am here." Grounded palettes: forest greens, terracotta, deep cream. Petal shapes are round and consistent across the bouquet. Bouquet note reads like a hand on the shoulder.',
+    'Steady tone. Solidarity, quiet support, "I am here." Use grounded palettes (forest greens, terracotta, deep cream). Petal shapes should be round and consistent across the bouquet. The bouquet note should read like a hand on the shoulder.',
 }
 
 function validateBody(raw: unknown): { ok: true; body: RequestBody } | { ok: false; error: string } {
