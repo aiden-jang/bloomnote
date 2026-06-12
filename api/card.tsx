@@ -24,6 +24,7 @@
 import { ImageResponse } from '@vercel/og'
 import { Redis } from '@upstash/redis'
 import type { GardenData, FlowerSpec } from '../src/garden'
+import { getFraunces } from './_lib/fonts'
 
 export const config = { runtime: 'edge' }
 
@@ -76,7 +77,8 @@ export default async function handler(req: Request): Promise<Response> {
   return renderCard(garden, { forceDownload, filename })
 }
 
-function renderCard(g: GardenData, opts: { forceDownload: boolean; filename: string }): Response {
+async function renderCard(g: GardenData, opts: { forceDownload: boolean; filename: string }): Promise<Response> {
+  const fonts = await getFraunces()
   const flowers = (g.flowers ?? []).slice(0, 5)
   const senderLine = g.from
     ? `${g.from} grew ${g.to || 'you'} a garden`
@@ -105,7 +107,9 @@ function renderCard(g: GardenData, opts: { forceDownload: boolean; filename: str
           display: 'flex',
           flexDirection: 'column',
           padding: '80px 90px 70px',
-          fontFamily: 'serif',
+          // Fraunces by default; per-element fontStyle: 'italic' kicks
+          // in for the message + signature where applicable.
+          fontFamily: 'Fraunces',
         }}
       >
         {/* Header: wordmark + sender line. Lighter than the OG version
@@ -204,6 +208,14 @@ function renderCard(g: GardenData, opts: { forceDownload: boolean; filename: str
     {
       width: CARD_SIZE,
       height: CARD_SIZE,
+      fonts: [
+        // Two registrations under the same name. satori picks one
+        // based on the element's fontStyle — that's how the
+        // message + signature get italic glyphs while the header +
+        // wordmark get roman ones.
+        { name: 'Fraunces', data: fonts.regular, style: 'normal', weight: 400 },
+        { name: 'Fraunces', data: fonts.italic, style: 'italic', weight: 400 },
+      ],
       headers: {
         // Per-garden content is immutable, so cache forever. The
         // Content-Disposition switches between inline (preview-friendly)
