@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import FlowerSVG from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { playBloom, pulse } from '../sound'
@@ -141,8 +141,45 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed }: Props)
   // flowers arrive.
   const showGhostSprout = flowers.length === 0
 
+  // Scroll parallax. Petals lag behind content scroll — as the user
+  // moves down the recipient view to read the note, the petal layer
+  // drifts upward at ~25% of scroll speed. Implementation:
+  //
+  //   1. Passive scroll listener (no event-handler perf hit).
+  //   2. requestAnimationFrame coalesces repeated scroll events into
+  //      one DOM mutation per frame (max 60Hz).
+  //   3. Updates a single CSS custom property; the .petalLayer
+  //      consumes it via transform. One write per frame, no React
+  //      re-renders, no Layout/Paint cost beyond the GPU composite.
+  //
+  // Honors prefers-reduced-motion by skipping the listener entirely;
+  // the CSS variable stays at its 0 fallback so the petals don't move.
+  const sceneRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    let raf = 0
+    const apply = () => {
+      raf = 0
+      sceneRef.current?.style.setProperty('--scroll-y', `${window.scrollY}px`)
+    }
+    const onScroll = () => {
+      // Coalesce: ignore further events until the next frame runs.
+      if (raf) return
+      raf = requestAnimationFrame(apply)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    apply() // sync initial position (handles refresh-mid-page case)
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
   return (
-    <div className={styles.scene}>
+    <div className={styles.scene} ref={sceneRef}>
       <div className={styles.sky} />
       <div className={styles.garden}>
         {showGhostSprout && <GhostSprout />}

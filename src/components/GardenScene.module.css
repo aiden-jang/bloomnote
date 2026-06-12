@@ -120,12 +120,36 @@
 /* Drift layer. Sits over the whole scene; petals enter from above
    the visible area and fall diagonally past the flowers. The scene
    already has overflow:hidden, so petals exiting at the bottom or
-   horizontally are clipped cleanly. */
+   horizontally are clipped cleanly.
+
+   Scroll parallax: the layer translates upward at 25% of page scroll,
+   making the petals appear to lag behind content as the user scrolls
+   down. --scroll-y is set on the scene root by GardenScene.tsx via a
+   requestAnimationFrame'd scroll listener; the 0px fallback covers
+   first-render / SSR / reduced-motion users gracefully.
+
+   will-change: transform hints the browser to composite the layer on
+   the GPU so the parallax doesn't trigger paint on every scroll
+   tick. */
 .petalLayer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  /* Parallax lag: positive multiplier means the layer translates DOWN
+     as the user scrolls down — counteracting the natural upward motion
+     of the scene scrolling out of viewport. Net effect: petals appear
+     to "hold position" while content scrolls past, the way background
+     mountains do in a side-scroller. Multiplier of 0.18 is in the
+     "you feel it but can't name it" range — subtle is the goal. */
+  transform: translate3d(0, calc(var(--scroll-y, 0px) * 0.18), 0);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petalLayer {
+    transform: none;
+  }
 }
 
 /* Individual petal — an asymmetric border-radius shape gives it a
