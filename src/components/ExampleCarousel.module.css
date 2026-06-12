@@ -1,0 +1,161 @@
+/* Sits between the header and the form when the composer is idle
+   and the form is empty. Stack of three cards; each is a tappable
+   button that pre-fills the form. */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.heading {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-left: 2px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardItem {
+  display: flex;
+}
+
+/* The card is a button (full interactive target) styled like a card.
+   Resetting button defaults so we can paint over them. */
+.card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid var(--green-pale);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: var(--green-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -8px rgba(91, 111, 79, 0.25);
+}
+
+.card:active {
+  transform: translateY(0);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
+}
+
+/* Mini garden — small fixed-size preview of 3–4 flowers. Heights
+   compressed so each card stays short; FlowerSVG handles the
+   internal scaling. */
+.miniGarden {
+  flex-shrink: 0;
+  width: 100px;
+  height: 64px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.miniSlot {
+  display: flex;
+  align-items: flex-end;
+  transform: rotate(var(--slot-rotate, 0deg));
+  /* Scale the full FlowerSVG (which is sized for the main scene) down
+     to fit the card. Origin: bottom-center keeps the stem grounded. */
+  transform-origin: bottom center;
+  /* The actual scale factor — about 0.35 of full size. */
+  --mini-scale: 0.35;
+  transform: scale(var(--mini-scale)) rotate(var(--slot-rotate, 0deg));
+  width: calc(60px / var(--mini-scale));
+  height: calc(180px / var(--mini-scale));
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fromLine {
+  font-size: 13px;
+  color: var(--text-mid);
+  letter-spacing: 0.01em;
+}
+
+.fromName,
+.toName {
+  color: var(--text-deep);
+  font-weight: 500;
+}
+
+.snippet {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-mid);
+  /* Two-line clamp. Snippets are already pre-truncated, but the clamp
+     guards against unusual font sizes / zoom levels. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tryCta {
+  font-size: 11px;
+  color: var(--green-deep);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Print + reduced-motion: the carousel is a discovery affordance,
+   not part of any finished card the user would print or send. Hide
+   on print. Disable transforms for reduced-motion preference. */
+@media print {
+  .wrap { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+}
+
+/* Mobile: collapse the mini garden to be smaller so card heights
+   stay reasonable on narrow screens. */
+@media (max-width: 480px) {
+  .miniGarden {
+    width: 80px;
+    height: 56px;
+  }
+  .miniSlot {
+    --mini-scale: 0.28;
+  }
+}
