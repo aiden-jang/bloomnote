@@ -285,6 +285,13 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         // on the recipient's view as a card-like "Grown {date}" line.
         createdAt: new Date().toISOString(),
         unlockAt,
+        // Persist occasion + mood so the recipient view can shift its
+        // sky gradient (and future mood-driven UI) to match what the
+        // sender chose. Both are optional on the type, but we always
+        // include them on new records — keeps every new garden a
+        // first-class citizen of every UI surface that consumes them.
+        occasion,
+        mood,
         previous: seedForPrevious,
       }
 
@@ -422,6 +429,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         to: recipient.trim(),
         createdAt: new Date().toISOString(),
         unlockAt,
+        occasion,
+        mood,
         previous: seedForPrevious,
       }
 
@@ -614,6 +623,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       <GardenScene
         flowers={flowers}
         autoBloom
+        // Live-shift the sky as the user changes the occasion picker.
+        // The CSS transition on .sky's background cross-fades the
+        // gradient, so the user sees the atmosphere respond to their
+        // choice within the same composer view — small product win.
+        occasion={occasion}
         key={garden ? garden.flowers.map(f => f.name).join('-') : 'empty'}
       />
 

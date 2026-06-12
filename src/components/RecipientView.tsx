@@ -26,7 +26,7 @@ interface Props {
 type Phase = 'sealed' | 'blooming'
 
 export default function RecipientView({ gardenData, gardenId }: Props) {
-  const { flowers, message, from, to, bouquetNote, previous, createdAt } = gardenData
+  const { flowers, message, from, to, bouquetNote, previous, createdAt, occasion } = gardenData
   const grownOn = formatGardenDate(createdAt)
   // The page lands in 'sealed' state — the garden plot is empty, a
   // "open the garden" button sits below it. Tapping the button
@@ -86,6 +86,10 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         flowers={flowers}
         autoBloom={phase === 'blooming'}
         onAllBloomed={handleAllBloomed}
+        // The sender chose this occasion when they wrote the note;
+        // the recipient sees the matching sky tint so the
+        // atmosphere reads as deliberate, not random.
+        occasion={occasion}
         key="recipient"
       />
 

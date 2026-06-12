@@ -56,6 +56,22 @@ export interface GardenData {
    */
   unlockAt?: string
   /**
+   * The occasion (mirror of OCCASIONS values in src/lib/occasions.ts) the
+   * sender chose. Stored so the recipient view can reflect the same
+   * atmosphere — e.g. the sky gradient shifts to muted cool tones for
+   * sympathy gardens, warm peach for birthdays. Optional because
+   * pre-existing gardens (from before this field shipped) decode without
+   * it; we just fall back to the default gradient.
+   */
+  occasion?: string
+  /**
+   * The mood (mirror of MOODS values in src/lib/moods.ts) the sender
+   * chose. Currently informational only — preserved so we can light up
+   * mood-driven UI variations in the future without re-encoding old
+   * gardens. Same backwards-compat reasoning as `occasion`.
+   */
+  mood?: string
+  /**
    * The previous garden in the thread, if this is a reply. Depth-capped
    * to 1: a `previous` never has its own `previous`, so the URL stays
    * bounded even after many back-and-forths. The user sees current +

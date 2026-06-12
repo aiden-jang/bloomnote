@@ -10,7 +10,19 @@
 .sky {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #d4eeff 0%, #e8f5d0 100%);
+  /* Gradient is driven by --sky-top / --sky-bottom set on the scene
+     root (see GardenScene.tsx → SKY_GRADIENTS). Fallback values are
+     the default "just-because" stops so the gradient works even if
+     the variables are unset (e.g. unit tests, missing occasion).
+     The transition makes the gradient *animate* when the user
+     switches occasions in the composer — pure visual delight, almost
+     free since the cross-fade is GPU-composited. */
+  background: linear-gradient(
+    180deg,
+    var(--sky-top, #d4eeff) 0%,
+    var(--sky-bottom, #e8f5d0) 100%
+  );
+  transition: background 0.6s ease;
 }
 
 .garden {

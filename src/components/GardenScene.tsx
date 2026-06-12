@@ -1,8 +1,43 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import FlowerSVG from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { playBloom, pulse } from '../sound'
 import styles from './GardenScene.module.css'
+
+/**
+ * Sky gradient palette by occasion. Each entry is two soft pastel
+ * stops (top → bottom) that subtly shift the scene's atmosphere
+ * without overpowering the flowers themselves. The default ("just-
+ * because") and the fallback for unknown values is the original
+ * blue → yellow-green gradient.
+ *
+ * Constraint: stops must stay light enough that black-on-light text
+ * (the recipient view's message, the legend) remains readable
+ * against any flower colors that bleed into the same space.
+ * Saturation was deliberately dialed down — premium products use
+ * mood-shift, not paint chips.
+ */
+const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
+  // Default — clear morning sky into pale meadow grass.
+  'just-because': { top: '#d4eeff', bottom: '#e8f5d0' },
+  // Warm peach into cream — celebratory without screaming.
+  birthday:       { top: '#fde6cf', bottom: '#fff1d8' },
+  // Soft sage greens — grounded, grateful.
+  'thank-you':    { top: '#e2efd9', bottom: '#f0f5e3' },
+  // Pink dusk into champagne — romantic.
+  anniversary:    { top: '#f6e0e8', bottom: '#f9efe0' },
+  // Golden warm — achievement, energy.
+  congrats:       { top: '#fde2c0', bottom: '#ffeac8' },
+  // Pale healing greens — gentle, restorative.
+  'get-well':     { top: '#d4ecdd', bottom: '#e8f4d8' },
+  // Cool muted overcast — quiet space for grief.
+  sympathy:       { top: '#d8dde6', bottom: '#e5e9ef' },
+}
+
+function gradientFor(occasion?: string): { top: string; bottom: string } {
+  if (occasion && occasion in SKY_GRADIENTS) return SKY_GRADIENTS[occasion]
+  return SKY_GRADIENTS['just-because']
+}
 
 interface Placement {
   spec: FlowerSpec
@@ -14,6 +49,12 @@ interface Props {
   flowers: FlowerSpec[]
   autoBloom: boolean
   onAllBloomed?: () => void
+  /**
+   * Drives the sky gradient. Defaults to "just-because" when omitted
+   * or unknown — pre-existing gardens without an `occasion` field
+   * fall through to that default.
+   */
+  occasion?: string
 }
 
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
@@ -83,7 +124,15 @@ function GhostSprout() {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion }: Props) {
+  // Resolve the gradient once per render; the cost is a Record lookup,
+  // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
+  // get consumed by the CSS module on the .sky element.
+  const sky = gradientFor(occasion)
+  const sceneStyle: CSSProperties = {
+    ['--sky-top' as string]: sky.top,
+    ['--sky-bottom' as string]: sky.bottom,
+  }
   const [bloomedCount, setBloomedCount] = useState(0)
   const placed = placeFlowers(flowers)
 
@@ -179,7 +228,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed }: Props)
   }, [])
 
   return (
-    <div className={styles.scene} ref={sceneRef}>
+    <div className={styles.scene} ref={sceneRef} style={sceneStyle}>
       <div className={styles.sky} />
       <div className={styles.garden}>
         {showGhostSprout && <GhostSprout />}
