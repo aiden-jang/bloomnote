@@ -777,6 +777,59 @@
   color: var(--text-deep);
 }
 
+/* Re-roll button. Same tertiary visual weight as resetBtn /
+   downloadBtn — these are all "after the bloom" iteration actions,
+   not the primary share/copy CTAs. */
+.rerollBtn {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 22px;
+  border: 1.5px solid var(--green-pale);
+  background: white;
+  color: var(--text-mid);
+  font-size: 14px;
+  transition: all 0.15s;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rerollBtn:hover:not(:disabled) {
+  border-color: var(--green-light);
+  background: #f5fbf0;
+  color: var(--text-deep);
+}
+
+.rerollBtn:disabled,
+.shareBtn:disabled,
+.copyBtnSecondary:disabled,
+.copyBtn:disabled,
+.resetBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Regeneration status — replaces the URL pill while a re-roll is in
+   flight. Same height as the URL pill so the share card doesn't
+   reflow. */
+.urlStatus {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-mid);
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+/* Re-roll failure surface. Sits below the share title, above the
+   URL pill. Matches .error visual weight but lives in the share
+   card so the user sees it where the failed action lives. */
+.shareError {
+  font-size: 13px;
+  color: var(--error, #c44e4e);
+  letter-spacing: 0.01em;
+  margin: 4px 0 -2px;
+}
+
 /* Print: hide everything that's screen-only (form inputs, the
    designing spinner, the share card with its URL and buttons, the
    helper hints). What stays visible — when printed from the designed

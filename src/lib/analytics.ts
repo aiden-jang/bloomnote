@@ -104,6 +104,17 @@ export function trackMakeAnother(): void {
   emit('make_another')
 }
 
+/**
+ * User clicked "different flowers" — regenerate the garden with the
+ * same inputs. Useful signal: a spike here means the AI's first-shot
+ * quality on certain inputs (occasion, mood combos) is unsatisfying.
+ * The `attempt` counter tells us how many re-rolls happened in one
+ * session before the user accepted a result.
+ */
+export function trackGardenRerolled(props: { attempt: number; durationMs: number }): void {
+  emit('garden_rerolled', props)
+}
+
 // --- Recipient side ------------------------------------------------------
 
 /**
