@@ -26,11 +26,18 @@
 /* The scroll container. Hides its scrollbar visually but stays
    keyboard- and pointer-scrollable. `scroll-snap-type: x mandatory`
    makes each card snap to the start edge when you flick through —
-   matches the feel of an iOS carousel. */
+   matches the feel of an iOS carousel.
+
+   Vertical padding is what lets the cards' :hover lift + drop-shadow
+   render fully. CSS forces `overflow-y` to clip whenever `overflow-x`
+   is set to anything but `visible`, so the only way to "let the card
+   breathe upward" is to make the container itself taller than the
+   card row by the padding amount. Top 6px covers the 2px hover-up;
+   bottom 16px covers the box-shadow's downward bloom. */
 .list {
   list-style: none;
   margin: 0;
-  padding: 0 2px 4px;
+  padding: 6px 2px 16px;
   display: flex;
   flex-direction: row;
   gap: 10px;
