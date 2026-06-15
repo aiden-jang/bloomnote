@@ -44,13 +44,17 @@ import styles from './Composer.module.css'
 type Phase = 'idle' | 'designing' | 'designed'
 
 // Snapshot shape used by the clear-draft undo toast. Session-local
-// only — the form deliberately doesn't persist across refresh.
+// only — the form deliberately doesn't persist across refresh. Captures
+// the schedule state too, so clearing collapses the picker and undo can
+// bring it back exactly as it was.
 interface Draft {
   from: string
   recipient: string
   message: string
   occasion: string
   mood: string
+  scheduleOpen: boolean
+  unlockLocal: string
 }
 
 /**
@@ -271,10 +275,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     return null
   })()
 
+  // With the schedule picker open, a date+time is required before we'll
+  // let them submit — an empty `unlockLocal` means "opened the picker but
+  // hasn't chosen yet", which would otherwise silently send unscheduled.
+  // (scheduleError stays null while empty so we don't flash an error the
+  // instant they expand it; this gate handles the disabled button.)
   const canSubmit =
     recipient.trim().length >= 1 &&
     message.trim().length >= 4 &&
-    scheduleError === null
+    scheduleError === null &&
+    (!scheduleOpen || unlockLocal !== '')
 
   const handleDesign = useCallback(async () => {
     if (!canSubmit) return
@@ -612,7 +622,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     // pending, cancel its timer — the new clear takes precedence.
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
 
-    const snapshot: Draft = { from, recipient, message, occasion, mood }
+    const snapshot: Draft = { from, recipient, message, occasion, mood, scheduleOpen, unlockLocal }
 
     // Clearing is a quick local action; no view transition needed.
     // React batches these updates automatically in an event handler.
@@ -621,13 +631,18 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setMessage('')
     setOccasion(DEFAULT_OCCASION)
     setMood(DEFAULT_MOOD)
+    // Collapse the schedule picker back to "send now" — a cleared form
+    // should look like a fresh one, not leave the time-capsule UI open
+    // with a stale (or empty) pick.
+    setScheduleOpen(false)
+    setUnlockLocal('')
     setUndoDraft(snapshot)
 
     undoTimerRef.current = setTimeout(() => {
       setUndoDraft(null)
       undoTimerRef.current = null
     }, 8000)
-  }, [from, recipient, message, occasion, mood])
+  }, [from, recipient, message, occasion, mood, scheduleOpen, unlockLocal])
 
   const handleUndoClear = useCallback(() => {
     if (!undoDraft) return
@@ -640,6 +655,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setMessage(undoDraft.message)
     setOccasion(undoDraft.occasion || DEFAULT_OCCASION)
     setMood(undoDraft.mood || DEFAULT_MOOD)
+    setScheduleOpen(undoDraft.scheduleOpen)
+    setUnlockLocal(undoDraft.unlockLocal)
     setUndoDraft(null)
   }, [undoDraft])
 
@@ -830,6 +847,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               {remixSeed ? 'grow one back' : 'grow their garden'}
             </button>
           </div>
+
+          {/* Tell the user why the button is dead. Empty name/message are
+              self-evident from the fields; the non-obvious one is an open
+              schedule picker with nothing chosen — the form looks complete
+              but the button won't fire. (A past-time pick is covered by
+              the picker's own inline error, so skip the hint then.) */}
+          {scheduleOpen && unlockLocal === '' && !scheduleError && (
+            <p className={styles.actionHint} aria-live="polite">
+              pick a date &amp; time above to schedule, or hit cancel to send now
+            </p>
+          )}
 
           {remixSeed && (
             <p className={styles.escape}>

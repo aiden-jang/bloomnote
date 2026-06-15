@@ -499,6 +499,17 @@
   cursor: not-allowed;
 }
 
+/* Inline hint explaining a disabled submit button. Sits just under the
+   actions row, quiet enough not to read as an error (which is reserved
+   for an actually-wrong pick). */
+.actionHint {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: center;
+  letter-spacing: 0.01em;
+  margin-top: -2px;
+}
+
 .escape {
   font-size: 12px;
   color: var(--text-light);
@@ -1180,6 +1191,7 @@
   .section,
   .helperRow,
   .actions,
+  .actionHint,
   .designingPanel,
   .escape,
   .error,
