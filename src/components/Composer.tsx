@@ -887,24 +887,25 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </>
       )}
 
-      {/* Footer block — privacy disclosure + author credit. The
-          privacy line is the honest thing to say given that (a) the
-          user's note is processed by a third-party model and (b) the
-          full note ends up inside the share URL, where anyone holding
-          the link can read it. Direct, lowercase, no legalese — same
-          register as the rest of the UI copy. */}
-      <div className={styles.footer}>
-        <p className={styles.disclosure}>
-          your note goes to gemini and sits behind your share link.
-          i don't track what you wrote or who you sent it to.
-        </p>
+      {/* Footer. One quiet line by default; the privacy detail expands
+          on tap. <details>/<summary> is keyboard- and screen-reader-
+          friendly and free of JS. */}
+      <footer className={styles.footer}>
         <p className={styles.credit}>
           made by{' '}
           <a href="https://www.aidenjang.com" target="_blank" rel="noreferrer">
             aiden jang
           </a>
+          {' · '}
+          <details className={styles.privacyDetails}>
+            <summary className={styles.privacySummary}>privacy</summary>
+            <span className={styles.privacyBody}>
+              your note goes to gemini and sits behind your share link.
+              i don't track what you wrote or who you sent it to.
+            </span>
+          </details>
         </p>
-      </div>
+      </footer>
     </div>
   )
 }

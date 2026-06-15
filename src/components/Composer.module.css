@@ -376,22 +376,10 @@
   margin-top: 28px;
   padding-top: 18px;
   border-top: 1px solid var(--green-pale);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
-/* Privacy disclosure. Even quieter than the credit because it's
-   functional info, not branding. */
-.disclosure {
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-light);
-  letter-spacing: 0.02em;
-  line-height: 1.5;
-}
-
-/* Author credit. Lowercase to match the rest of the copy. */
+/* Single quiet line: "made by aiden jang · privacy".
+   The privacy <details> expands inline on tap. */
 .credit {
   text-align: center;
   font-size: 11px;
@@ -407,6 +395,44 @@
 
 .credit a:hover {
   color: var(--green-mid);
+}
+
+/* Inline <details> styled to fit on the same line as the credit.
+   Default browser styling for <details> is a block element with a
+   ▶/▼ triangle; we reset both. */
+.privacyDetails {
+  display: inline;
+}
+
+.privacySummary {
+  display: inline;
+  cursor: pointer;
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  /* Hide the default disclosure triangle (Chrome / Firefox / Safari). */
+  list-style: none;
+}
+
+.privacySummary::-webkit-details-marker {
+  display: none;
+}
+
+.privacySummary:hover {
+  color: var(--green-mid);
+}
+
+/* The expanded body renders below the credit line as a small block.
+   Slightly indented so it doesn't visually compete with the credit. */
+.privacyBody {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-light);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  max-width: 360px;
+  margin-inline: auto;
 }
 
 /* Mobile responsive — primary breakpoint at 480px (between large
