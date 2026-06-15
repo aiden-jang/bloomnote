@@ -74,19 +74,27 @@ export default function ShareCard({
           <span className={styles.urlText}>{shareUrl}</span>
         )}
       </div>
+      {/* Three rows of progressively quieter actions:
+            primary   — share / copy (the thing the user came here to do)
+            secondary — different flowers (iterate before committing)
+            tertiary  — save as image / save as story (text links)
+            quiet     — make another (destructive; bottom, alone) */}
       <div className={styles.shareActions}>
-        {canShare && (
-          <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling}>
-            share
+        <div className={styles.shareActionsPrimary}>
+          {canShare && (
+            <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling}>
+              share
+            </button>
+          )}
+          <button
+            className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
+            onClick={onCopy}
+            disabled={isRerolling}
+          >
+            {copied ? 'copied' : 'copy link'}
           </button>
-        )}
-        <button
-          className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
-          onClick={onCopy}
-          disabled={isRerolling}
-        >
-          {copied ? 'copied' : 'copy link'}
-        </button>
+        </div>
+
         <button
           type="button"
           className={styles.rerollBtn}
@@ -94,31 +102,35 @@ export default function ShareCard({
           disabled={isRerolling}
           aria-busy={isRerolling}
         >
-          different flowers
+          ⟳ different flowers
         </button>
-        {/* Anchor (not onClick) so right-click "save link as" works and
-            so screenreaders announce these as the file-producing links
-            they are. */}
+
+        {/* Save-as links — text-link weight, not button weight. Save
+            options are tertiary; making them look like primary actions
+            would compete with share. Anchors (not onClick) so right-
+            click "save link as" works. */}
         {gardenId && !isRerolling && (
-          <>
+          <p className={styles.shareDownloads}>
             <a
               href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
               download
-              className={styles.downloadBtn}
+              className={styles.shareDownloadLink}
               onClick={() => trackCardDownloaded('composer', 'square')}
             >
               save as image
             </a>
+            <span className={styles.shareDownloadSep} aria-hidden>·</span>
             <a
               href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
               download
-              className={styles.downloadBtn}
+              className={styles.shareDownloadLink}
               onClick={() => trackCardDownloaded('composer', 'story')}
             >
               save as story
             </a>
-          </>
+          </p>
         )}
+
         <button
           className={styles.resetBtn}
           onClick={onStartOver}

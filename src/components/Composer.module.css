@@ -107,6 +107,20 @@
   white-space: nowrap;
   flex-shrink: 0;
   padding-top: 1px;
+  transition: color 0.25s ease;
+}
+
+/* Length tiers — quietly teach the user that longer notes get
+   better gardens, without saying so in copy. Color shift only;
+   no badges, no labels. */
+.charCountThin {
+  color: var(--text-light);
+}
+.charCountGood {
+  color: var(--green-mid);
+}
+.charCountNear {
+  color: var(--error, #c44e4e);
 }
 
 .input {
@@ -675,18 +689,49 @@
   word-break: break-all;
 }
 
-/* Grid with auto-fit replaces the old single-row flex. Reason: the
-   action set grew to 5–6 buttons (share, copy, different flowers,
-   save as image, save as story, make another) and flex with
-   `flex: 1` was shrinking buttons below their content width — labels
-   like "save as image" would clip or push the row past the share
-   card's right edge.
-   `minmax(130px, 1fr)` settles into 2 columns on phones, 3 on tablets,
-   4–5 on desktop. Buttons stay readable, no overflow at any width. */
+/* Stacked rows by visual weight:
+     1. Primary row    (share + copy)         — green buttons, side-by-side
+     2. Secondary      (different flowers)    — outlined button, full width
+     3. Tertiary       (save as ...)          — text links separated by ·
+     4. Quiet          (make another)         — outlined button, full width
+   Replaces the earlier auto-fit grid that crammed 5–6 buttons into one
+   visual layer. Hierarchy via row position + button style, not size. */
 .shareActions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+}
+
+.shareActionsPrimary {
+  display: flex;
+  gap: 10px;
+}
+
+.shareActionsPrimary > button {
+  flex: 1;
+}
+
+.shareDownloads {
+  margin: 2px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-light);
+  letter-spacing: 0.01em;
+}
+
+.shareDownloadLink {
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.shareDownloadLink:hover {
+  color: var(--green-deep);
+}
+
+.shareDownloadSep {
+  margin: 0 8px;
+  opacity: 0.5;
 }
 
 /* Default Copy — primary action when there's no Share button (desktop
