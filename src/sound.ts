@@ -1,6 +1,56 @@
 let ctx: AudioContext | null = null
 let unlockInstalled = false
 
+// --- Global mute -------------------------------------------------------
+//
+// A single source of truth for "should this device make noise." Every
+// audible play function checks `muted` and bails early, so muting is
+// enforced in one place rather than at each call site. Persisted to
+// localStorage so the choice survives reloads and carries across the
+// composer → recipient views.
+//
+// Reads/writes are guarded: localStorage throws in private-mode Safari
+// and is absent under SSR. A failure just means the preference doesn't
+// persist — sound still works, it's never load-bearing.
+
+const MUTE_KEY = 'blossom:muted'
+
+function readMuted(): boolean {
+	if (typeof window === 'undefined') return false
+	try {
+		return window.localStorage.getItem(MUTE_KEY) === '1'
+	} catch {
+		return false
+	}
+}
+
+let muted = readMuted()
+
+/** True when sound is currently allowed to play. */
+export function isSoundEnabled(): boolean {
+	return !muted
+}
+
+/** Set the on/off state and persist it. */
+export function setSoundEnabled(enabled: boolean): void {
+	muted = !enabled
+	if (typeof window === 'undefined') return
+	try {
+		window.localStorage.setItem(MUTE_KEY, muted ? '1' : '0')
+	} catch {
+		// Storage disabled — preference won't persist; not fatal.
+	}
+}
+
+/** Flip the state. Returns the new enabled value so callers can update
+ *  their UI without a second read. */
+export function toggleSound(): boolean {
+	// `muted` is the current state; passing it to setSoundEnabled flips
+	// us (enable when currently muted, disable when currently on).
+	setSoundEnabled(muted)
+	return !muted
+}
+
 function getCtx(): AudioContext {
 	if (!ctx) ctx = new AudioContext()
 	return ctx
@@ -68,6 +118,7 @@ function playTone({ freq = 440, type = 'sine', duration = 0.4, gain = 0.15, dela
 }
 
 export function playBloom(index: number = 0): void {
+	if (muted) return
 	const notes = [523, 659, 784, 880, 1047, 1175]
 	const freq = notes[index % notes.length]
 	playTone({ freq, type: 'sine', duration: 0.6, gain: 0.12 })
@@ -84,6 +135,10 @@ export function playBloom(index: number = 0): void {
 // shouldn't break the experience, it just means the user is on
 // hardware that doesn't support it.
 export function pulse(): void {
+	// The haptic is the bloom chime's percussive accent, so it follows
+	// the same mute switch — a buzz alongside a silenced bloom would
+	// feel inconsistent.
+	if (muted) return
 	if (typeof navigator === 'undefined') return
 	if (typeof navigator.vibrate !== 'function') return
 	try {
@@ -96,6 +151,7 @@ export function pulse(): void {
 }
 
 export function playChime(): void {
+	if (muted) return
 	const chord = [523, 659, 784]
 	chord.forEach((freq, i) => {
 	playTone({ freq, type: 'sine', duration: 1.2, gain: 0.08, delay: i * 0.08 })
@@ -103,6 +159,7 @@ export function playChime(): void {
 }
 
 export function playSuccess(): void {
+	if (muted) return
 	const melody = [784, 880, 1047]
 	melody.forEach((freq, i) => {
 	playTone({ freq, type: 'sine', duration: 0.5, gain: 0.1, delay: i * 0.15 })
@@ -110,6 +167,7 @@ export function playSuccess(): void {
 }
 
 export function playWhoosh(): void {
+	if (muted) return
 	const ac = getCtx()
 	const bufferSize = ac.sampleRate * 0.3
 	const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate)
