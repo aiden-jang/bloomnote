@@ -184,6 +184,28 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     }
   }, [remixSeed])
 
+  // Mobile keyboard handling. On iOS Safari, focusing the textarea
+  // slides the virtual keyboard up — and frequently covers the
+  // bottom half of the field the user just tapped. The browser's
+  // own scroll-on-focus heuristic isn't reliable across versions.
+  //
+  // Fix: on focus, schedule a scrollIntoView(center) 300ms later —
+  // enough for the keyboard's slide animation to complete so the
+  // browser knows the new viewport height. The behavior is benign
+  // on desktop (block: 'center' is a no-op when the element is
+  // already in view).
+  useEffect(() => {
+    const ta = messageRef.current
+    if (!ta) return
+    const onFocus = () => {
+      window.setTimeout(() => {
+        ta.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }, 300)
+    }
+    ta.addEventListener('focus', onFocus)
+    return () => ta.removeEventListener('focus', onFocus)
+  }, [])
+
   // Analytics: composer opened. Fired once per mount so we get an
   // accurate "fresh vs remix landing" split. StrictMode double-mounts
   // in dev would inflate this by 2x — that's tolerable noise because
