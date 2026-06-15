@@ -27,21 +27,9 @@
 
 import { Redis } from '@upstash/redis'
 import { getClientIp, rateLimit } from './_lib/rateLimit'
+import { getRedis } from './_lib/redis'
 
 export const config = { runtime: 'edge' }
-
-// Lazily initialized so we don't construct a Redis client on cold
-// start if the env vars aren't set — that would let "client cannot
-// be initialized" errors mask the real "missing creds" diagnosis.
-let _redis: Redis | null = null
-function getRedis(): Redis | null {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 // 6 chars of base62 = 62^6 ≈ 56 billion possible IDs. For a portfolio
 // project that might see a few thousand gardens lifetime, the

@@ -1,26 +1,8 @@
-// Edge middleware that personalizes the Open Graph meta tags for
-// shared-garden URLs.
-//
-// The problem this solves: Blossom is a single-page app. The static
-// `index.html` has a generic `<meta property="og:image">` baked in,
-// and that's what every URL serves — including `/g/abc123`. So when
-// someone shares a garden in iMessage, the preview shows the generic
-// Blossom image instead of the specific garden the recipient is about
-// to open. Bots like the iMessage scraper don't run our React app;
-// they only see the HTML they're served.
-//
-// The fix: intercept every `/g/<id>` request *before* the static HTML
-// is served, fetch the HTML, swap in the per-garden OG tags, and
-// return the modified document. The /api/og endpoint generates the
-// actual image; this middleware just rewrites the <head> to point at
-// it.
-//
-// Edge middleware runs at Vercel's edge POPs, so adding this doesn't
-// slow down delivery — the rewrite happens in the same network hop
-// that already serves the HTML.
+// Edge middleware that rewrites `<meta og:image>` on /g/<id> responses
+// so link-preview crawlers see the per-garden OG image from /api/og.
+// Without this, every shared garden would show the generic index.html
+// preview (crawlers don't run our React app — they only see the HTML).
 
-// Vercel Edge Middleware uses Web standard Request/Response types
-// (not Next.js's NextRequest wrapper, since this is a Vite project).
 export const config = {
   // Only run on /g/<...>. CSS, JS, /api/*, and the rest of the site
   // skip this middleware entirely. Saves an edge invocation on every

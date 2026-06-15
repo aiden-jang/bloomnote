@@ -1,42 +1,14 @@
-// Downloadable card image — a 1080×1080 PNG of a specific garden,
-// designed to live well in iMessage, Instagram, screenshots, or as a
-// printed square card.
-//
-// Separate from /api/og because the constraints are different:
-//
-//   /api/og   → 1200×630, for link-preview cards. Wide aspect. No
-//                 message text (the preview is a tease, not the
-//                 payload). Heavy header, generous breathing room.
-//
-//   /api/card → 1080×1080, for downloaded sharing. Square. Includes
-//                 the sender's message + signature + the flowers + a
-//                 quiet wordmark. This is "the thing you screenshot
-//                 and post," so it has to stand alone visually.
-//
-// Why a server endpoint instead of html2canvas on the client:
-//   1. Identical pixel output across browsers (no mobile Safari
-//      quirks rendering CSS gradients differently from desktop).
-//   2. No font-loading race — @vercel/og embeds the rasterized
-//      glyphs from the request, so the PNG never has fallback fonts.
-//   3. Doesn't ship 30+ KB of html2canvas to the client bundle.
-//   4. Same infrastructure as /api/og.tsx, so the cost is marginal.
+// Downloadable 1080×1080 garden card. Triggered by "save as image"
+// in the UI; rendered server-side so pixel output is identical across
+// browsers and there's no font-load race on the client.
 
 import { ImageResponse } from '@vercel/og'
-import { Redis } from '@upstash/redis'
-import type { GardenData, FlowerSpec } from '../src/garden'
+import type { GardenData } from '../src/garden'
 import { getFraunces } from './_lib/fonts'
+import { getRedis } from './_lib/redis'
+import FlowerSilhouette from './_lib/silhouette'
 
 export const config = { runtime: 'edge' }
-
-let _redis: Redis | null = null
-function getRedis(): Redis | null {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 // 1080×1080 is the de-facto standard for "square share image" —
 // Instagram feed (post-2017), iMessage chat bubbles, Discord embeds,
@@ -136,7 +108,7 @@ async function renderCard(g: GardenData, opts: { forceDownload: boolean; filenam
           }}
         >
           {flowers.map((f, i) => (
-            <FlowerSilhouette key={i} flower={f} />
+            <FlowerSilhouette key={i} flower={f} size={110} stemWidth={5} maxStemHeight={160} />
           ))}
         </div>
 
@@ -229,55 +201,6 @@ async function renderCard(g: GardenData, opts: { forceDownload: boolean; filenam
   )
 }
 
-/**
- * Inline SVG flower silhouette — shared shape with /api/og.tsx but
- * scaled slightly smaller for the square card layout. Could be
- * extracted to a shared module, but duplicating ~30 lines is fine
- * given the two endpoints have meaningfully different layouts and
- * may diverge further.
- */
-function FlowerSilhouette({ flower }: { flower: FlowerSpec }) {
-  const [c1, c2] = flower.petalColors
-  const petalCount = flower.petalCount || 8
-  const center = { x: 60, y: 60 }
-  const stemHeight = Math.min(flower.stemHeight || 90, 160)
-
-  const petals = []
-  for (let i = 0; i < petalCount; i++) {
-    const angle = (i / petalCount) * Math.PI * 2
-    const px = center.x + Math.cos(angle) * 20
-    const py = center.y + Math.sin(angle) * 20
-    petals.push(
-      <ellipse
-        key={i}
-        cx={px}
-        cy={py}
-        rx={16}
-        ry={24}
-        transform={`rotate(${(angle * 180) / Math.PI + 90} ${px} ${py})`}
-        fill={i % 2 === 0 ? c1 : c2}
-      />,
-    )
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width="110" height="110" viewBox="0 0 120 120">
-        {petals}
-        <circle cx={center.x} cy={center.y} r={12} fill={flower.centerColor} />
-      </svg>
-      <div
-        style={{
-          width: '5px',
-          height: `${stemHeight}px`,
-          background: flower.stemColor,
-          borderRadius: '3px',
-          marginTop: '-8px',
-        }}
-      />
-    </div>
-  )
-}
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s

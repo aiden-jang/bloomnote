@@ -1,43 +1,15 @@
-// Personalized Open Graph image generator.
-//
-// When someone shares `blossom.aidenjang.com/g/abc123`, the link preview
-// in iMessage/WhatsApp/Slack/Discord/etc. currently shows a generic
-// Blossom OG image — same for every garden. That's a missed moment.
-// The recipient is about to open *a specific garden*; the preview should
-// reflect that.
-//
-// This endpoint renders a per-garden PNG: the actual flower silhouettes,
-// the sender's name, the recipient's name, the wordmark. Crawlers (the
-// scraper bots that the messaging apps use to fetch link previews) hit
-// /api/og?id=<short_id>, get back a 1200×630 PNG, and use it for the
-// preview card. Same Cache-Control as the garden record (immutable),
-// so each unique garden image gets cached at every CDN edge after the
-// first request.
-//
-// This file pairs with middleware.ts, which intercepts /g/<id> requests
-// and injects the appropriate <meta property="og:image"> tag pointing
-// at this endpoint. Without the middleware, the static index.html
-// would still serve the generic OG meta tag — crawlers don't run our
-// React app, so they'd never see route-specific tags otherwise.
+// Per-garden Open Graph image. 1200×630 PNG rendered on demand and
+// served via middleware.ts injecting `<meta og:image>` into /g/<id>
+// responses, so link previews in iMessage/Slack/etc. show the actual
+// shared garden instead of a generic placeholder.
 
 import { ImageResponse } from '@vercel/og'
-import { Redis } from '@upstash/redis'
-import type { GardenData, FlowerSpec } from '../src/garden'
+import type { GardenData } from '../src/garden'
 import { getFraunces } from './_lib/fonts'
+import { getRedis } from './_lib/redis'
+import FlowerSilhouette from './_lib/silhouette'
 
 export const config = { runtime: 'edge' }
-
-// Same lazy init pattern as api/garden.ts so a missing env doesn't
-// crash on cold start.
-let _redis: Redis | null = null
-function getRedis(): Redis | null {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 // OG image dimensions are an industry standard. 1200×630 = 1.91:1
 // aspect, which is what Facebook, Twitter, iMessage, and Slack all
@@ -204,58 +176,6 @@ async function renderGeneric(): Promise<Response> {
       // a day. Per-garden images cache forever (immutable above).
       headers: { 'Cache-Control': 'public, max-age=86400' },
     },
-  )
-}
-
-/**
- * Inline SVG flower for OG rendering. Deliberately simpler than the
- * real FlowerSVG — @vercel/og's JSX subset doesn't support our full
- * animation/CSS-module pipeline. Just colored shapes that capture
- * the palette + general shape of the actual flower.
- */
-function FlowerSilhouette({ flower }: { flower: FlowerSpec }) {
-  const [c1, c2] = flower.petalColors
-  const petalCount = flower.petalCount || 8
-  const radius = 36
-  const center = { x: 60, y: 60 }
-  const stemHeight = Math.min(flower.stemHeight || 90, 180)
-
-  // Build petals as a ring of small ellipses around the center.
-  // Stays performant at this image size; no per-flower SVG filters.
-  const petals = []
-  for (let i = 0; i < petalCount; i++) {
-    const angle = (i / petalCount) * Math.PI * 2
-    const px = center.x + Math.cos(angle) * radius * 0.55
-    const py = center.y + Math.sin(angle) * radius * 0.55
-    petals.push(
-      <ellipse
-        key={i}
-        cx={px}
-        cy={py}
-        rx={18}
-        ry={26}
-        transform={`rotate(${(angle * 180) / Math.PI + 90} ${px} ${py})`}
-        fill={i % 2 === 0 ? c1 : c2}
-      />,
-    )
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width="120" height="120" viewBox="0 0 120 120">
-        {petals}
-        <circle cx={center.x} cy={center.y} r={14} fill={flower.centerColor} />
-      </svg>
-      <div
-        style={{
-          width: '6px',
-          height: `${stemHeight}px`,
-          background: flower.stemColor,
-          borderRadius: '3px',
-          marginTop: '-10px',
-        }}
-      />
-    </div>
   )
 }
 

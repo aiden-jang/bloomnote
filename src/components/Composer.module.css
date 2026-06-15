@@ -692,7 +692,6 @@
 /* Default Copy — primary action when there's no Share button (desktop
    without Web Share API support). */
 .copyBtn {
-  flex: 2;
   padding: 11px 20px;
   border-radius: 22px;
   background: var(--green-mid);
@@ -710,7 +709,6 @@
 /* Share button — primary action on mobile / Safari, where native
    share is the more natural mobile flow than copy-then-paste. */
 .shareBtn {
-  flex: 2;
   padding: 11px 20px;
   border-radius: 22px;
   background: var(--green-mid);
@@ -728,7 +726,6 @@
 /* Copy demoted to secondary when Share is the primary action. Same
    shape, lighter visual weight so it doesn't compete. */
 .copyBtnSecondary {
-  flex: 1;
   padding: 11px 16px;
   border-radius: 22px;
   background: white;
@@ -744,7 +741,6 @@
 }
 
 .resetBtn {
-  flex: 1;
   padding: 11px 16px;
   border-radius: 22px;
   border: 1.5px solid var(--green-pale);
@@ -763,7 +759,6 @@
    right-click → "save link as" also works. Matches the visual weight
    of resetBtn (tertiary action), not the primary share/copy buttons. */
 .downloadBtn {
-  flex: 1;
   padding: 11px 16px;
   border-radius: 22px;
   border: 1.5px solid var(--green-pale);
@@ -790,7 +785,6 @@
    downloadBtn — these are all "after the bloom" iteration actions,
    not the primary share/copy CTAs. */
 .rerollBtn {
-  flex: 1;
   padding: 11px 16px;
   border-radius: 22px;
   border: 1.5px solid var(--green-pale);
