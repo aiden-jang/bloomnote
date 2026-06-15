@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import Composer from './components/Composer'
+import MyGardens from './components/MyGardens'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import { fetchGarden, isShortId, type GardenData } from './garden'
 
 /**
- * Three route shapes:
+ * Route shapes:
  *   /g/<short_id>  → recipient view (KV lookup)
  *   /r/<short_id>  → composer in remix mode (KV lookup, seed pre-filled)
+ *   /mine          → on-device archive of gardens you've sent
  *   anything else  → composer (fresh)
  *
  * Only short IDs (6 chars from a curated base62 alphabet) are valid
@@ -23,17 +25,22 @@ import { fetchGarden, isShortId, type GardenData } from './garden'
 type Route =
   | { kind: 'composer'; seed?: GardenData }                       // fresh OR resolved remix seed
   | { kind: 'recipient'; garden: GardenData; gardenId: string }   // resolved share
+  | { kind: 'mine' }                                              // on-device archive
   | { kind: 'loading' }                                           // short ID, fetch pending
   | { kind: 'notfound' }                                          // 404 (bad ID, deleted, malformed)
 
 interface ParsedRoute {
-  view: 'composer' | 'recipient'
+  view: 'composer' | 'recipient' | 'mine'
   short?: string  // 6-char base62 ID, ready for KV lookup
   malformed?: boolean
 }
 
 function parseRoute(): ParsedRoute {
   const path = window.location.pathname
+
+  // /mine is a static, client-only route — no server lookup, reads
+  // straight from localStorage in the view. Trailing slash tolerated.
+  if (path === '/mine' || path === '/mine/') return { view: 'mine' }
 
   const sharedMatch = path.match(/^\/g\/(.+)$/)
   if (sharedMatch) {
@@ -59,6 +66,7 @@ export default function App() {
   const parsed = useMemo(parseRoute, [])
 
   const [route, setRoute] = useState<Route>(() => {
+    if (parsed.view === 'mine') return { kind: 'mine' }
     if (parsed.view === 'recipient') {
       if (parsed.malformed) return { kind: 'notfound' }
       return { kind: 'loading' }
@@ -95,6 +103,7 @@ export default function App() {
     return () => ctrl.abort()
   }, [parsed])
 
+  if (route.kind === 'mine') return <MyGardens />
   if (route.kind === 'loading') return <LoadingShell />
   if (route.kind === 'notfound') return <NotFoundShell />
   if (route.kind === 'recipient') {
