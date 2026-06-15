@@ -24,6 +24,12 @@ import {
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { formatGardenDate } from '../lib/formatDate'
+import {
+  countSentGardens,
+  recordSentGarden,
+  updateSentGardenId,
+  type MineRecord,
+} from '../lib/mine'
 import { DEFAULT_MOOD, MOODS } from '../lib/moods'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
 import { withViewTransition } from '../lib/viewTransition'
@@ -62,6 +68,26 @@ function charCountTierClass(len: number, styles: Record<string, string>): string
   if (len < 40) return styles.charCountThin
   if (len < 320) return styles.charCountGood
   return styles.charCountNear
+}
+
+/**
+ * Build the thin on-device archive summary for a just-created garden.
+ * Pulls names/occasion/mood from the stored record and one
+ * representative petal color per flower (capped at 5) for the swatch
+ * chip on /mine. Kept out of the handlers so handleDesign and
+ * handleReroll stay in sync on what gets archived.
+ */
+function buildMineRecord(id: string, data: GardenData): MineRecord {
+  return {
+    id,
+    to: data.to ?? '',
+    from: data.from ?? '',
+    occasion: data.occasion,
+    mood: data.mood,
+    createdAt: data.createdAt ?? new Date().toISOString(),
+    unlockAt: data.unlockAt,
+    swatches: data.flowers.map(f => f.petalColors[0]).slice(0, 5),
+  }
 }
 
 function classifyError(err: unknown): string {
@@ -121,6 +147,13 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [placeholder] = useState(
     () => MESSAGE_PLACEHOLDERS[Math.floor(Math.random() * MESSAGE_PLACEHOLDERS.length)],
   )
+
+  // How many gardens this device has sent — gates the "your gardens"
+  // footer link so it never shows for a first-time visitor with an
+  // empty archive. Seeded from storage at mount and bumped after each
+  // successful design (re-rolls update in place, so they don't change
+  // the count).
+  const [mineCount, setMineCount] = useState(() => countSentGardens())
 
   // Time capsule: opt-in scheduled delivery. The UI is collapsed by
   // default ("send now") so first-time users aren't asked to think
@@ -346,6 +379,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       }
       const finalUrl = buildShareUrl(shortId)
 
+      // Add to the on-device "your gardens" archive. Best-effort and
+      // fire-and-forget — a storage failure (private mode, quota) never
+      // blocks the share flow.
+      recordSentGarden(buildMineRecord(shortId, data))
+      setMineCount(countSentGardens())
+
       // Cross-fade designing panel → designed preview. playSuccess
       // stays outside the transition so the chime plays at the start
       // of the visual change, not after it.
@@ -455,6 +494,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       if (!shortId) {
         throw new Error("couldn't save the new garden. try again?")
       }
+
+      // Re-point the archive entry at the regenerated garden — same
+      // session, new short ID. Falls back to an insert if the original
+      // entry isn't around (storage cleared mid-session).
+      updateSentGardenId(prevGardenId, buildMineRecord(shortId, data))
 
       // GardenScene re-keys on flower signature change, so the new
       // flowers re-bloom from sprout on render. That's the entire
@@ -904,6 +948,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               i don't track what you wrote or who you sent it to.
             </span>
           </details>
+          {mineCount > 0 && (
+            <>
+              {' · '}
+              <a href="/mine">your gardens</a>
+            </>
+          )}
         </p>
       </footer>
     </div>

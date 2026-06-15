@@ -5,6 +5,7 @@
   "framework": "vite",
   "rewrites": [
     { "source": "/g/(.*)", "destination": "/" },
-    { "source": "/r/(.*)", "destination": "/" }
+    { "source": "/r/(.*)", "destination": "/" },
+    { "source": "/mine", "destination": "/" }
   ]
 }
