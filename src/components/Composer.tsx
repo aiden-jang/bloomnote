@@ -704,13 +704,13 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         />
       )}
 
-      {/* Onboarding carousel — only shown when (a) the composer is
-          idle, (b) this is a fresh visit (no remix seed), and (c) the
-          user hasn't started typing yet. The moment any of those
-          change, the carousel hides itself so we're not occupying
-          screen space with discovery affordances during composition. */}
-      {phase === 'idle' && !remixSeed && !hasDraft && (
-        <ExampleCarousel onSelect={handleExampleSelect} />
+      {/* Onboarding carousel — rendered while the composer is idle on a
+          fresh visit (no remix seed). Once the user starts a draft it
+          folds away via the `collapsed` prop rather than unmounting, so
+          the form glides up instead of snapping. Clearing the draft
+          re-expands it. */}
+      {phase === 'idle' && !remixSeed && (
+        <ExampleCarousel onSelect={handleExampleSelect} collapsed={hasDraft} />
       )}
 
       {phase === 'idle' && (
@@ -950,13 +950,15 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               i don't track what you wrote or who you sent it to.
             </span>
           </details>
-          {mineCount > 0 && (
-            <>
-              {' · '}
-              <a href="/mine">your gardens</a>
-            </>
-          )}
         </p>
+        {/* "your gardens" gets its own line below the credit — it's a
+            navigation link, not attribution, so the extra space keeps
+            the two kinds of footer content from reading as one run-on. */}
+        {mineCount > 0 && (
+          <p className={styles.footerNav}>
+            <a href="/mine">your gardens</a>
+          </p>
+        )}
       </footer>
     </div>
   )

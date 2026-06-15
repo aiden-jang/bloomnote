@@ -397,6 +397,25 @@
   color: var(--green-mid);
 }
 
+/* "your gardens" nav link — its own line, set apart from the credit
+   above it so the attribution and the navigation don't blur together. */
+.footerNav {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.footerNav a {
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footerNav a:hover {
+  color: var(--green-mid);
+}
+
 /* Inline <details> styled to fit on the same line as the credit.
    Default browser styling for <details> is a block element with a
    ▶/▼ triangle; we reset both. */

@@ -10,6 +10,13 @@ interface Props {
    * within seconds of arriving on the site.
    */
   onSelect: (g: ExampleGarden) => void
+  /**
+   * When true, the carousel folds away (height collapses to 0 + fades)
+   * instead of staying open. Composer sets this once the user starts a
+   * draft. We collapse rather than unmount so the transition is smooth
+   * — an abrupt unmount yanked the form upward with a visible jump.
+   */
+  collapsed?: boolean
 }
 
 /**
@@ -29,16 +36,22 @@ interface Props {
  * any field. Either way they reach the "wow" moment without typing
  * a single character.
  */
-export default function ExampleCarousel({ onSelect }: Props) {
+export default function ExampleCarousel({ onSelect, collapsed = false }: Props) {
   return (
-    <section className={styles.wrap} aria-label="example gardens">
-      <p className={styles.heading}>or try one of these</p>
-      <ul className={styles.list}>
-        {EXAMPLE_GARDENS.map(g => (
-          <ExampleCard key={g.id} garden={g} onSelect={onSelect} />
-        ))}
-      </ul>
-    </section>
+    <div className={`${styles.collapser} ${collapsed ? styles.collapsed : ''}`}>
+      {/* Inner element owns the overflow clip; the collapser animates
+          grid-template-rows 1fr↔0fr around it. */}
+      <div className={styles.collapserInner}>
+        <section className={styles.wrap} aria-label="example gardens" aria-hidden={collapsed}>
+          <p className={styles.heading}>or try one of these</p>
+          <ul className={styles.list}>
+            {EXAMPLE_GARDENS.map(g => (
+              <ExampleCard key={g.id} garden={g} onSelect={onSelect} />
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
   )
 }
 
