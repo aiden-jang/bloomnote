@@ -643,6 +643,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setUndoDraft(null)
   }, [undoDraft])
 
+  // Dismiss the toast early without undoing. The clear stands; we just
+  // close the toast and cancel its auto-hide timer so it doesn't fire
+  // against an already-dismissed toast.
+  const handleDismissUndo = useCallback(() => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current)
+      undoTimerRef.current = null
+    }
+    setUndoDraft(null)
+  }, [])
+
   const handleCopy = useCallback(() => {
     if (!shareUrl) return
     void navigator.clipboard.writeText(shareUrl).then(() => {
@@ -863,6 +874,14 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           <span>draft cleared</span>
           <button type="button" className={styles.undoBtn} onClick={handleUndoClear}>
             undo
+          </button>
+          <button
+            type="button"
+            className={styles.undoDismiss}
+            onClick={handleDismissUndo}
+            aria-label="dismiss"
+          >
+            ×
           </button>
         </div>
       )}
