@@ -12,20 +12,21 @@ export interface Occasion {
   label: string
 }
 
-// Display labels are intentionally lowercase + conversational. The wire
+// Display labels are intentionally lowercase + texting-casual. The wire
 // `value` stays stable so existing drafts and the backend's
 // canonical-label map (api/design-garden.ts → KNOWN_OCCASIONS) keep
 // working — the AI still receives the proper "Birthday" / "Sympathy"
-// tone signal even though the user sees "happy bday" / "thinking of
-// you" in the dropdown.
+// tone signal even though the user sees "hbd" / "here for u" in the
+// dropdown. Get-well and sympathy deliberately stay warm rather than
+// jokey: a punchline reads wrong on a grief or sickbed garden.
 export const OCCASIONS: readonly Occasion[] = [
-  { value: 'just-because', label: 'no reason' },
-  { value: 'birthday',     label: 'happy bday' },
-  { value: 'thank-you',    label: 'thanks' },
-  { value: 'anniversary',  label: 'still here' },
-  { value: 'congrats',     label: 'you did it' },
-  { value: 'get-well',     label: 'feel better' },
-  { value: 'sympathy',     label: 'thinking of you' },
+  { value: 'just-because', label: 'just bc' },
+  { value: 'birthday',     label: 'hbd' },
+  { value: 'thank-you',    label: 'ty' },
+  { value: 'anniversary',  label: 'we made it' },
+  { value: 'congrats',     label: 'big w' },
+  { value: 'get-well',     label: 'rest up' },
+  { value: 'sympathy',     label: 'here for u' },
 ] as const
 
 export const DEFAULT_OCCASION: Occasion['value'] = 'just-because'
@@ -33,5 +34,5 @@ export const DEFAULT_OCCASION: Occasion['value'] = 'just-because'
 export const OCCASION_VALUES = new Set<string>(OCCASIONS.map(o => o.value))
 
 export function labelFor(value: string): string {
-  return OCCASIONS.find(o => o.value === value)?.label ?? 'Just because'
+  return OCCASIONS.find(o => o.value === value)?.label ?? 'just bc'
 }
