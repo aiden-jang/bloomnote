@@ -50,6 +50,20 @@ interface Draft {
  * the model's output (and indirectly, the user's note), so we map to
  * a small set of stable labels here and only ever log the label.
  */
+/**
+ * Pick a CSS modifier class for the char-count based on message
+ * length. Teaches the user that longer notes get better gardens —
+ * not via copy, just by quietly turning the count more confident as
+ * the note grows. Anywhere past 320 nudges amber as a "you're near
+ * the limit" warning.
+ */
+function charCountTierClass(len: number, styles: Record<string, string>): string {
+  if (len === 0) return ''
+  if (len < 40) return styles.charCountThin
+  if (len < 320) return styles.charCountGood
+  return styles.charCountNear
+}
+
 function classifyError(err: unknown): string {
   if (!(err instanceof Error)) return 'unknown'
   const m = err.message.toLowerCase()
@@ -705,7 +719,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               <span className={styles.helper}>
                 quirks beat vibes. the more specific, the better the bouquet.
               </span>
-              <span className={styles.charCount}>{message.length}/400</span>
+              <span
+                className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}
+              >
+                {message.length}/400
+              </span>
             </div>
           </section>
 
