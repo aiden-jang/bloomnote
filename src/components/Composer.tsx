@@ -104,9 +104,9 @@ function classifyError(err: unknown): string {
 }
 
 const MESSAGE_PLACEHOLDERS = [
-  "Happy birthday, Maya. You're the only person I know who keeps a tide journal AND laughs too loudly at her own jokes. You'd drive six hours to see a sunset and somehow always rope me in. So glad you exist.",
-  "Mom, 60 years. You raised three kids on your own while finishing your degree at night, taught me how to garden, and still call every Sunday. I don't say thank you enough.",
-  "Theo, the night I was applying to grad school you stayed up making sure I ate. The pour-over was the best part. I think about that a lot. Happy birthday, friend.",
+  "happy bday maya. you're the only person i know who keeps a tide journal AND laughs too hard at her own jokes. would drive six hours for a sunset and rope me in every time. no notes, glad you exist.",
+  "mom, 60 years. raised three of us solo while finishing your degree at night, taught me to garden, still call every sunday. don't say ty nearly enough.",
+  "theo the night i applied to grad school you stayed up making sure i ate. the pour-over kind of carried me ngl. think about it more than you'd guess. hbd friend.",
 ]
 
 interface ComposerProps {
@@ -286,7 +286,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     withViewTransition(() => {
       setPhase('designing')
       setErrorText(null)
-      setStatusText('reading…')
+      setStatusText('reading the room…')
     })
 
     const ctrl = new AbortController()
@@ -311,7 +311,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         },
         {
           signal: ctrl.signal,
-          onThinking: () => setStatusText('thinking…'),
+          onThinking: () => setStatusText('cooking…'),
         },
       )
       setGarden(result)
@@ -369,7 +369,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       // 450-char URL. The garden the user just spent 5 seconds
       // designing is wasted in that scenario, which is unfortunate —
       // but a broken share experience is worse than a clear failure.
-      setStatusText('preparing link…')
+      setStatusText('wrapping it up…')
 
       const SHORTEN_TIMEOUT_MS = 3000
       const shortId = await Promise.race([
@@ -446,7 +446,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     const prevGardenId = gardenId
 
     setIsRerolling(true)
-    setStatusText('regenerating…')
+    setStatusText('replanting…')
     setErrorText(null)
 
     const ctrl = new AbortController()
@@ -680,7 +680,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         <p className={styles.subtitle}>
           {remixSeed
             ? `write ${remixSeed.from || 'them'} back.`
-            : 'write a note. we grow them a garden.'}
+            : 'write a note. they get a whole garden.'}
         </p>
       </header>
 
@@ -786,7 +786,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             />
             <div className={styles.helperRow}>
               <span className={styles.helper}>
-                quirks beat vibes. the more specific, the better the bouquet.
+                quirks beat vibes. the weirder the detail, the better the bouquet.
               </span>
               <span
                 className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}
@@ -850,7 +850,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         <div className={styles.designingPanel}>
           <div className={styles.designingRow}>
             <Spinner />
-            <span>{statusText || 'designing…'}</span>
+            <span>{statusText || 'planting…'}</span>
           </div>
           <button className={styles.cancelBtn} onClick={handleCancel}>
             cancel

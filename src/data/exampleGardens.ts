@@ -40,7 +40,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Maya',
     to: 'Sarah',
     message:
-      "happy birthday, sarah. you're the only person i know who keeps a tide journal AND laughs too loudly at her own jokes. so glad you exist.",
+      "happy bday sarah!! you're the only person alive who keeps a tide journal AND laughs too hard at her own jokes. no notes, so glad you exist.",
     occasion: 'birthday',
     mood: 'playful',
     flowers: [
@@ -91,7 +91,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Casey',
     to: 'Jamie',
     message:
-      "saw a kite on the beach today and immediately thought of that windy afternoon in half moon bay. hope LA is treating you well.",
+      "saw a kite on the beach today and immediately thought of that windy afternoon in half moon bay. anyway. hope LA's being nice to you.",
     occasion: 'just-because',
     mood: 'wistful',
     flowers: [
@@ -132,7 +132,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Theo',
     to: 'Dr. Park',
     message:
-      "thank you for taking that extra hour after class. the way you explained gradient descent finally made it click. i won't forget it.",
+      "dr. park you stayed an extra hour after class and gradient descent finally clicked. lowkey changed my whole semester. ty for real.",
     occasion: 'thank-you',
     mood: 'steady',
     flowers: [
