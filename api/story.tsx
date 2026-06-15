@@ -1,37 +1,15 @@
-// Vertical (1080×1920) garden export, tuned for Instagram Stories,
-// TikTok carousels, Snapchat, and other 9:16 surfaces.
-//
-// Why a separate endpoint instead of `?format=story` on /api/card:
-//
-//   - The layouts diverge meaningfully. Square: header on top, message
-//     fills middle, footer at bottom. Vertical: small wordmark, BIG
-//     hero flowers, sender line, message, signature stacked with much
-//     more breathing room. Forcing both into one render with conditional
-//     branches would obscure the design intent.
-//   - Different aspect ratios → different font-size calibrations. A
-//     36px header that reads well at 1080×1080 reads tiny at 1080×1920.
-//   - File size + cache costs are negligible; splitting is free.
-//
-// Pairs with /api/card.tsx — both are user-facing download formats.
-// Frontend buttons let the user pick "save as image" (square) or
-// "save as story" (vertical).
+// 1080×1920 vertical garden export for Instagram Stories / TikTok /
+// Snapchat. Companion to /api/card (square 1080×1080); layouts diverge
+// enough to justify a separate file rather than one parameterized
+// render.
 
 import { ImageResponse } from '@vercel/og'
-import { Redis } from '@upstash/redis'
-import type { GardenData, FlowerSpec } from '../src/garden'
+import type { GardenData } from '../src/garden'
 import { getFraunces } from './_lib/fonts'
+import { getRedis } from './_lib/redis'
+import FlowerSilhouette from './_lib/silhouette'
 
 export const config = { runtime: 'edge' }
-
-let _redis: Redis | null = null
-function getRedis(): Redis | null {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 // 1080×1920 = exact 9:16. Instagram Stories crops UI chrome from top
 // and bottom (~250px on each side, varies by device), so the visual
@@ -137,7 +115,7 @@ async function renderStory(
           }}
         >
           {flowers.map((f, i) => (
-            <FlowerSilhouette key={i} flower={f} />
+            <FlowerSilhouette key={i} flower={f} size={160} stemWidth={7} maxStemHeight={300} />
           ))}
         </div>
 
@@ -235,58 +213,6 @@ async function renderStory(
           : `inline; filename="${opts.filename}"`,
       },
     },
-  )
-}
-
-/**
- * Same FlowerSilhouette as in card.tsx, scaled up for the bigger
- * story canvas. Duplicated rather than extracted because @vercel/og's
- * import resolution gets prickly with shared JSX modules, and the
- * three files are small enough that copy is cheaper than a shared
- * module + custom Vite resolution.
- */
-function FlowerSilhouette({ flower }: { flower: FlowerSpec }) {
-  const [c1, c2] = flower.petalColors
-  const petalCount = flower.petalCount || 8
-  const center = { x: 80, y: 80 }
-  // Story canvas is taller — give the stems room to breathe so the
-  // flowers don't all crowd into the top of the row.
-  const stemHeight = Math.min(flower.stemHeight || 90, 220) * 1.4
-
-  const petals = []
-  for (let i = 0; i < petalCount; i++) {
-    const angle = (i / petalCount) * Math.PI * 2
-    const px = center.x + Math.cos(angle) * 26
-    const py = center.y + Math.sin(angle) * 26
-    petals.push(
-      <ellipse
-        key={i}
-        cx={px}
-        cy={py}
-        rx={22}
-        ry={32}
-        transform={`rotate(${(angle * 180) / Math.PI + 90} ${px} ${py})`}
-        fill={i % 2 === 0 ? c1 : c2}
-      />,
-    )
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width="160" height="160" viewBox="0 0 160 160">
-        {petals}
-        <circle cx={center.x} cy={center.y} r={18} fill={flower.centerColor} />
-      </svg>
-      <div
-        style={{
-          width: '7px',
-          height: `${stemHeight}px`,
-          background: flower.stemColor,
-          borderRadius: '4px',
-          marginTop: '-12px',
-        }}
-      />
-    </div>
   )
 }
 

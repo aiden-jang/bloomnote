@@ -3,6 +3,8 @@ import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
+import ScheduleInput from './ScheduleInput'
+import ShareCard from './ShareCard'
 import { type ExampleGarden } from '../data/exampleGardens'
 import {
   buildShareUrl,
@@ -11,7 +13,6 @@ import {
   type GardenData,
 } from '../garden'
 import {
-  trackCardDownloaded,
   trackComposerOpened,
   trackGardenCanceled,
   trackGardenError,
@@ -67,17 +68,9 @@ const MESSAGE_PLACEHOLDERS = [
 ]
 
 interface ComposerProps {
-  /**
-   * Optional remix seed. When provided, the composer renders in
-   * "replying to X" mode: From/To are pre-filled from the inverse of
-   * the seed, the original note is shown as thread context, and the
-   * generated garden carries `previous` so the recipient sees the
-   * conversation.
-   *
-   * URL parsing for `/r/<id>` (including async fetch for short IDs)
-   * lives in App.tsx; the seed is fully resolved by the time we get
-   * it here.
-   */
+  /** Optional remix seed; when present, the composer renders in
+   *  reply mode (From/To pre-filled inverse, original shown as
+   *  thread context, generated garden carries `previous`). */
   remixSeed?: GardenData
 }
 
@@ -363,22 +356,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     abortRef.current?.abort()
   }, [])
 
-  /**
-   * Re-roll: regenerate the garden with the same inputs (message,
-   * recipient, from, occasion, mood, schedule). Different bouquet,
-   * different bouquet note, new short ID → new share URL.
-   *
-   * UX choices:
-   *   - Don't leave the designed-state. The flower row + share card
-   *     stay on screen during the round-trip; only the share URL
-   *     pill flips to a small "regenerating…" status. Avoids the
-   *     "wait, did I lose my garden?" anxiety of a full transition.
-   *   - The OLD KV record is left orphaned in Redis. That's fine for
-   *     a portfolio — Redis garbage-collects eventually under LRU
-   *     pressure, and we never re-issue the same short ID anyway.
-   *   - On failure, restore the previous garden so the user doesn't
-   *     lose their first-shot result while trying for a better one.
-   */
+  /** Re-roll: regenerate the garden with the same inputs. Stays in
+   *  the designed phase (only the URL pill flips to "regenerating…")
+   *  to avoid losing the user's place. On failure restores the previous
+   *  garden so a bad reroll doesn't discard their first-shot result. */
   const handleReroll = useCallback(async () => {
     if (isRerolling) return
     // Snapshot the current garden so we can restore on failure.
@@ -728,56 +709,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </div>
           </section>
 
-          {/* Time capsule: opt-in scheduled delivery. Collapsed by
-              default so first-time users aren't asked to make a
-              scheduling decision. */}
-          <section className={styles.schedule}>
-            {!scheduleOpen ? (
-              <button
-                type="button"
-                className={styles.scheduleToggle}
-                onClick={() => setScheduleOpen(true)}
-              >
-                or schedule for later →
-              </button>
-            ) : (
-              <div className={styles.scheduleBlock}>
-                <div className={styles.scheduleOpen}>
-                  <label className={styles.scheduleLabel}>
-                    opens on
-                  </label>
-                  <input
-                    type="datetime-local"
-                    className={`${styles.scheduleInput} ${scheduleError ? styles.scheduleInputError : ''}`}
-                    value={unlockLocal}
-                    onChange={e => setUnlockLocal(e.target.value)}
-                    // `min` is best-effort — some mobile browsers and
-                    // date pickers ignore it. The real validation is
-                    // in scheduleError above; this attribute just makes
-                    // the native picker's default behavior pleasanter.
-                    min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
-                    aria-invalid={scheduleError !== null}
-                    aria-describedby={scheduleError ? 'schedule-error' : undefined}
-                  />
-                  <button
-                    type="button"
-                    className={styles.scheduleClear}
-                    onClick={() => {
-                      setScheduleOpen(false)
-                      setUnlockLocal('')
-                    }}
-                  >
-                    cancel
-                  </button>
-                </div>
-                {scheduleError && (
-                  <p id="schedule-error" className={styles.scheduleErrorText}>
-                    {scheduleError}
-                  </p>
-                )}
-              </div>
-            )}
-          </section>
+          <ScheduleInput
+            open={scheduleOpen}
+            value={unlockLocal}
+            error={scheduleError}
+            onOpen={() => setScheduleOpen(true)}
+            onChange={setUnlockLocal}
+            onCancel={() => {
+              setScheduleOpen(false)
+              setUnlockLocal('')
+            }}
+          />
 
           {errorText && <div className={styles.error}>{errorText}</div>}
 
@@ -885,111 +827,22 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           {/* Divider separating "what they'll see" from "how you share it." */}
           <hr className={styles.shareDivider} aria-hidden />
 
-          <div className={styles.shareCard}>
-            <p className={styles.shareTitle}>
-              {recipient ? `${recipient}'s garden is ready` : 'ready to send'}
-            </p>
-            {/* In-share-card error surface — re-roll failures land
-                here. The idle-phase error block above only renders
-                during composition; in the designed phase we need our
-                own slot so a failed re-roll doesn't silently restore
-                the previous garden with no feedback. */}
-            {errorText && <p className={styles.shareError}>{errorText}</p>}
-            {/* Schedule confirmation. Only shown when the user opted
-                in — the sender should know their card is time-capsuled
-                before they hit share, not learn it later from the
-                recipient asking why the URL doesn't bloom. */}
-            {scheduleOpen && unlockLocal && (
-              <p className={styles.scheduleConfirm}>
-                will open on{' '}
-                {new Date(unlockLocal).toLocaleString(undefined, {
-                  weekday: 'long',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </p>
-            )}
-            <div className={styles.urlBox}>
-              {/* When re-rolling, swap the URL with a quiet status
-                  pill in the same slot so the share card layout
-                  doesn't jump. URL reappears when the new garden is
-                  ready. */}
-              {isRerolling ? (
-                <span className={styles.urlStatus}>{statusText || 'regenerating…'}</span>
-              ) : (
-                <span className={styles.urlText}>{shareUrl}</span>
-              )}
-            </div>
-            <div className={styles.shareActions}>
-              {canShare && (
-                <button
-                  className={styles.shareBtn}
-                  onClick={handleShare}
-                  disabled={isRerolling}
-                >
-                  share
-                </button>
-              )}
-              <button
-                className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
-                onClick={handleCopy}
-                disabled={isRerolling}
-              >
-                {copied ? 'copied' : 'copy link'}
-              </button>
-              {/* Re-roll: same inputs, new flowers + new short URL.
-                  Positioned before "save as image" because the natural
-                  flow is iterate → save → reset; you'd re-roll a few
-                  times until you like the bouquet, then save it. */}
-              <button
-                type="button"
-                className={styles.rerollBtn}
-                onClick={handleReroll}
-                disabled={isRerolling}
-                aria-busy={isRerolling}
-              >
-                different flowers
-              </button>
-              {/* Save-as-image — renders /api/card?id=<id>&download=1
-                  into a square PNG and triggers a browser download.
-                  Uses a real anchor (not onClick) so right-click "save
-                  link as" also works and so screenreaders announce it
-                  as a link, which is the more honest semantic — clicking
-                  it produces a file, not an in-app side effect. */}
-              {gardenId && !isRerolling && (
-                <>
-                  <a
-                    href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
-                    download
-                    className={styles.downloadBtn}
-                    onClick={() => trackCardDownloaded('composer', 'square')}
-                  >
-                    save as image
-                  </a>
-                  {/* Vertical 1080×1920 export for Instagram Stories /
-                      TikTok. Same KV record, different layout — see
-                      api/story.tsx for the design rationale. */}
-                  <a
-                    href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
-                    download
-                    className={styles.downloadBtn}
-                    onClick={() => trackCardDownloaded('composer', 'story')}
-                  >
-                    save as story
-                  </a>
-                </>
-              )}
-              <button
-                className={styles.resetBtn}
-                onClick={handleStartOver}
-                disabled={isRerolling}
-              >
-                make another
-              </button>
-            </div>
-          </div>
+          <ShareCard
+            shareUrl={shareUrl}
+            gardenId={gardenId}
+            recipient={recipient}
+            copied={copied}
+            canShare={canShare}
+            isRerolling={isRerolling}
+            errorText={errorText}
+            statusText={statusText}
+            scheduleOpen={scheduleOpen}
+            unlockLocal={unlockLocal}
+            onShare={handleShare}
+            onCopy={handleCopy}
+            onReroll={handleReroll}
+            onStartOver={handleStartOver}
+          />
 
         </>
       )}

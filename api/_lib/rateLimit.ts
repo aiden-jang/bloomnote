@@ -15,25 +15,12 @@
 // The shape mirrors the old in-memory function so call sites barely
 // change — just `await` the call now.
 
-import { Redis } from '@upstash/redis'
+import { getRedis } from './redis'
 
 export interface RateLimitResult {
   allowed: boolean
   /** Seconds until the bucket resets; 0 when allowed. */
   retryAfter: number
-}
-
-// Singleton client. Re-using one instance across requests means the
-// underlying HTTPS keep-alive (and Upstash's connection pool on their
-// side) doesn't churn.
-let _redis: Redis | null = null
-function getRedis(): Redis | null {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  _redis = new Redis({ url, token })
-  return _redis
 }
 
 /**

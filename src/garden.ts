@@ -175,39 +175,3 @@ export function buildRemixUrl(id: string): string {
   return `${buildAppUrl()}/r/${id}`
 }
 
-// --- Example / fallback garden ------------------------------------------
-//
-// Used as the initial preview state and when the AI request is unavailable.
-
-export const EXAMPLE_GARDEN: FlowerSpec[] = [
-  {
-    name: 'Morning Rose',
-    meaning: 'For someone who makes ordinary days feel warm.',
-    petalColors: ['#FF6B8A', '#FF8FA3', '#FFB3C1'],
-    centerColor: '#FFD700',
-    stemColor: '#3d6b32',
-    petalShape: 'round',
-    petalCount: 8,
-    stemHeight: 90,
-  },
-  {
-    name: 'Summer Daisy',
-    meaning: 'For the friend who is always reliably bright.',
-    petalColors: ['#ffffff', '#f0f0f0', '#e8e8e8'],
-    centerColor: '#FBBF24',
-    stemColor: '#5a8c4e',
-    petalShape: 'elongated',
-    petalCount: 10,
-    stemHeight: 75,
-  },
-  {
-    name: 'Quiet Lavender',
-    meaning: 'For the calm one — a small thank-you for steady company.',
-    petalColors: ['#A78BFA', '#C4B5FD', '#DDD6FE'],
-    centerColor: '#7C3AED',
-    stemColor: '#5b7c52',
-    petalShape: 'small',
-    petalCount: 10,
-    stemHeight: 95,
-  },
-]
