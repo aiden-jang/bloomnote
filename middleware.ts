@@ -1,69 +1,113 @@
-// Edge middleware that rewrites `<meta og:image>` on /g/<id> responses
-// so link-preview crawlers see the per-garden OG image from /api/og.
-// Without this, every shared garden would show the generic index.html
-// preview (crawlers don't run our React app — they only see the HTML).
+// Edge middleware that personalizes the shared-link previews for
+// /g/<id> requests. Without this, every shared garden falls back to
+// the generic homepage `<title>` and `<meta>` tags — crawlers don't
+// run our React app, so SPA-injected metadata never reaches them.
+//
+// Two layers of personalization:
+//   1. <title> + og:title — "<sender> sent <recipient> a garden"
+//   2. og:image — points at /api/og?id=<id> (the per-garden PNG)
+
+import { Redis } from '@upstash/redis'
 
 export const config = {
-  // Only run on /g/<...>. CSS, JS, /api/*, and the rest of the site
-  // skip this middleware entirely. Saves an edge invocation on every
-  // asset request.
+  // Only run on /g/<...>. Static assets and /api/* skip this entirely.
   matcher: '/g/:id*',
 }
 
 const SHORT_ID_PATTERN = /^[A-HJ-NP-Za-km-z2-9]{6}$/
 
+// Lazy Redis client at module scope. We can't import the shared
+// `api/_lib/redis.ts` helper here because the middleware bundle is
+// separate from the api bundle. Duplicating the 5-line setup is
+// cheaper than wrestling with cross-bundle imports.
+let cachedRedis: Redis | null = null
+function getRedis(): Redis | null {
+  if (cachedRedis) return cachedRedis
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (!url || !token) return null
+  cachedRedis = new Redis({ url, token })
+  return cachedRedis
+}
+
+// Subset of the garden shape we actually read here. Avoids importing
+// the full GardenData type across the bundle boundary.
+interface GardenPreview {
+  from?: string
+  to?: string
+}
+
 export default async function middleware(req: Request): Promise<Response | undefined> {
   const url = new URL(req.url)
   const match = url.pathname.match(/^\/g\/(.+)$/)
-  if (!match) return  // pass through
+  if (!match) return
 
   const id = match[1]
-  // Only personalize for legitimate short IDs. Garbage paths like
-  // /g/<random-blob> fall through to the static HTML's generic OG.
   if (!SHORT_ID_PATTERN.test(id)) return
 
-  // Skip if the request isn't an HTML document — bots scraping for
-  // images, RSS readers, etc. We only care about preview-card
-  // crawlers, which all send `Accept: text/html`.
+  // Only intercept HTML document requests. Image scrapers, RSS
+  // readers, etc. — let them fall through to the static asset.
   const accept = req.headers.get('accept') ?? ''
   if (!accept.includes('text/html')) return
 
-  // Fetch the static index.html via a regular request to the same
-  // origin. We can't `import` it because the bundler doesn't know
-  // about static assets, and we can't read the filesystem in Edge.
-  // The fetch is fast because the HTML is already at the edge.
+  // Look up the garden so the preview can include the sender +
+  // recipient names. If Redis is missing or the garden doesn't exist,
+  // we still fall through to og:image personalization with a generic
+  // title — better than nothing.
+  let garden: GardenPreview | null = null
+  const redis = getRedis()
+  if (redis) {
+    try {
+      garden = (await redis.get(`g:${id}`)) as GardenPreview | null
+    } catch {
+      // Redis hiccup — soldier on with generic copy.
+    }
+  }
+
+  const titleText = buildTitle(garden)
+  const descriptionText = buildDescription(garden)
+
+  // Fetch the static index.html so we can do string-level rewrites.
+  // We can't import it directly (bundler doesn't know about static
+  // assets) and can't read the filesystem in Edge.
   const indexResp = await fetch(new URL('/', url.origin), {
-    // Don't loop back into this middleware — the matcher above only
-    // catches /g/* anyway, but being explicit avoids surprises if
-    // matchers change.
     headers: { 'x-middleware-bypass': '1' },
   })
   if (!indexResp.ok) return
-
   let html = await indexResp.text()
 
-  // Build the absolute URL for the OG image endpoint. Crawlers don't
-  // resolve relative URLs reliably; some require fully-qualified.
   const ogImageUrl = `${url.origin}/api/og?id=${encodeURIComponent(id)}`
   const pageUrl = `${url.origin}/g/${encodeURIComponent(id)}`
 
-  // Strip any existing og:image / og:url / twitter:image tags so we
-  // don't end up with duplicates that crawlers might pick at random.
-  // (Twitter's scraper, in particular, picks the LAST occurrence.)
+  // Swap the <title> first — drives the browser tab text when a user
+  // (not a crawler) opens the link.
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(titleText)}</title>`)
+
+  // Strip any existing meta tags we're about to replace so we don't
+  // end up with duplicates. Twitter's scraper, in particular, picks
+  // the LAST occurrence when multiples exist.
   html = html
     .replace(/<meta\s+property="og:image"[^>]*>/gi, '')
     .replace(/<meta\s+property="og:url"[^>]*>/gi, '')
+    .replace(/<meta\s+property="og:title"[^>]*>/gi, '')
+    .replace(/<meta\s+property="og:description"[^>]*>/gi, '')
     .replace(/<meta\s+name="twitter:image"[^>]*>/gi, '')
+    .replace(/<meta\s+name="twitter:title"[^>]*>/gi, '')
+    .replace(/<meta\s+name="twitter:description"[^>]*>/gi, '')
+    .replace(/<meta\s+name="description"[^>]*>/gi, '')
 
-  // Inject our personalized tags right before </head>. Using
-  // string-replace on </head> is fine because the static index.html
-  // is a known shape — not user-generated content with ambiguous
-  // markup.
+  const escTitle = escapeHtml(titleText)
+  const escDesc = escapeHtml(descriptionText)
   const injected = `
+    <meta name="description" content="${escDesc}" />
     <meta property="og:image" content="${ogImageUrl}" />
     <meta property="og:url" content="${pageUrl}" />
-    <meta name="twitter:image" content="${ogImageUrl}" />
+    <meta property="og:title" content="${escTitle}" />
+    <meta property="og:description" content="${escDesc}" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="${ogImageUrl}" />
+    <meta name="twitter:title" content="${escTitle}" />
+    <meta name="twitter:description" content="${escDesc}" />
     </head>`
   html = html.replace('</head>', injected)
 
@@ -71,11 +115,39 @@ export default async function middleware(req: Request): Promise<Response | undef
     status: 200,
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      // Short cache: crawlers re-fetch occasionally; we don't want
-      // a stale OG tag pointing at an old image after we tweak the
-      // generator. Per-garden image URLs are stable so this only
-      // affects the meta-tag layer, not the image itself.
+      // Crawlers re-fetch occasionally; short cache keeps the meta
+      // layer fresh if we tweak copy. The per-garden image is cached
+      // forever via its own Cache-Control.
       'cache-control': 'public, max-age=300, s-maxage=300',
     },
   })
+}
+
+/** "Maya sent Sarah a garden" / "Maya sent you a garden" / fallback. */
+function buildTitle(g: GardenPreview | null): string {
+  const from = g?.from?.trim()
+  const to = g?.to?.trim()
+  if (from && to) return `${from} sent ${to} a garden`
+  if (from) return `${from} sent you a garden`
+  if (to) return `a garden for ${to}`
+  return 'a garden, for you'
+}
+
+/** Short tease for the preview snippet. Doesn't spoil the bouquet. */
+function buildDescription(g: GardenPreview | null): string {
+  const from = g?.from?.trim()
+  if (from) return `open the link to see what ${from} grew.`
+  return 'open the link to watch it bloom.'
+}
+
+/** Minimal HTML-attribute escaping. Sender names come from user
+ *  input, so they can contain quotes / angle brackets / ampersands
+ *  that would break the meta tag if interpolated raw. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
