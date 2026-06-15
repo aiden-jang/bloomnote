@@ -43,7 +43,7 @@ export default function ExampleCarousel({ onSelect, collapsed = false }: Props) 
           grid-template-rows 1fr↔0fr around it. */}
       <div className={styles.collapserInner}>
         <section className={styles.wrap} aria-label="example gardens" aria-hidden={collapsed}>
-          <p className={styles.heading}>or try one of these</p>
+          <p className={styles.heading}>or steal one of these</p>
           <ul className={styles.list}>
             {EXAMPLE_GARDENS.map(g => (
               <ExampleCard key={g.id} garden={g} onSelect={onSelect} />
