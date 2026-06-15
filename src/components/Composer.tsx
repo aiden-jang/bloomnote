@@ -5,6 +5,7 @@ import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
+import SoundToggle from './SoundToggle'
 import { type ExampleGarden } from '../data/exampleGardens'
 import {
   buildShareUrl,
@@ -672,6 +673,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   return (
     <div className={styles.wrap}>
+      <SoundToggle />
       <header className={styles.header}>
         <h1 className={styles.title}>blossom</h1>
         <p className={styles.subtitle}>

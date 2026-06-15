@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
+import SoundToggle from './SoundToggle'
 import { buildRemixUrl, type GardenData } from '../garden'
 import {
   trackCardDownloaded,
@@ -70,6 +71,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
 
   return (
     <div className={styles.wrap}>
+      <SoundToggle />
       <div className={styles.topLabel}>
         {from ? (
           <p className={styles.fromText}>
