@@ -8,3 +8,8 @@ dist
 
 # Local dev scaffolding (not project source)
 .claude/
+
+# Operator-only message reader. Reads notes straight from Redis with
+# the admin token — handy locally, but a "read every note" script
+# shouldn't ship in the public repo (it contradicts the privacy copy).
+scripts/list-messages.mjs

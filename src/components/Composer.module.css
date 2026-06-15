@@ -183,68 +183,283 @@
   color: var(--green-deep);
 }
 
-/* Container for the open state + error message. The two need to live
-   in one wrapper because the background pill + error caption read as
-   one logical control. */
+/* The open state: a soft card holding the title row, the quick-pick
+   preset chips, and the exact-time input. Replaces the old single-row
+   pill — the chips need vertical room, and a bordered card reads as a
+   deliberate panel rather than an afterthought input. Matches the
+   share card's surface (#f5f9f2 on green-pale) for visual continuity. */
 .scheduleBlock {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--green-pale);
+  background: #f5f9f2;
+  animation: scheduleIn 0.25s ease;
+}
+
+@keyframes scheduleIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheduleBlock { animation: none; }
+}
+
+/* Title + cancel on one line. */
+.scheduleHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scheduleTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-deep);
+  letter-spacing: 0.01em;
+}
+
+/* Quick-pick horizon chips. Wrap on narrow screens. */
+.schedulePresets {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.scheduleOpen {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--surface-soft, rgba(0, 0, 0, 0.03));
-  font-size: 13px;
+.presetChip {
+  background: white;
+  border: 1px solid var(--green-pale);
+  color: var(--text-mid);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
 
-.scheduleInputError {
-  border-color: var(--error, #c44e4e);
-  /* Subtle inset shadow rather than a bold ring — error feedback
-     should be clear but not alarming. */
-  box-shadow: 0 0 0 1px var(--error, #c44e4e);
+.presetChip:hover {
+  border-color: var(--green-light);
+  color: var(--green-deep);
+}
+
+.presetChip:active {
+  transform: scale(0.96);
+}
+
+.presetChip:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
+}
+
+/* Selected horizon — filled green so the current pick reads at a
+   glance. The :hover pairing keeps it filled when hovered (otherwise
+   the .presetChip:hover rule would repaint it). */
+.presetChipActive,
+.presetChipActive:hover {
+  background: var(--green-mid);
+  border-color: var(--green-mid);
+  color: white;
+}
+
+/* Disabled chip — e.g. "today" once that time of day has already
+   passed. Greyed and non-interactive until a later time re-enables it. */
+.presetChip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.presetChip:disabled:hover {
+  border-color: var(--green-pale);
+  color: var(--text-mid);
+}
+
+/* Inline calendar — a self-contained month view rendered in the card,
+   no native datetime-local modal. Soft white surface so it reads as a
+   distinct panel sitting on the card's #f5f9f2 background. */
+.scheduleCalendar {
+  background: white;
+  border: 1px solid var(--green-pale);
+  border-radius: 12px;
+  padding: 10px 12px 12px;
+}
+
+/* Month label flanked by ‹ / › nav arrows. */
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calMonthLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-deep);
+  letter-spacing: 0.01em;
+}
+
+.calNav {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--green-mid);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.calNav:hover:not(:disabled) {
+  background: #eef5e7;
+  color: var(--green-deep);
+}
+
+.calNav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 7-column grid: weekday headers + the day cells, all equal width. */
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calWeekday {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-light);
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+/* Empty leading cells before the 1st of the month. */
+.calEmpty {
+  aspect-ratio: 1;
+}
+
+.calDay {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.calDay:hover:not(:disabled) {
+  background: #eef5e7;
+  color: var(--green-deep);
+}
+
+.calDay:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.calDay:disabled {
+  color: var(--green-pale);
+  cursor: not-allowed;
+}
+
+.calDay:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: -2px;
+}
+
+/* Selected day — filled green, mirrors the active preset chip. The
+   :hover pairing keeps it filled when hovered. */
+.calDaySelected,
+.calDaySelected:hover {
+  background: var(--green-mid);
+  color: white;
+  font-weight: 600;
+}
+
+/* Today — a subtle ring so the user can orient without it competing
+   with the filled selection state. */
+.calToday:not(.calDaySelected) {
+  box-shadow: inset 0 0 0 1px var(--green-light);
+}
+
+/* "at <time chips>" row — the time-of-day picker under the calendar.
+   The "at" label sits inline with the chip group. */
+.scheduleTimeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scheduleAt {
+  font-size: 12px;
+  color: var(--text-light);
+  letter-spacing: 0.01em;
+}
+
+/* Exact-time row: the "or exact" label + a compact native time input,
+   for picks the chips don't cover. The whole thing is a <label> so
+   tapping the text focuses the input. */
+.scheduleExact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scheduleTimeInput {
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-dark);
+  background: white;
+  border: 1px solid var(--green-pale);
+  border-radius: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.scheduleTimeInput:focus {
+  outline: none;
+  border-color: var(--green-light);
+  box-shadow: 0 0 0 3px rgba(125, 181, 106, 0.25);
+}
+
+/* Live "opens <day> · <time>" confirmation under the picker. Green to
+   read as a settled, valid choice — distinct from the red error text. */
+.scheduleSummary {
+  font-size: 12px;
+  color: var(--green-mid);
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .scheduleErrorText {
   font-size: 12px;
   color: var(--error, #c44e4e);
-  padding-left: 12px;
   letter-spacing: 0.01em;
-}
-
-.scheduleLabel {
-  color: var(--text-mid);
-}
-
-.scheduleInput {
-  flex: 1;
-  min-width: 180px;
-  padding: 6px 10px;
-  font-size: 14px;
-  font-family: inherit;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: white;
-  color: var(--text-deep, inherit);
-  /* iOS auto-zoom prevention — same fix as our text inputs. */
-  font-size: max(14px, 1rem);
-}
-
-@media (max-width: 480px) {
-  .scheduleInput {
-    font-size: 16px;
-  }
 }
 
 .scheduleClear {
   background: none;
   border: none;
-  padding: 4px 8px;
+  padding: 2px 4px;
   font-family: inherit;
   font-size: 12px;
   color: var(--text-light);
@@ -254,7 +469,7 @@
 }
 
 .scheduleClear:hover {
-  color: var(--text-deep);
+  color: var(--green-deep);
 }
 
 .actions {
@@ -533,7 +748,8 @@
      difference from 14px is minimal; it just prevents the zoom. */
   .input,
   .textarea,
-  .select {
+  .select,
+  .scheduleTimeInput {
     font-size: 16px;
   }
 }
