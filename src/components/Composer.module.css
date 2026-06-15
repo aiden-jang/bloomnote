@@ -369,6 +369,33 @@
   border-color: rgba(255, 255, 255, 0.65);
 }
 
+/* Dismiss "×" — quieter than the undo button (no border, dimmed glyph)
+   so it reads as "close this" rather than competing with undo. Negative
+   right margin pulls it toward the pill edge to balance the larger
+   left padding on .undoToast. */
+.undoDismiss {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 18px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  margin-right: -4px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.undoDismiss:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
 /* Footer block — privacy disclosure on top, author credit below.
    The block as a whole owns the top border separator from the rest
    of the page; the two lines inside it just have a small gap. */
