@@ -1,0 +1,105 @@
+/* The AI's bouquet rationale, attached to the bottom of the note and
+   revealed with a typewriter effect. The dashed top rule sets it apart
+   from the handwritten message above without a hard break — it reads as
+   a postscript the AI added, not a separate UI panel. */
+.wrap {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--green-pale);
+}
+
+/* "✦ why this garden" — small, uppercase, letterspaced. The label cues
+   the source (the AI) so the typed sentence below reads as machine-
+   written reasoning rather than more of the sender's note. */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--green-mid);
+}
+
+/* The sparkle gets a violet→pink gradient via background-clip so it
+   reads as the "AI" accent — the rest of the UI is green/cream, so the
+   one bit of synthetic color signals "this part was generated." */
+.sparkle {
+  background: linear-gradient(120deg, #a78bfa, #f0abfc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-size: 11px;
+  animation: sparklePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes sparklePulse {
+  0%, 100% { opacity: 0.65; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+
+.text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-mid);
+  font-style: italic;
+}
+
+/* The blinking caret that trails the typed text. A thin solid bar that
+   blinks on a step-end timeline so it snaps on/off like a real text
+   cursor rather than fading. Sits on the baseline via inline-block +
+   vertical-align. Removed (component-side) the moment typing finishes. */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: var(--green-mid);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Visually-hidden full sentence for screen readers. The visible stream
+   is aria-hidden and clipped per-character; this mirror lets assistive
+   tech announce the whole note at once instead of a stuttering stream. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Reduced motion: no pulsing sparkle, no blinking caret. The component
+   also skips the per-character reveal and shows the full text at once. */
+@media (prefers-reduced-motion: reduce) {
+  .sparkle {
+    animation: none;
+    opacity: 1;
+  }
+  .cursor {
+    animation: none;
+  }
+}
+
+@media print {
+  .sparkle {
+    animation: none;
+  }
+  .cursor {
+    display: none;
+  }
+}

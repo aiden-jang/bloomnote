@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import BouquetNote from './BouquetNote'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
@@ -117,16 +118,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             a garden, for you.
           </p>
         )}
+        {/* The AI's bouquet rationale, typed out as a postscript on the
+            note. `start` is gated on msgVisible so it doesn't type itself
+            out before the garden has bloomed and the message faded in. */}
+        {bouquetNote && <BouquetNote note={bouquetNote} start={msgVisible} />}
         {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
       </div>
 
       <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
-        {/* Bouquet rationale lives behind the "?" disclosure on the
-            legend — see FlowerLegend.tsx. Consolidating it there keeps
-            the AI's reasoning in one place instead of splitting the
-            overall rationale (here) from the per-flower meanings
-            (below). */}
-        <FlowerLegend flowers={flowers} bouquetNote={bouquetNote} />
+        <FlowerLegend flowers={flowers} />
       </div>
 
       {/* Thread context — when this garden is itself a reply, show the
