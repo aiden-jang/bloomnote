@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import BouquetNote from './BouquetNote'
 import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
@@ -892,23 +893,23 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             )}
           </p>
 
-          {/* bouquetNote moved into FlowerLegend's "?" disclosure
-              below — consolidates the AI's rationale into one place
-              instead of splitting overall (here) vs per-flower (below). */}
-
           {message.trim() && (
             <div className={styles.previewMessage}>
               <p className={styles.previewMessageText}>{message.trim()}</p>
               {from.trim() && (
                 <p className={styles.previewSig}>— {from.trim()}</p>
               )}
+              {/* The AI's bouquet rationale, typed out as a postscript on
+                  the note. In the preview it types immediately (start
+                  defaults true) — the composer has no bloom gate. */}
+              {garden.bouquetNote && <BouquetNote note={garden.bouquetNote} />}
               <p className={styles.previewGrownOn}>
                 grown {formatGardenDate(new Date().toISOString())}
               </p>
             </div>
           )}
 
-          <FlowerLegend flowers={garden.flowers} bouquetNote={garden.bouquetNote} />
+          <FlowerLegend flowers={garden.flowers} />
 
           {/* Divider separating "what they'll see" from "how you share it." */}
           <hr className={styles.shareDivider} aria-hidden />
