@@ -4,6 +4,50 @@
    shorter screens while still letting first-time visitors see all
    three examples before they have to write anything. */
 
+/* Collapsible shell. The carousel is onboarding: once the user starts
+   a draft we fold it away instead of yanking it out of the layout
+   (which caused a hard upward jump). The grid-rows 1fr↔0fr technique
+   animates the true auto height without measuring it in JS. */
+.collapser {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 220ms ease,
+    margin-bottom 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collapserInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  /* The carousel sits between two of the composer's 1.25rem flex gaps.
+     At zero height both gaps remain, doubling the space; pulling the
+     bottom in by one gap restores the normal single-gap distance
+     between the garden above and the form below. */
+  margin-bottom: -1.25rem;
+  /* Drop the example buttons out of the tab order once fully folded.
+     Delayed so flipping to hidden doesn't cut the fade short. */
+  visibility: hidden;
+  transition:
+    grid-template-rows 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 220ms ease,
+    margin-bottom 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 320ms;
+}
+
+/* Reduced motion: skip the animation, just hide/show instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .collapser {
+    transition: none;
+  }
+}
+
 .wrap {
   display: flex;
   flex-direction: column;
