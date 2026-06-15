@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FlowerSpec } from '../garden'
+import { BLOOM_STAGGER_MS } from './GardenScene'
 import styles from './FlowerLegend.module.css'
 
 interface Props {
@@ -68,11 +69,9 @@ export default function FlowerLegend({ flowers, bouquetNote }: Props) {
             key={`${i}-${f.name}`}
             className={styles.item}
             // Per-row stagger matches the GardenScene's per-flower
-            // bloom timing (i * 380ms). In the Composer's designed
-            // state the rows fade in as their corresponding flower
-            // blooms above — the visual link between flower and
-            // meaning becomes motion, not just spatial proximity.
-            style={{ animationDelay: `${i * 380}ms` }}
+            // bloom timing — rows fade in as their corresponding
+            // flower blooms above.
+            style={{ animationDelay: `${i * BLOOM_STAGGER_MS}ms` }}
           >
             <span className={styles.swatchStack} aria-hidden>
               {f.petalColors.map((c, j) => (

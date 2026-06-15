@@ -39,6 +39,14 @@ function gradientFor(occasion?: string): { top: string; bottom: string } {
   return SKY_GRADIENTS['just-because']
 }
 
+/** Time between consecutive flower blooms. Exported so the legend
+ *  can stagger its row reveals in sync with the bloom they describe. */
+export const BLOOM_STAGGER_MS = 500
+
+/** How long to hold the fully-bloomed scene before the post-bloom
+ *  fade-ins (message, legend, CTA) start. Lets the bloom breathe. */
+const BLOOM_HOLD_MS = 1000
+
 interface Placement {
   spec: FlowerSpec
   left: number
@@ -136,13 +144,10 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   const [bloomedCount, setBloomedCount] = useState(0)
   const placed = placeFlowers(flowers)
 
-  // The dedupe-by-signature ref I had here was actively hostile under
-  // React 18 strict mode: first effect runs → sets the ref. Cleanup
-  // clears the scheduled timers. Re-run effect → ref still matches →
-  // early-return → no bloom. The cleanup function already makes this
-  // effect idempotent (timers from a prior run are torn down before a
-  // new run schedules its own), so re-keying GardenScene from the
-  // parent is the right way to reset the bloom, not a ref-based guard.
+  // Re-keying GardenScene from the parent (key prop) is the right way
+  // to reset the bloom — the cleanup function makes this effect
+  // idempotent (timers from a prior run are torn down before a new
+  // run schedules its own).
   const flowerSig = flowers.map(f => f.name).join('|')
 
   useEffect(() => {
@@ -157,12 +162,15 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
         pulse()
         setBloomedCount(prev => {
           const next = prev + 1
+          // Hold the moment after the last flower blooms before the
+          // legend + message start fading in. The bloom is the
+          // emotional peak — letting it breathe makes it land.
           if (next === placed.length && onAllBloomed) {
-            setTimeout(onAllBloomed, 400)
+            setTimeout(onAllBloomed, BLOOM_HOLD_MS)
           }
           return next
         })
-      }, i * 380)
+      }, i * BLOOM_STAGGER_MS)
       timers.push(t)
     })
 
