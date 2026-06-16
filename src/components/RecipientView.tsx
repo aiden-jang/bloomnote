@@ -11,7 +11,7 @@ import {
   trackReplyStarted,
 } from '../lib/analytics'
 import { formatGardenDate } from '../lib/formatDate'
-import { saveSharedImage } from '../lib/saveImage'
+import { prefetchSharedImage, saveSharedImage } from '../lib/saveImage'
 import { playChime } from '../sound'
 import styles from './RecipientView.module.css'
 
@@ -69,6 +69,19 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   // The reply URL points at the SAME short ID — `/g/abc123` and
   // `/r/abc123` are two views of one KV record. No duplicate writes.
   const remixHref = buildRemixUrl(gardenId)
+
+  // Save URLs, built once so the prefetch effect and the anchors agree.
+  const cardUrl = gardenId ? `/api/card?id=${encodeURIComponent(gardenId)}&download=1` : undefined
+  const storyUrl = gardenId ? `/api/story?id=${encodeURIComponent(gardenId)}&download=1` : undefined
+
+  // On iOS the save handler fetches the PNG itself; warm both while the
+  // recipient watches the garden bloom, so the share sheet opens inside the
+  // post-gesture window instead of waiting on a cold render. No-op on
+  // desktop/Android (see prefetchSharedImage).
+  useEffect(() => {
+    if (cardUrl) prefetchSharedImage(cardUrl)
+    if (storyUrl) prefetchSharedImage(storyUrl)
+  }, [cardUrl, storyUrl])
 
   return (
     <div className={styles.wrap}>
@@ -164,7 +177,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         {gardenId && (
           <p className={styles.downloadRow}>
             <a
-              href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
+              href={cardUrl}
               download
               className={styles.downloadLink}
               onClick={e => saveSharedImage(e, 'recipient', 'square')}
@@ -173,7 +186,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             </a>
             <span className={styles.downloadSep} aria-hidden>·</span>
             <a
-              href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
+              href={storyUrl}
               download
               className={styles.downloadLink}
               onClick={e => saveSharedImage(e, 'recipient', 'story')}

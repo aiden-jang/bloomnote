@@ -275,34 +275,71 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     return null
   })()
 
-  // With the schedule picker open, a date+time is required before we'll
-  // let them submit — an empty `unlockLocal` means "opened the picker but
-  // hasn't chosen yet", which would otherwise silently send unscheduled.
-  // (scheduleError stays null while empty so we don't flash an error the
-  // instant they expand it; this gate handles the disabled button.)
-  const canSubmit =
-    recipient.trim().length >= 1 &&
-    message.trim().length >= 4 &&
-    scheduleError === null &&
-    (!scheduleOpen || unlockLocal !== '')
-
-  // Why is the submit button disabled? Spell it out under the button so
-  // it's never a dead control with no explanation. Ordered by what to
-  // fix first: the core inputs (To + message), then the schedule. A
-  // past-time pick isn't covered here — the picker shows its own inline
-  // error for that. ("From" is optional, so it's never a blocker.)
+  // One source of truth for "can we submit — and if not, why not?" The
+  // reason renders under the button so a disabled control always explains
+  // itself, and `canSubmit` is just "nothing is blocking it." Ordered by
+  // what to fix first: the core inputs (To + message), then the schedule.
+  // ("From" is optional, so it's never a blocker.)
   const disabledReason: string | null = (() => {
-    if (canSubmit) return null
     const noRecipient = recipient.trim().length < 1
     const noMessage = message.trim().length < 4
     if (noRecipient && noMessage) return 'add who it’s for and a message to get started'
     if (noRecipient) return 'add who it’s for in the “to” field'
     if (noMessage) return 'write them a message first'
-    if (scheduleOpen && unlockLocal === '' && !scheduleError) {
+    // Past/malformed schedule time: the picker shows the specifics inline,
+    // so point back to it rather than repeating its sentence here. (An
+    // empty unlockLocal keeps scheduleError null — that's the next case,
+    // where the picker is open but nothing's been chosen yet.)
+    if (scheduleError) return 'fix the scheduled time above'
+    if (scheduleOpen && unlockLocal === '') {
       return 'pick a date & time above to schedule, or hit cancel to send now'
     }
     return null
   })()
+
+  const canSubmit = disabledReason === null
+
+  // Assemble the persisted garden record from a fresh design result plus
+  // the current form state. Shared by the initial design and re-roll so
+  // the two can't drift on schedule handling or reply-thread depth.
+  const buildGardenData = useCallback(
+    (result: DesignResult): GardenData => {
+      // Convert the optional schedule input to a UTC ISO string, clamping
+      // out past values (user picked a time, then sat on the page until it
+      // passed — an already-unlocked capsule would be a confusing no-op).
+      // The 30-second grace matches the server-side check.
+      let unlockAt: string | undefined
+      if (scheduleOpen && unlockLocal) {
+        const t = new Date(unlockLocal).getTime()
+        if (Number.isFinite(t) && t > Date.now() + 30_000) {
+          unlockAt = new Date(t).toISOString()
+        }
+      }
+      // Depth-cap replies at 1: strip `previous` from the seed before
+      // attaching it, so a long thread doesn't nest N gardens deep. The
+      // recipient view only renders one level back anyway.
+      const seedForPrevious = remixSeed
+        ? { ...remixSeed, previous: undefined }
+        : undefined
+      return {
+        flowers: result.flowers,
+        bouquetNote: result.bouquetNote,
+        message: message.trim(),
+        from: from.trim(),
+        to: recipient.trim(),
+        // Stamp when the sender hit "Grow their garden" — shows up on the
+        // recipient's view as a card-like "Grown {date}" line.
+        createdAt: new Date().toISOString(),
+        unlockAt,
+        // Persist occasion + mood so the recipient view can shift its sky
+        // gradient (and future mood-driven UI) to match the sender's choice.
+        occasion,
+        mood,
+        previous: seedForPrevious,
+      }
+    },
+    [scheduleOpen, unlockLocal, remixSeed, message, from, recipient, occasion, mood],
+  )
 
   const handleDesign = useCallback(async () => {
     if (!canSubmit) return
@@ -345,47 +382,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setGarden(result)
       setFlowers(result.flowers)
 
-      // The garden record bundles the new garden AND (if this is a
-      // reply) the original garden as `previous`. Depth-capped at 1:
-      // we strip `previous` from the seed before attaching it, so a
-      // five-message thread doesn't accumulate five nested gardens.
-      // The recipient view only renders one level back anyway —
-      // deeper history would be wasted storage and would slow the
-      // fetch with no UX upside.
-      const seedForPrevious = remixSeed
-        ? { ...remixSeed, previous: undefined }
-        : undefined
-      // Convert the optional schedule input to a UTC ISO string. We
-      // also clamp out values that are in the past (e.g. user picked a
-      // time, then sat on the page until it passed) — sending an
-      // already-unlocked capsule would be a confusing no-op.
-      let unlockAt: string | undefined
-      if (scheduleOpen && unlockLocal) {
-        const t = new Date(unlockLocal).getTime()
-        if (Number.isFinite(t) && t > Date.now() + 30_000) {
-          unlockAt = new Date(t).toISOString()
-        }
-      }
-
-      const data: GardenData = {
-        flowers: result.flowers,
-        bouquetNote: result.bouquetNote,
-        message: message.trim(),
-        from: from.trim(),
-        to: recipient.trim(),
-        // Stamp when the sender hit "Grow their garden" — shows up
-        // on the recipient's view as a card-like "Grown {date}" line.
-        createdAt: new Date().toISOString(),
-        unlockAt,
-        // Persist occasion + mood so the recipient view can shift its
-        // sky gradient (and future mood-driven UI) to match what the
-        // sender chose. Both are optional on the type, but we always
-        // include them on new records — keeps every new garden a
-        // first-class citizen of every UI surface that consumes them.
-        occasion,
-        mood,
-        previous: seedForPrevious,
-      }
+      const data = buildGardenData(result)
 
       // POST the garden to our own /api/garden endpoint to get a short
       // ID back. We stay in 'designing' phase until the round-trip
@@ -455,7 +452,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     } finally {
       abortRef.current = null
     }
-  }, [canSubmit, from, message, mood, occasion, recipient, remixSeed, scheduleOpen, unlockLocal])
+  }, [buildGardenData, canSubmit, from, message, mood, occasion, recipient, remixSeed])
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort()
@@ -494,31 +491,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         { signal: ctrl.signal },
       )
 
-      // Compute the same unlockAt + seed-for-previous logic as
-      // handleDesign so re-rolls preserve schedule and reply context.
-      let unlockAt: string | undefined
-      if (scheduleOpen && unlockLocal) {
-        const t = new Date(unlockLocal).getTime()
-        if (Number.isFinite(t) && t > Date.now() + 30_000) {
-          unlockAt = new Date(t).toISOString()
-        }
-      }
-      const seedForPrevious = remixSeed
-        ? { ...remixSeed, previous: undefined }
-        : undefined
-
-      const data: GardenData = {
-        flowers: result.flowers,
-        bouquetNote: result.bouquetNote,
-        message: message.trim(),
-        from: from.trim(),
-        to: recipient.trim(),
-        createdAt: new Date().toISOString(),
-        unlockAt,
-        occasion,
-        mood,
-        previous: seedForPrevious,
-      }
+      const data = buildGardenData(result)
 
       const shortId = await createShortGarden(data, ctrl.signal)
       if (!shortId) {
@@ -570,6 +543,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setIsRerolling(false)
     }
   }, [
+    buildGardenData,
     isRerolling,
     garden,
     flowers,
@@ -581,9 +555,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     from,
     occasion,
     mood,
-    remixSeed,
-    scheduleOpen,
-    unlockLocal,
   ])
 
   const handleStartOver = useCallback(() => {

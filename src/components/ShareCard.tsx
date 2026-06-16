@@ -7,7 +7,8 @@
 // (state machine, handlers) reads independently of the share UI.
 // Composer still owns the state; this component is presentational.
 
-import { saveSharedImage } from '../lib/saveImage'
+import { useEffect } from 'react'
+import { prefetchSharedImage, saveSharedImage } from '../lib/saveImage'
 import styles from './Composer.module.css'
 
 interface Props {
@@ -45,6 +46,18 @@ export default function ShareCard({
   onReroll,
   onStartOver,
 }: Props) {
+  // Built once so the prefetch effect and the anchors share one source.
+  const cardUrl = gardenId ? `/api/card?id=${encodeURIComponent(gardenId)}&download=1` : undefined
+  const storyUrl = gardenId ? `/api/story?id=${encodeURIComponent(gardenId)}&download=1` : undefined
+
+  // On iOS the save handler fetches the PNG itself; warm both now so the
+  // share sheet opens inside the post-gesture window rather than waiting on
+  // a cold render. No-op on desktop/Android (see prefetchSharedImage).
+  useEffect(() => {
+    if (cardUrl) prefetchSharedImage(cardUrl)
+    if (storyUrl) prefetchSharedImage(storyUrl)
+  }, [cardUrl, storyUrl])
+
   return (
     <div className={styles.shareCard}>
       <p className={styles.shareTitle}>
@@ -114,7 +127,7 @@ export default function ShareCard({
         {gardenId && !isRerolling && (
           <p className={styles.shareDownloads}>
             <a
-              href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
+              href={cardUrl}
               download
               className={styles.shareDownloadLink}
               onClick={e => saveSharedImage(e, 'composer', 'square')}
@@ -123,7 +136,7 @@ export default function ShareCard({
             </a>
             <span className={styles.shareDownloadSep} aria-hidden>·</span>
             <a
-              href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
+              href={storyUrl}
               download
               className={styles.shareDownloadLink}
               onClick={e => saveSharedImage(e, 'composer', 'story')}
