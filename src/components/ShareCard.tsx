@@ -7,7 +7,7 @@
 // (state machine, handlers) reads independently of the share UI.
 // Composer still owns the state; this component is presentational.
 
-import { trackCardDownloaded } from '../lib/analytics'
+import { saveSharedImage } from '../lib/saveImage'
 import styles from './Composer.module.css'
 
 interface Props {
@@ -107,15 +107,17 @@ export default function ShareCard({
 
         {/* Save-as links — text-link weight, not button weight. Save
             options are tertiary; making them look like primary actions
-            would compete with share. Anchors (not onClick) so right-
-            click "save link as" works. */}
+            would compete with share. Still real anchors so right-click
+            "save link as" works on desktop; on phones the onClick routes
+            through the share sheet so the image lands in Photos rather
+            than Files (see saveSharedImage). */}
         {gardenId && !isRerolling && (
           <p className={styles.shareDownloads}>
             <a
               href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
               download
               className={styles.shareDownloadLink}
-              onClick={() => trackCardDownloaded('composer', 'square')}
+              onClick={e => saveSharedImage(e, 'composer', 'square')}
             >
               save as image
             </a>
@@ -124,7 +126,7 @@ export default function ShareCard({
               href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
               download
               className={styles.shareDownloadLink}
-              onClick={() => trackCardDownloaded('composer', 'story')}
+              onClick={e => saveSharedImage(e, 'composer', 'story')}
             >
               save as story
             </a>

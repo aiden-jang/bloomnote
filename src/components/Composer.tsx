@@ -286,6 +286,24 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     scheduleError === null &&
     (!scheduleOpen || unlockLocal !== '')
 
+  // Why is the submit button disabled? Spell it out under the button so
+  // it's never a dead control with no explanation. Ordered by what to
+  // fix first: the core inputs (To + message), then the schedule. A
+  // past-time pick isn't covered here — the picker shows its own inline
+  // error for that. ("From" is optional, so it's never a blocker.)
+  const disabledReason: string | null = (() => {
+    if (canSubmit) return null
+    const noRecipient = recipient.trim().length < 1
+    const noMessage = message.trim().length < 4
+    if (noRecipient && noMessage) return 'add who it’s for and a message to get started'
+    if (noRecipient) return 'add who it’s for in the “to” field'
+    if (noMessage) return 'write them a message first'
+    if (scheduleOpen && unlockLocal === '' && !scheduleError) {
+      return 'pick a date & time above to schedule, or hit cancel to send now'
+    }
+    return null
+  })()
+
   const handleDesign = useCallback(async () => {
     if (!canSubmit) return
     // Fresh design — clear any prior re-roll counter so analytics
@@ -848,14 +866,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </button>
           </div>
 
-          {/* Tell the user why the button is dead. Empty name/message are
-              self-evident from the fields; the non-obvious one is an open
-              schedule picker with nothing chosen — the form looks complete
-              but the button won't fire. (A past-time pick is covered by
-              the picker's own inline error, so skip the hint then.) */}
-          {scheduleOpen && unlockLocal === '' && !scheduleError && (
+          {/* Tell the user why the button is dead, rather than leaving a
+              greyed control they have to puzzle over. See disabledReason. */}
+          {disabledReason && (
             <p className={styles.actionHint} aria-live="polite">
-              pick a date &amp; time above to schedule, or hit cancel to send now
+              {disabledReason}
             </p>
           )}
 
