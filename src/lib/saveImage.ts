@@ -16,7 +16,7 @@
 // for desktop: the direct download is exactly what people expect.
 
 import type { MouseEvent } from 'react'
-import { trackCardDownloaded } from './analytics'
+import { trackCardDownloaded, type CardFormat, type DownloadSurface } from './analytics'
 
 // iPhone / iPod, plus iPadOS — which reports as desktop Safari but gives
 // itself away with multiple touch points on a Mac platform string.
@@ -48,6 +48,40 @@ function shouldSaveViaShare(): boolean {
   }
 }
 
+// In-flight / resolved image fetches, keyed by URL, so a save can reuse a
+// blob that prefetchSharedImage warmed on mount. Bounded by the number of
+// distinct save URLs on a page (card + story for one garden), so it needs
+// no eviction. Only populated on the iOS share path.
+const prefetched = new Map<string, Promise<Blob>>()
+
+function fetchImageBlob(url: string): Promise<Blob> {
+  return fetch(url).then(res => {
+    if (!res.ok) throw new Error(`save fetch failed: ${res.status}`)
+    return res.blob()
+  })
+}
+
+/**
+ * Warm the rendered PNG ahead of the tap. iOS only — it's the one path
+ * where the click handler fetches the blob itself, and where a cold
+ * `@vercel/og` render can outlast the share sheet's short post-gesture
+ * activation window. Calling this on mount means the blob is usually
+ * already in hand by the time the user taps "save", so `navigator.share()`
+ * fires immediately instead of awaiting the network. Renders are cached
+ * immutably server-side, so the cost is one render per garden, not per
+ * view. A no-op everywhere else, and idempotent per URL.
+ */
+export function prefetchSharedImage(url: string): void {
+  if (!shouldSaveViaShare()) return
+  if (prefetched.has(url)) return
+  const blobPromise = fetchImageBlob(url)
+  // Drop a failed entry so a later prefetch/save can retry rather than
+  // re-await a rejected promise. The handler also marks the rejection as
+  // observed, so an un-clicked prefetch never logs an unhandled rejection.
+  blobPromise.catch(() => prefetched.delete(url))
+  prefetched.set(url, blobPromise)
+}
+
 // Programmatic download fallback for the rare case where we've fetched
 // the blob but the share sheet won't take it.
 function downloadBlob(blob: Blob, filename: string): void {
@@ -74,8 +108,8 @@ function downloadBlob(blob: Blob, filename: string): void {
  */
 export async function saveSharedImage(
   e: MouseEvent<HTMLAnchorElement>,
-  surface: 'composer' | 'recipient',
-  format: 'square' | 'story',
+  surface: DownloadSurface,
+  format: CardFormat,
 ): Promise<void> {
   // Read the URL before any await — React clears currentTarget once the
   // synchronous part of the handler returns.
@@ -91,9 +125,10 @@ export async function saveSharedImage(
 
   e.preventDefault()
   try {
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`save fetch failed: ${res.status}`)
-    const blob = await res.blob()
+    // Reuse the blob prefetchSharedImage warmed on mount when available, so
+    // share() fires inside iOS's activation window instead of waiting on a
+    // cold render here. Falls back to a fresh fetch if nothing's cached.
+    const blob = await (prefetched.get(url) ?? fetchImageBlob(url))
     const file = new File([blob], filename, { type: 'image/png' })
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share?.({ files: [file] })
@@ -105,9 +140,12 @@ export async function saveSharedImage(
     trackCardDownloaded(surface, format)
   } catch (err) {
     // User dismissed the share sheet: not a failure, and re-triggering a
-    // download would be a surprise. Bail quietly.
+    // download would be a surprise. Bail quietly without tracking.
     if (err instanceof DOMException && err.name === 'AbortError') return
     // Genuine failure (network, render): fall back to the download URL.
+    // The endpoint serves Content-Disposition: attachment, so this saves
+    // the file rather than navigating away — still a download, so track it.
+    trackCardDownloaded(surface, format)
     window.location.href = url
   }
 }

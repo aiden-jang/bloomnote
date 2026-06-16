@@ -87,6 +87,11 @@ export function trackShareLinkShared(): void {
   emit('share_link_shared')
 }
 
+/** Where a card/story save was triggered from (sender vs recipient view). */
+export type DownloadSurface = 'composer' | 'recipient'
+/** Which export dimension was saved: 1080×1080 square or 1080×1920 story. */
+export type CardFormat = 'square' | 'story'
+
 /**
  * User downloaded a garden image.
  *
@@ -101,8 +106,8 @@ export function trackShareLinkShared(): void {
  *     driving the downloads — useful product signal.
  */
 export function trackCardDownloaded(
-  surface: 'composer' | 'recipient',
-  format: 'square' | 'story',
+  surface: DownloadSurface,
+  format: CardFormat,
 ): void {
   emit('card_downloaded', { surface, format })
 }
