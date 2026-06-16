@@ -6,12 +6,12 @@ import RemixContext from './RemixContext'
 import SoundToggle from './SoundToggle'
 import { buildRemixUrl, type GardenData } from '../garden'
 import {
-  trackCardDownloaded,
   trackGardenBloomed,
   trackGardenOpened,
   trackReplyStarted,
 } from '../lib/analytics'
 import { formatGardenDate } from '../lib/formatDate'
+import { saveSharedImage } from '../lib/saveImage'
 import { playChime } from '../sound'
 import styles from './RecipientView.module.css'
 
@@ -157,14 +157,17 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             for KV-backed gardens). Recipient downloads typically end up
             as personal keepsakes or screenshots; we still track the
             event because spikes here are a signal that "the bloom is
-            beautiful enough to capture," which informs design choices. */}
+            beautiful enough to capture," which informs design choices.
+            On phones the onClick routes through the share sheet so the
+            image saves to Photos instead of Files (see saveSharedImage);
+            desktop keeps the plain download. */}
         {gardenId && (
           <p className={styles.downloadRow}>
             <a
               href={`/api/card?id=${encodeURIComponent(gardenId)}&download=1`}
               download
               className={styles.downloadLink}
-              onClick={() => trackCardDownloaded('recipient', 'square')}
+              onClick={e => saveSharedImage(e, 'recipient', 'square')}
             >
               save as image
             </a>
@@ -173,7 +176,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               href={`/api/story?id=${encodeURIComponent(gardenId)}&download=1`}
               download
               className={styles.downloadLink}
-              onClick={() => trackCardDownloaded('recipient', 'story')}
+              onClick={e => saveSharedImage(e, 'recipient', 'story')}
             >
               save as story
             </a>
