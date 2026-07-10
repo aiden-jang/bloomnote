@@ -1,0 +1,281 @@
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.topLabel {
+  text-align: center;
+}
+
+.fromText {
+  font-size: 15px;
+  color: var(--text-light);
+}
+
+.fromName {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--green-mid);
+  font-size: 17px;
+}
+
+.messageWrap {
+  background: white;
+  border: 1px solid var(--green-pale);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.messageWrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.messageText {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--green-deep);
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+.sig {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
+   the foot of the message card the way a date would on a physical
+   greeting card. */
+.grownOn {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--green-pale);
+  font-size: 11px;
+  color: var(--text-light);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+.bouquetNote {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--green-pale);
+}
+
+.legendWrap {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.8s ease 0.2s, transform 0.8s ease 0.2s;
+}
+
+.legendWrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cta {
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1s ease 0.4s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cta.visible {
+  opacity: 1;
+}
+
+.ctaText {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.ctaBtn {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 22px;
+  /* Match the composer CTA: green gradient + soft shadow, hover lift,
+     active press. */
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  font-family: var(--sans);
+  box-shadow: 0 3px 12px rgba(45, 90, 27, 0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.ctaBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(45, 90, 27, 0.26);
+}
+
+.ctaBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(45, 90, 27, 0.18);
+}
+
+/* "Open the garden" — the gesture that unlocks audio + triggers
+   bloom. Sized to be unmissable but not louder than the bouquet
+   note that follows. Sits centered, just below the empty garden
+   plot. Subtle pulse animation hints "tap me" without being
+   aggressive. */
+.openBtn {
+  align-self: center;
+  padding: 14px 32px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  animation: openBtnPulse 2.4s ease-in-out infinite;
+}
+
+/* On hover the attention pulse stops (they've found it); it settles
+   into a lifted resting state matching the other CTAs. */
+.openBtn:hover {
+  animation: none;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(45, 90, 27, 0.28);
+}
+
+.openBtn:active {
+  transform: scale(0.97);
+}
+
+@keyframes openBtnPulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0    rgba(74, 124, 63, 0.5); }
+  50%      { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(74, 124, 63, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .openBtn {
+    animation: none;
+  }
+}
+
+.ctaSub {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.ctaSubLink {
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ctaSubLink:hover {
+  color: var(--green-mid);
+}
+
+/* Save-as-image — sits below the primary CTA and the "start fresh"
+   link as a tertiary affordance. Quieter on purpose: recipients who
+   want to keep the garden are a minority of viewers, and a louder
+   button here would compete visually with "grow one back," which is
+   the action we most want them to take. Quiet doesn't mean hidden —
+   underline + spacing keep it discoverable. */
+/* Two download links rendered side-by-side as a single line with a
+   centered dot separator. Same visual weight as before, just an extra
+   option. */
+.downloadRow {
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--text-light);
+  letter-spacing: 0.01em;
+}
+
+.downloadLink {
+  display: inline;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.downloadLink:hover {
+  color: var(--text-mid);
+}
+
+.downloadSep {
+  margin: 0 8px;
+  color: var(--text-light);
+  opacity: 0.5;
+}
+
+/* Print: a save-link doesn't belong on a physical card. */
+@media print {
+  .downloadRow { display: none; }
+}
+
+.threadWrap {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s;
+}
+
+.threadWrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Mobile responsive — tighten padding, shrink the bouquet-note
+   and message text a touch so a long note doesn't take three
+   scroll-screens. */
+@media (max-width: 480px) {
+  .wrap {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .fromText {
+    font-size: 14px;
+  }
+
+  .fromName {
+    font-size: 16px;
+  }
+
+  .messageWrap {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .messageText {
+    font-size: 18px;
+    line-height: 1.55;
+  }
+
+  .bouquetNote {
+    font-size: 15px;
+  }
+}
+
+/* Print: drop the call-to-action ("grow one back?" link) — a screen-only
+   affordance. The topLabel and thread context stay; they're part of the card. */
+@media print {
+  .cta {
+    display: none !important;
+  }
+}

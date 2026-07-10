@@ -1,0 +1,257 @@
+.wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  text-align: center;
+  padding-top: 1rem;
+}
+
+.title {
+  font-family: var(--serif);
+  font-size: 38px;
+  font-weight: 500;
+  color: var(--green-deep);
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+  font-variation-settings: 'opsz' 96, 'SOFT' 60, 'WONK' 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+/* --- Empty state --- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.emptyText {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  color: var(--text-mid);
+}
+
+.emptyLink {
+  color: var(--green-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 14px;
+}
+
+/* --- List --- */
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--green-pale);
+  border-radius: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.card:hover {
+  border-color: var(--green-light);
+  box-shadow: 0 4px 16px rgba(45, 90, 27, 0.08);
+}
+
+/* Tappable main region — swatches + text. The whole left side is the
+   link to the recipient view; actions on the right are separate. */
+.cardMain {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.swatches {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* Overlapping swatch chips — a tiny bouquet thumbnail. The negative
+   margin tucks each behind the previous so a 5-color row stays
+   compact; the white ring keeps them legible where they overlap. */
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--cream);
+}
+
+.swatch:not(:first-child) {
+  margin-left: -5px;
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recipient {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* Separator dots between meta chips, drawn with ::before so we don't
+   need separator spans in the markup. */
+.meta > span:not(:first-child)::before {
+  content: '·';
+  margin-right: 0.4rem;
+}
+
+.sealed {
+  color: var(--soil);
+}
+
+/* --- Actions --- */
+.cardActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.actionBtn {
+  background: transparent;
+  border: 1px solid var(--green-light);
+  color: var(--green-mid);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.actionBtn:hover {
+  background: var(--green-mid);
+  color: white;
+}
+
+.actionBtn:active {
+  transform: scale(0.96);
+}
+
+.removeBtn {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.removeBtn:hover {
+  color: var(--soil-dark);
+}
+
+/* --- Footer --- */
+.footer {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--green-pale);
+  text-align: center;
+}
+
+.backLink {
+  font-size: 13px;
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.backLink:hover {
+  color: var(--green-mid);
+}
+
+@media (max-width: 480px) {
+  .wrap {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  /* Stack actions horizontally under the text on narrow screens so the
+     card doesn't get too tall. */
+  .card {
+    flex-wrap: wrap;
+  }
+
+  .cardActions {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+/* Sent / Received tabs (account view). */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tab,
+.tabActive {
+  appearance: none;
+  border: 1px solid var(--green-pale);
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tab:hover {
+  color: var(--text-dark);
+  border-color: var(--green-mid);
+}
+.tab:active,
+.tabActive:active {
+  transform: scale(0.96);
+}
+.tabActive {
+  background: var(--green-deep);
+  border-color: var(--green-deep);
+  color: var(--cream);
+}
