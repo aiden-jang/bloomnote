@@ -1,0 +1,78 @@
+# Deploying bloomnote → bloomnote.aidenjang.com
+
+**Status: not yet deployed** (first deploy is step 3.7). One Cloudflare Worker (`bloomnote-api`)
+serves both the API (`/api/*`, `/health`) and the web SPA on one origin, `bloomnote.aidenjang.com`.
+Gardens live in a KV namespace (`GARDENS`). Free tier; you pay only for DNS.
+
+Accounts are optional and use the shared auth service (`accounts.aidenjang.com`): the browser
+redirects there for sign-in/out, and bloomnote validates the `platform_session` cookie
+server-side via `/api/me`. The cookie is scoped to `.aidenjang.com`, so it's shared with owewell.
+
+All commands run from `apps/bloomnote/api`.
+
+## First deploy (once, in order)
+
+```bash
+# 1. Create the garden store, then paste the printed id into wrangler.toml,
+#    replacing "local-dev-placeholder" under [[kv_namespaces]].
+pnpm exec wrangler kv namespace create GARDENS
+
+# 2. Garden generation key (Gemini). Optional — without it, /api/design-garden returns 503
+#    gracefully and the rest of the app still works.
+echo "<gemini-api-key>" | pnpm exec wrangler secret put GEMINI_API_KEY
+
+# 3. Custom-domain two-step: a Worker needs a deployment before a custom domain attaches.
+#    - Comment out the [[routes]] custom_domain block in wrangler.toml.
+pnpm run deploy            # builds bloomnote-web, then wrangler deploy (first deployment)
+#    - Uncomment the [[routes]] block.
+pnpm run deploy            # redeploy to attach bloomnote.aidenjang.com
+```
+
+- `AUTH_URL` is committed in `wrangler.toml` `[vars]` (`https://accounts.aidenjang.com`), so no
+  auth secret to set. The account already has a `workers.dev` subdomain, so `error 10063` won't recur.
+
+## Routine redeploy
+
+```bash
+pnpm run deploy            # builds the SPA + deploys (use whenever web/ changed)
+pnpm exec wrangler deploy  # API/config-only change (reuses the last-built SPA)
+```
+
+## Dependency: the auth service must be current
+
+bloomnote's sign-out redirects to `accounts.aidenjang.com/logout`. That route + the copy fix
+were added after auth's original deploy, so redeploy auth too (from `apps/auth/api`):
+
+```bash
+pnpm run deploy
+```
+
+Otherwise sign-out falls through to `/account` and doesn't clear the session.
+
+## Smoke test (verify SSO + /mine cross-device)
+
+```bash
+curl https://bloomnote.aidenjang.com/health          # {"status":"ok","service":"bloomnote"}
+curl https://bloomnote.aidenjang.com/api/me            # {"user":null} when signed out
+```
+
+Then in a browser:
+1. Anonymous: create a garden, open its `/g/<id>` link — works with no account.
+2. Click **Sign in** (top-right) → lands on `accounts.aidenjang.com`, sign in → back to bloomnote.
+   If you're already signed into owewell, this should be seamless (shared `.aidenjang.com` cookie).
+3. `/mine` → your **Sent** garden appears; any anonymous gardens made on this device get claimed.
+4. Open someone else's `/g/<id>` while signed in → it shows under **Received**.
+5. Cross-device check: sign in on another browser/device → the same Sent/Received lists load
+   (they're server-side in KV, not localStorage).
+
+## Local dev (no Cloudflare needed)
+
+```bash
+# auth (:34100) + bloomnote API (:32200) + bloomnote web (:32100)
+cd apps/auth/api     && pnpm exec wrangler dev --port 34100 --inspector-port 9229 --local
+cd apps/bloomnote/api && pnpm exec wrangler dev --port 32200 --inspector-port 9231 --local --var AUTH_URL:http://localhost:34100 --var GEMINI_API_KEY:<key>
+cd apps/bloomnote/web && VITE_AUTH_URL=http://localhost:34100 pnpm dev
+```
+
+The web dev server proxies `/api` → the Worker at `:32200`; `VITE_AUTH_URL` points sign-in at the
+local auth service instead of prod.

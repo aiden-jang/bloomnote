@@ -1,15 +1,12 @@
-node_modules
-dist
+node_modules/
+dist/
+build/
+*.log
 .env
 .env.local
-.vercel
+.dev.vars
 .DS_Store
-*.log
-
-# Local dev scaffolding (not project source)
-.claude/
-
-# Operator-only message reader. Reads notes straight from Redis with
-# the admin token — handy locally, but a "read every note" script
-# shouldn't ship in the public repo (it contradicts the privacy copy).
-scripts/list-messages.mjs
+coverage/
+.vite/
+.wrangler/
+packages/worker/.wrangler/
