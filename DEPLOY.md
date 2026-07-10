@@ -1,14 +1,15 @@
 # Deploying bloomnote → bloomnote.aidenjang.com
 
-**Status: not yet deployed** (first deploy is step 3.7). One Cloudflare Worker (`bloomnote-api`)
-serves both the API (`/api/*`, `/health`) and the web SPA on one origin, `bloomnote.aidenjang.com`.
-Gardens live in a KV namespace (`GARDENS`). Free tier; you pay only for DNS.
+**Status: live** at `bloomnote.aidenjang.com` (KV provisioned, custom domain attached). For a new
+version use the **Routine redeploy** section; the first-deploy steps are kept for reference. One
+Cloudflare Worker (`bloomnote-api`) serves both the API (`/api/*`, `/health`) and the web SPA on
+one origin. Gardens live in a KV namespace (`GARDENS`). Free tier; you pay only for DNS.
 
 Accounts are optional and use the shared auth service (`accounts.aidenjang.com`): the browser
 redirects there for sign-in/out, and bloomnote validates the `platform_session` cookie
 server-side via `/api/me`. The cookie is scoped to `.aidenjang.com`, so it's shared with owewell.
 
-All commands run from `apps/bloomnote/api`.
+All commands run from `packages/api`.
 
 ## First deploy (once, in order)
 
@@ -38,14 +39,11 @@ pnpm run deploy            # builds the SPA + deploys (use whenever web/ changed
 pnpm exec wrangler deploy  # API/config-only change (reuses the last-built SPA)
 ```
 
-## Dependency: the auth service must be current
+## Dependency: the auth service
 
-bloomnote's sign-out redirects to `accounts.aidenjang.com/logout`. That route + the copy fix
-were added after auth's original deploy, so redeploy auth too (from `apps/auth/api`):
-
-```bash
-pnpm run deploy
-```
+bloomnote relies on the shared auth service at `accounts.aidenjang.com` (sign-in/out redirects +
+server-side `/auth/me` validation). Auth lives in its own repo now and is already live; deploy it
+from there if its contract changes.
 
 Otherwise sign-out falls through to `/account` and doesn't clear the session.
 
@@ -69,9 +67,11 @@ Then in a browser:
 
 ```bash
 # auth (:34100) + bloomnote API (:32200) + bloomnote web (:32100)
-cd apps/auth/api     && pnpm exec wrangler dev --port 34100 --inspector-port 9229 --local
-cd apps/bloomnote/api && pnpm exec wrangler dev --port 32200 --inspector-port 9231 --local --var AUTH_URL:http://localhost:34100 --var GEMINI_API_KEY:<key>
-cd apps/bloomnote/web && VITE_AUTH_URL=http://localhost:34100 pnpm dev
+# auth runs from its own repo:
+cd ../auth/packages/api && pnpm exec wrangler dev --port 34100 --inspector-port 9229 --local
+# bloomnote (this repo):
+cd packages/api && pnpm exec wrangler dev --port 32200 --inspector-port 9231 --local --var AUTH_URL:http://localhost:34100 --var GEMINI_API_KEY:<key>
+cd packages/web && VITE_AUTH_URL=http://localhost:34100 pnpm dev
 ```
 
 The web dev server proxies `/api` → the Worker at `:32200`; `VITE_AUTH_URL` points sign-in at the
