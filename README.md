@@ -8,7 +8,7 @@ bloom, and they can grow one back.
 
 `TypeScript` · `Hono` · `Cloudflare Workers` · `KV` · `Gemini (function calling)` · `SSE` · `React` · `Vite`
 
-> Part of the [platform monorepo](../../README.md). Runs on Cloudflare's free tier.
+> Part of a [platform of apps](https://github.com/aiden-jang/platform/blob/main/PLATFORM.md) that share one sign-in. Runs on Cloudflare's free tier.
 
 ---
 
