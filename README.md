@@ -142,3 +142,11 @@ guessable, but the link *is* the access token, so don't write anything you would
 ```bash
 pnpm --filter @bloomnote/api test    # KV garden store + garden validation
 ```
+
+## Observability
+
+- **Errors + requests:** Workers Logs is enabled (`[observability]` in `wrangler.toml`), so uncaught
+  throws and handled errors (via `app.onError`) are captured. Tail live with
+  `pnpm --filter @bloomnote/api exec wrangler tail`.
+- **Uptime:** `GET /health` returns `{ status: 'ok' }`, ready for a free external monitor (e.g.
+  UptimeRobot).
