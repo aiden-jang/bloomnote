@@ -102,6 +102,9 @@ interface GeminiResponse {
 // backoff; anything else (or a persistent failure) still throws.
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const MAX_ATTEMPTS = 3;
+// Cap a single Gemini call so a hung request can't leave the user staring at "growing…" forever
+// (fetch has no default timeout). On timeout we retry like any other transient failure.
+const REQUEST_TIMEOUT_MS = 20_000;
 
 export async function generateGarden(apiKey: string, userPrompt: string): Promise<ValidatedGarden> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -113,7 +116,22 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
   });
 
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch {
+      // Timed out or network-dropped. Retry a couple times, then surface a clear message.
+      if (attempt >= MAX_ATTEMPTS - 1) {
+        throw new Error('The garden service took too long. Please try again.');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      continue;
+    }
     if (res.ok) {
       const data = (await res.json()) as GeminiResponse;
       const parts = data.candidates?.[0]?.content?.parts ?? [];
