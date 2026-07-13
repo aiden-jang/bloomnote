@@ -4,6 +4,7 @@ import MyGardens from './components/MyGardens'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import Footer from './components/Footer'
+import { LegalPage } from './components/LegalPage'
 import { fetchGarden, isShortId, type GardenData } from './garden'
 
 /**
@@ -29,9 +30,11 @@ type Route =
   | { kind: 'mine' }                                              // on-device archive
   | { kind: 'loading' }                                           // short ID, fetch pending
   | { kind: 'notfound' }                                          // 404 (bad ID, deleted, malformed)
+  | { kind: 'privacy' }                                           // static legal page
+  | { kind: 'terms' }                                             // static legal page
 
 interface ParsedRoute {
-  view: 'composer' | 'recipient' | 'mine'
+  view: 'composer' | 'recipient' | 'mine' | 'privacy' | 'terms'
   short?: string  // 6-char base62 ID, ready for KV lookup
   malformed?: boolean
 }
@@ -42,6 +45,8 @@ function parseRoute(): ParsedRoute {
   // /mine is a static, client-only route — no server lookup, reads
   // straight from localStorage in the view. Trailing slash tolerated.
   if (path === '/mine' || path === '/mine/') return { view: 'mine' }
+  if (path === '/privacy' || path === '/privacy/') return { view: 'privacy' }
+  if (path === '/terms' || path === '/terms/') return { view: 'terms' }
 
   const sharedMatch = path.match(/^\/g\/(.+)$/)
   if (sharedMatch) {
@@ -68,6 +73,8 @@ export default function App() {
 
   const [route, setRoute] = useState<Route>(() => {
     if (parsed.view === 'mine') return { kind: 'mine' }
+    if (parsed.view === 'privacy') return { kind: 'privacy' }
+    if (parsed.view === 'terms') return { kind: 'terms' }
     if (parsed.view === 'recipient') {
       if (parsed.malformed) return { kind: 'notfound' }
       return { kind: 'loading' }
@@ -115,6 +122,10 @@ export default function App() {
       <NotFoundShell />
     ) : route.kind === 'recipient' ? (
       <RecipientGateway garden={route.garden} gardenId={route.gardenId} />
+    ) : route.kind === 'privacy' ? (
+      <LegalPage kind="privacy" />
+    ) : route.kind === 'terms' ? (
+      <LegalPage kind="terms" />
     ) : (
       <Composer remixSeed={route.seed} />
     )
