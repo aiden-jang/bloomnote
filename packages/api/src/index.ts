@@ -14,6 +14,14 @@ import { buildPrompt, checkBudget, generateGarden, validateBody } from './design
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Safety net: any error a route does not handle itself is logged server-side (Workers Logs /
+// `wrangler tail`) and returned as a generic 500, so an internal failure never leaks a stack
+// trace or implementation detail to the client.
+app.onError((err, c) => {
+  console.error('Unhandled error:', err);
+  return c.json({ error: 'InternalError' }, 500);
+});
+
 // Security headers on every response + a same-origin CSRF guard on state-changing requests.
 app.use('*', harden());
 
