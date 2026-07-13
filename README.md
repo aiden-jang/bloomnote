@@ -25,7 +25,7 @@ in SVG and bloom in sequence, streamed over SSE so you see progress. "Different 
 with the same inputs.
 
 You get a short link to share. The recipient opens it, watches it bloom, reads the meaning behind
-each flower, and can grow one back — the reply carries your original garden as thread context. You
+each flower, and can grow one back: the reply carries your original garden as thread context. You
 can also schedule delivery: the recipient sees a sealed envelope counting down to the moment you
 picked. bloomnote works fully signed out; an account just gives you a synced list of gardens
 you've sent and received.
@@ -33,7 +33,7 @@ you've sent and received.
 ## Architecture
 
 ```
-        Browser (React + Vite)                    bloomnote Worker (Hono) — one origin
+        Browser (React + Vite)                    bloomnote Worker (Hono) - one origin
    Composer / RecipientView / Sealed / MyGardens
         │  POST /api/design-garden (SSE)  ─────▶   designGarden.ts ─▶ Gemini 2.5 Flash
         │     start | thinking | complete          (raw REST generateContent, function call)
@@ -54,7 +54,7 @@ new petal shape is one switch arm.
 with a typed schema (`functionCallingConfig.mode = ANY`), which removes the "what if it answered
 in prose" failure mode. Its schema is a subset of OpenAPI and can't express regex or array
 bounds, so those rules live in the field descriptions (which the model reads) and a
-`validateGarden()` pass that rejects bad output with a real error — a bad `petalCount` becomes a
+`validateGarden()` pass that rejects bad output with a real error: a bad `petalCount` becomes a
 clean error event, not a half-drawn flower.
 
 **Short links on our own domain, in KV.** `POST /api/garden` writes the garden under a 6-char
@@ -62,14 +62,14 @@ base62 id (alphabet minus `0/O/1/l/I` for legibility) and returns it; `GET` read
 one-year immutable cache header, since a garden never changes once written. KV is the natural fit:
 the id is the only thing you ever query on, reads are edge-cached, and there's no relational shape
 to model. An earlier version used a third-party shortener, which put the recipient on someone
-else's domain with an occasional interstitial — both break the moment.
+else's domain with an occasional interstitial. Both break the moment.
 
 **No degraded fallback if the write fails.** The share card waits for the short link before it
 appears. If the KV write fails the user sees an error, not a 450-character link. Silently shipping
 a broken-looking share link trains people to distrust the app.
 
-**A budget cap so a public demo can't run up a bill.** Gemini calls are metered in KV — per-IP
-per-minute and a global daily ceiling — and the check fails *open* on KV hiccups so a metering
+**A budget cap so a public demo can't run up a bill.** Gemini calls are metered in KV (per-IP
+per-minute and a global daily ceiling), and the check fails *open* on KV hiccups so a metering
 blip never blocks a legitimate garden. The key is a wrangler secret; with no key the SSE
 error-path is still exercised.
 
@@ -123,7 +123,7 @@ pnpm install
 # local auth service (:34100), so a local login is validated there (not production). Run auth too.
 pnpm --filter @bloomnote/api dev
 
-# web SPA — http://localhost:32100
+# web SPA - http://localhost:32100
 pnpm --filter @bloomnote/web dev
 ```
 
@@ -135,7 +135,7 @@ See [DEPLOY.md](DEPLOY.md) for the production runbook.
 
 The note goes to Google's Gemini for processing and is stored in KV under the short id. Anyone
 with the link can read it. Ids are random 6-char base62 (~56 billion values) so they aren't
-guessable, but the link *is* the access token — don't write anything you wouldn't forward.
+guessable, but the link *is* the access token, so don't write anything you wouldn't forward.
 
 ## Tests
 
