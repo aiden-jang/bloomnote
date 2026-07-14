@@ -5,7 +5,7 @@ import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import SoundToggle from './SoundToggle'
 import { buildRemixUrl, type GardenData } from '../garden'
-import { downloadGardenImage } from '../lib/gardenImage'
+import { saveGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
 import { recordReceived } from '../lib/account'
 import {
@@ -203,7 +203,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           <button
             type="button"
             className={styles.ctaSubLink}
-            onClick={() => void downloadGardenImage({ flowers, from, to })}
+            onClick={() => void saveGardenImage({ flowers, from, to })}
           >
             save it as an image
           </button>

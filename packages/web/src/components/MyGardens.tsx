@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
 import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
 import { buildShareUrl, fetchGarden } from '../garden'
-import { downloadGardenImage } from '../lib/gardenImage'
+import { saveGardenImage } from '../lib/gardenImage'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
 import styles from './MyGardens.module.css'
@@ -317,7 +317,7 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
     try {
       const data = await fetchGarden(id)
       if (data?.flowers?.length) {
-        await downloadGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
+        await saveGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
       }
     } finally {
       setSaving(false)

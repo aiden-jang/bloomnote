@@ -93,12 +93,12 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
   );
 }
 
-/** Build the share-card PNG and trigger a download. Rejects if rasterization fails. */
-export async function downloadGardenImage(opts: GardenImageOpts): Promise<void> {
+/** Rasterize the share card to a PNG blob. Rejects if rasterization fails. */
+async function renderGardenPng(opts: GardenImageOpts): Promise<Blob> {
   const svg = renderToStaticMarkup(<ShareImage {...opts} />);
   const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   try {
-    await new Promise<void>((resolve, reject) => {
+    return await new Promise<Blob>((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         const dpr = 2; // render at 2x for a crisp 2160px image
@@ -109,19 +109,7 @@ export async function downloadGardenImage(opts: GardenImageOpts): Promise<void> 
         if (!ctx) return reject(new Error('canvas unavailable'));
         ctx.scale(dpr, dpr);
         ctx.drawImage(img, 0, 0, W, H);
-        canvas.toBlob((png) => {
-          if (!png) return reject(new Error('encode failed'));
-          const href = URL.createObjectURL(png);
-          const a = document.createElement('a');
-          const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-          a.download = `bloomnote-${base}.png`;
-          a.href = href;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(href);
-          resolve();
-        }, 'image/png');
+        canvas.toBlob((png) => (png ? resolve(png) : reject(new Error('encode failed'))), 'image/png');
       };
       img.onerror = () => reject(new Error('svg render failed'));
       img.src = svgUrl;
@@ -129,4 +117,46 @@ export async function downloadGardenImage(opts: GardenImageOpts): Promise<void> 
   } finally {
     URL.revokeObjectURL(svgUrl);
   }
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = href;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(href);
+}
+
+/**
+ * Save the garden as an image. On phones this opens the native share sheet with the PNG, so the
+ * user can tap "Save Image" and it lands in Photos (a plain download would go to Files instead).
+ * On desktop, or if sharing a file isn't supported, it downloads the PNG.
+ *
+ * Call from a user gesture: the rasterization is fast, but navigator.share needs user activation.
+ */
+export async function saveGardenImage(opts: GardenImageOpts): Promise<void> {
+  const blob = await renderGardenPng(opts);
+  const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  const filename = `bloomnote-${base}.png`;
+  const file = new File([blob], filename, { type: 'image/png' });
+
+  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+  if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
+    try {
+      await nav.share({
+        files: [file],
+        title: 'bloomnote',
+        text: opts.to ? `A garden for ${opts.to}` : 'A garden',
+      });
+      return;
+    } catch (err) {
+      // User dismissed the sheet — done, don't also download.
+      if (err instanceof Error && err.name === 'AbortError') return;
+      // Anything else (e.g. lost user activation): fall through to a plain download.
+    }
+  }
+  downloadBlob(blob, filename);
 }
