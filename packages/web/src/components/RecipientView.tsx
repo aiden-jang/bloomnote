@@ -9,6 +9,7 @@ import { saveGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
 import { recordReceived } from '../lib/account'
 import {
+  trackCardDownloaded,
   trackGardenBloomed,
   trackGardenOpened,
   trackReplyStarted,
@@ -41,6 +42,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     savingImageRef.current = true
     try {
       await saveGardenImage({ flowers, from, to })
+      trackCardDownloaded('recipient', 'square')
     } catch {
       // no-op — the garden stays on screen; the recipient can retry.
     } finally {

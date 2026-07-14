@@ -4,6 +4,7 @@ import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
 import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
 import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
+import { trackCardDownloaded } from '../lib/analytics'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
 import styles from './MyGardens.module.css'
@@ -334,6 +335,7 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
       const data = await (gardenRef.current ?? (gardenRef.current = fetchGarden(id)))
       if (data?.flowers?.length) {
         await saveGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
+        trackCardDownloaded('mine', 'square')
       }
     } catch {
       // Transient fetch failure or a rare canvas/decode error — drop the cached fetch so the next
