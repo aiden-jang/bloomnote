@@ -313,7 +313,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     const noMessage = message.trim().length < 4
     if (noRecipient && noMessage) return 'add who it’s for and a message to get started'
     if (noRecipient) return 'add who it’s for in the “to” field'
-    if (noMessage) return 'write them a message first'
+    if (noMessage) return 'write them a note first'
     // Past/malformed schedule time: the picker shows the specifics inline,
     // so point back to it rather than repeating its sentence here. (An
     // empty unlockLocal keeps scheduleError null — that's the next case,
@@ -502,7 +502,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     const prevGardenId = gardenId
 
     setIsRerolling(true)
-    setStatusText('replanting…')
+    setStatusText('regrowing…')
     setErrorText(null)
 
     const ctrl = new AbortController()
@@ -849,7 +849,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           </section>
 
           <section className={styles.section}>
-            <label className={styles.label}>your message</label>
+            <label className={styles.label}>your note</label>
             <textarea
               ref={messageRef}
               className={styles.textarea}
@@ -937,7 +937,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         <div className={styles.designingPanel}>
           <div className={styles.designingRow} role="status" aria-live="polite">
             <Spinner />
-            <span>{statusText || 'planting…'}</span>
+            <span>{statusText || 'growing…'}</span>
           </div>
           <button className={styles.cancelBtn} onClick={handleCancel}>
             cancel
@@ -984,7 +984,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                 {' a garden'}
               </>
             ) : (
-              `Someone grew ${recipient.trim() || 'them'} a garden`
+              `someone grew ${recipient.trim() || 'them'} a garden`
             )}
           </p>
 

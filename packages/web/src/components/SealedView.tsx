@@ -67,11 +67,11 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
       <div className={styles.topLabel}>
         {from ? (
           <p className={styles.fromText}>
-            <span className={styles.fromName}>{from}</span> sent {to ? to : 'you'} a garden
+            <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
           </p>
         ) : (
           <p className={styles.fromText}>
-            someone sent {to ? to : 'you'} a garden
+            someone grew {to ? to : 'you'} a garden
           </p>
         )}
       </div>

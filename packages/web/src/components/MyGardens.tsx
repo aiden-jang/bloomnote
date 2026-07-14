@@ -205,7 +205,9 @@ function AccountGardens() {
       ) : list.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.emptyText}>
-            {tab === 'sent' ? 'you haven’t grown any yet.' : 'nothing received yet.'}
+            {tab === 'sent'
+              ? 'you haven’t grown any yet.'
+              : 'gardens people grow you will show up here.'}
           </p>
           {tab === 'sent' && (
             <a href="/" className={styles.emptyLink}>

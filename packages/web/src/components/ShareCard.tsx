@@ -69,7 +69,7 @@ export default function ShareCard({
         {/* During reroll, swap the URL with a quiet status pill so the
             card doesn't reflow. */}
         {isRerolling ? (
-          <span className={styles.urlStatus}>{statusText || 'replanting…'}</span>
+          <span className={styles.urlStatus}>{statusText || 'regrowing…'}</span>
         ) : (
           <span className={styles.urlText}>{shareUrl}</span>
         )}
