@@ -128,11 +128,6 @@ export const FLOWER_DESIGN_FUNCTION = {
 const HEX = /^#[0-9A-Fa-f]{6}$/
 const ALLOWED_SHAPES = new Set(['round', 'elongated', 'bell', 'small', 'star'])
 
-export interface RawGarden {
-  bouquet_note: unknown
-  flowers: unknown
-}
-
 export interface ValidatedFlower {
   name: string
   meaning: string

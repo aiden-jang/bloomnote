@@ -31,8 +31,6 @@ export const OCCASIONS: readonly Occasion[] = [
 
 export const DEFAULT_OCCASION: Occasion['value'] = 'just-because'
 
-export const OCCASION_VALUES = new Set<string>(OCCASIONS.map(o => o.value))
-
 export function labelFor(value: string): string {
   return OCCASIONS.find(o => o.value === value)?.label ?? 'just bc'
 }

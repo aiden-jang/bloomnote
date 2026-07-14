@@ -7,8 +7,6 @@
 
 export type PetalShape = 'round' | 'elongated' | 'bell' | 'small' | 'star'
 
-export const PETAL_SHAPES: PetalShape[] = ['round', 'elongated', 'bell', 'small', 'star']
-
 /** A single AI-designed flower. Renders without any preset table. */
 export interface FlowerSpec {
   /** Poetic, invented name. */

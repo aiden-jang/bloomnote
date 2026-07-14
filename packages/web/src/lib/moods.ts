@@ -71,21 +71,3 @@ export const MOODS: readonly Mood[] = [
 ] as const
 
 export const DEFAULT_MOOD: Mood['value'] = 'none'
-
-export const MOOD_VALUES = new Set<string>(MOODS.map(m => m.value))
-
-/**
- * Server-side helper: given a mood value, return the prompt hint to
- * splice into the system prompt. Returns null for 'none' or any
- * unknown value, signaling "skip the mood block entirely."
- *
- * The backend imports this from `src/lib/moods.ts` directly — same
- * module serves both sides of the wire because the mood list is
- * shared truth and re-exporting it through a separate constant on
- * the API side would create two sources of drift.
- */
-export function promptHintFor(value: string): string | null {
-  const mood = MOODS.find(m => m.value === value)
-  if (!mood || mood.value === 'none') return null
-  return mood.promptHint
-}
