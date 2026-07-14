@@ -184,6 +184,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [thinking, setThinking] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // Guards against a double-tap firing two generations: the button doesn't unmount until the view
+  // transition swaps the DOM, so without this a fast second tap runs designGarden twice.
+  const designingRef = useRef(false)
+  // Same idea for save-as-image: don't open two share sheets / two downloads on a double-tap.
+  const savingImageRef = useRef(false)
 
   // While the model is thinking, cycle the status line so the wait feels alive. Cleanup stops it
   // when thinking ends (or the component unmounts).
@@ -365,7 +370,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   )
 
   const handleDesign = useCallback(async () => {
-    if (!canSubmit) return
+    if (!canSubmit || designingRef.current) return
+    designingRef.current = true
     // Fresh design — clear any prior re-roll counter so analytics
     // reflect "this user re-rolled N times after THIS specific
     // generation," not lifetime counts.
@@ -475,6 +481,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       trackGardenError(classifyError(err))
     } finally {
       abortRef.current = null
+      designingRef.current = false
     }
   }, [buildGardenData, canSubmit, from, message, mood, occasion, recipient, remixSeed])
 
@@ -715,9 +722,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   // Save the garden as a PNG "share card" (garden + who it's from + wordmark). Rasterized
   // client-side from a self-contained SVG, so it works offline and never leaves the device.
-  const handleSaveImage = useCallback(() => {
-    if (!flowers.length) return
-    void saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+  const handleSaveImage = useCallback(async () => {
+    if (!flowers.length || savingImageRef.current) return
+    savingImageRef.current = true
+    try {
+      await saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+    } catch {
+      // Rare (canvas/decode failure, or a non-abort share error). Swallow so it isn't an unhandled
+      // rejection; the Copy-link button remains as the fallback.
+    } finally {
+      savingImageRef.current = false
+    }
   }, [flowers, from, recipient])
 
   return (
