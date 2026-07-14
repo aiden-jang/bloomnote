@@ -44,7 +44,9 @@ function generateId(): string {
 export function looksLikeGarden(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false;
   const g = value as Record<string, unknown>;
-  return Array.isArray(g.flowers) && g.flowers.length > 0 && g.flowers.length <= 10;
+  // The design path produces 3–5 flowers and both renderers (GardenScene, the share image) are
+  // laid out for that; cap the write at 5 so a crafted payload can't store a garden that overlaps.
+  return Array.isArray(g.flowers) && g.flowers.length > 0 && g.flowers.length <= 5;
 }
 
 function str(v: unknown): string {

@@ -87,7 +87,7 @@ export function trackShareLinkShared(): void {
 }
 
 /** Where a card/story save was triggered from (sender vs recipient view). */
-export type DownloadSurface = 'composer' | 'recipient'
+export type DownloadSurface = 'composer' | 'recipient' | 'mine'
 /** Which export dimension was saved: 1080×1080 square or 1080×1920 story. */
 export type CardFormat = 'square' | 'story'
 

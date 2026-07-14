@@ -15,6 +15,7 @@ import {
   type GardenData,
 } from '../garden'
 import {
+  trackCardDownloaded,
   trackComposerOpened,
   trackGardenCanceled,
   trackGardenError,
@@ -727,6 +728,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     savingImageRef.current = true
     try {
       await saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+      trackCardDownloaded('composer', 'square')
     } catch {
       // Rare (canvas/decode failure, or a non-abort share error). Swallow so it isn't an unhandled
       // rejection; the Copy-link button remains as the fallback.
