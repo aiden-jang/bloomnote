@@ -6,6 +6,9 @@ interface Props {
   index: number
   bloomed: boolean
   swayDelay?: number
+  /** Render the fully-open flower with no CSS animations, so it rasterizes correctly into a
+   *  static share image (entrance animations don't run in an <img>-loaded SVG). */
+  staticRender?: boolean
 }
 
 interface PetalGeometry {
@@ -88,7 +91,7 @@ function buildPetalPath(
   )
 }
 
-export default function FlowerSVG({ flower, bloomed, swayDelay = 0 }: Props) {
+export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender = false }: Props) {
   const groupRef = useRef<SVGGElement>(null)
   const { stemHeight, petalCount, petalColors, centerColor, stemColor, petalShape } = flower
 
@@ -107,7 +110,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0 }: Props) {
       viewBox={`0 0 80 ${svgH}`}
       style={{
         overflow: 'visible',
-        animationName: bloomed ? 'sway' : 'none',
+        animationName: bloomed && !staticRender ? 'sway' : 'none',
         animationDuration: `${2.5 + swayDelay * 0.3}s`,
         animationTimingFunction: 'ease-in-out',
         animationIterationCount: 'infinite',
@@ -125,7 +128,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0 }: Props) {
             strokeLinecap="round"
             style={{
               transformOrigin: `${cx}px ${svgH}px`,
-              animationName: 'bloomStem',
+              animationName: staticRender ? 'none' : 'bloomStem',
               animationDuration: '0.5s',
               animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
               animationFillMode: 'forwards',
@@ -157,7 +160,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0 }: Props) {
                 opacity="0.92"
                 style={{
                   transformOrigin: `${cx}px ${stemTop + geom.centerRadius}px`,
-                  animationName: 'popIn',
+                  animationName: staticRender ? 'none' : 'popIn',
                   animationDuration: '0.4s',
                   animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
                   animationFillMode: 'forwards',
