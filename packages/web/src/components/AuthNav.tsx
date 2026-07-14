@@ -18,6 +18,10 @@ const wrap: CSSProperties = {
   // Translucent cream chip (matching the sound toggle) so the links stay legible over whatever
   // content scrolls behind this fixed bar.
   padding: '7px 14px',
+  // Never let the pill run past the viewport's left edge on a phone (it grows leftward from
+  // right:64). The display name inside also truncates, so a long name can't push it across the
+  // centered header title.
+  maxWidth: 'calc(100vw - 76px)',
   background: 'rgba(250, 246, 238, 0.82)',
   border: '1px solid var(--green-pale, #e2e8dc)',
   borderRadius: 999,
@@ -32,6 +36,14 @@ const link: CSSProperties = {
   border: 'none',
   font: 'inherit',
   padding: 0,
+  whiteSpace: 'nowrap',
+};
+// The display name is user-controlled and unbounded — truncate it so it can't grow the pill.
+const nameLink: CSSProperties = {
+  ...link,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  maxWidth: '8rem',
 };
 
 export function AuthNav(): ReactNode {
@@ -53,7 +65,7 @@ export function AuthNav(): ReactNode {
       <a style={link} href="/mine">
         your gardens
       </a>
-      <a style={link} href={accountUrl}>
+      <a style={nameLink} href={accountUrl} title={user.displayName}>
         {user.displayName}
       </a>
       <button type="button" style={link} onClick={() => logout()}>
