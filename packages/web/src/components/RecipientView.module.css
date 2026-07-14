@@ -272,6 +272,15 @@
   }
 }
 
+/* On narrow screens the full-width header would run under the fixed sign-in / sound chips
+   (top-right). Drop the content below them. Placed after the block above so it wins the
+   padding-top; desktop is unaffected (the centered column never reaches those chips). */
+@media (max-width: 560px) {
+  .wrap {
+    padding-top: 4rem;
+  }
+}
+
 /* Print: drop the call-to-action ("grow one back?" link) — a screen-only
    affordance. The topLabel and thread context stay; they're part of the card. */
 @media print {
