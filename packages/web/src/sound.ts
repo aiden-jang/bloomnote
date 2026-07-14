@@ -54,7 +54,13 @@ export function toggleSound(): boolean {
 }
 
 function getCtx(): AudioContext {
-	if (!ctx) ctx = new AudioContext()
+	if (!ctx) {
+		// Older iOS Safari only exposes the prefixed constructor.
+		const Ctor =
+			window.AudioContext ??
+			(window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+		ctx = new Ctor()
+	}
 	return ctx
 }
 
@@ -67,20 +73,34 @@ function getCtx(): AudioContext {
  *
  * Safe to call multiple times — the `unlockInstalled` flag dedupes.
  */
+let bufferUnlocked = false
+
 export function unlockAudio(): void {
 	if (unlockInstalled || typeof window === 'undefined') return
 	unlockInstalled = true
 	const unlock = () => {
 		const ac = getCtx()
+		// iOS Safari won't produce sound until a node is actually *started* inside a user gesture —
+		// resume() alone leaves later plays silent. Play a one-sample silent buffer once to unlock it.
+		if (!bufferUnlocked) {
+			try {
+				const src = ac.createBufferSource()
+				src.buffer = ac.createBuffer(1, 1, 22050)
+				src.connect(ac.destination)
+				src.start(0)
+				bufferUnlocked = true
+			} catch {
+				// createBuffer/start can throw before the context is ready; a later gesture retries.
+			}
+		}
+		// Re-resume on every gesture, not just the first: iOS re-suspends the context when the tab is
+		// backgrounded, and the composer plays its chime ~15s after the "grow" tap. Listeners stay
+		// installed so any later interaction re-arms audio. resume() is a cheap no-op when running.
 		if (ac.state === 'suspended') {
 			ac.resume().catch(() => {
-				// Some browsers throw if resume is called from a non-gesture
-				// context. Falling back silently — next gesture will retry.
+				// Some browsers throw if resume runs outside a gesture — the next gesture retries.
 			})
 		}
-		window.removeEventListener('click', unlock)
-		window.removeEventListener('touchstart', unlock)
-		window.removeEventListener('keydown', unlock)
 	}
 	window.addEventListener('click', unlock)
 	window.addEventListener('touchstart', unlock)
