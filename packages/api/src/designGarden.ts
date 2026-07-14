@@ -84,7 +84,7 @@ export async function checkBudget(env: Env, ip: string): Promise<BudgetResult> {
     const dayCount = (Number(await env.GARDENS.get(dayKey)) || 0) + 1;
     await env.GARDENS.put(dayKey, String(dayCount), { expirationTtl: 90_000 });
     if (dayCount > DAILY_CAP) {
-      return { ok: false, status: 503, retryAfter: 3600, message: 'bloomnote is at capacity for today. Try again tomorrow.' };
+      return { ok: false, status: 503, retryAfter: 3600, message: 'bloomnote is at capacity for today. try again tomorrow.' };
     }
     return { ok: true };
   } catch {

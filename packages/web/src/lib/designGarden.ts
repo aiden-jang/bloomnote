@@ -178,12 +178,12 @@ export function friendlyError(raw: string): string {
   // Rate limiting — our IP cap and Gemini's quota both surface as
   // some flavor of "rate limit" / 429.
   if (/rate.?limit|\b429\b|too.?many.?requests/i.test(raw)) {
-    return "the demo's rate limit kicked in. give it about a minute and try again."
+    return "bloomnote's rate limit kicked in. give it about a minute and try again."
   }
 
   // Gemini quota exhausted (free tier, daily cap, etc.)
   if (/quota.?exceeded|generate.?content.?free.?tier|resource.?exhausted/i.test(raw)) {
-    return 'the demo has used up its daily gemini quota. try again tomorrow, or clone the repo and run it locally with your own free key.'
+    return 'bloomnote has used up its daily gemini quota. try again tomorrow, or clone the repo and run it locally with your own free key.'
   }
 
   // Model not found (e.g. a deprecated model id) / API endpoint issues
@@ -196,9 +196,14 @@ export function friendlyError(raw: string): string {
     return "couldn't reach the server. check your connection and try again."
   }
 
+  // Timed out — the model or our backend took too long (server sends "took too long").
+  if (/timeout|timed.?out|took.?too.?long|took.?longer/i.test(raw)) {
+    return 'that took longer than expected. give it another try.'
+  }
+
   // Server config missing — we shipped without an API key set
   if (/gemini_api_key|missing.+api.?key/i.test(raw)) {
-    return "the demo isn't configured with an api key right now. (try cloning the repo + adding your own to run locally.)"
+    return "bloomnote isn't configured with an api key right now. (try cloning the repo + adding your own to run locally.)"
   }
 
   // Post-AI validation failed — the model returned a garden that
@@ -222,7 +227,7 @@ export function friendlyError(raw: string): string {
   // Long or stack-trace-shaped — definitely not user-readable, fall
   // back to a generic message rather than dumping it on screen
   if (raw.length > 160 || /\bstack:\s|exception|\bat\s+\w+\s*\(/i.test(raw)) {
-    return 'something went wrong. try again, and if it keeps happening let me know.'
+    return 'something went wrong. give it another try in a moment.'
   }
 
   // Default: short, looks human-readable already (e.g. our backend's

@@ -169,7 +169,7 @@ app.get('/g/:id', async (c) => {
   const g = garden as Record<string, unknown>;
   const from = typeof g.from === 'string' ? g.from.trim() : '';
   const to = typeof g.to === 'string' ? g.to.trim() : '';
-  const title = from && to ? `${from} sent ${to} a garden` : from ? `${from} sent you a garden` : 'someone sent you a garden';
+  const title = from && to ? `${from} grew ${to} a garden` : from ? `${from} grew you a garden` : 'someone grew you a garden';
   const description = 'a little garden, grown just for you. open it to watch it bloom.';
   const url = new URL(c.req.url).toString();
 
