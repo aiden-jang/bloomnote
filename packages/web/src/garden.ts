@@ -144,20 +144,20 @@ export async function fetchGarden(
   id: string,
   signal?: AbortSignal,
 ): Promise<GardenData | null> {
-  try {
-    const resp = await fetch(`/api/garden?id=${encodeURIComponent(id)}`, {
-      signal: signal ?? null,
-    })
-    if (!resp.ok) return null
-    const json = (await resp.json()) as { garden?: unknown }
-    // Upstash auto-parses JSON on read, so what we get back is already
-    // a GardenData-shaped object. No re-validation here — the garden
-    // was already validated by the model + post-hoc validator when it
-    // was created.
-    return (json.garden ?? null) as GardenData | null
-  } catch {
-    return null
-  }
+  const resp = await fetch(`/api/garden?id=${encodeURIComponent(id)}`, {
+    signal: signal ?? null,
+  })
+  // A real "gone" (bad id, deleted) is a 404 → null, a permanent dead-end. Anything else (offline,
+  // 5xx, aborted) throws so the caller can offer a retry instead of falsely claiming the link is
+  // expired/mistyped.
+  if (resp.status === 404) return null
+  if (!resp.ok) throw new Error(`garden fetch failed: ${resp.status}`)
+  const json = (await resp.json()) as { garden?: unknown }
+  // Upstash auto-parses JSON on read, so what we get back is already
+  // a GardenData-shaped object. No re-validation here — the garden
+  // was already validated by the model + post-hoc validator when it
+  // was created.
+  return (json.garden ?? null) as GardenData | null
 }
 
 export function buildShareUrl(id: string): string {

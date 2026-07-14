@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
@@ -32,6 +32,21 @@ type Phase = 'sealed' | 'blooming'
 export default function RecipientView({ gardenData, gardenId }: Props) {
   const { flowers, message, from, to, bouquetNote, previous, createdAt, occasion } = gardenData
   const grownOn = formatGardenDate(createdAt)
+
+  // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
+  // canvas/decode failure so it isn't an unhandled rejection.
+  const savingImageRef = useRef(false)
+  const handleSaveImage = useCallback(async () => {
+    if (savingImageRef.current) return
+    savingImageRef.current = true
+    try {
+      await saveGardenImage({ flowers, from, to })
+    } catch {
+      // no-op — the garden stays on screen; the recipient can retry.
+    } finally {
+      savingImageRef.current = false
+    }
+  }, [flowers, from, to])
 
   // If a signed-in visitor opens a garden, keep it in their Received list (cross-device).
   // Best-effort and idempotent; anonymous visitors are unaffected. When it's newly saved (not
@@ -203,7 +218,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           <button
             type="button"
             className={styles.ctaSubLink}
-            onClick={() => void saveGardenImage({ flowers, from, to })}
+            onClick={() => void handleSaveImage()}
           >
             save it as an image
           </button>

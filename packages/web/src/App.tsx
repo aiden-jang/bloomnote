@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Composer from './components/Composer'
 import MyGardens from './components/MyGardens'
 import RecipientView from './components/RecipientView'
@@ -30,6 +30,7 @@ type Route =
   | { kind: 'mine' }                                              // on-device archive
   | { kind: 'loading' }                                           // short ID, fetch pending
   | { kind: 'notfound' }                                          // 404 (bad ID, deleted, malformed)
+  | { kind: 'loaderror' }                                         // transient fetch failure (offline/5xx) — retryable
   | { kind: 'privacy' }                                           // static legal page
   | { kind: 'terms' }                                             // static legal page
 
@@ -82,6 +83,12 @@ export default function App() {
     if (parsed.short) return { kind: 'loading' }
     return { kind: 'composer' }
   })
+  // Bumped by the retry button to re-run the fetch effect after a transient failure.
+  const [retryNonce, setRetryNonce] = useState(0)
+  const retryLoad = useCallback(() => {
+    setRoute({ kind: 'loading' })
+    setRetryNonce((n) => n + 1)
+  }, [])
 
   // Fetch the garden by short ID. AbortController guards against the
   // StrictMode double-invoke racing with itself (or a fast navigation
@@ -90,26 +97,34 @@ export default function App() {
     if (!parsed.short) return
     const ctrl = new AbortController()
     void (async () => {
-      const garden = await fetchGarden(parsed.short!, ctrl.signal)
-      if (ctrl.signal.aborted) return
-      if (!garden) {
-        // Recipient 404 is a hard dead-end. Composer falls back to a
-        // fresh form — same friendlier behavior as a malformed seed.
+      try {
+        const garden = await fetchGarden(parsed.short!, ctrl.signal)
+        if (ctrl.signal.aborted) return
+        if (!garden) {
+          // A real 404 is a hard dead-end. Composer falls back to a
+          // fresh form — same friendlier behavior as a malformed seed.
+          setRoute(
+            parsed.view === 'recipient'
+              ? { kind: 'notfound' }
+              : { kind: 'composer' },
+          )
+          return
+        }
         setRoute(
           parsed.view === 'recipient'
-            ? { kind: 'notfound' }
-            : { kind: 'composer' },
+            ? { kind: 'recipient', garden, gardenId: parsed.short! }
+            : { kind: 'composer', seed: garden },
         )
-        return
+      } catch (err) {
+        // Aborted (StrictMode/navigation) isn't a failure — let the superseding run win.
+        if (ctrl.signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return
+        // Transient (offline/5xx): offer a retry for a recipient; a seed link just falls back to
+        // the composer so the sender can still write.
+        setRoute(parsed.view === 'recipient' ? { kind: 'loaderror' } : { kind: 'composer' })
       }
-      setRoute(
-        parsed.view === 'recipient'
-          ? { kind: 'recipient', garden, gardenId: parsed.short! }
-          : { kind: 'composer', seed: garden },
-      )
     })()
     return () => ctrl.abort()
-  }, [parsed])
+  }, [parsed, retryNonce])
 
   // Every view shares one site footer (made by · privacy · terms), rendered here so it stays
   // consistent across the composer, recipient, sealed, mine, and error views.
@@ -120,6 +135,8 @@ export default function App() {
       <LoadingShell />
     ) : route.kind === 'notfound' ? (
       <NotFoundShell />
+    ) : route.kind === 'loaderror' ? (
+      <LoadErrorShell onRetry={retryLoad} />
     ) : route.kind === 'recipient' ? (
       <RecipientGateway garden={route.garden} gardenId={route.gardenId} />
     ) : route.kind === 'privacy' ? (
@@ -224,6 +241,47 @@ function NotFoundShell() {
       >
         start one for someone new
       </a>
+    </div>
+  )
+}
+
+// Transient load failure (offline / server hiccup), distinct from a real 404: the garden is
+// probably fine, so offer a retry instead of claiming the link is gone.
+function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        gap: '0.75rem',
+        textAlign: 'center',
+        padding: '1.5rem',
+      }}
+    >
+      <p style={{ fontFamily: 'Fraunces, serif', fontSize: '1.4rem' }}>
+        couldn&rsquo;t load that garden.
+      </p>
+      <p style={{ color: 'var(--color-ink-muted, #6b6963)', fontSize: '0.95rem' }}>
+        looks like a connection hiccup, not a bad link.
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        style={{
+          marginTop: '1rem',
+          color: 'var(--color-accent, #c2549c)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textDecoration: 'underline',
+          font: 'inherit',
+        }}
+      >
+        try again
+      </button>
     </div>
   )
 }

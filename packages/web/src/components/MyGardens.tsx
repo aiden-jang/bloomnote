@@ -316,15 +316,27 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
   // inside the mobile user-activation window that navigator.share requires.
   const gardenRef = useRef<Promise<GardenData | null> | null>(null)
   const prefetch = (): void => {
-    if (!gardenRef.current) gardenRef.current = fetchGarden(id)
+    if (gardenRef.current) return
+    const p = fetchGarden(id)
+    gardenRef.current = p
+    // A failed prefetch shouldn't become an unhandled rejection or poison the cache — clear it so
+    // an actual save re-fetches instead of re-awaiting a rejected promise.
+    p.catch(() => {
+      if (gardenRef.current === p) gardenRef.current = null
+    })
   }
   const handleSaveImage = async (): Promise<void> => {
+    if (saving) return
     setSaving(true)
     try {
       const data = await (gardenRef.current ?? (gardenRef.current = fetchGarden(id)))
       if (data?.flowers?.length) {
         await saveGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
       }
+    } catch {
+      // Transient fetch failure or a rare canvas/decode error — drop the cached fetch so the next
+      // tap retries rather than re-awaiting the rejected promise.
+      gardenRef.current = null
     } finally {
       setSaving(false)
     }
