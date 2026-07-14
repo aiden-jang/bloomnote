@@ -25,7 +25,7 @@ import {
   trackShareLinkShared,
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
-import { downloadGardenImage } from '../lib/gardenImage'
+import { saveGardenImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import {
   countSentGardens,
@@ -717,7 +717,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // client-side from a self-contained SVG, so it works offline and never leaves the device.
   const handleSaveImage = useCallback(() => {
     if (!flowers.length) return
-    void downloadGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+    void saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
   }, [flowers, from, recipient])
 
   return (
