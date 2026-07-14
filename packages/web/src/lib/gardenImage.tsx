@@ -10,8 +10,8 @@ const H = 1080;
 
 export interface GardenImageOpts {
   flowers: FlowerSpec[];
-  from?: string;
-  to?: string;
+  from?: string | undefined;
+  to?: string | undefined;
 }
 
 function ShareImage({ flowers, from, to }: GardenImageOpts) {

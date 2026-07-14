@@ -2,7 +2,8 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
 import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
-import { buildShareUrl } from '../garden'
+import { buildShareUrl, fetchGarden } from '../garden'
+import { downloadGardenImage } from '../lib/gardenImage'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
 import styles from './MyGardens.module.css'
@@ -307,6 +308,21 @@ interface RowProps {
 
 function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
   const { id, to, occasion, createdAt, unlockAt, swatches } = record
+  const [saving, setSaving] = useState(false)
+
+  // The list summary only has color swatches, not full flower specs, so fetch the garden before
+  // building its share image.
+  const handleSaveImage = async (): Promise<void> => {
+    setSaving(true)
+    try {
+      const data = await fetchGarden(id)
+      if (data?.flowers?.length) {
+        await downloadGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const sealedUntil =
     unlockAt && new Date(unlockAt).getTime() > Date.now() ? formatGardenDate(unlockAt) : null
@@ -339,6 +355,14 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
       <div className={styles.cardActions}>
         <button type="button" className={styles.actionBtn} onClick={onCopy}>
           {copied ? 'copied' : 'copy link'}
+        </button>
+        <button
+          type="button"
+          className={styles.actionBtn}
+          onClick={() => void handleSaveImage()}
+          disabled={saving}
+        >
+          {saving ? 'saving…' : 'save image'}
         </button>
         {onRemove && (
           <button
