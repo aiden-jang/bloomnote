@@ -91,9 +91,18 @@ function buildPetalPath(
   )
 }
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
+
 export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender = false }: Props) {
   const groupRef = useRef<SVGGElement>(null)
   const { stemHeight, petalCount, petalColors, centerColor, stemColor, petalShape } = flower
+  // Render still (fully-formed, no sway/pop-in) for static rasterization AND for reduced-motion
+  // users. These animations are set via inline style, which a CSS media query can't override, so
+  // the check has to happen here — otherwise reduced-motion users still get the infinite sway.
+  const still = staticRender || prefersReducedMotion()
 
   const svgH = stemHeight + 80
   const cx = 40
@@ -110,7 +119,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
       viewBox={`0 0 80 ${svgH}`}
       style={{
         overflow: 'visible',
-        animationName: bloomed && !staticRender ? 'sway' : 'none',
+        animationName: bloomed && !still ? 'sway' : 'none',
         animationDuration: `${2.5 + swayDelay * 0.3}s`,
         animationTimingFunction: 'ease-in-out',
         animationIterationCount: 'infinite',
@@ -128,7 +137,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
             strokeLinecap="round"
             style={{
               transformOrigin: `${cx}px ${svgH}px`,
-              animationName: staticRender ? 'none' : 'bloomStem',
+              animationName: still ? 'none' : 'bloomStem',
               animationDuration: '0.5s',
               animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
               animationFillMode: 'forwards',
@@ -160,7 +169,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
                 opacity="0.92"
                 style={{
                   transformOrigin: `${cx}px ${stemTop + geom.centerRadius}px`,
-                  animationName: staticRender ? 'none' : 'popIn',
+                  animationName: still ? 'none' : 'popIn',
                   animationDuration: '0.4s',
                   animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
                   animationFillMode: 'forwards',

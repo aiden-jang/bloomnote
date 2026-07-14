@@ -883,7 +883,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             }}
           />
 
-          {errorText && <div className={styles.error}>{errorText}</div>}
+          {errorText && (
+            <div className={styles.error} role="alert">
+              {errorText}
+            </div>
+          )}
 
           <div className={styles.actions}>
             <button
@@ -931,7 +935,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'designing' && (
         <div className={styles.designingPanel}>
-          <div className={styles.designingRow}>
+          <div className={styles.designingRow} role="status" aria-live="polite">
             <Spinner />
             <span>{statusText || 'planting…'}</span>
           </div>
