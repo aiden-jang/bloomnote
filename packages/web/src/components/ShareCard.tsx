@@ -24,6 +24,7 @@ interface Props {
   unlockLocal: string
   onShare: () => void
   onCopy: () => void
+  onSaveImage: () => void
   onReroll: () => void
   onStartOver: () => void
 }
@@ -40,6 +41,7 @@ export default function ShareCard({
   unlockLocal,
   onShare,
   onCopy,
+  onSaveImage,
   onReroll,
   onStartOver,
 }: Props) {
@@ -91,6 +93,15 @@ export default function ShareCard({
             {copied ? 'copied' : 'copy link'}
           </button>
         </div>
+
+        <button
+          type="button"
+          className={styles.copyBtnSecondary}
+          onClick={onSaveImage}
+          disabled={isRerolling}
+        >
+          save as image
+        </button>
 
         <button
           type="button"
