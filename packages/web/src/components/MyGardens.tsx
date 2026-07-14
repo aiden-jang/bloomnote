@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
 import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
-import { buildShareUrl, fetchGarden } from '../garden'
+import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
@@ -310,12 +310,18 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
   const { id, to, occasion, createdAt, unlockAt, swatches } = record
   const [saving, setSaving] = useState(false)
 
-  // The list summary only has color swatches, not full flower specs, so fetch the garden before
-  // building its share image.
+  // The list summary only has color swatches, not full flower specs, so the garden must be fetched
+  // before building its share image. Prefetch on interaction-intent (hover / focus / touch-down) and
+  // cache the promise, so by tap time the data is usually ready — keeping the click-to-share gap
+  // inside the mobile user-activation window that navigator.share requires.
+  const gardenRef = useRef<Promise<GardenData | null> | null>(null)
+  const prefetch = (): void => {
+    if (!gardenRef.current) gardenRef.current = fetchGarden(id)
+  }
   const handleSaveImage = async (): Promise<void> => {
     setSaving(true)
     try {
-      const data = await fetchGarden(id)
+      const data = await (gardenRef.current ?? (gardenRef.current = fetchGarden(id)))
       if (data?.flowers?.length) {
         await saveGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
       }
@@ -360,6 +366,9 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
           type="button"
           className={styles.actionBtn}
           onClick={() => void handleSaveImage()}
+          onPointerEnter={prefetch}
+          onPointerDown={prefetch}
+          onFocus={prefetch}
           disabled={saving}
         >
           {saving ? 'saving…' : 'save image'}
