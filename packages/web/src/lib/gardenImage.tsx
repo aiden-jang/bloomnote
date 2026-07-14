@@ -23,7 +23,11 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
   const groundSurface = panelY + panelH - groundH;
   const scale = 1.7;
   const n = Math.max(1, flowers.length);
-  const headline = from ? `${from} grew ${to || 'you'} a garden` : `a garden, for ${to || 'you'}`;
+  // Names allow 60 chars, but the headline is one non-wrapping line — truncate so it can't run off
+  // both edges of the exported PNG.
+  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s);
+  const toName = to ? clipName(to) : 'you';
+  const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`;
 
   return (
     <svg
