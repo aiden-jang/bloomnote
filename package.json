@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Write a note, an LLM grows someone a garden.",
+  "license": "MIT",
   "engines": {
     "node": ">=22"
   },
