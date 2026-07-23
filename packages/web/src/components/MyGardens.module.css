@@ -9,7 +9,10 @@
 
 .header {
   text-align: center;
-  padding-top: 1rem;
+  /* Clear the fixed account nav pill (AuthNav, top:14 + ~30px tall). On mobile its "your gardens /
+     name / sign out" pill is wide enough to sit over this centered title, so keep the heading below
+     it. */
+  padding-top: 2.75rem;
 }
 
 .title {
