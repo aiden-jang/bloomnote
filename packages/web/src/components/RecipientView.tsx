@@ -176,6 +176,12 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         </button>
       )}
 
+      {/* Everything below the plot renders only AFTER the garden is opened. While sealed these
+          sections would sit at opacity:0 but still reserve their full height, leaving a large empty
+          gap between "open the garden" and the footer on mobile. Mounting them on open (they still
+          fade in via msgVisible) collapses that gap and matches the reveal. */}
+      {phase === 'blooming' && (
+        <>
       <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
         {message ? (
           <>
@@ -230,6 +236,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           </a>
         </p>
       </div>
+        </>
+      )}
     </div>
   )
 }
