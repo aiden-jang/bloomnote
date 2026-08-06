@@ -644,13 +644,29 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
    */
   const showDemo = phase === 'idle' && !remixSeed && !hasDraft && flowers.length === 0
   const [demoIndex, setDemoIndex] = useState(0)
+  // Set while the visitor is pointing at (or has focused) an example card, which shows that
+  // garden in the hero. Pausing the cycle matters more than it sounds: without it the plot would
+  // swap out from under someone who deliberately asked to look at one.
+  const [previewId, setPreviewId] = useState<string | null>(null)
 
   useEffect(() => {
     // One garden, held, for anyone who asked for less motion — cycling is the motion here.
-    if (!showDemo || prefersReducedMotion()) return
+    if (!showDemo || previewId || prefersReducedMotion()) return
     const t = setInterval(() => setDemoIndex(i => (i + 1) % EXAMPLE_GARDENS.length), DEMO_CYCLE_MS)
     return () => clearInterval(t)
-  }, [showDemo])
+  }, [showDemo, previewId])
+
+  /**
+   * Pointing at a card moves the cycle to it rather than overriding it, so letting go doesn't
+   * snap the hero back to whatever was showing before — the visitor keeps looking at the one they
+   * chose, and the cycle simply resumes from there.
+   */
+  const handlePreview = useCallback((id: string | null) => {
+    setPreviewId(id)
+    if (id === null) return
+    const i = EXAMPLE_GARDENS.findIndex(g => g.id === id)
+    if (i >= 0) setDemoIndex(i)
+  }, [])
 
   const demo = EXAMPLE_GARDENS[demoIndex % EXAMPLE_GARDENS.length]!
   const heroFlowers = showDemo ? demo.flowers : flowers
@@ -826,7 +842,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           the form glides up instead of snapping. Clearing the draft
           re-expands it. */}
       {phase === 'idle' && !remixSeed && (
-        <ExampleCarousel onSelect={handleExampleSelect} collapsed={hasDraft} />
+        <ExampleCarousel
+          onSelect={handleExampleSelect}
+          collapsed={hasDraft}
+          activeId={showDemo ? demo.id : undefined}
+          onPreview={handlePreview}
+        />
       )}
 
       {phase === 'idle' && (
