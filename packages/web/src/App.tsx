@@ -209,8 +209,19 @@ function LoadingShell() {
   )
 }
 
-// 404 state. The "start one for someone new" anchor is the only
-// recovery path — there's no way to retry a missing share link.
+/**
+ * 404 state.
+ *
+ * The copy here used to say the link "may have expired," which is false and badly so. Gardens are
+ * stored with no TTL precisely because a keepsake link has to keep working (see the KV layout note
+ * in the API's gardens.ts). Telling a recipient their gift expired invents a loss that didn't
+ * happen, and makes the product sound like it throws presents away.
+ *
+ * What actually lands someone here is a broken link: chat apps truncate long URLs, and people
+ * retype them. So the page says the garden is still there and points at the one thing that
+ * recovers it — asking the sender to send the link again. Starting a new garden stays available
+ * but is second, since a person who came here to receive something didn't come to write one.
+ */
 function NotFoundShell() {
   return (
     <div
@@ -226,20 +237,28 @@ function NotFoundShell() {
       }}
     >
       <p style={{ fontFamily: 'Fraunces, serif', fontSize: '1.4rem' }}>
-        couldn&rsquo;t find that garden.
+        that link didn&rsquo;t lead anywhere.
       </p>
-      <p style={{ color: 'var(--color-ink-muted, #6b6963)', fontSize: '0.95rem' }}>
-        the link may have expired or been mistyped.
+      <p
+        style={{
+          color: 'var(--color-ink-muted, #6b6963)',
+          fontSize: '0.95rem',
+          maxWidth: '30rem',
+          lineHeight: 1.6,
+        }}
+      >
+        gardens never expire, so if someone grew you one, it&rsquo;s still there. links get cut
+        short in messages more often than you&rsquo;d think. worth asking them to send it again.
       </p>
       <a
         href="/"
         style={{
           marginTop: '1rem',
-          color: 'var(--color-accent, #c2549c)',
+          color: 'var(--color-accent, #4a7c3f)',
           textDecoration: 'underline',
         }}
       >
-        start one for someone new
+        or grow one for someone
       </a>
     </div>
   )
@@ -272,7 +291,7 @@ function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
         onClick={onRetry}
         style={{
           marginTop: '1rem',
-          color: 'var(--color-accent, #c2549c)',
+          color: 'var(--color-accent, #4a7c3f)',
           background: 'none',
           border: 'none',
           cursor: 'pointer',

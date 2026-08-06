@@ -9,7 +9,7 @@ export type PetalShape = 'round' | 'elongated' | 'bell' | 'small' | 'star'
 
 /** A single AI-designed flower. Renders without any preset table. */
 export interface FlowerSpec {
-  /** Poetic, invented name. */
+  /** A real flower species, plain: "Rose", "Sunflower", "Lavender". */
   name: string
   /** One-sentence note about what this flower represents for the recipient. */
   meaning: string

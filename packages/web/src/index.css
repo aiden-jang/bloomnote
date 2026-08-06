@@ -12,6 +12,16 @@
   --text-dark:   #1e3a10;
   --text-mid:    #4a6741;
   --text-light:  #7a9e72;
+  /*
+   * Standalone text links (the 404 and error shells, /mine, the error boundary).
+   *
+   * This token was being referenced by four places before it existed, so every one of them fell
+   * through to their hardcoded `#c2549c` fallback and rendered magenta. That's not just
+   * off-palette: violet→pink is reserved for the AI sparkle on "why this garden", where it's the
+   * app's only synthetic color and the only thing marking generated content. Spending it on a
+   * navigation link quietly spends the signal too.
+   */
+  --color-accent: #4a7c3f;
   /* Fraunces is a variable serif with personality — slight wobble in
      the heavier weights that reads as "deliberately set." Playfair
      stays in the stack as a graceful fallback if Fraunces ever fails
