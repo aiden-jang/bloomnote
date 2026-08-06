@@ -25,6 +25,27 @@ app.onError((err, c) => {
 // Security headers on every response + a same-origin CSRF guard on state-changing requests.
 app.use('*', harden());
 
+/**
+ * Per-user responses must never be stored.
+ *
+ * A GET with no Cache-Control is heuristically cacheable, so the browser invents its own freshness
+ * lifetime and keeps it. That shipped in accounts and produced a real bug: sign out, press back, the
+ * page re-checks the session, the browser answers from its own cache, and you appear signed in until a
+ * refresh. It cuts both ways too, since a cached signed-out response keeps telling a freshly signed-in
+ * person they are signed out.
+ *
+ * Deliberately conditional. A route that has already chosen its own caching knows something this
+ * middleware does not, and overwriting that would silently undo an intentional decision.
+ */
+app.use('*', async (c, next) => {
+  await next();
+  if (!c.res.headers.get('cache-control')) {
+    c.header('Cache-Control', 'no-store, max-age=0');
+    c.header('Pragma', 'no-cache');
+  }
+});
+
+
 app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }));
 
 // Who is the caller? Same-origin endpoint the web polls so the browser never talks to the
