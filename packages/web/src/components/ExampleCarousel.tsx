@@ -17,6 +17,18 @@ interface Props {
    * — an abrupt unmount yanked the form upward with a visible jump.
    */
   collapsed?: boolean
+  /**
+   * The example currently growing in the hero plot above. Marked on its card so the big garden
+   * and the small card read as the same thing — without it a visitor watches a garden bloom,
+   * looks down at three cards, and has no way to know the one on top is one of these.
+   */
+  activeId?: string | undefined
+  /**
+   * Show this example in the hero. Fired on hover and on focus, so pointing at a card previews
+   * it full size. Composer pauses its cycle while a card is being pointed at; passing null
+   * hands control back.
+   */
+  onPreview?: (id: string | null) => void
 }
 
 /**
@@ -36,7 +48,7 @@ interface Props {
  * any field. Either way they reach the "wow" moment without typing
  * a single character.
  */
-export default function ExampleCarousel({ onSelect, collapsed = false }: Props) {
+export default function ExampleCarousel({ onSelect, collapsed = false, activeId, onPreview }: Props) {
   return (
     <div className={`${styles.collapser} ${collapsed ? styles.collapsed : ''}`}>
       {/* Inner element owns the overflow clip; the collapser animates
@@ -46,7 +58,13 @@ export default function ExampleCarousel({ onSelect, collapsed = false }: Props) 
           <p className={styles.heading}>or steal one of these</p>
           <ul className={styles.list}>
             {EXAMPLE_GARDENS.map(g => (
-              <ExampleCard key={g.id} garden={g} onSelect={onSelect} />
+              <ExampleCard
+                key={g.id}
+                garden={g}
+                onSelect={onSelect}
+                active={g.id === activeId}
+                {...(onPreview ? { onPreview } : {})}
+              />
             ))}
           </ul>
         </section>
@@ -58,9 +76,13 @@ export default function ExampleCarousel({ onSelect, collapsed = false }: Props) 
 function ExampleCard({
   garden,
   onSelect,
+  active = false,
+  onPreview,
 }: {
   garden: ExampleGarden
   onSelect: (g: ExampleGarden) => void
+  active?: boolean
+  onPreview?: (id: string | null) => void
 }) {
   // Truncate the message to two short lines worth of preview text —
   // keeps card heights consistent regardless of the underlying note
@@ -71,8 +93,15 @@ function ExampleCard({
     <li className={styles.cardItem}>
       <button
         type="button"
-        className={styles.card}
+        className={active ? `${styles.card} ${styles.cardActive}` : styles.card}
         onClick={() => onSelect(garden)}
+        // Hover and focus both preview, so the link between card and hero exists for the keyboard
+        // too. Nothing here changes the form — pointing at a card only changes what's on display,
+        // and the click is still the only thing that commits.
+        onMouseEnter={() => onPreview?.(garden.id)}
+        onMouseLeave={() => onPreview?.(null)}
+        onFocus={() => onPreview?.(garden.id)}
+        onBlur={() => onPreview?.(null)}
         aria-label={`try the ${garden.mood} example: from ${garden.from} to ${garden.to}`}
       >
         {/* Mini garden preview. autoBloom is irrelevant here — these
@@ -90,7 +119,9 @@ function ExampleCard({
               // garden, not a chart bar graph.
               style={{ ['--slot-rotate' as string]: `${(i - 1) * 2}deg` }}
             >
-              <FlowerSVG flower={f} index={i} bloomed swayDelay={i} />
+              <div className={styles.miniFlower}>
+                <FlowerSVG flower={f} index={i} bloomed swayDelay={i} />
+              </div>
             </div>
           ))}
         </div>

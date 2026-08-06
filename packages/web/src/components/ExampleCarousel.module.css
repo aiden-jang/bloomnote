@@ -129,6 +129,14 @@
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
+/* The example currently growing in the hero. Deliberately quiet — a tinted border and a soft ring,
+   not the filled treatment a selected chip gets. Nothing has been chosen yet; this only says
+   "that big one up there is this one." */
+.cardActive {
+  border-color: var(--green-light);
+  box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.1);
+}
+
 .card:hover {
   border-color: var(--green-light);
   transform: translateY(-2px);
@@ -157,14 +165,43 @@
   overflow: hidden;
 }
 
+/*
+ * The scale goes on the flower, not on the slot.
+ *
+ * A transform doesn't affect layout, so when the slot itself was scaled, flex still reserved its
+ * full pre-scale box — 200px per flower, 608px of content in a 128px card. Flex then squeezed each
+ * slot to a third of its width while the flower inside stayed centered on its original box, so the
+ * three overlapped and `overflow: hidden` cut the last one off. The card showed roughly one and a
+ * half flowers and read as a single stem.
+ *
+ * Giving the slot its true visual size makes the row lay out as three flowers, which is the point:
+ * the card is a small copy of the garden growing in the hero, and it should look like it.
+ */
 .miniSlot {
+  --mini-scale: 0.3;
+  /* The layout box: what the flex row actually reserves, and the flower's visual footprint. */
+  flex: 0 0 auto;
+  width: 40px;
+  height: 54px;
+  position: relative;
+}
+
+/*
+ * The scaled box. It has to be a separate element from the flower itself: FlowerSVG runs an
+ * infinite `sway` animation on the <svg>, and an animated property beats a stylesheet
+ * declaration, so a `transform` set here on the svg is silently discarded — the flowers render
+ * full size and the card clips their heads off. Nothing errors; the scale just never happens.
+ */
+.miniFlower {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: calc(40px / var(--mini-scale));
   display: flex;
   align-items: flex-end;
+  justify-content: center;
   transform-origin: bottom center;
-  --mini-scale: 0.3;
-  transform: scale(var(--mini-scale)) rotate(var(--slot-rotate, 0deg));
-  width: calc(60px / var(--mini-scale));
-  height: calc(180px / var(--mini-scale));
+  transform: translateX(-50%) scale(var(--mini-scale)) rotate(var(--slot-rotate, 0deg));
 }
 
 .body {
