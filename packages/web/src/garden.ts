@@ -78,6 +78,50 @@ export interface GardenData {
   previous?: GardenData | undefined
 }
 
+// --- Making a stored garden drawable ------------------------------------
+
+const SHAPES: PetalShape[] = ['round', 'elongated', 'bell', 'small', 'star']
+const isHex = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)
+
+/**
+ * Substitute a drawable value for any flower field that would break the render.
+ *
+ * The API validates on write and repairs on read, so in principle nothing reaches here
+ * malformed. It is guarded anyway because a garden response is served `immutable` for a year:
+ * a recipient who opened a broken garden before the repair shipped keeps being handed the broken
+ * copy out of their own browser cache, where no server fix can reach them. This runs after that
+ * cache, so it can.
+ *
+ * Every failure it prevents is silent rather than loud. `stemHeight + 80` gives NaN and React
+ * only *warns* about a NaN attribute; a missing color falls through to SVG's own defaults, which
+ * are `fill: black` and `stroke: none`. Together they render a black smudge floating in the sky
+ * with no stem, on the one screen this app exists for.
+ */
+export function drawableFlower(f: FlowerSpec): FlowerSpec {
+  const petals = Array.isArray(f.petalColors) ? f.petalColors.filter(isHex) : []
+  return {
+    ...f,
+    name: typeof f.name === 'string' && f.name.trim() ? f.name : 'a flower',
+    meaning: typeof f.meaning === 'string' ? f.meaning : '',
+    petalColors: petals.length > 0 ? (petals as [string, string, string]) : ['#F2B8C6', '#F7CBD6', '#FADEE5'],
+    centerColor: isHex(f.centerColor) ? f.centerColor : '#FFC53D',
+    stemColor: isHex(f.stemColor) ? f.stemColor : '#7C9A6E',
+    petalShape: SHAPES.includes(f.petalShape) ? f.petalShape : 'round',
+    petalCount: Number.isInteger(f.petalCount) && f.petalCount > 0 && f.petalCount <= 20 ? f.petalCount : 8,
+    stemHeight: Number.isFinite(f.stemHeight) && f.stemHeight > 0 ? f.stemHeight : 90,
+  }
+}
+
+/** Same, for a whole garden and the one it replies to. */
+export function drawableGarden(g: GardenData): GardenData {
+  const out: GardenData = {
+    ...g,
+    flowers: Array.isArray(g.flowers) ? g.flowers.map(drawableFlower) : [],
+  }
+  if (g.previous) out.previous = drawableGarden(g.previous)
+  return out
+}
+
 // --- Short URLs ---------------------------------------------------------
 //
 // Gardens are stored in Upstash Redis keyed by a 6-character base62 ID.
@@ -153,11 +197,12 @@ export async function fetchGarden(
   if (resp.status === 404) return null
   if (!resp.ok) throw new Error(`garden fetch failed: ${resp.status}`)
   const json = (await resp.json()) as { garden?: unknown }
-  // Upstash auto-parses JSON on read, so what we get back is already
-  // a GardenData-shaped object. No re-validation here — the garden
-  // was already validated by the model + post-hoc validator when it
-  // was created.
-  return (json.garden ?? null) as GardenData | null
+  // The single untrusted boundary in the app: everything downstream (the scene, the drift petals,
+  // the legend, the share image) reads flower fields straight out of this object and computes
+  // geometry from them. Normalizing here rather than at each of those call sites means a field
+  // that goes missing can only ever cost a default, not a broken gift.
+  if (!json.garden) return null
+  return drawableGarden(json.garden as GardenData)
 }
 
 export function buildShareUrl(id: string): string {

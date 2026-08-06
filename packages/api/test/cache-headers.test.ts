@@ -2,7 +2,18 @@ import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 
 const GARDEN = {
-  flowers: [{ name: 'Rose', petalColors: ['#e11d48'] }],
+  flowers: [
+    {
+      name: 'Rose',
+      meaning: 'for the obvious reason',
+      petalColors: ['#e11d48', '#f43f5e', '#fb7185'],
+      centerColor: '#ffc53d',
+      stemColor: '#7c9a6e',
+      petalShape: 'round',
+      petalCount: 8,
+      stemHeight: 92,
+    },
+  ],
   message: 'hi',
   from: 'Aria',
   to: 'Bo',

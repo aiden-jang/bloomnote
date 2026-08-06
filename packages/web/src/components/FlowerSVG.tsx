@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { drawableFlower } from '../garden'
 import type { FlowerSpec, PetalShape } from '../garden'
 
 interface Props {
@@ -98,7 +99,9 @@ function prefersReducedMotion(): boolean {
 
 export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender = false }: Props) {
   const groupRef = useRef<SVGGElement>(null)
-  const { stemHeight, petalCount, petalColors, centerColor, stemColor, petalShape } = flower
+  // Normalized at the fetch boundary already; repeated here because this component is also
+  // rendered directly from the example cards and the share-image path, and a NaN here is silent.
+  const { stemHeight, petalCount, petalColors, centerColor, stemColor, petalShape } = drawableFlower(flower)
   // Render still (fully-formed, no sway/pop-in) for static rasterization AND for reduced-motion
   // users. These animations are set via inline style, which a CSS media query can't override, so
   // the check has to happen here — otherwise reduced-motion users still get the infinite sway.
