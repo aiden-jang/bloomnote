@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
+import ChipRow from './ChipRow'
 import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
@@ -7,7 +8,7 @@ import RemixContext from './RemixContext'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import SoundToggle from './SoundToggle'
-import { type ExampleGarden } from '../data/exampleGardens'
+import { EXAMPLE_GARDENS, type ExampleGarden } from '../data/exampleGardens'
 import {
   buildShareUrl,
   createShortGarden,
@@ -26,6 +27,7 @@ import {
   trackShareLinkShared,
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
+import { prefersReducedMotion } from '../lib/motion'
 import { saveGardenImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import {
@@ -45,6 +47,16 @@ import styles from './Composer.module.css'
 // share link are the output. No second-phase "now add a message" step,
 // because the message is already there.
 type Phase = 'idle' | 'designing' | 'designed'
+
+/**
+ * How long each demo garden holds in the homepage hero before the next one grows.
+ *
+ * Long enough to be looked at rather than watched: the bloom itself takes ~1.5s (three flowers
+ * at BLOOM_STAGGER_MS apart, plus the petal pop), so this leaves several seconds of stillness.
+ * Shorter and the hero reads as an animation demanding attention, which is the opposite of the
+ * calm this app is going for.
+ */
+const DEMO_CYCLE_MS = 7000
 
 // Rotated through while the model is thinking (the longest part of the wait), so a multi-second
 // generation feels like the garden is being made rather than a spinner hanging. Lowercase to match.
@@ -616,6 +628,34 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const hasDraft =
     from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0
 
+  /**
+   * The homepage hero used to be an empty plot with a single grey sprout stub in it — 320px of
+   * the largest element above the fold, saying nothing, while the genuinely nice flowers sat in
+   * 90px thumbnails underneath. A visitor's first impression of a product that makes gardens was
+   * a product that makes an empty rectangle.
+   *
+   * So on arrival the plot grows a real garden, cycling through the curated examples. It's the
+   * same scene component the recipient sees, so the homepage now demonstrates the promise in the
+   * subtitle instead of asserting it.
+   *
+   * It clears the moment the visitor starts typing. That reads as the bed being cleared for
+   * them, and it matches what the example carousel below already does on `hasDraft` — the page
+   * folds the demo away as they take over. Their own garden then grows in the same plot.
+   */
+  const showDemo = phase === 'idle' && !remixSeed && !hasDraft && flowers.length === 0
+  const [demoIndex, setDemoIndex] = useState(0)
+
+  useEffect(() => {
+    // One garden, held, for anyone who asked for less motion — cycling is the motion here.
+    if (!showDemo || prefersReducedMotion()) return
+    const t = setInterval(() => setDemoIndex(i => (i + 1) % EXAMPLE_GARDENS.length), DEMO_CYCLE_MS)
+    return () => clearInterval(t)
+  }, [showDemo])
+
+  const demo = EXAMPLE_GARDENS[demoIndex % EXAMPLE_GARDENS.length]!
+  const heroFlowers = showDemo ? demo.flowers : flowers
+  const heroOccasion = showDemo ? demo.occasion : occasion
+
   // Example-carousel pick. Pre-fills every input so the user can hit
   // "grow their garden" immediately and experience the bloom moment
   // without typing. Scrolls the message textarea into focus afterward
@@ -755,14 +795,19 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       </header>
 
       <GardenScene
-        flowers={flowers}
+        flowers={heroFlowers}
         autoBloom
         // Live-shift the sky as the user changes the occasion picker.
         // The CSS transition on .sky's background cross-fades the
         // gradient, so the user sees the atmosphere respond to their
         // choice within the same composer view — small product win.
-        occasion={occasion}
-        key={garden ? garden.flowers.map(f => f.name).join('-') : 'empty'}
+        occasion={heroOccasion}
+        silent={showDemo}
+        compact={hasDraft}
+        // Re-keying restarts the bloom from sprout, which is what makes each demo garden grow in
+        // rather than cut. The demo id has to be part of the key: two examples could otherwise
+        // share a flower-name signature and the second would appear fully grown.
+        key={showDemo ? `demo-${demo.id}` : garden ? garden.flowers.map(f => f.name).join('-') : 'empty'}
       />
 
       {/* Remix context — shown above the form when the user is replying
@@ -817,7 +862,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               visible at a glance and selecting is a single tap. */}
           <section className={styles.section}>
             <span className={styles.label} id="occasion-label">occasion</span>
-            <div className={styles.chipRow} role="radiogroup" aria-labelledby="occasion-label">
+            <ChipRow labelledBy="occasion-label">
               {OCCASIONS.map(o => (
                 <button
                   key={o.value}
@@ -830,11 +875,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   {o.label}
                 </button>
               ))}
-            </div>
+            </ChipRow>
           </section>
           <section className={styles.section}>
             <span className={styles.label} id="mood-label">mood</span>
-            <div className={styles.chipRow} role="radiogroup" aria-labelledby="mood-label">
+            <ChipRow labelledBy="mood-label">
               {MOODS.map(m => (
                 <button
                   key={m.value}
@@ -847,7 +892,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   {m.label}
                 </button>
               ))}
-            </div>
+            </ChipRow>
           </section>
 
           <section className={styles.section}>

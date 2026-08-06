@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import FlowerSVG from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
+import { prefersReducedMotion } from '../lib/motion'
 import { playBloom, pulse } from '../sound'
 import styles from './GardenScene.module.css'
 
@@ -63,6 +64,15 @@ interface Props {
    * fall through to that default.
    */
   occasion?: string | undefined
+  /**
+   * Bloom without the chime. Sound is on by default, and the homepage demo re-blooms on a loop —
+   * without this it would ding at the visitor every few seconds for as long as they sat on the
+   * page. The bloom sound should mark *their* garden arriving, which is the whole reason it's
+   * worth having; spending it on a background loop makes it mean nothing.
+   */
+  silent?: boolean
+  /** Shrink to a waiting bed. Only meaningful with no flowers — see `.sceneCompact`. */
+  compact?: boolean
 }
 
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
@@ -132,7 +142,7 @@ function GhostSprout() {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -158,8 +168,10 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
 
     placed.forEach((_, i) => {
       const t = setTimeout(() => {
-        playBloom(i)
-        pulse()
+        if (!silent) {
+          playBloom(i)
+          pulse()
+        }
         setBloomedCount(prev => {
           const next = prev + 1
           // Hold the moment after the last flower blooms before the
@@ -175,7 +187,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     })
 
     return () => timers.forEach(clearTimeout)
-  }, [autoBloom, flowerSig, placed.length, onAllBloomed])
+  }, [autoBloom, flowerSig, placed.length, onAllBloomed, silent])
 
   // Drift petals. Only rendered when there are flowers and the scene
   // is allowed to bloom — re-keyed by flowerSig so the animations
@@ -213,8 +225,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   // the CSS variable stays at its 0 fallback so the petals don't move.
   const sceneRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    if (prefersReducedMotion()) return
 
     let raf = 0
     const apply = () => {
@@ -236,7 +247,13 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   }, [])
 
   return (
-    <div className={styles.scene} ref={sceneRef} style={sceneStyle}>
+    <div
+      // Compact only ever applies to an empty plot; a scene with flowers in it always gets full
+      // height, so a garden can never be cropped by a stale flag.
+      className={compact && flowers.length === 0 ? `${styles.scene} ${styles.sceneCompact}` : styles.scene}
+      ref={sceneRef}
+      style={sceneStyle}
+    >
       <div className={styles.sky} />
       <div className={styles.garden}>
         {showGhostSprout && <GhostSprout />}
