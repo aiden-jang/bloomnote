@@ -40,7 +40,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         </p>
         <a
           href="/"
-          style={{ marginTop: '1rem', color: 'var(--color-accent, #c2549c)', textDecoration: 'underline' }}
+          style={{ marginTop: '1rem', color: 'var(--color-accent, #4a7c3f)', textDecoration: 'underline' }}
         >
           grow a new one
         </a>

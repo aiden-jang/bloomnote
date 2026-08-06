@@ -43,7 +43,7 @@ const undoButtonStyle: CSSProperties = {
   font: 'inherit',
   fontWeight: 600,
   padding: '2px 8px',
-  color: 'var(--color-accent, #c2549c)',
+  color: 'var(--color-accent, #4a7c3f)',
 }
 
 /** Fields GardenRow renders — satisfied by both MineRecord and the server GardenSummary. */
