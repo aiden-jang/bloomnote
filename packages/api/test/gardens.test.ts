@@ -9,8 +9,20 @@ import {
 } from '../src/gardens.js';
 import { testEnv } from './helpers.js';
 
+/** A flower the renderers can actually draw. Every field below feeds SVG geometry. */
+const FLOWER = {
+  name: 'Rose',
+  meaning: 'for the obvious reason',
+  petalColors: ['#e11d48', '#f43f5e', '#fb7185'],
+  centerColor: '#ffc53d',
+  stemColor: '#7c9a6e',
+  petalShape: 'round',
+  petalCount: 8,
+  stemHeight: 92,
+};
+
 const GARDEN = {
-  flowers: [{ name: 'Rose', petalColors: ['#e11d48'] }],
+  flowers: [FLOWER],
   message: 'hi',
   from: 'Aria',
   to: 'Bo',
@@ -64,6 +76,59 @@ describe('gardens (KV)', () => {
     expect((await listMine(testEnv, 'bob')).received).toHaveLength(0);
     // The garden itself survives, so a shared link still opens.
     expect(await readGarden(testEnv, r.id)).not.toBeNull();
+  });
+
+  // A flower missing any geometry field renders as a black smudge rather than failing, because
+  // React only warns about a NaN attribute. Both doors are covered: write refuses it, read repairs
+  // whatever is already stored.
+  describe('unrenderable flowers', () => {
+    const cases: Array<[string, Record<string, unknown>]> = [
+      ['no stemHeight', { ...FLOWER, stemHeight: undefined }],
+      ['no petalCount', { ...FLOWER, petalCount: undefined }],
+      ['no petalColors', { ...FLOWER, petalColors: undefined }],
+      ['one petal color instead of three', { ...FLOWER, petalColors: ['#e11d48'] }],
+      ['a color that is not hex', { ...FLOWER, centerColor: 'red' }],
+      ['an unknown petal shape', { ...FLOWER, petalShape: 'hexagonal' }],
+      ['a fractional petal count', { ...FLOWER, petalCount: 8.5 }],
+      ['a stem taller than the scene', { ...FLOWER, stemHeight: 4000 }],
+    ];
+
+    for (const [label, flower] of cases) {
+      test(`write rejects ${label}`, async () => {
+        const r = await createGarden(testEnv, { ...GARDEN, flowers: [flower] });
+        expect(r.ok).toBe(false);
+      });
+    }
+
+    test('write rejects a reply whose quoted garden is broken', async () => {
+      const previous = { ...GARDEN, flowers: [{ ...FLOWER, stemHeight: undefined }] };
+      expect((await createGarden(testEnv, { ...GARDEN, previous })).ok).toBe(false);
+    });
+
+    test('read repairs a garden stored before the write door existed', async () => {
+      // Straight into KV, bypassing createGarden — this is what the old writes left behind.
+      const id = 'legacy';
+      await testEnv.GARDENS.put(
+        `g:${id}`,
+        JSON.stringify({ ...GARDEN, flowers: [{ name: 'Ghost', petalColors: ['#e11d48'] }] }),
+      );
+      const g = (await readGarden(testEnv, id)) as { flowers: Record<string, unknown>[] };
+      const f = g.flowers[0]!;
+      expect(Number.isInteger(f.stemHeight)).toBe(true);
+      expect(Number.isInteger(f.petalCount)).toBe(true);
+      expect(f.petalColors).toHaveLength(3);
+      expect(f.centerColor).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(f.stemColor).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(f.petalShape).toBe('round');
+      expect(f.name).toBe('Ghost'); // what survived is kept, not overwritten
+    });
+
+    test('read leaves a good garden exactly as it was', async () => {
+      const r = await createGarden(testEnv, GARDEN);
+      if (!r.ok) throw new Error('create failed');
+      const g = (await readGarden(testEnv, r.id)) as { flowers: unknown[] };
+      expect(g.flowers[0]).toEqual(FLOWER);
+    });
   });
 
   test('claim adopts anonymous gardens once', async () => {

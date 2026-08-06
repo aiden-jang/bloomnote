@@ -40,13 +40,91 @@ function generateId(): string {
   return id;
 }
 
-/** Cheap structural check: shaped like a garden, and not absurdly large. */
+// --- Flower shape -------------------------------------------------------
+//
+// Every renderer derives geometry from these fields: the SVG height is `stemHeight + 80`, the
+// petals are `Array.from({length: petalCount})` indexed into `petalColors`. A flower missing one
+// of them doesn't fail loudly — it computes NaN, and React only *warns* about a NaN attribute
+// while still rendering the element. The result is a black smudge floating where a flower should
+// be, on the one screen this app exists for.
+//
+// So the shape is enforced at both doors. Write rejects a flower that can't be drawn; read repairs
+// one, because gardens stored before this check existed are already in KV and a keepsake link has
+// to keep working.
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const SHAPES = new Set(['round', 'elongated', 'bell', 'small', 'star']);
+// Wider than the design prompt's own ranges (petalCount 5–14, stemHeight 70–115) on purpose. The
+// door only has to guarantee the thing is drawable; tuning what looks *good* belongs to the prompt,
+// and coupling the two would mean a prompt tweak silently starts rejecting writes.
+const PETAL_COUNT = { min: 3, max: 20, fallback: 8 };
+const STEM_HEIGHT = { min: 40, max: 160, fallback: 90 };
+const FALLBACK_PETALS = ['#F2B8C6', '#F7CBD6', '#FADEE5'];
+const FALLBACK_CENTER = '#FFC53D';
+const FALLBACK_STEM = '#7C9A6E';
+
+const isHex = (v: unknown): v is string => typeof v === 'string' && HEX_RE.test(v);
+
+function isCount(v: unknown, { min, max }: { min: number; max: number }): v is number {
+  return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
+}
+
+/** Can every renderer draw this flower without producing a NaN? */
+function isRenderableFlower(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const f = value as Record<string, unknown>;
+  return (
+    Array.isArray(f.petalColors) &&
+    f.petalColors.length === 3 &&
+    f.petalColors.every(isHex) &&
+    isHex(f.centerColor) &&
+    isHex(f.stemColor) &&
+    typeof f.petalShape === 'string' &&
+    SHAPES.has(f.petalShape) &&
+    isCount(f.petalCount, PETAL_COUNT) &&
+    isCount(f.stemHeight, STEM_HEIGHT)
+  );
+}
+
+/** Substitute a drawable value for anything missing or out of range. Never throws. */
+function repairFlower(value: unknown): Record<string, unknown> {
+  const f = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const petals = Array.isArray(f.petalColors) ? f.petalColors.filter(isHex) : [];
+  return {
+    ...f,
+    name: typeof f.name === 'string' && f.name.trim() ? f.name : 'a flower',
+    meaning: typeof f.meaning === 'string' ? f.meaning : '',
+    petalColors: petals.length === 3 ? petals : FALLBACK_PETALS,
+    centerColor: isHex(f.centerColor) ? f.centerColor : FALLBACK_CENTER,
+    stemColor: isHex(f.stemColor) ? f.stemColor : FALLBACK_STEM,
+    petalShape: typeof f.petalShape === 'string' && SHAPES.has(f.petalShape) ? f.petalShape : 'round',
+    petalCount: isCount(f.petalCount, PETAL_COUNT) ? f.petalCount : PETAL_COUNT.fallback,
+    stemHeight: isCount(f.stemHeight, STEM_HEIGHT) ? f.stemHeight : STEM_HEIGHT.fallback,
+  };
+}
+
+/** Structural check: shaped like a garden, drawable, and not absurdly large. */
 export function looksLikeGarden(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false;
   const g = value as Record<string, unknown>;
   // The design path produces 3–5 flowers and both renderers (GardenScene, the share image) are
   // laid out for that; cap the write at 5 so a crafted payload can't store a garden that overlaps.
-  return Array.isArray(g.flowers) && g.flowers.length > 0 && g.flowers.length <= 5;
+  if (!Array.isArray(g.flowers) || g.flowers.length === 0 || g.flowers.length > 5) return false;
+  if (!g.flowers.every(isRenderableFlower)) return false;
+  // A reply carries the garden it answers, and the recipient view renders that one too. Depth is
+  // capped at 1 by the composer, so one level of recursion covers it.
+  if (g.previous !== undefined && !looksLikeGarden(g.previous)) return false;
+  return true;
+}
+
+/** Make a stored garden drawable. Applied on read so pre-validation records still open. */
+export function repairGarden(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const g = value as Record<string, unknown>;
+  if (!Array.isArray(g.flowers)) return value;
+  const out: Record<string, unknown> = { ...g, flowers: g.flowers.map(repairFlower) };
+  if (g.previous && typeof g.previous === 'object') out.previous = repairGarden(g.previous);
+  return out;
 }
 
 function str(v: unknown): string {
@@ -100,7 +178,7 @@ export async function createGarden(env: Env, garden: unknown, ownerId?: string):
 export async function readGarden(env: Env, id: string): Promise<unknown | null> {
   if (!ID_RE.test(id)) return null;
   const raw = await env.GARDENS.get(`g:${id}`);
-  return raw === null ? null : (JSON.parse(raw) as unknown);
+  return raw === null ? null : repairGarden(JSON.parse(raw) as unknown);
 }
 
 /**
