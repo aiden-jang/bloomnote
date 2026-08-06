@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { prefersReducedMotion } from '../lib/motion'
 import styles from './BouquetNote.module.css'
 
 interface Props {
@@ -18,11 +19,6 @@ interface Props {
 // enough not to test patience on a two-sentence note, slow enough to
 // register as "being written" rather than pasted.
 const TYPE_MS = 22
-
-function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false
-  return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-}
 
 /**
  * The AI's bouquet rationale, presented as part of the note and

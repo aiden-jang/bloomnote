@@ -5,6 +5,20 @@
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--green-pale);
+  transition: height 0.35s ease;
+}
+
+/*
+ * Waiting bed. While the visitor is writing and no garden exists yet, the plot is 260px of empty
+ * sky sitting between them and the field they're typing in — the state they spend by far the most
+ * time in, and the emptiest thing on the page.
+ *
+ * Only the height changes: everything in the scene is anchored to the bottom, so shrinking crops
+ * sky off the top and leaves the soil and the sprout exactly where they were. It grows back to
+ * full height when their garden arrives, which makes the bloom feel like it needed the room.
+ */
+.sceneCompact {
+  height: 132px;
 }
 
 .sky {

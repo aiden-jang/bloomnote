@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { drawableFlower } from '../garden'
+import { prefersReducedMotion } from '../lib/motion'
 import type { FlowerSpec, PetalShape } from '../garden'
 
 interface Props {
@@ -61,6 +62,9 @@ function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
   }
 }
 
+/** How long the stem takes to reach full height. The head waits this out before opening. */
+const STEM_MS = 500
+
 function buildPetalPath(
   shape: PetalShape,
   size: number,
@@ -92,11 +96,6 @@ function buildPetalPath(
   )
 }
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false
-  return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-}
-
 export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender = false }: Props) {
   const groupRef = useRef<SVGGElement>(null)
   // Normalized at the fetch boundary already; repeated here because this component is also
@@ -111,6 +110,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
   const cx = 40
   const stemTop = 20
   const geom = petalGeometry(petalShape)
+  const head = stemTop + geom.centerRadius
 
   // Subtle center inner color — slightly darker version of centerColor.
   const centerInner = darken(centerColor, 0.2)
@@ -133,7 +133,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
       {bloomed && (
         <g ref={groupRef}>
           <line
-            x1={cx} y1={stemTop + geom.centerRadius}
+            x1={cx} y1={head}
             x2={cx} y2={svgH}
             stroke={stemColor}
             strokeWidth="4"
@@ -141,29 +141,45 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
             style={{
               transformOrigin: `${cx}px ${svgH}px`,
               animationName: still ? 'none' : 'bloomStem',
-              animationDuration: '0.5s',
+              animationDuration: `${STEM_MS}ms`,
               animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
               animationFillMode: 'forwards',
             }}
           />
-          <ellipse
-            cx={cx - 10} cy={svgH - stemHeight * 0.45}
-            rx="9" ry="5"
-            fill={stemColor}
-            transform={`rotate(-35, ${cx - 10}, ${svgH - stemHeight * 0.45})`}
-            opacity="0.9"
-          />
-          <ellipse
-            cx={cx + 10} cy={svgH - stemHeight * 0.6}
-            rx="9" ry="5"
-            fill={stemColor}
-            transform={`rotate(35, ${cx + 10}, ${svgH - stemHeight * 0.6})`}
-            opacity="0.9"
-          />
+          {/* Leaves ride the stem up. Without this they hang in mid-air, fully drawn, next to a
+              stem that hasn't reached them yet. */}
+          <g
+            style={{
+              transformOrigin: `${cx}px ${svgH}px`,
+              animationName: still ? 'none' : 'bloomStem',
+              animationDuration: `${STEM_MS}ms`,
+              animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
+              animationFillMode: 'forwards',
+            }}
+          >
+            <ellipse
+              cx={cx - 10} cy={svgH - stemHeight * 0.45}
+              rx="9" ry="5"
+              fill={stemColor}
+              transform={`rotate(-35, ${cx - 10}, ${svgH - stemHeight * 0.45})`}
+              opacity="0.9"
+            />
+            <ellipse
+              cx={cx + 10} cy={svgH - stemHeight * 0.6}
+              rx="9" ry="5"
+              fill={stemColor}
+              transform={`rotate(35, ${cx + 10}, ${svgH - stemHeight * 0.6})`}
+              opacity="0.9"
+            />
+          </g>
+          {/* The head opens only once the stem has arrived to carry it. Previously the petals
+              popped at t=0 while the stem was still growing, so for the first half-second the
+              flower was a head floating in the sky above a rising line. One flower blooming once
+              hid it; the homepage loops three gardens, which did not. */}
           {Array.from({ length: petalCount }).map((_, i) => {
             const angle = ((360 / petalCount) * i * Math.PI) / 180
             const color = petalColors[i % petalColors.length]
-            const d = buildPetalPath(petalShape, geom.size, angle, cx, stemTop + geom.centerRadius)
+            const d = buildPetalPath(petalShape, geom.size, angle, cx, head)
             return (
               <path
                 key={i}
@@ -171,28 +187,44 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
                 fill={color}
                 opacity="0.92"
                 style={{
-                  transformOrigin: `${cx}px ${stemTop + geom.centerRadius}px`,
+                  transformOrigin: `${cx}px ${head}px`,
                   animationName: still ? 'none' : 'popIn',
                   animationDuration: '0.4s',
                   animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
-                  animationFillMode: 'forwards',
-                  animationDelay: `${i * 30}ms`,
+                  // `both`, not `forwards`: with only `forwards` the element renders at its
+                  // natural size for the whole delay, so a delayed pop-in shows the thing first
+                  // and animates it second. `both` applies the 0% keyframe up front.
+                  animationFillMode: 'both',
+                  animationDelay: `${STEM_MS + i * 30}ms`,
                 }}
               />
             )
           })}
-          <circle cx={cx} cy={stemTop + geom.centerRadius} r={geom.centerRadius} fill={centerColor} />
-          <circle cx={cx} cy={stemTop + geom.centerRadius} r={geom.centerRadius * 0.55} fill={centerInner} opacity="0.7" />
-          {Array.from({ length: 5 }).map((_, i) => (
-            <circle
-              key={i}
-              cx={cx + Math.cos((i / 5) * Math.PI * 2) * (geom.centerRadius * 0.65)}
-              cy={(stemTop + geom.centerRadius) + Math.sin((i / 5) * Math.PI * 2) * (geom.centerRadius * 0.65)}
-              r={1.5}
-              fill={petalColors[0]}
-              opacity="0.6"
-            />
-          ))}
+          <g
+            style={{
+              transformOrigin: `${cx}px ${head}px`,
+              animationName: still ? 'none' : 'popIn',
+              animationDuration: '0.4s',
+              animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
+              animationFillMode: 'both',
+              // Just behind the first petals, so the center lands into an opening flower rather
+              // than sitting there waiting to be surrounded.
+              animationDelay: `${STEM_MS + 60}ms`,
+            }}
+          >
+            <circle cx={cx} cy={head} r={geom.centerRadius} fill={centerColor} />
+            <circle cx={cx} cy={head} r={geom.centerRadius * 0.55} fill={centerInner} opacity="0.7" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <circle
+                key={i}
+                cx={cx + Math.cos((i / 5) * Math.PI * 2) * (geom.centerRadius * 0.65)}
+                cy={head + Math.sin((i / 5) * Math.PI * 2) * (geom.centerRadius * 0.65)}
+                r={1.5}
+                fill={petalColors[0]}
+                opacity="0.6"
+              />
+            ))}
+          </g>
         </g>
       )}
     </svg>

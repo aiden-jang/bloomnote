@@ -1,0 +1,62 @@
+/* One line of chips that scrolls sideways when they don't fit. See ChipRow.tsx for why. */
+
+.row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  /* Vertical padding + a matching negative margin. `overflow-x: auto` forces the computed
+     `overflow-y` to `auto` too, so without room to breathe the focus ring and the :active
+     scale on a chip get clipped by the scroll box. The negative margin keeps the row
+     occupying the same vertical space it did before it became a scroller. */
+  padding: 4px 0;
+  margin: -4px 0;
+
+  /* A visible scrollbar under a row of pills reads as a browser artifact, not a design
+     element — the fade is the affordance instead. Touch devices don't show one anyway. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  /* Chips settle on a boundary rather than mid-pill. `proximity`, not `mandatory`: a flick
+     that lands nicely shouldn't be dragged somewhere else. */
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+.row > * {
+  scroll-snap-align: start;
+  /* Chips are sized by their text; in a nowrap flex row they'd otherwise be squeezed to fit. */
+  flex: 0 0 auto;
+}
+
+/*
+ * Edge fades, masked rather than overlaid, so they work over any background — the composer sits
+ * on cream today, but a gradient behind it later would show a hard-edged overlay rectangle.
+ *
+ * Both stops default to 0 width (fully opaque mask = no fade). ChipRow sets the data attributes
+ * only for a side that actually has content hidden past it, so a row that fits shows nothing.
+ */
+.row {
+  --fade-start: 0px;
+  --fade-end: 0px;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent 100%
+  );
+  transition: mask-image 0.2s ease;
+}
+
+.row[data-fade-start] {
+  --fade-start: 28px;
+}
+
+.row[data-fade-end] {
+  --fade-end: 28px;
+}
