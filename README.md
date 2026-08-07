@@ -107,8 +107,10 @@ the browser never talks to accounts cross-origin.
   it was descoped to keep the port lean.
 - **Orphaned records.** Re-rolling writes a new record and abandons the old one. Fine at this
   scale; past heavy traffic I'd overwrite in place or expire them.
-- **No tests on the SSE path yet.** The KV store and garden validation are unit-tested; a full
-  compose → bloom → share → recipient pass is the honest gap.
+- **No browser-level end-to-end test.** The KV store, garden validation, the quota classifier and
+  the SSE route are all unit-tested (Gemini stubbed at `fetch`, so none of it spends quota), and
+  the prompt has its own eval. What's still missing is a real browser driving
+  compose → bloom → share → recipient in one pass.
 
 ## Project layout
 
