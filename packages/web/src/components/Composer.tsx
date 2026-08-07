@@ -28,7 +28,7 @@ import {
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { prefersReducedMotion } from '../lib/motion'
-import { saveGardenImage } from '../lib/gardenImage'
+import { saveGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import {
   countSentGardens,
@@ -449,6 +449,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       }
       const finalUrl = buildShareUrl(shortId)
 
+      /*
+       * Render the link-preview card and hand it to the Worker.
+       *
+       * Not awaited. It costs a canvas rasterize and a round trip, and the person is standing in
+       * front of a garden they just made: making them watch a spinner for the benefit of whoever
+       * they send it to would be the wrong trade. If it never finishes, the link unfurls with the
+       * generic card, which is exactly what happened before this existed.
+       */
+      void uploadOgImage(shortId, { flowers: result.flowers, from: from.trim(), to: recipient.trim() })
+
       // Add to the on-device "your gardens" archive. Best-effort and
       // fire-and-forget — a storage failure (private mode, quota) never
       // blocks the share flow.
@@ -545,6 +555,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       // Re-point the archive entry at the regenerated garden — same
       // session, new short ID. Falls back to an insert if the original
       // entry isn't around (storage cleared mid-session).
+      // A re-roll is a different garden under a new id, so it needs its own card.
+      void uploadOgImage(shortId, { flowers: result.flowers, from: from.trim(), to: recipient.trim() })
+
       updateSentGardenId(prevGardenId, buildMineRecord(shortId, data))
 
       // GardenScene re-keys on flower signature change, so the new
