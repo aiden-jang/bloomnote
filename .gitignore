@@ -10,3 +10,10 @@ coverage/
 .vite/
 .wrangler/
 packages/worker/.wrangler/
+
+# Playwright writes these on every failed run: a screenshot, an error dump, and a trace zip that
+# is several megabytes. They are regenerated per run and never worth keeping, and a trace committed
+# once stays in git history forever even after it is deleted.
+test-results/
+playwright-report/
+.playwright/
