@@ -3,7 +3,9 @@ import {
   claimGardens,
   createGarden,
   listMine,
+  putOgImage,
   readGarden,
+  readOgImage,
   recordReceived,
   removeFromAccount,
 } from '../src/gardens.js';
@@ -138,5 +140,53 @@ describe('gardens (KV)', () => {
     expect((await listMine(testEnv, 'u')).sent.map((s) => s.id)).toContain(r.id);
     // Already owned → a second claim by anyone is a no-op.
     expect(await claimGardens(testEnv, 'other', [r.id])).toBe(0);
+  });
+});
+
+/**
+ * The link-preview card.
+ *
+ * Write-once and unauthenticated, which is a combination worth pinning down. bloomnote is
+ * anonymous-first, so requiring a session would mean most gardens never get a card at all; what
+ * stands in for auth is that the id is unguessable and the first write is the only write. Without
+ * that second half, anyone who saw a shared link could replace the picture on someone's gift.
+ */
+describe('share-card image', () => {
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]).buffer;
+  const NOT_PNG = new TextEncoder().encode('<svg>nope</svg>').buffer;
+
+  const madeGarden = async (): Promise<string> => {
+    const r = await createGarden(testEnv, GARDEN);
+    if (!r.ok) throw new Error('create failed');
+    return r.id;
+  };
+
+  test('stores the first card and serves it back', async () => {
+    const id = await madeGarden();
+    expect((await putOgImage(testEnv, id, PNG)).ok).toBe(true);
+    expect(await readOgImage(testEnv, id)).not.toBeNull();
+  });
+
+  test('refuses a second write, so a link-holder cannot replace the picture', async () => {
+    const id = await madeGarden();
+    expect((await putOgImage(testEnv, id, PNG)).ok).toBe(true);
+    const second = await putOgImage(testEnv, id, PNG);
+    expect(second.ok).toBe(false);
+    if (!second.ok) expect(second.status).toBe(409);
+  });
+
+  test('refuses anything that is not a PNG', async () => {
+    const id = await madeGarden();
+    expect((await putOgImage(testEnv, id, NOT_PNG)).ok).toBe(false);
+    expect(await readOgImage(testEnv, id)).toBeNull();
+  });
+
+  test('refuses a card for a garden that does not exist', async () => {
+    // Otherwise the store doubles as free image hosting on someone else's domain.
+    expect((await putOgImage(testEnv, 'nosuch', PNG)).ok).toBe(false);
+  });
+
+  test('has no card before one is uploaded', async () => {
+    expect(await readOgImage(testEnv, await madeGarden())).toBeNull();
   });
 });

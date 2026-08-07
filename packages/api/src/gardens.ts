@@ -151,6 +151,47 @@ function summarize(id: string, garden: Record<string, unknown>): GardenSummary {
   return summary;
 }
 
+/**
+ * Share-card image for a garden, as PNG bytes.
+ *
+ * Rendered in the sender's browser rather than here. The Worker has no canvas, and rasterizing SVG
+ * at the edge means shipping a WASM renderer into every cold start for something that happens once
+ * per garden. The browser that just drew the garden is already holding everything needed.
+ *
+ * Write-once. Anyone can POST to a known id, so allowing overwrites would let a stranger replace
+ * the picture on somebody's gift; first write wins and the rest are refused. Combined with the
+ * 6-char id being unguessable, that is the whole threat model.
+ */
+const MAX_OG_BYTES = 400 * 1024;
+
+export type OgResult = { ok: true } | { ok: false; status: 400 | 409 | 413; message: string };
+
+export async function putOgImage(env: Env, id: string, bytes: ArrayBuffer): Promise<OgResult> {
+  if (!ID_RE.test(id)) return { ok: false, status: 400, message: 'Bad id.' };
+  if (bytes.byteLength === 0) return { ok: false, status: 400, message: 'Empty image.' };
+  if (bytes.byteLength > MAX_OG_BYTES) {
+    return { ok: false, status: 413, message: `Image exceeds ${MAX_OG_BYTES} bytes.` };
+  }
+  // A PNG always starts with these eight bytes. Cheap, and it stops the store being used as a
+  // dumping ground for arbitrary blobs that would then be served with an image content type.
+  const head = new Uint8Array(bytes.slice(0, 8));
+  const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (!PNG.every((b, i) => head[i] === b)) return { ok: false, status: 400, message: 'Not a PNG.' };
+  // The garden has to exist, so an image cannot be parked against an id nobody has claimed.
+  if ((await env.GARDENS.get(`g:${id}`)) === null) return { ok: false, status: 400, message: 'No such garden.' };
+  if ((await env.GARDENS.get(`og:${id}`, 'stream')) !== null) {
+    return { ok: false, status: 409, message: 'Already has an image.' };
+  }
+  await env.GARDENS.put(`og:${id}`, bytes);
+  return { ok: true };
+}
+
+/** The stored PNG, or null. */
+export async function readOgImage(env: Env, id: string): Promise<ArrayBuffer | null> {
+  if (!ID_RE.test(id)) return null;
+  return env.GARDENS.get(`og:${id}`, 'arrayBuffer');
+}
+
 export type CreateResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 500; message: string };
 
 /** Create a garden. When `ownerId` is set (a signed-in creator), stamp it and index it as Sent. */

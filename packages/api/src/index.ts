@@ -6,13 +6,29 @@ import {
   claimGardens,
   createGarden,
   listMine,
+  putOgImage,
   readGarden,
+  readOgImage,
   recordReceived,
   removeFromAccount,
 } from './gardens.js';
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js';
 
 const app = new Hono<{ Bindings: Env }>();
+
+/**
+ * Absolute URL for a garden's link-preview card, forced to https off localhost.
+ *
+ * The scheme cannot just be inherited from the request. In `wrangler dev` a Worker with a custom
+ * domain route sees the request as `http://bloomnote.aidenjang.com/...`, so the tag went out
+ * pointing at http, and Twitter drops a card whose image is not https while other unfurlers show a
+ * broken placeholder. Localhost stays http so the card is still fetchable in development.
+ */
+function ogImageUrl(reqUrl: string, id: string): string {
+  const u = new URL(`/og/${id}.png`, reqUrl);
+  if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') u.protocol = 'https:';
+  return u.toString();
+}
 
 // Safety net: any error a route does not handle itself is logged server-side (Workers Logs /
 // `wrangler tail`) and returned as a generic 500, so an internal failure never leaks a stack
@@ -74,6 +90,35 @@ app.post('/api/garden', async (c) => {
   const result = await createGarden(c.env, body, user?.id);
   if (!result.ok) return c.json({ error: result.message }, result.status);
   return c.json({ id: result.id });
+});
+
+/**
+ * The share-card PNG for a garden, rendered by the sender's browser right after creating it.
+ *
+ * Unauthenticated on purpose. The sender is usually signed out (bloomnote is anonymous-first), so
+ * requiring a session would mean most gardens never get a card. What protects it instead is that
+ * the write is once-only and the id is unguessable: see putOgImage.
+ */
+app.post('/api/garden/:id/og', async (c) => {
+  const bytes = await c.req.arrayBuffer();
+  const result = await putOgImage(c.env, c.req.param('id'), bytes);
+  if (!result.ok) return c.json({ error: result.message }, result.status);
+  return c.json({ ok: true });
+});
+
+// The card itself. Crawlers fetch this, so it must be a plain immutable image with no session
+// dependence and no redirect: several unfurlers give up on either.
+app.get('/og/:id', async (c) => {
+  const id = c.req.param('id').replace(/\.png$/, '');
+  const png = await readOgImage(c.env, id);
+  if (png === null) return c.notFound();
+  return new Response(png, {
+    headers: {
+      'content-type': 'image/png',
+      // Same reasoning as the garden JSON: it can never change once written.
+      'cache-control': 'public, max-age=31536000, immutable',
+    },
+  });
 });
 
 // Record that the signed-in caller opened someone else's garden (adds it to their Received list).
@@ -193,15 +238,32 @@ app.get('/g/:id', async (c) => {
   const title = from && to ? `${from} grew ${to} a garden` : from ? `${from} grew you a garden` : 'someone grew you a garden';
   const description = 'a little garden, grown just for you. open it to watch it bloom.';
   const url = new URL(c.req.url).toString();
+  // Only point at a card that exists. A broken og:image is worse than none: most unfurlers show a
+  // grey placeholder rather than falling back to the site default, so the link looks broken rather
+  // than plain. Gardens made before this shipped have no card and keep the generic one.
+  const ogUrl = (await readOgImage(c.env, c.req.param('id'))) === null ? null : ogImageUrl(c.req.url, c.req.param('id'));
 
-  return new HTMLRewriter()
+  const rewriter = new HTMLRewriter()
     .on('title', { element: (e) => { e.setInnerContent(title); } })
     .on('meta[property="og:title"]', { element: (e) => { e.setAttribute('content', title); } })
     .on('meta[name="twitter:title"]', { element: (e) => { e.setAttribute('content', title); } })
     .on('meta[property="og:description"]', { element: (e) => { e.setAttribute('content', description); } })
     .on('meta[name="twitter:description"]', { element: (e) => { e.setAttribute('content', description); } })
-    .on('meta[property="og:url"]', { element: (e) => { e.setAttribute('content', url); } })
-    .transform(shell);
+    .on('meta[property="og:url"]', { element: (e) => { e.setAttribute('content', url); } });
+
+  if (ogUrl) {
+    rewriter
+      .on('meta[property="og:image"]', { element: (e) => { e.setAttribute('content', ogUrl); } })
+      .on('meta[name="twitter:image"]', { element: (e) => { e.setAttribute('content', ogUrl); } })
+      .on('meta[property="og:image:alt"]', {
+        element: (e) => { e.setAttribute('content', `the garden ${from || 'someone'} grew`); },
+      });
+  // twitter:card is already summary_large_image in the shell, and og:image:width/height already
+  // say 1200x630, so the card the client renders has to be exactly that. Those tags are left
+  // alone rather than restated here: two places setting the same value is how they drift apart.
+  }
+
+  return rewriter.transform(shell);
 });
 
 // Everything that isn't the API is the web SPA: real files, or index.html for client routes
