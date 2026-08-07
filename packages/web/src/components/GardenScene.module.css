@@ -234,3 +234,42 @@
     transform-origin: bottom center;
   }
 }
+
+/*
+ * The bee. Positioned by percentage across the plot, moved by transitioning `left` when React
+ * changes which flower it is visiting.
+ *
+ * `left` and not a transform because the flowers are placed the same way, so the bee and its
+ * destination are always measured in the same units. Long, eased transition: a bee crosses a garden
+ * unhurriedly and then hangs about.
+ */
+.bee {
+  position: absolute;
+  width: 26px;
+  margin-left: -13px;
+  /* `bottom` is set inline, per flower, so it transitions alongside `left` and the bee arcs between
+     heads of different heights instead of sliding along one invisible line. */
+  transition:
+    left 2.6s cubic-bezier(0.45, 0, 0.35, 1),
+    bottom 2.6s cubic-bezier(0.3, 0.1, 0.4, 1);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* The hover, on the inner element so it composes with the parent's horizontal travel instead of
+   fighting it for the transform property. */
+.beeBody {
+  display: block;
+  width: 100%;
+  animation: beeHover 1.15s ease-in-out infinite;
+}
+
+@keyframes beeHover {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-4px) rotate(3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bee { transition: none; }
+  .beeBody { animation: none; }
+}

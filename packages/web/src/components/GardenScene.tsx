@@ -114,6 +114,31 @@ const PETAL_DRIFTERS = [
 ] as const
 
 /**
+ * A bee, doing its rounds.
+ *
+ * The recipient view is the whole point of the app and, once the bloom animation finishes, it stops
+ * moving: a still picture of some flowers. One small thing with somewhere to be turns it into a
+ * place. It visits the flowers rather than wandering, because a bee that ignored the flowers would
+ * read as a bug crawling on the screen.
+ *
+ * Deliberately not a swarm. One bee is a garden; three is an infestation.
+ */
+function Bee() {
+  return (
+    <svg viewBox="0 0 16 11" className={styles.beeBody} aria-hidden>
+      {/* Wings first, so the body sits over them. */}
+      <ellipse cx="7" cy="3.4" rx="3.1" ry="2.1" fill="#eaf4ff" opacity="0.75" />
+      <ellipse cx="10" cy="3.6" rx="2.6" ry="1.8" fill="#eaf4ff" opacity="0.6" />
+      <ellipse cx="8.6" cy="6.4" rx="4.4" ry="3" fill="#f0b429" />
+      <path d="M7.2 3.9 A4.4 3 0 0 0 7.2 8.9 Z" fill="#4a3b1a" opacity="0.85" />
+      <path d="M10.1 4.3 A4.4 3 0 0 0 10.1 8.5 Z" fill="#4a3b1a" opacity="0.85" />
+      <circle cx="4.6" cy="6.4" r="1.5" fill="#4a3b1a" />
+      <path d="M3.6 4.9 L2.2 3.4 M4.4 4.6 L3.6 2.9" stroke="#4a3b1a" strokeWidth="0.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/**
  * Empty-plot teaser. A single ground-anchored sprout that grows up,
  * unfurls a leaf, then retracts on a slow loop. Hints at the bloom
  * to come without committing to any specific flower aesthetic.
@@ -153,6 +178,26 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   }
   const [bloomedCount, setBloomedCount] = useState(0)
   const placed = placeFlowers(flowers)
+
+  /*
+   * Which flower the bee is heading for.
+   *
+   * A destination index plus a CSS transition, rather than a keyframe path: the number of flowers
+   * varies from three to five, so any hand-authored @keyframes would be wrong for most gardens.
+   * This way the route is always exactly the flowers that are actually there.
+   *
+   * Only after everything has bloomed. A bee arriving mid-bloom would be competing with the one
+   * thing the recipient is meant to be watching.
+   */
+  const [beeAt, setBeeAt] = useState(0)
+  const beeFlying = autoBloom && placed.length > 0 && bloomedCount >= placed.length && !prefersReducedMotion()
+  useEffect(() => {
+    if (!beeFlying) return
+    // Uneven dwell: a fixed interval reads as a machine on a track. Prime-ish numbers so the bee
+    // never falls into step with the flowers' sway.
+    const t = setInterval(() => setBeeAt(i => (i + 1) % placed.length), 3700)
+    return () => clearInterval(t)
+  }, [beeFlying, placed.length])
 
   // Re-keying GardenScene from the parent (key prop) is the right way
   // to reset the bloom — the cleanup function makes this effect
@@ -257,6 +302,28 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       <div className={styles.sky} />
       <div className={styles.garden}>
         {showGhostSprout && <GhostSprout />}
+        {beeFlying && (() => {
+          const target = placed[beeAt % placed.length]!
+          /*
+           * Height comes from the flower, not a constant.
+           *
+           * `bottom: 62%` looked right on whichever garden I happened to be testing and was wrong
+           * everywhere else: stems run from 70 to 115, so a fixed height leaves the bee hovering
+           * below the tall flowers and above the short ones. FlowerSVG draws a head 30px down from
+           * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
+           * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
+           */
+          const headUp = target.spec.stemHeight + 50 - 8
+          return (
+            <div
+              className={styles.bee}
+              style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
+              aria-hidden
+            >
+              <Bee />
+            </div>
+          )
+        })()}
         {placed.map((p, i) => (
           <div
             key={placementKey(p.spec, i)}
