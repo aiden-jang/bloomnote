@@ -155,10 +155,19 @@ guessable, but the link *is* the access token, so don't write anything you would
 ## Tests
 
 ```bash
-pnpm --filter @bloomnote/api test    # KV garden store + garden validation
+pnpm --filter @bloomnote/api test    # KV store, validation, quota classifier, SSE route
 ```
 
-Fast, offline, and safe to run on every commit.
+Fast, offline, and safe to run on every commit. Gemini is stubbed at `fetch` throughout, so the
+suite costs nothing and never touches the daily quota.
+
+The SSE route is the one worth knowing about: `/api/design-garden` always returns 200 with a
+stream, so a failed generation is not an HTTP error but a well-formed response carrying an `error`
+event. Nothing else in the toolchain can see the difference, which is why those cases are tested
+explicitly.
+
+`pnpm --filter @bloomnote/web check:tokens` (also run by `build`) fails on a `var(--token)` that
+was never defined and has no fallback. Three of those had shipped before it existed.
 
 ### Prompt eval
 
