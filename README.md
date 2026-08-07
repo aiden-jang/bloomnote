@@ -73,6 +73,18 @@ per-minute and a global daily ceiling), and the check fails *open* on KV hiccups
 blip never blocks a legitimate garden. The key is a wrangler secret; with no key the SSE
 error-path is still exercised.
 
+The daily ceiling is 15, which looks arbitrarily small until you check the actual limit it guards:
+the Gemini free tier allows 20 `generateContent` requests per day per project for this model. It
+was originally 800, a number chosen without looking, so the guard could never fire and the app's
+own honest "at capacity for today" message was unreachable. Past the real quota every visitor
+instead got "the garden service is busy, please try again" about something that could not succeed
+until midnight Pacific. A cap that never fires is not a conservative cap, it is a decorative one.
+
+Below 20 rather than at it because one generation can spend more than one request: a transient
+failure is retried up to three times and every attempt counts against the quota. And because a
+429 means two different things, the client now reads the error body and tells the per-day quota
+apart from a per-minute burst, retrying the second and never the first.
+
 **Time capsules are entirely client-side.** Scheduling adds one `unlockAt` string to the record.
 No cron, no server timer. `SealedView.tsx` counts down in the browser with an interval that slows
 as the unlock recedes, so it isn't running a 60Hz timer for a two-week wait. Editing your device
@@ -87,8 +99,9 @@ the browser never talks to accounts cross-origin.
 ## Trade-offs
 
 - **Model quality.** Flash gets most of the way there and costs nothing on the free tier, which
-  matters for a public demo. A frontier model writes slightly better flower names; swapping the
-  provider is `designGarden.ts` + `prompt.ts`, roughly thirty lines.
+  matters for a public demo. Where it shows is the prose: a frontier model reaches for the note's
+  specifics more reliably and needs less prompting not to drift into greeting-card filler. Swapping
+  the provider is `designGarden.ts` + `prompt.ts`, roughly thirty lines.
 - **Per-garden link previews aren't wired.** Every share currently unfurls with the homepage OG
   card, not a per-garden image. Rendering one on demand in the Worker is a clean future addition;
   it was descoped to keep the port lean.
@@ -142,6 +155,39 @@ guessable, but the link *is* the access token, so don't write anything you would
 ```bash
 pnpm --filter @bloomnote/api test    # KV garden store + garden validation
 ```
+
+Fast, offline, and safe to run on every commit.
+
+### Prompt eval
+
+The prompt does real work that no type checker can see. Its most important rule is that a garden
+should talk about the note the sender actually wrote: given "you drove four hours in the rain to
+sit in a hospital car park", the output should say four hours, or rain, or the car park, and not
+"thank you for your unwavering support", a line that would work for a stranger. That is a
+property of generated prose, so the only honest way to check it is to generate and measure.
+
+```bash
+pnpm --filter @bloomnote/api eval
+```
+
+Deliberately separate from `pnpm test`, and named `*.eval.ts` so vitest's default include can't
+sweep it into a normal run: every case spends a real Gemini call. Needs `GEMINI_API_KEY` in
+`packages/api/.dev.vars`.
+
+**Mind the budget.** The Gemini free tier allows **20 `generateContent` requests per day** for this
+model, project-wide. The default run is four fixtures at one generation each, so it costs 4 of the
+20 and prints that total before it spends anything. `EVAL_RUNS=3` gives majority-of-three voting,
+which is much better evidence about a sampled model, and costs 12 of the 20. Worth it when a prompt
+change is worth confirming; not on every edit.
+
+Run it after editing `prompt.ts`. If the daily quota is gone it says so in those words and stops,
+rather than reporting a prompt regression it never observed.
+
+Knobs: `EVAL_RUNS` (default 1) and `EVAL_PACE_MS` (default 4000).
+
+The same 20/day limit is why `DAILY_CAP` in `designGarden.ts` is 15 and not 800: past the real
+quota the app should say "at capacity for today", not "the garden service is busy, please try
+again" about something that cannot succeed until midnight Pacific.
 
 ## Observability
 

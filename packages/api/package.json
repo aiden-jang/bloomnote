@@ -8,7 +8,8 @@
     "dev": "wrangler dev --var AUTH_URL:http://localhost:34100",
     "deploy": "pnpm --filter @bloomnote/web build && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "eval": "vitest run --config vitest.eval.config.ts"
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.1.0",

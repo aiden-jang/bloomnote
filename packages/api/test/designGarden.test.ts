@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
-import { buildPrompt, checkBudget, validateBody } from '../src/designGarden.js';
+import { afterEach, describe, expect, test } from 'vitest';
+import { buildPrompt, checkBudget, generateGarden, validateBody } from '../src/designGarden.js';
 import { validateGarden } from '../src/prompt.js';
 import { testEnv } from './helpers.js';
 
@@ -99,4 +99,72 @@ describe('checkBudget (KV cost guard)', () => {
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.status).toBe(429);
   });
+});
+
+/**
+ * A 429 means two different things and they want opposite handling. A per-minute burst clears in
+ * seconds and should be retried; the per-day project quota does not clear until midnight Pacific,
+ * so retrying spends time to fail identically and "please try again" is advice that cannot work.
+ *
+ * This is worth a test because getting it wrong is invisible: both paths throw, both surface an
+ * error to the user, and only the wording tells them whether waiting ten seconds or a day is the
+ * move. The free tier is 20 requests per day, so the daily branch is the one real users hit.
+ */
+describe('quota exhaustion vs a busy blip', () => {
+  const quotaBody = {
+    error: {
+      code: 429,
+      status: 'RESOURCE_EXHAUSTED',
+      details: [
+        {
+          '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+          violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', quotaValue: '20' }],
+        },
+      ],
+    },
+  };
+  const burstBody = {
+    error: {
+      code: 429,
+      status: 'RESOURCE_EXHAUSTED',
+      details: [
+        {
+          '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+          violations: [{ quotaId: 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', quotaValue: '10' }],
+        },
+      ],
+    },
+  };
+
+  /** Swap global fetch for one that always 429s with the given body, counting attempts. */
+  function stubFetch(body: unknown): () => number {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return new Response(JSON.stringify(body), { status: 429, headers: { 'content-type': 'application/json' } });
+    }) as typeof fetch;
+    return () => calls;
+  }
+
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  test('a daily quota says come back tomorrow, and does not retry', async () => {
+    const calls = stubFetch(quotaBody);
+    await expect(generateGarden('k', 'p')).rejects.toThrow(/capacity for today/i);
+    // Retrying a daily quota cannot succeed; spending more requests on it is pure waste.
+    expect(calls()).toBe(1);
+  });
+
+  // Explicit timeout: this one actually sleeps through generateGarden's real 500ms + 1000ms
+  // backoff, and the 5s default left so little headroom that it timed out roughly one run in
+  // eight under workerd contention. A flaky test that fails on timing teaches people to re-run
+  // until green, which is exactly how a real failure gets waved through.
+  test('a per-minute burst retries and reports a busy service', async () => {
+    const calls = stubFetch(burstBody);
+    await expect(generateGarden('k', 'p')).rejects.toThrow(/busy \(429\)/);
+    expect(calls()).toBeGreaterThan(1);
+  }, 20_000);
 });
