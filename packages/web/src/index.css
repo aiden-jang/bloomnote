@@ -22,6 +22,24 @@
    * navigation link quietly spends the signal too.
    */
   --color-accent: #4a7c3f;
+  /*
+   * Alias for --text-dark. Four rules across SealedView and Composer ask for --text-deep, which
+   * never existed, and none of them pass a fallback. `color` is inherited, so an invalid var()
+   * silently resolves to the parent's colour instead of failing: the countdown and the hovered
+   * chips have been quietly wearing whatever colour they happened to sit inside.
+   */
+  --text-deep: #1e3a10;
+  /*
+   * Wax seal on the time capsule envelope. Same story with a louder ending: SealedView asks for
+   * these two, they were never defined, and `fill` is NOT inherited, so an invalid var() falls
+   * back to the CSS initial value, which for fill is black. The centrepiece of the sealed screen
+   * rendered as a black dot, with a black ✿ glyph inside it that nobody has ever seen.
+   *
+   * Dusty rose rather than a true red: it has to read as sealing wax next to forest green on
+   * cream without turning into a warning colour.
+   */
+  --pink-mid:  #e0919f;
+  --pink-deep: #a3546a;
   /* Fraunces is a variable serif with personality — slight wobble in
      the heavier weights that reads as "deliberately set." Playfair
      stays in the stack as a graceful fallback if Fraunces ever fails

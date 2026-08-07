@@ -47,11 +47,24 @@
   color: var(--text-mid);
 }
 
+/*
+ * A <button> sitting inline inside a sentence, so it needs the full reset. Without it the user
+ * agent's defaults come through and "sign in" renders as a little grey box with a border, in the
+ * browser's default sans at 14px, in the middle of a serif line. It looked like a broken widget
+ * rather than a link.
+ *
+ * `font: inherit` is the part that's easy to forget and does the most work: it picks up the
+ * surrounding serif and its size, so the link sits in the sentence instead of interrupting it.
+ */
 .emptyLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   color: var(--green-mid);
   text-decoration: underline;
   text-underline-offset: 3px;
-  font-size: 14px;
 }
 
 /* --- List --- */
