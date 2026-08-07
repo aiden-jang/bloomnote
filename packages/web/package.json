@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build": "node scripts/check-tokens.mjs && tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "gen-icons": "node scripts/gen-icons.mjs",
-    "gen-og": "node scripts/gen-og.mjs"
+    "gen-og": "node scripts/gen-og.mjs",
+    "check:tokens": "node scripts/check-tokens.mjs"
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.1.0",
