@@ -73,6 +73,10 @@ interface Props {
   silent?: boolean
   /** Shrink to a waiting bed. Only meaningful with no flowers — see `.sceneCompact`. */
   compact?: boolean
+  /** Index of the flower being looked at, from the legend or from the plot itself. */
+  focused?: number | null
+  /** Pointing at a flower, or letting go of it. */
+  onFocus?: (index: number | null) => void
 }
 
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
@@ -167,7 +171,7 @@ function GhostSprout() {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false, focused = null, onFocus }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -327,9 +331,21 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
         {placed.map((p, i) => (
           <div
             key={placementKey(p.spec, i)}
-            className={styles.flowerSlot}
-            style={{ left: `${p.left}%`, zIndex: p.zIndex }}
+            className={
+              focused === i
+                ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
+                : focused !== null
+                  ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
+                  : styles.flowerSlot
+            }
+            // Focused flowers come forward, so a lifted flower is never behind its neighbour.
+            style={{ left: `${p.left}%`, zIndex: focused === i ? 4 : p.zIndex }}
             title={p.spec.name}
+            onMouseEnter={() => onFocus?.(i)}
+            onMouseLeave={() => onFocus?.(null)}
+            // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
+            // tapping it again lets go, so the link is reachable without a mouse.
+            onClick={() => onFocus?.(focused === i ? null : i)}
           >
             <FlowerSVG
               flower={p.spec}

@@ -103,6 +103,18 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     // it survives the navigation.
   }
 
+  /*
+   * Which flower the recipient is looking at, shared by the scene and the legend.
+   *
+   * The two halves of this screen have never been connected: the garden is a picture and the
+   * meanings are a list, and working out which line belongs to which flower means comparing colour
+   * swatches by eye. Since every meaning is written about a specific flower, that link is the
+   * content, not decoration.
+   *
+   * Held here rather than in either component because it has to point both ways.
+   */
+  const [focused, setFocused] = useState<number | null>(null)
+
   // Stable across re-renders so GardenScene's bloom effect (which lists onAllBloomed as a dep)
   // doesn't re-fire and replay the whole animation when unrelated state changes — e.g. the
   // "saved to your gardens" pill flipping on after recordReceived resolves.
@@ -158,6 +170,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         flowers={flowers}
         autoBloom={phase === 'blooming'}
         onAllBloomed={handleAllBloomed}
+        focused={focused}
+        onFocus={setFocused}
         // The sender chose this occasion when they wrote the note;
         // the recipient sees the matching sky tint so the
         // atmosphere reads as deliberate, not random.
@@ -201,7 +215,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       </div>
 
       <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
-        <FlowerLegend flowers={flowers} />
+        <FlowerLegend flowers={flowers} focused={focused} onFocus={setFocused} />
       </div>
 
       {/* Thread context — when this garden is itself a reply, show the

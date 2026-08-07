@@ -86,3 +86,40 @@
   line-height: 1.55;
   color: var(--text-mid);
 }
+
+/*
+ * Looking at one flower.
+ *
+ * Focus comes from either side: hovering a row here, or hovering a flower in the plot above. The
+ * un-focused rows dim rather than the focused one shouting, because the point is to make one line
+ * findable, not to make the rest of the note feel like it stopped mattering.
+ */
+/*
+ * Applied to the row's children, not the row.
+ *
+ * `.item` carries `itemReveal` with `animation-fill-mode: forwards`, and that animates both
+ * `opacity` and `transform`. An animation beats a plain declaration even after it has finished, so
+ * focus styles set on the row itself are silently discarded: the rows would have looked completely
+ * inert and nothing would have explained why. The children have no animations of their own.
+ */
+.item {
+  cursor: default;
+}
+
+.item .swatchStack,
+.item .text {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.itemOn .text {
+  transform: translateX(3px);
+}
+
+.itemOff .swatchStack,
+.itemOff .text {
+  opacity: 0.42;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itemOn .text { transform: none; }
+}

@@ -273,3 +273,28 @@
   .bee { transition: none; }
   .beeBody { animation: none; }
 }
+
+/*
+ * The focused flower, and the ones that aren't.
+ *
+ * Lifts and brightens slightly rather than scaling: the flowers share a soil line, and scaling one
+ * would lift its stem off the ground, which is exactly the "floating" mistake the door light and
+ * the box front both made. Moving straight up keeps it planted.
+ */
+.flowerSlot {
+  transition: transform 0.24s ease, opacity 0.24s ease, filter 0.24s ease;
+  cursor: pointer;
+}
+
+.flowerSlotOn {
+  transform: translateX(-50%) translateY(-6px);
+  filter: drop-shadow(0 6px 10px rgba(60, 80, 40, 0.22));
+}
+
+.flowerSlotOff {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flowerSlotOn { transform: translateX(-50%); }
+}
