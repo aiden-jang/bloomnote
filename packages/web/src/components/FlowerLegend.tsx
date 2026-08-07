@@ -4,6 +4,10 @@ import styles from './FlowerLegend.module.css'
 
 interface Props {
   flowers: FlowerSpec[]
+  /** Index of the flower being looked at, whether from here or from the plot above. */
+  focused?: number | null
+  /** Pointing at a row, or letting go of it. */
+  onFocus?: (index: number | null) => void
 }
 
 /**
@@ -17,7 +21,7 @@ interface Props {
  * the message with a typewriter reveal), so this component is purely
  * the per-flower breakdown.
  */
-export default function FlowerLegend({ flowers }: Props) {
+export default function FlowerLegend({ flowers, focused = null, onFocus }: Props) {
   return (
     <section className={styles.list} aria-label="What each flower means">
       <p className={styles.heading}>what they mean</p>
@@ -26,7 +30,16 @@ export default function FlowerLegend({ flowers }: Props) {
         {flowers.map((f, i) => (
           <li
             key={`${i}-${f.name}`}
-            className={styles.item}
+            className={
+              focused === i
+                ? `${styles.item} ${styles.itemOn}`
+                : focused !== null
+                  ? `${styles.item} ${styles.itemOff}`
+                  : styles.item
+            }
+            onMouseEnter={() => onFocus?.(i)}
+            onMouseLeave={() => onFocus?.(null)}
+            onClick={() => onFocus?.(focused === i ? null : i)}
             // Per-row stagger matches the GardenScene's per-flower
             // bloom timing — rows fade in as their corresponding
             // flower blooms above.
