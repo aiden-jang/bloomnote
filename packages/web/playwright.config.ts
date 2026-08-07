@@ -33,21 +33,10 @@ export default defineConfig({
     baseURL: 'http://localhost:32100',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    /*
-     * Run as a reduced-motion visitor.
-     *
-     * Not only a flake workaround, though it is that too: "open the garden" carries an infinite
-     * attention pulse, so Playwright's stability check never passes and the click times out after
-     * a minute. Forcing the click would paper over exactly the kind of "can a person actually
-     * press this" problem the suite exists to find.
-     *
-     * The app already turns those animations off under prefers-reduced-motion, so asking for it
-     * puts the run on a path the app deliberately supports, and makes that path tested rather
-     * than assumed. The trade-off is real and worth naming: the entrance animations themselves
-     * (the staged bloom, the typewriter note) are not exercised here, only their end state.
-     */
-    reducedMotion: 'reduce',
   },
+  // Reduced motion is emulated per-page in the spec, not declared here. Setting it in `use` (at
+  // either level) left `matchMedia('(prefers-reduced-motion: reduce)')` reporting false in the
+  // page, so it looked configured and did nothing. See the beforeEach in journey.spec.ts.
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {

@@ -73,6 +73,26 @@ async function stubDesign(page: Page): Promise<void> {
 /** Petals are <path> inside the scene; a bloomed garden has many, an empty plot has none. */
 const petals = (page: Page) => page.locator('svg path');
 
+/*
+ * Every page runs as a reduced-motion visitor.
+ *
+ * Necessary, not cosmetic: "open the garden" carries an infinite attention pulse, so Playwright's
+ * stability check never passes and the click times out after a minute. Forcing the click would
+ * paper over exactly the "can a person actually press this" class of problem this suite is for.
+ *
+ * Done here with an explicit call rather than `reducedMotion` in the config, because that setting
+ * did not reach the page: a probe showed `matchMedia('(prefers-reduced-motion: reduce)')` false
+ * with it set in `use`, and true immediately after calling this. A config option that silently
+ * does nothing is worse than no config option.
+ *
+ * The app already turns these animations off under prefers-reduced-motion, so this puts the run on
+ * a path it deliberately supports. The trade-off is real: the entrance animations themselves (the
+ * staged bloom, the typewriter note) are not exercised, only their end state.
+ */
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+});
+
 test.describe('compose → bloom → share → recipient', () => {
   test('a garden can be grown, shared, and opened', async ({ page }) => {
     await stubDesign(page);
