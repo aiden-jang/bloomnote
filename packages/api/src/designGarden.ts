@@ -60,7 +60,25 @@ export function buildPrompt(body: DesignBody): string {
 }
 
 const PER_IP_PER_MINUTE = 8;
-const DAILY_CAP = 800; // global guard on the Gemini free tier / cost; best-effort, resets daily
+/**
+ * Global daily ceiling on garden generations.
+ *
+ * This was 800, with a comment saying it guarded the Gemini free tier. The free tier for
+ * gemini-2.5-flash is 20 requests per day per project (`GenerateRequestsPerDayPerProjectPerModel-
+ * FreeTier`), so the guard was set about forty times higher than the thing it was guarding and
+ * could never fire. The visible cost of that: past the real quota every visitor got
+ * "The garden service is busy (429). Please try again." — a message that invites retrying
+ * something that cannot succeed until midnight Pacific — while the honest "at capacity for today"
+ * message sitting right below was unreachable.
+ *
+ * Set below 20 rather than at it because a single generation can spend more than one request:
+ * generateGarden retries a transient failure up to MAX_ATTEMPTS times and every attempt counts.
+ * This is a soft guard on a best-effort KV counter, not an accountant, so it errs low and leaves
+ * room for those retries.
+ *
+ * Raise this the moment the key moves to a paid tier; it is a quota guard, not a product decision.
+ */
+const DAILY_CAP = 15;
 
 export type BudgetResult = { ok: true } | { ok: false; status: 429 | 503; retryAfter: number; message: string };
 
@@ -106,6 +124,29 @@ const MAX_ATTEMPTS = 3;
 // (fetch has no default timeout). On timeout we retry like any other transient failure.
 const REQUEST_TIMEOUT_MS = 20_000;
 
+/**
+ * Is this 429 the per-day project quota rather than a per-minute burst?
+ *
+ * Gemini reports it as a QuotaFailure detail whose `quotaId` names the window, e.g.
+ * `GenerateRequestsPerDayPerProjectPerModel-FreeTier`. Matching on "PerDay" rather than the full
+ * id keeps this working across tiers and model names.
+ *
+ * Fails closed: any trouble reading the body and we treat it as the retryable kind, since a
+ * needless retry is much cheaper than wrongly telling someone to come back tomorrow.
+ */
+async function isDailyQuotaExhausted(res: Response): Promise<boolean> {
+  try {
+    const body = (await res.clone().json()) as {
+      error?: { details?: { '@type'?: string; violations?: { quotaId?: string }[] }[] };
+    };
+    return (body.error?.details ?? []).some((d) =>
+      (d.violations ?? []).some((v) => (v.quotaId ?? '').includes('PerDay')),
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function generateGarden(apiKey: string, userPrompt: string): Promise<ValidatedGarden> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   const body = JSON.stringify({
@@ -138,6 +179,13 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
       const call = parts.map((p) => p.functionCall).find((fc) => fc?.name === 'design_garden');
       if (!call) throw new Error('The model did not return a garden. Please try again.');
       return validateGarden(call.args);
+    }
+    // A 429 comes in two flavours that want opposite handling. A per-minute burst clears in
+    // seconds and is worth retrying; the per-day project quota does not clear until midnight
+    // Pacific, so retrying only spends two more seconds to fail identically, and telling the user
+    // to "try again" is actively wrong. Gemini distinguishes them in the error body.
+    if (res.status === 429 && (await isDailyQuotaExhausted(res))) {
+      throw new Error('bloomnote is at capacity for today. try again tomorrow.');
     }
     if (attempt >= MAX_ATTEMPTS - 1 || !RETRYABLE_STATUS.has(res.status)) {
       throw new Error(`The garden service is busy (${res.status}). Please try again.`);
