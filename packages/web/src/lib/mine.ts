@@ -1,43 +1,25 @@
-// A private, on-device archive of the gardens you've sent. Lives
-// entirely in localStorage — nothing here is ever uploaded. It exists
-// so you can find a link you sent last week without having stashed it
-// somewhere yourself ("what was that garden I made for Maya?").
+// An on-device archive of the gardens you've sent, so you can find last week's link without having
+// stashed it yourself. Nothing here is uploaded.
 //
-// Every access is wrapped in try/catch because localStorage throws in
-// private-mode Safari and is absent under SSR. The archive is a
-// convenience, never load-bearing: if storage is unavailable the app
-// behaves exactly as before, just without an outbox.
-//
-// Capped + FIFO so a heavy user can't grow it without bound. We keep
-// only a thin summary per garden (names, occasion, a few petal colors)
-// — enough to render a recognizable card and a working link, without
-// duplicating the full garden that already lives server-side.
+// Never load-bearing: every access is wrapped because localStorage throws in private-mode Safari,
+// and losing it costs an outbox, not a garden. Capped and FIFO, holding a thin summary rather than
+// a copy of the record that already lives server-side.
 
 const STORAGE_KEY = 'bloomnote:mine'
 const LEGACY_KEY = 'blossom:mine' // pre-rename; read as a fallback so on-device archives carry over
 const MAX_ENTRIES = 50
 
 export interface MineRecord {
-  /** Short ID — the `/g/<id>` the recipient opens. */
+  /** The `/g/<id>` the recipient opens. */
   id: string
-  /** Recipient name (may be empty). */
   to: string
-  /** Sender name (may be empty). */
   from: string
-  /** Occasion value (mirror of src/lib/occasions.ts). */
   occasion?: string | undefined
-  /** Mood value (mirror of src/lib/moods.ts). */
   mood?: string | undefined
-  /** ISO 8601 timestamp this garden was created. */
   createdAt: string
-  /** When a time capsule, the ISO 8601 unlock moment. */
+  /** Set only for a time capsule. */
   unlockAt?: string | undefined
-  /**
-   * One representative petal color per flower (capped), used to draw a
-   * small swatch row on the archive card. Lets /mine render a
-   * recognizable chip for each garden without re-fetching the full
-   * record from the server.
-   */
+  /** One petal colour per flower, so /mine draws a recognisable card without re-fetching it. */
   swatches: string[]
 }
 

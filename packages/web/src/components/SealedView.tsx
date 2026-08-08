@@ -12,25 +12,14 @@ interface Props {
 }
 
 /**
- * Sealed envelope + live countdown for time-capsule gardens.
+ * Sealed envelope and countdown for a time-capsule garden.
  *
- * The whole conceit hinges on anticipation: the recipient knows
- * *something* is here, knows who it's from, knows roughly when it
- * opens — but the garden itself stays hidden until the moment. So
- * the design choices are:
+ * The recipient gets who it's from and when it opens, and nothing of the flowers — not even
+ * silhouettes, because a reveal you've already half-seen isn't one. The countdown ticks by the
+ * second only when it's close; a per-second tick on a three-month wait is theatre.
  *
- *   - No glimpse of the flowers. Not even silhouettes. The reveal
- *     needs to feel like a reveal.
- *   - A live countdown, updating every second when close, less often
- *     when far. Constant ticking turns "wait 3 months" into theater.
- *   - Sender's name prominent so the receiver knows whose moment
- *     they're anticipating.
- *   - Once the unlock time hits, the page smoothly transitions to the
- *     normal recipient view via the parent's onUnlock callback.
- *
- * Clock skew note: we trust the client's clock for the countdown.
- * Spoofing the device clock would let a recipient open early — and
- * that's fine. This is a UX choreography, not a security boundary.
+ * The clock is the recipient's own, so spoofing the device opens it early. That's fine — this is
+ * choreography for a moment, not a security boundary. Same call as `unlockAt` in garden.ts.
  */
 export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
   const target = new Date(unlockAt).getTime()

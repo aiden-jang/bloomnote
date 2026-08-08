@@ -26,54 +26,38 @@ export interface FlowerSpec {
   stemHeight: number
 }
 
+/**
+ * A stored garden.
+ *
+ * Every optional field is optional for the same reason: gardens written before that field existed
+ * are immutable and cached for a year, so each one has to decode and render without it. Adding a
+ * required field here silently breaks every garden already in the wild.
+ */
 export interface GardenData {
   flowers: FlowerSpec[]
-  /** Optional one or two-sentence note about the whole garden, AI-written. */
+  /** One or two sentences about the bouquet as a whole, AI-written. */
   bouquetNote: string
-  /** User-provided personal message. */
+  /** The sender's own message. */
   message: string
-  /** Sender name. */
   from: string
-  /** Recipient name. */
   to?: string | undefined
-  /**
-   * ISO 8601 timestamp of when the sender hit "Grow their garden." Optional
-   * because pre-existing share URLs (from before this field shipped)
-   * decode without it; we just don't show the "Grown on …" line in that case.
-   */
+  /** ISO 8601. Drives the "grown on …" line, which is simply omitted when absent. */
   createdAt?: string | undefined
   /**
-   * ISO 8601 timestamp before which the garden stays sealed (time-capsule
-   * mode). The recipient sees a countdown until this moment, then the
-   * garden becomes openable. Omit for immediate delivery.
+   * ISO 8601. Until this moment the recipient sees a countdown instead of the garden.
    *
-   * Clock skew note: comparison is recipient-clock vs server-stored UTC.
-   * A determined recipient can spoof their device clock and unlock early,
-   * which is acceptable for a "moment of joy" product — this is not a
-   * security boundary, it's a UX choreography.
+   * Compared against the recipient's own clock, so someone determined can set their device forward
+   * and open it early. That is fine: this is choreography for a moment, not a security boundary,
+   * and the cost of treating it as one would be a server round trip on every load.
    */
   unlockAt?: string | undefined
-  /**
-   * The occasion (mirror of OCCASIONS values in src/lib/occasions.ts) the
-   * sender chose. Stored so the recipient view can reflect the same
-   * atmosphere — e.g. the sky gradient shifts to muted cool tones for
-   * sympathy gardens, warm peach for birthdays. Optional because
-   * pre-existing gardens (from before this field shipped) decode without
-   * it; we just fall back to the default gradient.
-   */
+  /** Mirrors OCCASIONS in src/lib/occasions.ts. Drives the sky gradient; falls back to the default. */
   occasion?: string | undefined
-  /**
-   * The mood (mirror of MOODS values in src/lib/moods.ts) the sender
-   * chose. Currently informational only — preserved so we can light up
-   * mood-driven UI variations in the future without re-encoding old
-   * gardens. Same backwards-compat reasoning as `occasion`.
-   */
+  /** Mirrors MOODS in src/lib/moods.ts. Stored but unused, so mood-driven UI needs no re-encoding. */
   mood?: string | undefined
   /**
-   * The previous garden in the thread, if this is a reply. Depth-capped
-   * to 1: a `previous` never has its own `previous`, so the URL stays
-   * bounded even after many back-and-forths. The user sees current +
-   * the one it replied to, no further back.
+   * The garden this one replies to. Depth-capped at 1 — a `previous` never has its own — so the
+   * record stays bounded no matter how long the back-and-forth runs.
    */
   previous?: GardenData | undefined
 }
@@ -124,39 +108,22 @@ export function drawableGarden(g: GardenData): GardenData {
 
 // --- Short URLs ---------------------------------------------------------
 //
-// Gardens are stored in Upstash Redis keyed by a 6-character base62 ID.
-// The share URL is `/g/<id>` and the reply URL is `/r/<id>` — same
-// record, two views. No URL-encoded payloads; all garden data lives
-// server-side.
+// Gardens live in Workers KV under a 6-character id. `/g/<id>` and `/r/<id>` are two views of one
+// record: nothing is URL-encoded, so a link can't be pulled apart or forged into a garden.
 
-// Always anchor share URLs at the origin root. Assumes the app is
-// deployed at a domain root (e.g. bloomnote.aidenjang.com/) rather than
-// in a subdirectory (e.g. example.com/bloomnote/). Path-based routing
-// (/g/<...>, /r/<...>) doesn't compose with subdirectory deployments
-// — if that ever becomes a requirement, this function and the route
-// matchers in App.tsx and Composer.tsx all need to learn about the
-// base path together.
+/** Origin root. Path routing (/g/, /r/) rules out deploying under a subdirectory. */
 function buildAppUrl(): string {
   return window.location.origin
 }
 
-/**
- * Short IDs are 6 characters from a curated base62 alphabet (no 0/O,
- * no 1/l/I). The pattern is shared with the server's generator in
- * api/garden.ts; if you change one, change both.
- */
+/** Curated base62: no 0/O, no 1/l/I. Mirrors the server's generator in gardens.ts — change both. */
 const SHORT_ID_PATTERN = /^[A-HJ-NP-Za-km-z2-9]{6}$/
 
 export function isShortId(value: string): boolean {
   return SHORT_ID_PATTERN.test(value)
 }
 
-/**
- * Create a short-URL record for this garden by POSTing it to
- * /api/garden. Returns the short ID on success; returns null on any
- * failure. The composer surfaces the failure to the user — there's no
- * silent fallback to a self-contained URL anymore.
- */
+/** Null on any failure. The composer surfaces that: a share link that half-works is worse. */
 export async function createShortGarden(
   data: GardenData,
   signal?: AbortSignal,
@@ -177,12 +144,10 @@ export async function createShortGarden(
 }
 
 /**
- * Fetch a garden by short ID. Returns null on 404 or any other
- * failure — the caller decides how to render the missing state.
+ * Fetch a garden by short id.
  *
- * The response is aggressively cacheable (the server sets
- * `Cache-Control: immutable`) so repeat opens of the same link from
- * the same browser don't hit Redis or the CDN twice.
+ * Served `immutable` for a year, so a repeat open never leaves the browser. That cache is also why
+ * the normalisation below has to happen here rather than only on the server.
  */
 export async function fetchGarden(
   id: string,
@@ -209,11 +174,7 @@ export function buildShareUrl(id: string): string {
   return `${buildAppUrl()}/g/${id}`
 }
 
-/**
- * The "grow one back" URL. Points at the same short ID as the share
- * URL — one storage record serves both views. The composer fetches
- * the same garden by ID, then uses it as a remix seed.
- */
+/** "Grow one back". Same id as the share URL — the composer reads it back as a remix seed. */
 export function buildRemixUrl(id: string): string {
   return `${buildAppUrl()}/r/${id}`
 }

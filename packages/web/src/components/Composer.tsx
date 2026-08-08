@@ -427,15 +427,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       const data = buildGardenData(result)
 
       // POST the garden to our own /api/garden endpoint to get a short
-      // ID back. We stay in 'designing' phase until the round-trip
-      // completes — usually <200ms because the endpoint runs on the
-      // same Edge network as the model call we just made.
+      // ID back, staying in 'designing' until the round trip completes.
       //
-      // If the shortener fails (Upstash down, missing creds, network),
-      // we surface a clear error rather than degrading silently to a
-      // 450-char URL. The garden the user just spent 5 seconds
-      // designing is wasted in that scenario, which is unfortunate —
-      // but a broken share experience is worse than a clear failure.
+      // A failed write surfaces as a clear error rather than degrading to a self-contained URL.
+      // That costs the user the garden they just waited five seconds for, which is bad — but a
+      // share link that silently half-works is worse.
       setThinking(false)
       setStatusText('wrapping it up…')
 
