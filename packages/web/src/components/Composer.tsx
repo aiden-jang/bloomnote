@@ -861,6 +861,34 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'idle' && (
         <>
+          {/* The note comes first because it is the only thing the app actually needs: it is both
+              the message and the design brief, and the tagline above asks for it by name. It used
+              to sit under two names, an occasion and a mood, which put it at y=932 on a 900px
+              screen — the one input this page exists for, below the fold, behind four optional
+              ones. Everything under it refines a garden that this field alone can already grow. */}
+          <section className={styles.section}>
+            <label className={styles.label}>your note</label>
+            <textarea
+              ref={messageRef}
+              className={styles.textarea}
+              placeholder={placeholder}
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              rows={6}
+              maxLength={400}
+            />
+            <div className={styles.helperRow}>
+              <span className={styles.helper}>
+                quirks beat vibes. the weirder the detail, the better the bouquet.
+              </span>
+              <span
+                className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}
+              >
+                {message.length}/400
+              </span>
+            </div>
+          </section>
+
           <div className={styles.nameRow}>
             <section className={styles.section}>
               <label className={styles.label}>from</label>
@@ -923,29 +951,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                 </button>
               ))}
             </ChipRow>
-          </section>
-
-          <section className={styles.section}>
-            <label className={styles.label}>your note</label>
-            <textarea
-              ref={messageRef}
-              className={styles.textarea}
-              placeholder={placeholder}
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              rows={6}
-              maxLength={400}
-            />
-            <div className={styles.helperRow}>
-              <span className={styles.helper}>
-                quirks beat vibes. the weirder the detail, the better the bouquet.
-              </span>
-              <span
-                className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}
-              >
-                {message.length}/400
-              </span>
-            </div>
           </section>
 
           <ScheduleInput
