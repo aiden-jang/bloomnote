@@ -1,9 +1,7 @@
-// Garden domain model + URL encoding for AI-designed gardens.
+// The garden domain model.
 //
-// The shape here is shared verbatim between the frontend and the backend
-// tool-use schema (see api/design-garden.ts). Keeping a single source of
-// truth for the schema means a change to a petal shape or color field
-// only has to happen in one place.
+// This shape is mirrored by the model's tool schema in api/src/prompt.ts, so a new petal shape or
+// colour field has to be added in both places or the model will send something this can't draw.
 
 export type PetalShape = 'round' | 'elongated' | 'bell' | 'small' | 'star'
 
