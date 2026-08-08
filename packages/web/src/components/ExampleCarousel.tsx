@@ -32,21 +32,11 @@ interface Props {
 }
 
 /**
- * Homepage onboarding affordance. Three curated example gardens shown
- * stacked above the composer when:
+ * Three curated examples, above the composer, on a fresh route with an empty form.
  *
- *   - the user is on a fresh route (no remix seed), and
- *   - the form is still empty (no draft being typed).
- *
- * The goal is to show what bloomnote *produces* before asking the user
- * to produce input. Most first-time visitors don't know what to write
- * because they can't see the output yet — examples close that loop.
- *
- * Tapping "try this" fires onSelect with the full example data; the
- * Composer pre-fills From, To, message, occasion, and mood, and the
- * user can either ship as-is to experience the bloom moment, or edit
- * any field. Either way they reach the "wow" moment without typing
- * a single character.
+ * A first-time visitor can't write the note because they haven't seen what the note produces. These
+ * show the output before asking for the input; "try this" fills every field, so they can reach the
+ * bloom without typing anything.
  */
 export default function ExampleCarousel({ onSelect, collapsed = false, activeId, onPreview }: Props) {
   return (

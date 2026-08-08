@@ -5,9 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 32100,
-    // Proxy the API to the bloomnote Worker (wrangler dev) in dev, so the browser treats it
-    // as same-origin and matches prod (one Worker serves the SPA + the API). The Vercel-style
-    // in-process apiPlugin is replaced by this once the Worker exists (step 3.2).
+    // Proxy /api to the Worker so the browser sees one origin in dev, the way production does
+    // (a single Worker serving both the SPA and the API).
     proxy: {
       '/api': { target: 'http://localhost:32200', changeOrigin: true },
     },
