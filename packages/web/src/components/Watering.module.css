@@ -1,0 +1,92 @@
+/*
+ * Caption weight on purpose. This sits directly under the garden, and anything with real button
+ * chrome there would read as the main thing to do on the page, which it is not — the note is.
+ */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 10px auto 0;
+  animation: waterFade 0.5s ease both;
+}
+
+@keyframes waterFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--green-pale, #e2e8dc);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--text-mid, #6b6963);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.btn:hover {
+  color: var(--green-deep, #2f5d2a);
+  border-color: var(--green-mid, #7c9a6e);
+  background: #fff;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.can {
+  width: 19px;
+  height: 14px;
+  flex-shrink: 0;
+  /* Tips toward the spout on hover, the way you'd start to pour. */
+  transition: transform 0.24s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.btn:hover .can {
+  transform: rotate(-16deg) translateX(-1px);
+}
+
+/* Stays tipped once it has been used. */
+.canPoured {
+  transform: rotate(-20deg);
+}
+
+/* No `gap` here, unlike .btn: the sentence continues into a span, and a flex gap put a space in
+   front of the comma ("you watered it , and 3 others did too"). The can gets its space explicitly. */
+.done {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 7px 2px;
+  font-size: 0.84rem;
+  color: var(--green-mid, #7c9a6e);
+}
+
+.done .can {
+  margin-right: 7px;
+}
+
+.others {
+  color: var(--text-mid, #6b6963);
+  opacity: 0.75;
+}
+
+.count {
+  font-size: 0.8rem;
+  color: var(--text-mid, #6b6963);
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row { animation: none; }
+  .can, .btn { transition: none; }
+  .btn:hover .can { transform: none; }
+}

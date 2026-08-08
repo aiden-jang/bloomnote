@@ -192,6 +192,47 @@ export async function readOgImage(env: Env, id: string): Promise<ArrayBuffer | n
   return env.GARDENS.get(`og:${id}`, 'arrayBuffer');
 }
 
+/*
+ * Watering.
+ *
+ * The one thing a sender never got back was any sign the garden had landed. Replying means composing
+ * a whole garden of your own, which is a lot to ask of "I saw this and it got me", so almost nobody
+ * closed the loop. Watering is the cheap version: one tap, no writing, and the next time the sender
+ * opens their own link it says the garden was watered.
+ *
+ * Deliberately anonymous and deliberately soft:
+ *
+ * - There is no identity here, so this cannot be a true unique count. The client remembers its own
+ *   tap so the button doesn't invite mashing, and the cap below is what actually holds on the
+ *   server. Someone determined can walk a garden they were given up to the cap; the worst outcome
+ *   is a number that reads "a lot", which is not a lie about anything that matters.
+ * - KV is eventually consistent and this is read-modify-write, so simultaneous waters can collapse
+ *   into one. A counter that undercounts by one during a tie is fine; taking a lock on a Durable
+ *   Object to protect a decorative number is not.
+ */
+const MAX_WATERS = 99;
+
+export type WaterResult = { ok: true; waters: number } | { ok: false; status: 400; message: string };
+
+export async function waterGarden(env: Env, id: string): Promise<WaterResult> {
+  if (!ID_RE.test(id)) return { ok: false, status: 400, message: 'Bad id.' };
+  // The garden has to exist, so nobody can park a counter against an unclaimed id.
+  if ((await env.GARDENS.get(`g:${id}`)) === null) {
+    return { ok: false, status: 400, message: 'No such garden.' };
+  }
+  const next = Math.min(MAX_WATERS, (await readWaters(env, id)) + 1);
+  await env.GARDENS.put(`water:${id}`, String(next));
+  return { ok: true, waters: next };
+}
+
+/** How many times this garden has been watered. 0 when never, or when the stored value is junk. */
+export async function readWaters(env: Env, id: string): Promise<number> {
+  if (!ID_RE.test(id)) return 0;
+  const raw = await env.GARDENS.get(`water:${id}`);
+  const n = raw === null ? 0 : Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? Math.min(MAX_WATERS, n) : 0;
+}
+
 export type CreateResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 500; message: string };
 
 /** Create a garden. When `ownerId` is set (a signed-in creator), stamp it and index it as Sent. */

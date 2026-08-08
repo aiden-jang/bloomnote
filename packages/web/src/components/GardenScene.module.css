@@ -298,3 +298,66 @@
 @media (prefers-reduced-motion: reduce) {
   .flowerSlotOn { transform: translateX(-50%); }
 }
+
+/*
+ * Being watered.
+ *
+ * Drops fall down each flower's own column and land in the soil, then that flower dips and springs
+ * back — the small bob a stem makes when something lands on it, not a bounce. It happens once and
+ * then the layer unmounts.
+ *
+ * Every keyframe repeats `translateX(-50%)`. The slot is centred on its column by that transform, so
+ * a keyframe that only wrote translateY would snap each flower half its own width to the right for
+ * the length of the animation. Same reason the animation is on the slot at all rather than on the
+ * flower: scaling or moving the flower alone would lift the stem off the soil line.
+ */
+.dropLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/*
+ * Deliberately more saturated than real water, and outlined.
+ *
+ * The first pass used the pale blue you would actually pick for a droplet, #cfeaf7 into #9ecfe8, and
+ * they fell down a sky that starts at #d4eeff — pale blue on pale blue, six pixels wide. They were
+ * in the DOM, at the right coordinates, at opacity 0.9, and could not be seen at all. The sky is the
+ * background here, so the water has to be darker than it rather than lighter.
+ */
+.drop {
+  position: absolute;
+  top: -10px;
+  width: 6px;
+  height: 10px;
+  margin-left: -3px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: linear-gradient(180deg, #7cc3e8 0%, #3f92c8 100%);
+  box-shadow: 0 0 0 0.5px rgba(31, 92, 133, 0.35), inset 0 -1px 1px rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  animation: dropFall 620ms cubic-bezier(0.45, 0, 0.7, 1) forwards;
+}
+
+@keyframes dropFall {
+  0%   { opacity: 0; transform: translateY(0) scaleY(0.8); }
+  15%  { opacity: 0.9; }
+  80%  { opacity: 0.9; transform: translateY(190px) scaleY(1.25); }
+  /* Flattens into the soil instead of vanishing mid-air. */
+  100% { opacity: 0; transform: translateY(202px) scaleY(0.4) scaleX(1.6); }
+}
+
+.flowerSlotPerk {
+  animation: perk 540ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes perk {
+  0%   { transform: translateX(-50%) translateY(0); }
+  35%  { transform: translateX(-50%) translateY(3px); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop { animation: none; opacity: 0; }
+  .flowerSlotPerk { animation: none; }
+}

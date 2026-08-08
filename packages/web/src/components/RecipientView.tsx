@@ -4,6 +4,7 @@ import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
 import SoundToggle from './SoundToggle'
+import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
@@ -115,6 +116,10 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
    */
   const [focused, setFocused] = useState<number | null>(null)
 
+  // Bumped on each watering; GardenScene reads it to replay the drops. A counter, not a flag, so
+  // the scene doesn't need this component to time a reset.
+  const [wateredAt, setWateredAt] = useState(0)
+
   // Stable across re-renders so GardenScene's bloom effect (which lists onAllBloomed as a dep)
   // doesn't re-fire and replay the whole animation when unrelated state changes — e.g. the
   // "saved to your gardens" pill flipping on after recordReceived resolves.
@@ -172,6 +177,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         onAllBloomed={handleAllBloomed}
         focused={focused}
         onFocus={setFocused}
+        wateredAt={wateredAt}
         // The sender chose this occasion when they wrote the note;
         // the recipient sees the matching sky tint so the
         // atmosphere reads as deliberate, not random.
@@ -196,6 +202,13 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           fade in via msgVisible) collapses that gap and matches the reveal. */}
       {phase === 'blooming' && (
         <>
+      {/* Gated on msgVisible, not just on the phase: during the bloom itself the flowers are the
+          only thing on this screen that matters, and a button under them would take attention the
+          moment does not have to spare. */}
+      {msgVisible && gardenId && (
+        <Watering gardenId={gardenId} onWatered={() => setWateredAt(n => n + 1)} />
+      )}
+
       <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
         {message ? (
           <>
