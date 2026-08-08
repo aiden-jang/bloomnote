@@ -30,6 +30,14 @@ can also schedule delivery: the recipient sees a sealed envelope counting down t
 picked. bloomnote works fully signed out; an account just gives you a synced list of gardens
 you've sent and received.
 
+Two smaller things on the recipient's side, both aimed at the same gap. Pointing at a flower
+highlights its line in the legend and vice versa, because otherwise the garden is a picture and
+the meanings are a list and matching them up means comparing colour swatches by eye — and every
+meaning was written about one specific flower, so that link is the content rather than decoration.
+And a watering can under the plot gives them a one-tap way to answer: the sender used to hear
+nothing at all unless someone composed a whole garden back, which is far more than most people
+will do for a feeling that only needs acknowledging.
+
 ## Architecture
 
 ```
@@ -102,15 +110,21 @@ the browser never talks to accounts cross-origin.
   matters for a public demo. Where it shows is the prose: a frontier model reaches for the note's
   specifics more reliably and needs less prompting not to drift into greeting-card filler. Swapping
   the provider is `designGarden.ts` + `prompt.ts`, roughly thirty lines.
-- **Per-garden link previews aren't wired.** Every share currently unfurls with the homepage OG
-  card, not a per-garden image. Rendering one on demand in the Worker is a clean future addition;
-  it was descoped to keep the port lean.
+- **Link-preview cards are written once, by the sender's browser.** The card is rasterised
+  client-side after the bloom and POSTed to `/api/garden/:id/og`, which accepts it only if the
+  garden exists, the bytes start with a PNG signature, and nothing is stored there yet. Anyone can
+  POST to a known id, so allowing overwrites would let a stranger replace the picture on somebody's
+  gift; first write wins and the rest get a 409. Gardens created before this shipped have no card
+  and unfurl with the homepage image, which is the honest outcome of not backfilling.
+- **Watering is an anonymous counter, not a vote.** The recipient taps a watering can and the
+  sender sees it next time they open their own link — the only signal that a garden landed, short of
+  composing a whole one back. There is no identity to hang it on, so the client remembers its own tap
+  and the server caps the total at 99. Someone determined can walk a garden they were given up to the
+  cap; the worst outcome is a number that reads "a lot", which isn't a lie about anything that
+  matters. Making it honest would mean making people sign in to say "this was nice", which costs more
+  than the gesture is worth.
 - **Orphaned records.** Re-rolling writes a new record and abandons the old one. Fine at this
   scale; past heavy traffic I'd overwrite in place or expire them.
-- **No browser-level end-to-end test.** The KV store, garden validation, the quota classifier and
-  the SSE route are all unit-tested (Gemini stubbed at `fetch`, so none of it spends quota), and
-  the prompt has its own eval. What's still missing is a real browser driving
-  compose → bloom → share → recipient in one pass.
 
 ## Project layout
 
@@ -155,11 +169,22 @@ guessable, but the link *is* the access token, so don't write anything you would
 ## Tests
 
 ```bash
-pnpm --filter @bloomnote/api test    # KV store, validation, quota classifier, SSE route
+pnpm --filter @bloomnote/api test    # 58 tests: KV store, validation, quota classifier, SSE route
+pnpm --filter @bloomnote/web e2e     # Playwright: compose → bloom → share → recipient
 ```
 
-Fast, offline, and safe to run on every commit. Gemini is stubbed at `fetch` throughout, so the
-suite costs nothing and never touches the daily quota.
+Fast, offline, and safe to run on every commit. Gemini is stubbed at `fetch` throughout — in the
+unit tests and again in the browser, where the one call that would cost money is intercepted and
+fulfilled with a canned SSE stream. Neither suite touches the daily quota.
+
+The end-to-end suite exists because this app's real bugs have almost all been invisible to the
+other layers: black flowers from a missing `stemHeight`, a legend whose colours were undefined
+tokens, a mini-garden clipped by a `transform` that doesn't affect layout. Typecheck, lint and unit
+tests were green through every one of them. Only a render catches that class of bug.
+
+One trap worth knowing: `reducedMotion` set in the Playwright config's `use` block never reaches
+the page — `matchMedia` keeps reporting false, so it looks configured and does nothing. It's
+emulated per-page with `page.emulateMedia()` in a `beforeEach` instead.
 
 The SSE route is the one worth knowing about: `/api/design-garden` always returns 200 with a
 stream, so a failed generation is not an HTTP error but a well-formed response carrying an `error`

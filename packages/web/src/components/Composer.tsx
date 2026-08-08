@@ -83,11 +83,6 @@ interface Draft {
 }
 
 /**
- * Coarse bucket for analytics. Raw error messages can carry pieces of
- * the model's output (and indirectly, the user's note), so we map to
- * a small set of stable labels here and only ever log the label.
- */
-/**
  * Pick a CSS modifier class for the char-count based on message
  * length. Teaches the user that longer notes get better gardens —
  * not via copy, just by quietly turning the count more confident as
@@ -121,6 +116,11 @@ function buildMineRecord(id: string, data: GardenData): MineRecord {
   }
 }
 
+/**
+ * Coarse bucket for analytics. Raw error messages can carry pieces of
+ * the model's output (and indirectly, the user's note), so we map to
+ * a small set of stable labels here and only ever log the label.
+ */
 function classifyError(err: unknown): string {
   if (!(err instanceof Error)) return 'unknown'
   const m = err.message.toLowerCase()
