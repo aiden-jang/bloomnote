@@ -77,6 +77,12 @@ interface Props {
   focused?: number | null
   /** Pointing at a flower, or letting go of it. */
   onFocus?: (index: number | null) => void
+  /**
+   * Bumped once each time the garden is watered. A counter rather than a boolean so a second
+   * watering restarts the animation: toggling a flag back and forth needs the caller to time the
+   * reset, and a changed `key` on the drop layer is what actually replays the CSS.
+   */
+  wateredAt?: number
 }
 
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
@@ -171,7 +177,7 @@ function GhostSprout() {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false, focused = null, onFocus }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false, focused = null, onFocus, wateredAt = 0 }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -202,6 +208,21 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     const t = setInterval(() => setBeeAt(i => (i + 1) % placed.length), 3700)
     return () => clearInterval(t)
   }, [beeFlying, placed.length])
+
+  /*
+   * The watering: drops fall, then every flower perks up.
+   *
+   * Held as on/off state rather than derived straight from `wateredAt` because a CSS animation only
+   * replays when the class goes away and comes back. Turning it off after a second does that, and
+   * also means the drop layer isn't sitting in the tree for the rest of the visit.
+   */
+  const [perking, setPerking] = useState(false)
+  useEffect(() => {
+    if (!wateredAt || prefersReducedMotion()) return
+    setPerking(true)
+    const t = setTimeout(() => setPerking(false), 1000)
+    return () => clearTimeout(t)
+  }, [wateredAt])
 
   // Re-keying GardenScene from the parent (key prop) is the right way
   // to reset the bloom — the cleanup function makes this effect
@@ -328,18 +349,36 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
             </div>
           )
         })()}
+        {/* One drop per flower, aimed at that flower's own column, so it reads as watering these
+            flowers rather than as weather. Keyed on the count so a second watering replays it. */}
+        {perking && (
+          <div className={styles.dropLayer} key={wateredAt} aria-hidden>
+            {placed.map((p, i) => (
+              <span
+                key={i}
+                className={styles.drop}
+                style={{ left: `${p.left}%`, animationDelay: `${i * 90}ms` }}
+              />
+            ))}
+          </div>
+        )}
         {placed.map((p, i) => (
           <div
             key={placementKey(p.spec, i)}
             className={
-              focused === i
+              (focused === i
                 ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
                 : focused !== null
                   ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
-                  : styles.flowerSlot
+                  : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
             }
             // Focused flowers come forward, so a lifted flower is never behind its neighbour.
-            style={{ left: `${p.left}%`, zIndex: focused === i ? 4 : p.zIndex }}
+            // The perk waits out its own drop's fall, so each flower answers the water that hit it.
+            style={{
+              left: `${p.left}%`,
+              zIndex: focused === i ? 4 : p.zIndex,
+              animationDelay: `${i * 90 + 460}ms`,
+            }}
             title={p.spec.name}
             onMouseEnter={() => onFocus?.(i)}
             onMouseLeave={() => onFocus?.(null)}

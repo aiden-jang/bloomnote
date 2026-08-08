@@ -9,8 +9,10 @@ import {
   putOgImage,
   readGarden,
   readOgImage,
+  readWaters,
   recordReceived,
   removeFromAccount,
+  waterGarden,
 } from './gardens.js';
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js';
 
@@ -119,6 +121,24 @@ app.get('/og/:id', async (c) => {
       'cache-control': 'public, max-age=31536000, immutable',
     },
   });
+});
+
+/*
+ * Watering: the recipient's one-tap answer, and the count anyone opening the link can see.
+ *
+ * Both are `no-store`. The garden itself is immutable and cached for a year, which is exactly why
+ * the count has to live on its own route: baked into the page it would freeze at whatever it was
+ * when the first visitor arrived, and the sender would never see it move.
+ */
+app.post('/api/garden/:id/water', async (c) => {
+  const result = await waterGarden(c.env, c.req.param('id'));
+  if (!result.ok) return c.json({ error: result.message }, result.status);
+  return c.json({ waters: result.waters }, 200, { 'cache-control': 'no-store' });
+});
+
+app.get('/api/garden/:id/water', async (c) => {
+  const waters = await readWaters(c.env, c.req.param('id'));
+  return c.json({ waters }, 200, { 'cache-control': 'no-store' });
 });
 
 // Record that the signed-in caller opened someone else's garden (adds it to their Received list).
