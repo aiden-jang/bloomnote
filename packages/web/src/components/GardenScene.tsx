@@ -148,6 +148,65 @@ function Bee() {
   )
 }
 
+/*
+ * Grass and pebbles along the soil line.
+ *
+ * The flowers are illustrated and the ground was two flat divs with a ruler-straight edge between
+ * them, so the two halves of the scene read as different pieces of software. This breaks the line
+ * up without moving it: the stems land exactly on the soil surface, so an undulating crest would
+ * leave a stem ending a few pixels above the dirt.
+ *
+ * Positions are hand-picked, like PETAL_DRIFTERS, and deliberately avoid where stems land. Flowers
+ * sit at 10/30/36.7/50/63.3/70/90% depending on how many there are; every value here clears all of
+ * those by at least six points, so a tuft never sprouts out of a stem.
+ */
+const SOIL_DETAIL = [
+  { x: 4, tuft: true },
+  { x: 21, tuft: false },
+  { x: 44, tuft: true },
+  { x: 58, tuft: false },
+  { x: 82, tuft: true },
+  { x: 96, tuft: false },
+] as const
+
+/**
+ * The soil crest.
+ *
+ * Mounds *upward only*, never below the flat line. The stems are anchored to the soil surface, so a
+ * crest that dipped would leave one ending in mid-air; rising instead buries the bottom pixel or two
+ * of whichever stems it passes, which is what soil heaped around a stem actually looks like. The
+ * ground paints after the flowers, so that overlap happens for free.
+ */
+function SoilCrest() {
+  return (
+    <svg className={styles.crest} viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden>
+      <path
+        d="M0 6 L0 4 Q6 1.5 13 3.5 Q20 5.5 27 3 Q34 1 41 3.5 Q48 5.5 55 3 Q62 1.5 69 3.5 Q76 5.5 83 3 Q90 1 97 3.5 L100 3 L100 6 Z"
+        fill="#a0714f"
+      />
+    </svg>
+  )
+}
+
+function SoilLine() {
+  return (
+    <div className={styles.soilLine} aria-hidden>
+      <SoilCrest />
+      {SOIL_DETAIL.map(({ x, tuft }) =>
+        tuft ? (
+          <svg key={x} className={styles.tuft} style={{ left: `${x}%` }} viewBox="0 0 12 9">
+            <path d="M6 9 C5.4 6 4.6 4 3 2.2" className={styles.blade} />
+            <path d="M6 9 C6 6.2 6 4.2 6.2 1.6" className={styles.blade} />
+            <path d="M6 9 C6.7 6.3 7.6 4.4 9.2 2.8" className={styles.blade} />
+          </svg>
+        ) : (
+          <span key={x} className={styles.pebble} style={{ left: `${x}%` }} />
+        ),
+      )}
+    </div>
+  )
+}
+
 /**
  * Empty-plot teaser. A single ground-anchored sprout that grows up,
  * unfurls a leaf, then retracts on a slow loop. Hints at the bloom
@@ -397,6 +456,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       </div>
       <div className={styles.ground}>
         <div className={styles.groundTop} />
+        <SoilLine />
         <div className={styles.groundBase} />
       </div>
       {/* Drift layer sits on top of the ground but its petals are
