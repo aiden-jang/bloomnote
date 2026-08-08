@@ -14,7 +14,7 @@ export interface Occasion {
 
 // Display labels are intentionally lowercase + texting-casual. The wire
 // `value` stays stable so existing drafts and the backend's
-// canonical-label map (api/design-garden.ts → KNOWN_OCCASIONS) keep
+// canonical-label map (api/src/designGarden.ts → KNOWN_OCCASIONS) keep
 // working — the AI still receives the proper "Birthday" / "Sympathy"
 // tone signal even though the user sees "hbd" / "here for u" in the
 // dropdown. Get-well and sympathy deliberately stay warm rather than
