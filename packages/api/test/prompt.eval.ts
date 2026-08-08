@@ -189,7 +189,7 @@ describe.skipIf(!KEY)('prompt quality', () => {
 
   for (const fx of FIXTURES) {
     describe(fx.label, () => {
-      let gardens: ValidatedGarden[] = [];
+      const gardens: ValidatedGarden[] = [];
 
       beforeAll(async () => {
         // Sequential and paced: the design endpoint is rate-limited per IP in production and
