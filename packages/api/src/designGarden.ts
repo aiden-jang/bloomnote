@@ -168,7 +168,7 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
     } catch {
       // Timed out or network-dropped. Retry a couple times, then surface a clear message.
       if (attempt >= MAX_ATTEMPTS - 1) {
-        throw new Error('The garden service took too long. Please try again.');
+        throw new Error('the garden took too long to grow. give it another go.');
       }
       await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
       continue;
@@ -177,7 +177,7 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
       const data = (await res.json()) as GeminiResponse;
       const parts = data.candidates?.[0]?.content?.parts ?? [];
       const call = parts.map((p) => p.functionCall).find((fc) => fc?.name === 'design_garden');
-      if (!call) throw new Error('The model did not return a garden. Please try again.');
+      if (!call) throw new Error('that one came back empty-handed. try again?');
       return validateGarden(call.args);
     }
     // A 429 comes in two flavours that want opposite handling. A per-minute burst clears in
@@ -188,7 +188,7 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
       throw new Error('bloomnote is at capacity for today. try again tomorrow.');
     }
     if (attempt >= MAX_ATTEMPTS - 1 || !RETRYABLE_STATUS.has(res.status)) {
-      throw new Error(`The garden service is busy (${res.status}). Please try again.`);
+      throw new Error(`too many people planting at once (${res.status}). give it a second.`);
     }
     await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
   }

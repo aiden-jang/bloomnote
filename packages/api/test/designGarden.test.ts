@@ -164,7 +164,8 @@ describe('quota exhaustion vs a busy blip', () => {
   // until green, which is exactly how a real failure gets waved through.
   test('a per-minute burst retries and reports a busy service', async () => {
     const calls = stubFetch(burstBody);
-    await expect(generateGarden('k', 'p')).rejects.toThrow(/busy \(429\)/);
+    // The 429 has to reach the message: it is what separates "busy, retry" from the daily cap.
+    await expect(generateGarden('k', 'p')).rejects.toThrow(/429/);
     expect(calls()).toBeGreaterThan(1);
   }, 20_000);
 });
