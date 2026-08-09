@@ -5,6 +5,7 @@ import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '
 import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
 import { trackCardDownloaded } from '../lib/analytics'
+import { fetchWatersBatch, watersLabel } from '../lib/water'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
 import styles from './MyGardens.module.css'
@@ -110,6 +111,27 @@ function AccountGardens() {
   // pending one so its delete isn't lost.
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingCommit = useRef<(() => void) | null>(null)
+  /*
+   * Water counts for the visible list, in one request.
+   *
+   * Keyed off the ids rather than the tab so switching back and forth doesn't refetch, and so a
+   * garden removed from the list stops being asked about. Failures resolve to {} inside
+   * fetchWatersBatch, so a slow or broken lookup costs the counts and nothing else.
+   */
+  const [waters, setWaters] = useState<Record<string, number>>({})
+  const visibleIds = (tab === 'sent' ? sent : received).map(g => g.id)
+  const idKey = visibleIds.join(',')
+  useEffect(() => {
+    if (!idKey) return
+    let cancelled = false
+    void fetchWatersBatch(idKey.split(',')).then(w => {
+      if (!cancelled) setWaters(prev => ({ ...prev, ...w }))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [idKey])
+
   const [pending, setPending] = useState<{ item: GardenSummary; list: Tab; index: number } | null>(null)
 
   const flushPending = () => {
@@ -223,6 +245,7 @@ function AccountGardens() {
               key={r.id}
               record={r}
               copied={copiedId === r.id}
+              waters={waters[r.id] ?? 0}
               onCopy={() => handleCopy(r.id)}
               onRemove={() => handleRemove(r.id)}
             />
@@ -239,6 +262,21 @@ function LocalGardens() {
   const { login } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
+  // anonymous-first, so the sender who never makes an account is the usual sender, and without this
+  // they only ever learn a garden was watered by reopening that exact link.
+  const [waters, setWaters] = useState<Record<string, number>>({})
+  const idKey = records.map(r => r.id).join(',')
+  useEffect(() => {
+    if (!idKey) return
+    let cancelled = false
+    void fetchWatersBatch(idKey.split(',')).then(w => {
+      if (!cancelled) setWaters(prev => ({ ...prev, ...w }))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [idKey])
 
   const handleCopy = (id: string) => {
     void navigator.clipboard.writeText(buildShareUrl(id)).then(() => {
@@ -275,6 +313,7 @@ function LocalGardens() {
               key={r.id}
               record={r}
               copied={copiedId === r.id}
+              waters={waters[r.id] ?? 0}
               onCopy={() => handleCopy(r.id)}
               onRemove={() => handleRemove(r.id)}
             />
@@ -305,11 +344,13 @@ function Shell({ subtitle, children }: { subtitle: string; children: React.React
 interface RowProps {
   record: CardData
   copied: boolean
+  /** How many times this garden has been watered. Omitted or 0 means the row says nothing. */
+  waters?: number
   onCopy: () => void
   onRemove?: () => void
 }
 
-function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
+function GardenRow({ record, copied, waters = 0, onCopy, onRemove }: RowProps) {
   const { id, to, occasion, createdAt, unlockAt, swatches } = record
   const [saving, setSaving] = useState(false)
 
@@ -370,6 +411,10 @@ function GardenRow({ record, copied, onCopy, onRemove }: RowProps) {
             ) : (
               grownOn && <span>{grownOn}</span>
             )}
+            {/* The only thing on this page that came back from the other person. Shown only when
+                somebody actually watered it — a "watered 0 times" on every card would bury the ones
+                that mean something. */}
+            {waters > 0 && <span className={styles.watered}>{watersLabel(waters)}</span>}
           </span>
         </span>
       </a>

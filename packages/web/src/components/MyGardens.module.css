@@ -271,3 +271,10 @@
   border-color: var(--green-deep);
   color: var(--cream);
 }
+
+/* The one thing on a sent-garden card that came back from the other person, so it gets the accent
+   rather than the muted meta grey the date and occasion use. */
+.watered {
+  color: var(--green-mid);
+  font-weight: 500;
+}

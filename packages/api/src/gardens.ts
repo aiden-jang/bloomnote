@@ -233,6 +233,28 @@ export async function readWaters(env: Env, id: string): Promise<number> {
   return Number.isFinite(n) && n > 0 ? Math.min(MAX_WATERS, n) : 0;
 }
 
+/**
+ * Water counts for a list of gardens, as `{ id: count }`.
+ *
+ * Batched because the "your gardens" list would otherwise fire one request per card, and the whole
+ * point of showing the count there is that the sender sees it without going looking. Ids that don't
+ * parse or have never been watered are simply absent, so the caller treats a missing key as zero.
+ *
+ * Capped: this walks KV once per id, and the request is a plain query string anybody can lengthen.
+ */
+const MAX_WATER_LOOKUP = 60;
+
+export async function readWatersBatch(env: Env, ids: string[]): Promise<Record<string, number>> {
+  const wanted = [...new Set(ids.filter((id) => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP);
+  const counts = await Promise.all(wanted.map((id) => readWaters(env, id)));
+  const out: Record<string, number> = {};
+  wanted.forEach((id, i) => {
+    const n = counts[i] ?? 0;
+    if (n > 0) out[id] = n;
+  });
+  return out;
+}
+
 export type CreateResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 500; message: string };
 
 /** Create a garden. When `ownerId` is set (a signed-in creator), stamp it and index it as Sent. */

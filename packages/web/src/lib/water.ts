@@ -50,6 +50,31 @@ export async function fetchWaters(id: string): Promise<number> {
   }
 }
 
+/**
+ * Water counts for a list of gardens, as `{ id: count }`. Missing means zero.
+ *
+ * One request for a whole page of cards. Fetching per card would mean a dozen round trips to show a
+ * number that is decoration on most of them, and the failure mode of a slow list is worse than the
+ * failure mode of no number at all — so this resolves to `{}` on any error and the cards just don't
+ * mention watering.
+ */
+export async function fetchWatersBatch(ids: string[]): Promise<Record<string, number>> {
+  if (ids.length === 0) return {};
+  try {
+    const r = await fetch(`/api/waters?ids=${encodeURIComponent(ids.join(','))}`);
+    if (!r.ok) return {};
+    const raw = ((await r.json()) as { waters?: unknown }).waters;
+    if (!raw || typeof raw !== 'object') return {};
+    const out: Record<string, number> = {};
+    for (const [id, n] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = n;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 /** Water it. Resolves to the new count, or null if the write failed. */
 export async function sendWater(id: string): Promise<number | null> {
   try {
