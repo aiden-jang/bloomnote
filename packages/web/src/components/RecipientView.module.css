@@ -40,6 +40,22 @@
   transform: translateY(0);
 }
 
+/*
+ * Everything on this screen is text somebody else typed, so every block that carries it has to
+ * survive a word that never breaks. Pasting a link into a note is the ordinary case, and one URL
+ * was widening the whole document to 761px inside a 375px phone — the header, the plot and the
+ * footer all dragged sideways with it, on the one screen this app exists for.
+ *
+ * `anywhere` rather than `break-word`: break-word still refuses to break a long word if it is the
+ * only thing on the line, which is exactly the case here.
+ */
+.messageText,
+.sig,
+.fromText,
+.grownOn {
+  overflow-wrap: anywhere;
+}
+
 .messageText {
   font-family: var(--serif);
   font-size: 20px;
