@@ -220,7 +220,13 @@ export async function waterGarden(env: Env, id: string): Promise<WaterResult> {
   if ((await env.GARDENS.get(`g:${id}`)) === null) {
     return { ok: false, status: 400, message: 'No such garden.' };
   }
-  const next = Math.min(MAX_WATERS, (await readWaters(env, id)) + 1);
+  const current = await readWaters(env, id);
+  // At the cap, answer without writing. Math.min alone clamps the number but still put()s it, so a
+  // loop against one garden was an unbounded stream of KV writes — and KV writes are the scarce
+  // quota here, shared with garden creation. Exhausting it would stop anyone making a new garden,
+  // which is a far worse outcome than a counter that stops climbing.
+  if (current >= MAX_WATERS) return { ok: true, waters: MAX_WATERS };
+  const next = current + 1;
   await env.GARDENS.put(`water:${id}`, String(next));
   return { ok: true, waters: next };
 }
