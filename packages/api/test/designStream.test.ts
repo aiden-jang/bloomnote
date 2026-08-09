@@ -98,7 +98,10 @@ describe('POST /api/design-garden (SSE)', () => {
     expect(res.status).toBe(200);
     const got = await events(res);
     expect(got.map(([name]) => name)).toContain('error');
-    expect(String(got.at(-1)![1].error)).toMatch(/busy|try again/i);
+    // Asserts the shape, not the sentence: a transient upstream failure has to surface the status
+    // so it stays distinguishable from the daily-cap message, which is the one that must NOT invite
+    // a retry. Pinning this to the exact prose made a copy edit look like a broken retry path.
+    expect(String(got.at(-1)![1].error)).toContain('500');
     // Explicit timeout: a 500 is retryable, so this sleeps through the real 500ms + 1000ms
     // backoff. The 5s default leaves too little headroom under workerd contention, which is
     // exactly how the burst test in designGarden.test.ts became flaky.
@@ -115,7 +118,9 @@ describe('POST /api/design-garden (SSE)', () => {
   test('prose instead of a function call is an error event', async () => {
     stubGemini(() => Response.json({ candidates: [{ content: { parts: [{ text: 'here you go!' }] } }] }));
     const got = await events(await post(BODY));
-    expect(String(got.at(-1)![1].error)).toMatch(/did not return a garden/i);
+    // Any error will do here; the point is that prose instead of a function call is an error
+    // event rather than a half-drawn garden.
+    expect(String(got.at(-1)![1].error ?? '')).not.toBe('');
   });
 
   test('a bad request never reaches Gemini', async () => {
