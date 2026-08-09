@@ -73,6 +73,13 @@
   gap: 3px;
 }
 
+/* Same reason as RecipientView's message: the model writes these, and a long unbroken token here
+   pushes the legend card past the viewport. */
+.name,
+.meaning {
+  overflow-wrap: anywhere;
+}
+
 .name {
   font-family: var(--serif);
   font-size: 16px;
