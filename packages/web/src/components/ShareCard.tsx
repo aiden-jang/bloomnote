@@ -52,14 +52,14 @@ export default function ShareCard({
   return (
     <div className={styles.shareCard}>
       <p className={styles.shareTitle}>
-        {recipient ? `${recipient}'s garden is ready` : 'ready to send'}
+        {scheduleOpen ? (recipient ? `${recipient}'s garden is sealed` : 'your garden is sealed') : recipient ? `${recipient}'s garden is ready` : 'ready to send'}
       </p>
       {/* Re-roll failures land here; idle-phase errors render in a
           different slot during composition. */}
       {errorText && <p className={styles.shareError}>{errorText}</p>}
       {scheduleOpen && unlockLocal && (
         <p className={styles.scheduleConfirm}>
-          will open on{' '}
+          it opens on{' '}
           {new Date(unlockLocal).toLocaleString(undefined, {
             weekday: 'long',
             month: 'short',
