@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
 import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
@@ -78,6 +78,7 @@ function AccountGardens() {
       : 'sent',
   )
   const [busy, setBusy] = useState(true)
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -185,6 +186,12 @@ function AccountGardens() {
   useEffect(() => () => flushPending(), [])
 
   const list = tab === 'sent' ? sent : received
+  const filtered = useMemo(() => filterGardens(list, query), [list, query])
+  const switchTab = (nextTab: Tab) => {
+    setTab(nextTab)
+    // A search for a recipient should not make the other collection appear empty on arrival.
+    setQuery('')
+  }
 
   return (
     <Shell subtitle="the gardens you've grown and kept, on every device.">
@@ -202,7 +209,7 @@ function AccountGardens() {
           role="tab"
           aria-selected={tab === 'sent'}
           className={tab === 'sent' ? styles.tabActive : styles.tab}
-          onClick={() => setTab('sent')}
+          onClick={() => switchTab('sent')}
         >
           sent{sent.length ? ` (${sent.length})` : ''}
         </button>
@@ -211,11 +218,28 @@ function AccountGardens() {
           role="tab"
           aria-selected={tab === 'received'}
           className={tab === 'received' ? styles.tabActive : styles.tab}
-          onClick={() => setTab('received')}
+          onClick={() => switchTab('received')}
         >
           received{received.length ? ` (${received.length})` : ''}
         </button>
       </div>
+
+      {list.length > 1 && (
+        <label className={styles.search}>
+          <span className={styles.srOnly}>Find a garden</span>
+          <input
+            type="search"
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder={tab === 'received' ? 'find someone’s garden' : 'find a garden'}
+          />
+          {query && (
+            <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
+              clear
+            </button>
+          )}
+        </label>
+      )}
 
       {busy ? (
         <p className={styles.emptyText}>loading…</p>
@@ -232,9 +256,16 @@ function AccountGardens() {
             </a>
           )}
         </div>
+      ) : filtered.length === 0 ? (
+        <div className={styles.empty}>
+          <p className={styles.emptyText}>no gardens match “{query.trim()}”.</p>
+          <button type="button" className={styles.emptyLink} onClick={() => setQuery('')}>
+            show them all
+          </button>
+        </div>
       ) : (
         <ul className={styles.list}>
-          {list.map(r => (
+          {filtered.map(r => (
             <GardenRow
               key={r.id}
               record={r}
@@ -254,6 +285,7 @@ function AccountGardens() {
 function LocalGardens() {
   const { login } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
+  const [query, setQuery] = useState('')
   // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
   // anonymous-first, so the sender who never makes an account is the usual sender, and without this
   // they only ever learn a garden was watered by reopening that exact link.
@@ -274,6 +306,7 @@ function LocalGardens() {
     removeSentGarden(id)
     setRecords(rs => rs.filter(r => r.id !== id))
   }
+  const filtered = useMemo(() => filterGardens(records, query), [records, query])
 
   return (
     <Shell subtitle="the gardens you've grown, saved on this device.">
@@ -293,8 +326,33 @@ function LocalGardens() {
           </a>
         </div>
       ) : (
+        <>
+          {records.length > 1 && (
+            <label className={styles.search}>
+              <span className={styles.srOnly}>Find a garden</span>
+              <input
+                type="search"
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder="find a garden"
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
+                  clear
+                </button>
+              )}
+            </label>
+          )}
+          {filtered.length === 0 ? (
+            <div className={styles.empty}>
+              <p className={styles.emptyText}>no gardens match “{query.trim()}”.</p>
+              <button type="button" className={styles.emptyLink} onClick={() => setQuery('')}>
+                show them all
+              </button>
+            </div>
+          ) : (
         <ul className={styles.list}>
-          {records.map(r => (
+          {filtered.map(r => (
             <GardenRow
               key={r.id}
               record={r}
@@ -304,8 +362,21 @@ function LocalGardens() {
             />
           ))}
         </ul>
+          )}
+        </>
       )}
     </Shell>
+  )
+}
+
+/** Search what people remember: who it was for, who it came from, or the occasion. */
+function filterGardens<T extends CardData>(gardens: T[], query: string): T[] {
+  const needle = query.trim().toLocaleLowerCase()
+  if (!needle) return gardens
+  return gardens.filter(garden =>
+    [garden.from, garden.to, garden.occasion]
+      .filter((part): part is string => typeof part === 'string')
+      .some(part => part.toLocaleLowerCase().includes(needle)),
   )
 }
 
