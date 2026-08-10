@@ -68,10 +68,10 @@ const THINKING_MESSAGES = [
   'writing the note…',
 ]
 
-// Snapshot shape used by the clear-draft undo toast. Session-local
-// only — the form deliberately doesn't persist across refresh. Captures
-// the schedule state too, so clearing collapses the picker and undo can
-// bring it back exactly as it was.
+// Snapshot shape used by the clear-draft undo toast and the tab-local
+// recovery cache. It deliberately lives in sessionStorage rather than
+// localStorage: a note survives an accidental refresh, but never follows
+// someone to a different browser or lingers after the tab is closed.
 interface Draft {
   from: string
   recipient: string
@@ -80,6 +80,45 @@ interface Draft {
   mood: string
   scheduleOpen: boolean
   unlockLocal: string
+}
+
+const DRAFT_STORAGE_VERSION = 1
+
+function draftStorageKey(): string {
+  // A reply draft belongs to its specific garden, while a fresh draft belongs
+  // to the homepage. Keeping those separate prevents a half-written reply
+  // appearing when someone starts a new note (or the other way around).
+  return `bloomnote:draft:${window.location.pathname}`
+}
+
+function readStoredDraft(): Draft | null {
+  try {
+    const raw = window.sessionStorage.getItem(draftStorageKey())
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    const record = parsed as { version?: unknown; draft?: unknown }
+    if (record.version !== DRAFT_STORAGE_VERSION || !record.draft || typeof record.draft !== 'object') {
+      return null
+    }
+    const draft = record.draft as Partial<Draft>
+    if (
+      typeof draft.from !== 'string' ||
+      typeof draft.recipient !== 'string' ||
+      typeof draft.message !== 'string' ||
+      typeof draft.occasion !== 'string' ||
+      typeof draft.mood !== 'string' ||
+      typeof draft.scheduleOpen !== 'boolean' ||
+      typeof draft.unlockLocal !== 'string'
+    ) {
+      return null
+    }
+    return draft as Draft
+  } catch {
+    // Private browsing and storage-quota failures should never interfere
+    // with writing a garden. Recovery is a courtesy, not a dependency.
+    return null
+  }
 }
 
 /**
@@ -142,17 +181,37 @@ interface ComposerProps {
 export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const [phase, setPhase] = useState<Phase>('idle')
+  // Read once on mount. sessionStorage is intentionally scoped to this tab,
+  // so an accidental refresh restores the thought in progress without making
+  // it a permanent, cross-device archive of a private message.
+  const [recoveredDraft] = useState<Draft | null>(() => readStoredDraft())
+  const storageKeyRef = useRef(draftStorageKey())
+
+  const clearStoredDraft = useCallback(() => {
+    try {
+      window.sessionStorage.removeItem(storageKeyRef.current)
+    } catch {
+      // Storage is best-effort; never make a local cleanup block the flow.
+    }
+  }, [])
 
   // Initial input values are computed once at mount.
   //   - In remix mode, pre-fill From/To from the inverse of the seed
   //     (we're replying, so the original sender becomes our recipient).
   //   - Otherwise, blank slate.
-  // The form is deliberately ephemeral: refreshing the page wipes
-  // whatever was typed. Recovery from accidental refresh is the
-  // tradeoff; in exchange the user always lands on a fresh form
-  // without stale drafts cluttering it.
+  // A matching tab-local recovery draft takes precedence over either
+  // default. It expires with the tab, so a new visit still starts fresh.
   const initialInputs = useMemo(() => {
     const base = { occasion: DEFAULT_OCCASION, mood: DEFAULT_MOOD }
+    if (recoveredDraft) {
+      return {
+        from: recoveredDraft.from,
+        recipient: recoveredDraft.recipient,
+        message: recoveredDraft.message,
+        occasion: recoveredDraft.occasion || base.occasion,
+        mood: recoveredDraft.mood || base.mood,
+      }
+    }
     if (remixSeed) {
       return {
         ...base,
@@ -162,7 +221,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       }
     }
     return { ...base, from: '', recipient: '', message: '' }
-  }, [remixSeed])
+  }, [recoveredDraft, remixSeed])
 
   const [from, setFrom] = useState(initialInputs.from)
   const [recipient, setRecipient] = useState(initialInputs.recipient)
@@ -189,8 +248,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // Value stored as local-datetime string (the format <input
   // type="datetime-local"> emits, e.g. "2026-09-15T14:30"). We
   // convert to ISO 8601 UTC at submit time.
-  const [scheduleOpen, setScheduleOpen] = useState(false)
-  const [unlockLocal, setUnlockLocal] = useState('')
+  const [scheduleOpen, setScheduleOpen] = useState(() => recoveredDraft?.scheduleOpen ?? false)
+  const [unlockLocal, setUnlockLocal] = useState(() => recoveredDraft?.unlockLocal ?? '')
 
   // Streaming progress.
   const [statusText, setStatusText] = useState<string>('')
@@ -445,6 +504,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       }
       const finalUrl = buildShareUrl(shortId)
 
+      // The garden is safely stored and shareable now, so the tab-local
+      // writing recovery is no longer useful (and must not resurrect this
+      // note if they later return to the composer).
+      clearStoredDraft()
+
       /*
        * Render the link-preview card and hand it to the Worker.
        *
@@ -502,7 +566,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       abortRef.current = null
       designingRef.current = false
     }
-  }, [buildGardenData, canSubmit, from, message, mood, occasion, recipient, remixSeed])
+  }, [buildGardenData, canSubmit, from, message, mood, occasion, recipient, remixSeed, clearStoredDraft])
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort()
@@ -615,6 +679,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     // means "I'm done with this garden, start me clean" — re-typing
     // is the right default. If you want to tweak the same note and
     // regenerate, the clear-draft / undo flow is the explicit path.
+    clearStoredDraft()
     withViewTransition(() => {
       setPhase('idle')
       setGarden(null)
@@ -630,12 +695,33 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setRerollAttempt(0)
     })
     trackMakeAnother()
-  }, [])
+  }, [clearStoredDraft])
 
   // Only show the clear link when there's something to clear. Trimmed
   // so "  " in a field doesn't count as draft content.
   const hasDraft =
     from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0
+
+  // Save while the person is writing, not on a debounce that can miss the
+  // last keystroke before a refresh. This is session-only and removed after
+  // a successful garden, a deliberate clear, or "make another."
+  useEffect(() => {
+    if (phase !== 'idle') return
+    try {
+      if (!hasDraft) {
+        window.sessionStorage.removeItem(storageKeyRef.current)
+        return
+      }
+      const draft: Draft = { from, recipient, message, occasion, mood, scheduleOpen, unlockLocal }
+      window.sessionStorage.setItem(
+        storageKeyRef.current,
+        JSON.stringify({ version: DRAFT_STORAGE_VERSION, draft }),
+      )
+    } catch {
+      // See readStoredDraft: persistence is a convenience, never a reason
+      // to make the composer feel broken.
+    }
+  }, [phase, hasDraft, from, recipient, message, occasion, mood, scheduleOpen, unlockLocal])
 
   /**
    * The homepage hero used to be an empty plot with a single grey sprout stub in it — 320px of
@@ -709,6 +795,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
 
     const snapshot: Draft = { from, recipient, message, occasion, mood, scheduleOpen, unlockLocal }
+    clearStoredDraft()
 
     // Clearing is a quick local action; no view transition needed.
     // React batches these updates automatically in an event handler.
@@ -728,7 +815,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setUndoDraft(null)
       undoTimerRef.current = null
     }, 8000)
-  }, [from, recipient, message, occasion, mood, scheduleOpen, unlockLocal])
+  }, [from, recipient, message, occasion, mood, scheduleOpen, unlockLocal, clearStoredDraft])
 
   const handleUndoClear = useCallback(() => {
     if (!undoDraft) return
@@ -1154,4 +1241,3 @@ function Spinner() {
     </span>
   )
 }
-

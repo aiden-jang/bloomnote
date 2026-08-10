@@ -94,6 +94,30 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('compose → bloom → share → recipient', () => {
+  test('a note in progress survives a refresh in the same tab', async ({ page }) => {
+    await page.goto('/')
+
+    await page.getByPlaceholder('your name').fill('Aiden')
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.locator('textarea').fill('I kept thinking about that rainy drive home.')
+
+    // Wait for the tab-local recovery cache rather than assuming React has
+    // flushed its effect before the reload starts.
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('bloomnote:draft:/'))).not.toBeNull()
+    await page.reload()
+
+    await expect(page.getByPlaceholder('your name')).toHaveValue('Aiden')
+    await expect(page.getByPlaceholder('their name')).toHaveValue('Nadia')
+    await expect(page.locator('textarea')).toHaveValue('I kept thinking about that rainy drive home.')
+
+    // Clear means clear: a deliberate reset must win over recovery.
+    await page.getByRole('button', { name: 'clear draft' }).click()
+    await page.reload()
+    await expect(page.getByPlaceholder('your name')).toHaveValue('')
+    await expect(page.getByPlaceholder('their name')).toHaveValue('')
+    await expect(page.locator('textarea')).toHaveValue('')
+  })
+
   test('a garden can be grown, shared, and opened', async ({ page }) => {
     await stubDesign(page);
     await page.goto('/');
