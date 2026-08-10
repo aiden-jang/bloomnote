@@ -24,6 +24,7 @@ interface Props {
 export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
   const target = new Date(unlockAt).getTime()
   const [now, setNow] = useState(() => Date.now())
+  const [calendarSaved, setCalendarSaved] = useState(false)
 
   // Pick a tick interval scaled to how far away the unlock is. No
   // point burning a setInterval every second when the next change is
@@ -76,6 +77,7 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
     a.download = 'garden-opening.ics'
     a.click()
     URL.revokeObjectURL(href)
+    setCalendarSaved(true)
   }
 
   return (
@@ -116,8 +118,9 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
         <p className={styles.opensRelative}>{formatRemaining(remaining)}</p>
         <p className={styles.opensExact}>{formatExact(unlockDate)}</p>
         <button type="button" className={styles.calendarBtn} onClick={addToCalendar}>
-          add a reminder
+          {calendarSaved ? 'reminder downloaded' : 'add a reminder'}
         </button>
+        {calendarSaved && <span className={styles.calendarHint} role="status">open it to add the garden to your calendar</span>}
       </div>
 
       <p className={styles.hint}>come back when it&rsquo;s time.</p>
