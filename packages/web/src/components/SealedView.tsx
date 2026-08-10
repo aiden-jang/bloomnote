@@ -50,6 +50,33 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
 
   const remaining = Math.max(0, target - now)
   const unlockDate = new Date(unlockAt)
+  const addToCalendar = () => {
+    const name = from ? `${from}'s garden` : 'A garden for you'
+    const start = new Date(unlockAt)
+    const end = new Date(start.getTime() + 30 * 60_000)
+    const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+    const escape = (s: string) => s.replace(/[\\,;\n]/g, (c) => (c === '\n' ? '\\n' : `\\${c}`))
+    const body = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//bloomnote//garden//EN',
+      'BEGIN:VEVENT',
+      `UID:bloomnote-${stamp(start)}@aidenjang.com`,
+      `DTSTAMP:${stamp(new Date())}`,
+      `DTSTART:${stamp(start)}`,
+      `DTEND:${stamp(end)}`,
+      `SUMMARY:${escape(name)} opens`,
+      'DESCRIPTION:A garden is ready to bloom.',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n')
+    const href = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = href
+    a.download = 'garden-opening.ics'
+    a.click()
+    URL.revokeObjectURL(href)
+  }
 
   return (
     <div className={styles.wrap}>
@@ -88,6 +115,9 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
         <p className={styles.opensLabel}>opens in</p>
         <p className={styles.opensRelative}>{formatRemaining(remaining)}</p>
         <p className={styles.opensExact}>{formatExact(unlockDate)}</p>
+        <button type="button" className={styles.calendarBtn} onClick={addToCalendar}>
+          add a reminder
+        </button>
       </div>
 
       <p className={styles.hint}>come back when it&rsquo;s time.</p>

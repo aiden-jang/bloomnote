@@ -78,6 +78,23 @@
   letter-spacing: 0.02em;
 }
 
+.calendarBtn {
+  align-self: center;
+  margin-top: 8px;
+  border: 1px solid var(--green-pale);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-mid);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 12px;
+  transition: border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.calendarBtn:hover { border-color: var(--green-light); color: var(--green-deep); }
+.calendarBtn:active { transform: scale(0.97); }
+
 .hint {
   font-size: 13px;
   color: var(--text-light);
