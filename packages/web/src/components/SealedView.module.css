@@ -95,6 +95,13 @@
 .calendarBtn:hover { border-color: var(--green-light); color: var(--green-deep); }
 .calendarBtn:active { transform: scale(0.97); }
 
+.calendarHint {
+  margin-top: 3px;
+  color: var(--text-light);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .hint {
   font-size: 13px;
   color: var(--text-light);
