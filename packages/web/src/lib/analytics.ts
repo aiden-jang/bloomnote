@@ -99,6 +99,11 @@ export function trackGardenBloomed(): void {
   emit('garden_bloomed')
 }
 
+/** A recipient passed a garden along from its open view, rather than only keeping a copy. */
+export function trackGardenReshared(method: 'native' | 'copy'): void {
+  emit('garden_reshared', { method })
+}
+
 /**
  * Recipient is about to become a sender.
  *

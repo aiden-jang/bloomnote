@@ -120,6 +120,14 @@ test.describe('compose → bloom → share → recipient', () => {
   })
 
   test('a garden can be grown, shared, and opened', async ({ page }) => {
+    // Keep the recipient handoff inside the browser test: the native sheet itself belongs to the
+    // OS, but its successful completion must produce the same in-page confirmation everywhere.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: () => Promise.resolve(),
+      })
+    })
     await stubDesign(page);
     await page.goto('/');
 
@@ -174,6 +182,8 @@ test.describe('compose → bloom → share → recipient', () => {
     }
     // The reply loop is the thing that makes this a conversation rather than a one-way card.
     await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible();
+    await page.getByRole('button', { name: 'Share this garden' }).click();
+    await expect(page.getByRole('button', { name: 'Share this garden' })).toContainText('garden shared');
   });
 
   test('a dead link says the garden is still there', async ({ page }) => {

@@ -13,6 +13,7 @@ import {
   trackCardDownloaded,
   trackGardenBloomed,
   trackGardenOpened,
+  trackGardenReshared,
   trackReplyStarted,
 } from '../lib/analytics'
 import { formatGardenDate } from '../lib/formatDate'
@@ -38,6 +39,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
   // canvas/decode failure so it isn't an unhandled rejection.
   const savingImageRef = useRef(false)
+  const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const handleSaveImage = useCallback(async () => {
     if (savingImageRef.current) return
@@ -59,6 +61,34 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       savingImageRef.current = false
     }
   }, [flowers, from, to])
+  // Passing a garden along should feel as easy as receiving it. Native share preserves the
+  // platform's familiar destinations; clipboard is the reliable fallback for browsers without it.
+  const handleShareGarden = useCallback(async () => {
+    if (shareStatus) return
+    setShareStatus('sharing')
+    const shareData: ShareData = {
+      title: 'bloomnote',
+      text: from ? `A garden from ${from}` : 'A garden for you',
+      url: window.location.href,
+    }
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share(shareData)
+        setShareStatus('shared')
+        trackGardenReshared('native')
+      } else {
+        await navigator.clipboard.writeText(window.location.href)
+        setShareStatus('copied')
+        trackGardenReshared('copy')
+      }
+      window.setTimeout(() => setShareStatus(null), 2500)
+    } catch (err) {
+      // Closing a native sheet is a normal outcome. Leave the garden exactly as it was so a
+      // recipient can choose another route (or try again) without seeing an alarming error.
+      setShareStatus(null)
+      if (err instanceof Error && err.name === 'AbortError') return
+    }
+  }, [from, shareStatus])
 
   // If a signed-in visitor opens a garden, keep it in their Received list (cross-device).
   // Best-effort and idempotent; anonymous visitors are unaffected. When it's newly saved (not
@@ -272,6 +302,22 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 : imageStatus === 'downloaded'
                   ? 'image downloaded'
                   : 'save it as an image'}
+          </button>
+          {' · '}
+          <button
+            type="button"
+            className={styles.ctaSubLink}
+            onClick={() => void handleShareGarden()}
+            disabled={shareStatus !== null}
+            aria-label="Share this garden"
+          >
+            {shareStatus === 'sharing'
+              ? 'opening…'
+              : shareStatus === 'shared'
+                ? 'garden shared'
+                : shareStatus === 'copied'
+                  ? 'link copied'
+                  : 'share this garden'}
           </button>
           {' · '}
           <a href="/" className={styles.ctaSubLink}>
