@@ -1,5 +1,25 @@
 /* One line of chips that scrolls sideways when they don't fit. See ChipRow.tsx for why. */
 
+/*
+ * Registered so the fade can animate.
+ *
+ * An unregistered custom property has no type, so the browser can only flip it from one value to
+ * the next — a `transition` naming it does nothing. Declaring a syntax makes it interpolable, which
+ * is what turns the fade appearing into a fade rather than a step. The old code transitioned
+ * `mask-image` instead, which never animated either.
+ */
+@property --fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
 .row {
   display: flex;
   flex-wrap: nowrap;
@@ -21,6 +41,15 @@
      that lands nicely shouldn't be dragged somewhere else. */
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
+
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--fade-start),
+    #000 calc(100% - var(--fade-end)),
+    transparent 100%
+  );
+  transition: --fade-start 0.2s ease, --fade-end 0.2s ease;
 }
 
 .row::-webkit-scrollbar {
@@ -34,29 +63,21 @@
 }
 
 /*
- * Edge fades, masked rather than overlaid, so they work over any background — the composer sits
- * on cream today, but a gradient behind it later would show a hard-edged overlay rectangle.
+ * While a mouse is dragging the row.
  *
- * Both stops default to 0 width (fully opaque mask = no fade). ChipRow sets the data attributes
- * only for a side that actually has content hidden past it, so a row that fits shows nothing.
+ * Snapping is suspended for the duration: with snap active every pixel of the drag fights a pull
+ * toward the nearest chip boundary, so the row stutters instead of following the cursor. It comes
+ * back on pointerup, which is when settling on a boundary is what you actually want.
  */
-.row {
-  --fade-start: 0px;
-  --fade-end: 0px;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 var(--fade-start),
-    #000 calc(100% - var(--fade-end)),
-    transparent 100%
-  );
-  transition: mask-image 0.2s ease;
+.row[data-dragging] {
+  scroll-snap-type: none;
+  cursor: grabbing;
+  /* A drag across pills otherwise selects their text, which then highlights blue mid-scroll. */
+  user-select: none;
 }
 
-.row[data-fade-start] {
-  --fade-start: 28px;
-}
-
-.row[data-fade-end] {
-  --fade-end: 28px;
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
 }
