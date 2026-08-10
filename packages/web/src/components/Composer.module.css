@@ -172,7 +172,18 @@
   font-family: inherit;
   font-size: 13px;
   line-height: 1;
-  padding: 8px 14px;
+  /*
+   * 12px, not 14px, on the horizontal.
+   *
+   * The seven occasion chips measured 534px against a column capped at 520px, so the last one was
+   * cut by 14px: too little to read as "there is more", plenty to read as a bug. 2px off each side
+   * of each chip buys 28px and brings the row to 506px, which restores the thing chips were chosen
+   * for over a dropdown — every option visible without interacting.
+   *
+   * This is not the fix for overflow, just the removal of one case that never should have needed
+   * one. Narrow screens still scroll, and ChipRow now makes that reachable with a mouse.
+   */
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1.5px solid var(--green-pale);
   background: white;

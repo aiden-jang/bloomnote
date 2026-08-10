@@ -19,6 +19,10 @@
  *
  * A reference WITH a fallback is allowed: that is a deliberate default, and `--scroll-y` (set
  * from JS at runtime) legitimately cannot be declared in CSS at all.
+ *
+ * So is an `@property` registration that states an `initial-value`. That is a stronger definition
+ * than a plain declaration, not a weaker one: it types the token and says what it resolves to when
+ * nobody assigns it, which is precisely the hole this script exists to close.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -41,6 +45,12 @@ for (const f of files) {
   for (const m of src.matchAll(/^\s*(--[\w-]+)\s*:/gm)) defined.add(m[1]);
   for (const m of src.matchAll(/\['(--[\w-]+)'\s* as string\]/g)) defined.add(m[1]);
   for (const m of src.matchAll(/'(--[\w-]+)':/g)) defined.add(m[1]);
+  // Registered properties count only when they declare an initial-value. Without one, a
+  // registration with any syntax but `*` is invalid and dropped, which puts the token straight back
+  // to guaranteed-invalid — the exact case this script is here to catch.
+  for (const m of src.matchAll(/@property\s+(--[\w-]+)\s*\{([^}]*)\}/g)) {
+    if (/initial-value\s*:/.test(m[2])) defined.add(m[1]);
+  }
 }
 
 const problems = [];
