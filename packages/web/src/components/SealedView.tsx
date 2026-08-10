@@ -68,6 +68,11 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
       `DTEND:${stamp(end)}`,
       `SUMMARY:${escape(name)} opens`,
       'DESCRIPTION:A garden is ready to bloom.',
+      'BEGIN:VALARM',
+      'TRIGGER:-PT15M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Your bloomnote garden opens in 15 minutes.',
+      'END:VALARM',
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n')
@@ -75,8 +80,13 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
     const a = document.createElement('a')
     a.href = href
     a.download = 'garden-opening.ics'
+    // Keep the URL alive long enough for Safari and mobile browsers to hand the file to their
+    // download manager. Revoking it in the same turn can turn an apparently successful tap into
+    // a silent no-op on those browsers.
+    document.body.appendChild(a)
     a.click()
-    URL.revokeObjectURL(href)
+    a.remove()
+    window.setTimeout(() => URL.revokeObjectURL(href), 1000)
     setCalendarSaved(true)
   }
 
