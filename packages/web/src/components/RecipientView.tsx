@@ -42,8 +42,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     if (savingImageRef.current) return
     savingImageRef.current = true
     try {
-      await saveGardenImage({ flowers, from, to })
-      trackCardDownloaded('recipient', 'square')
+      const result = await saveGardenImage({ flowers, from, to })
+      if (result === 'downloaded') trackCardDownloaded('recipient', 'square')
     } catch {
       // no-op — the garden stays on screen; the recipient can retry.
     } finally {

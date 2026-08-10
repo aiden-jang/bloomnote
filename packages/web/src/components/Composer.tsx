@@ -902,7 +902,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         return
       }
       setImageStatus(result)
-      trackCardDownloaded('composer', 'square')
+      if (result === 'downloaded') trackCardDownloaded('composer', 'square')
       window.setTimeout(() => setImageStatus(null), 2500)
     } catch {
       // Rare (canvas/decode failure, or a non-abort share error). Swallow so it isn't an unhandled
