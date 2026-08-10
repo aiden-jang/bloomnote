@@ -38,7 +38,7 @@ import {
 } from '../lib/mine'
 import { DEFAULT_MOOD, MOODS } from '../lib/moods'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
-import { placeholderFor } from '../lib/placeholders'
+import { placeholderFor, placeholderOptions } from '../lib/placeholders'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
@@ -241,6 +241,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // Curated example that follows the selected occasion + mood, so the empty
   // field previews the kind of note those choices suggest.
   const placeholder = placeholderFor(occasion, mood)
+  const promptOptions = useMemo(() => placeholderOptions(occasion, mood), [occasion, mood])
+  const [promptIndex, setPromptIndex] = useState(0)
+  const writingPrompt = promptOptions[promptIndex % promptOptions.length] ?? placeholder
 
   // How many gardens this device has sent — gates the "your gardens"
   // footer link so it never shows for a first-time visitor with an
@@ -987,7 +990,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <textarea
               ref={messageRef}
               className={styles.textarea}
-              placeholder={placeholder}
+              placeholder={writingPrompt}
               value={message}
               onChange={e => setMessage(e.target.value)}
               rows={6}
@@ -1003,6 +1006,25 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                 {message.length}/400
               </span>
             </div>
+            {!message.trim() && (
+              <div className={styles.promptRow}>
+                <button
+                  type="button"
+                  className={styles.promptLink}
+                  onClick={() => {
+                    setMessage(writingPrompt)
+                    messageRef.current?.focus()
+                  }}
+                >
+                  use this thought
+                </button>
+                {promptOptions.length > 1 && (
+                  <button type="button" className={styles.promptLink} onClick={() => setPromptIndex(index => index + 1)}>
+                    another angle ↻
+                  </button>
+                )}
+              </div>
+            )}
           </section>
 
           <div className={styles.nameRow}>

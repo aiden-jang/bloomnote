@@ -78,3 +78,9 @@ export function placeholderFor(occasion: string, mood: string): string {
   const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
   return set[mood] ?? set.default
 }
+
+/** A few distinct human-written angles for the quiet "stuck" state in the composer. */
+export function placeholderOptions(occasion: string, mood: string): string[] {
+  const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
+  return [...new Set([set[mood], set.default, ...Object.values(set)].filter((note): note is string => Boolean(note)))]
+}
