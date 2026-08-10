@@ -244,6 +244,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const promptOptions = useMemo(() => placeholderOptions(occasion, mood), [occasion, mood])
   const [promptIndex, setPromptIndex] = useState(0)
   const writingPrompt = promptOptions[promptIndex % promptOptions.length] ?? placeholder
+  // A fresh occasion or mood deserves its own first idea. Without this, rotating through a birthday
+  // prompt and then choosing "thank you" could land on an arbitrary later thank-you variant, which
+  // makes the helper feel random instead of responsive to the choice they just made.
+  useEffect(() => setPromptIndex(0), [occasion, mood])
 
   // How many gardens this device has sent — gates the "your gardens"
   // footer link so it never shows for a first-time visitor with an
