@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, test } from 'vitest';
-import { createGarden, readWaters, waterGarden } from '../src/gardens.js';
+import { createGarden, readWaters, readWatersBatch, waterGarden } from '../src/gardens.js';
 
 const GARDEN = {
   flowers: [
@@ -64,5 +64,46 @@ describe('watering', () => {
     }
     expect(puts).toEqual([]);
     expect(await readWaters(env as never, id)).toBe(99);
+  });
+});
+
+describe('readWatersBatch', () => {
+  test('returns counts by id and omits the unwatered', async () => {
+    const a = await newGarden();
+    const b = await newGarden();
+    const c = await newGarden();
+    await waterGarden(env as never, a);
+    await waterGarden(env as never, a);
+    await waterGarden(env as never, b);
+
+    const got = await readWatersBatch(env as never, [a, b, c]);
+    expect(got).toEqual({ [a]: 2, [b]: 1 });
+  });
+
+  /**
+   * The cap is a subrequest budget, not a preference. Every id is one KV read, KV reads count as
+   * subrequests, and the free tier allows 50 per request — so the fan-out has to stay under it or
+   * the whole list request fails on exactly the page that needed it.
+   */
+  test('never fans out past its cap, however many ids are asked for', async () => {
+    const id = await newGarden();
+    const many = Array.from({ length: 300 }, (_, i) => (i === 0 ? id : `zz${String(i).padStart(4, '0')}`));
+
+    let reads = 0;
+    const realGet = env.GARDENS.get.bind(env.GARDENS);
+    (env.GARDENS as unknown as { get: unknown }).get = (...args: unknown[]) => {
+      reads++;
+      return (realGet as (...a: unknown[]) => unknown)(...args);
+    };
+    try {
+      await readWatersBatch(env as never, many);
+    } finally {
+      (env.GARDENS as unknown as { get: unknown }).get = realGet;
+    }
+    expect(reads).toBeLessThanOrEqual(40);
+  });
+
+  test('ignores ids that could not be gardens', async () => {
+    expect(await readWatersBatch(env as never, ['../../etc', '', 'x'])).toEqual({});
   });
 });

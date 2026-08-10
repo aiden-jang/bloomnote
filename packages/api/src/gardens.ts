@@ -246,9 +246,15 @@ export async function readWaters(env: Env, id: string): Promise<number> {
  * point of showing the count there is that the sender sees it without going looking. Ids that don't
  * parse or have never been watered are simply absent, so the caller treats a missing key as zero.
  *
- * Capped: this walks KV once per id, and the request is a plain query string anybody can lengthen.
+ * Capped at 40, and the number matters. Each id is one KV read, KV reads count as subrequests, and
+ * this app runs on Cloudflare's free tier where a single request may make 50. A fan-out of 60 would
+ * have failed outright on exactly the page it was written for — somebody with enough gardens to want
+ * the list. 40 leaves headroom.
+ *
+ * Beyond the cap the extra cards simply show no count, which is the same as never having watered.
+ * A wrong number would be worse than a missing one.
  */
-const MAX_WATER_LOOKUP = 60;
+const MAX_WATER_LOOKUP = 40;
 
 export async function readWatersBatch(env: Env, ids: string[]): Promise<Record<string, number>> {
   const wanted = [...new Set(ids.filter((id) => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP);
