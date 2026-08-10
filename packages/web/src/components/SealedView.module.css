@@ -94,6 +94,7 @@
 
 .calendarBtn:hover { border-color: var(--green-light); color: var(--green-deep); }
 .calendarBtn:active { transform: scale(0.97); }
+.calendarBtn:disabled { cursor: default; opacity: 0.72; transform: none; }
 
 .calendarHint {
   margin-top: 3px;
