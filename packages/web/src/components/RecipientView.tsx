@@ -38,14 +38,23 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
   // canvas/decode failure so it isn't an unhandled rejection.
   const savingImageRef = useRef(false)
+  const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const handleSaveImage = useCallback(async () => {
     if (savingImageRef.current) return
     savingImageRef.current = true
+    setImageStatus('saving')
     try {
       const result = await saveGardenImage({ flowers, from, to })
+      if (result === 'dismissed') {
+        setImageStatus(null)
+        return
+      }
+      setImageStatus(result)
       if (result === 'downloaded') trackCardDownloaded('recipient', 'square')
+      window.setTimeout(() => setImageStatus(null), 2500)
     } catch {
       // no-op — the garden stays on screen; the recipient can retry.
+      setImageStatus(null)
     } finally {
       savingImageRef.current = false
     }
@@ -254,8 +263,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             type="button"
             className={styles.ctaSubLink}
             onClick={() => void handleSaveImage()}
+            disabled={imageStatus !== null}
           >
-            save it as an image
+            {imageStatus === 'saving'
+              ? 'making image…'
+              : imageStatus === 'shared'
+                ? 'image shared'
+                : imageStatus === 'downloaded'
+                  ? 'image downloaded'
+                  : 'save it as an image'}
           </button>
           {' · '}
           <a href="/" className={styles.ctaSubLink}>

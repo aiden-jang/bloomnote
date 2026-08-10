@@ -209,6 +209,11 @@
   color: var(--green-mid);
 }
 
+.ctaSubLink:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
 /* Save-as-image — sits below the primary CTA and the "start fresh"
    link as a tertiary affordance. Quieter on purpose: recipients who
    want to keep the garden are a minority of viewers, and a louder
