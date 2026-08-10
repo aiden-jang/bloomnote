@@ -111,6 +111,14 @@ export function unlockAudio(): void {
 // pages that allow autoplay already.
 unlockAudio()
 
+/*
+ * Schedule slightly ahead of now, never at now. The audio thread has already rendered up to
+ * currentTime by the time a play function runs, so a note booked for exactly currentTime lands in
+ * the past and the hardware skips what it missed. That doesn't silence the note, which is why it's
+ * easy to miss: it eats the attack and leaves the tail.
+ */
+const LOOKAHEAD = 0.02
+
 interface ToneOptions {
 	freq?: number
 	type?: OscillatorType
@@ -121,6 +129,7 @@ interface ToneOptions {
 
 function playTone({ freq = 440, type = 'sine', duration = 0.4, gain = 0.15, delay = 0 }: ToneOptions): void {
 	const ac = getCtx()
+	const start = ac.currentTime + LOOKAHEAD
 	const osc = ac.createOscillator()
 	const gainNode = ac.createGain()
 
@@ -128,15 +137,15 @@ function playTone({ freq = 440, type = 'sine', duration = 0.4, gain = 0.15, dela
 	gainNode.connect(ac.destination)
 
 	osc.type = type
-	osc.frequency.setValueAtTime(freq, ac.currentTime + delay)
-	osc.frequency.exponentialRampToValueAtTime(freq * 0.95, ac.currentTime + delay + duration)
+	osc.frequency.setValueAtTime(freq, start + delay)
+	osc.frequency.exponentialRampToValueAtTime(freq * 0.95, start + delay + duration)
 
-	gainNode.gain.setValueAtTime(0, ac.currentTime + delay)
-	gainNode.gain.linearRampToValueAtTime(gain, ac.currentTime + delay + 0.02)
-	gainNode.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + delay + duration)
+	gainNode.gain.setValueAtTime(0, start + delay)
+	gainNode.gain.linearRampToValueAtTime(gain, start + delay + 0.02)
+	gainNode.gain.exponentialRampToValueAtTime(0.001, start + delay + duration)
 
-	osc.start(ac.currentTime + delay)
-	osc.stop(ac.currentTime + delay + duration)
+	osc.start(start + delay)
+	osc.stop(start + delay + duration)
 }
 
 export function playBloom(index: number = 0): void {
@@ -178,6 +187,41 @@ export function playChime(): void {
 	chord.forEach((freq, i) => {
 	playTone({ freq, type: 'sine', duration: 1.2, gain: 0.08, delay: i * 0.08 })
 	})
+}
+
+/**
+ * Three drops landing, for watering someone's garden.
+ *
+ * Written out rather than routed through playTone because a drop bends the wrong way for it: a
+ * falling droplet's pitch *rises* as the air bubble it traps collapses, which is the whole reason
+ * a plink sounds like water and not like a bell. playTone bends every note down by design.
+ *
+ * The three are staggered unevenly on purpose. Even spacing reads as a machine; water doesn't
+ * arrive on a metronome.
+ */
+export function playWater(): void {
+	if (muted) return
+	const ac = getCtx()
+	const drops = [
+		{ from: 620, to: 1180, at: 0, gain: 0.09 },
+		{ from: 520, to: 980, at: 0.09, gain: 0.07 },
+		{ from: 700, to: 1320, at: 0.21, gain: 0.05 },
+	]
+	for (const d of drops) {
+		const osc = ac.createOscillator()
+		const env = ac.createGain()
+		const t = ac.currentTime + LOOKAHEAD + d.at
+		osc.type = 'sine'
+		osc.frequency.setValueAtTime(d.from, t)
+		osc.frequency.exponentialRampToValueAtTime(d.to, t + 0.06)
+		env.gain.setValueAtTime(0, t)
+		env.gain.linearRampToValueAtTime(d.gain, t + 0.006)
+		env.gain.exponentialRampToValueAtTime(0.0001, t + 0.13)
+		osc.connect(env)
+		env.connect(ac.destination)
+		osc.start(t)
+		osc.stop(t + 0.15)
+	}
 }
 
 export function playSuccess(): void {

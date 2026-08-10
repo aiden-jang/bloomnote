@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchWaters, hasWatered, rememberWatered, sendWater, watersLabel } from '../lib/water'
+import { playWater } from '../sound'
 import styles from './Watering.module.css'
 
 interface Props {
@@ -40,6 +41,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
     // where it was and the button spent, which is the right way round — nagging someone to try
     // again would make a gesture feel like a form.
     setWatered(true)
+    playWater()
     rememberWatered(gardenId)
     onWatered()
     const n = await sendWater(gardenId)
