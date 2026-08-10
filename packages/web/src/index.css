@@ -1,6 +1,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  /*
+   * Spring easing, sampled from a damped harmonic oscillator rather than approximated as a bezier.
+   * A cubic-bezier is bounded by its endpoints, so it cannot overshoot and settle back; linear()
+   * can, because it is a lookup table. 1.1% overshoot, normalized so duration stays separate.
+   *
+   * popIn deliberately does not use this: its overshoot is hand-authored in the keyframes (70% at
+   * scale 1.1), which is the better tool when the bounce should be that large and that specific.
+   */
+  --ease-spring: linear(0, 0.038, 0.13, 0.248, 0.373, 0.494, 0.604, 0.699, 0.778, 0.842, 0.893, 0.931, 0.959, 0.98, 0.993, 1.002, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
+
   --green-deep:  #2d5a1b;
   --green-mid:   #4a7c3f;
   --green-light: #7db56a;
@@ -102,14 +112,12 @@ textarea, input {
   outline: none;
 }
 
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
 @keyframes sway {
   0%, 100% { transform: rotate(-1deg); }
   50%       { transform: rotate(1deg); }
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes popIn {

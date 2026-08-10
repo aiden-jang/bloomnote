@@ -795,7 +795,7 @@
   /* Soft lift so the loading card reads as a raised surface on the warm
      page gradient, consistent with the composer's fields and CTA. */
   box-shadow: 0 4px 16px rgba(45, 90, 27, 0.06);
-  animation: fadeUp 0.3s ease forwards;
+  animation: fadeUp 0.3s var(--ease-spring) forwards;
 }
 
 .designingRow {
@@ -890,7 +890,7 @@
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 4px 16px rgba(45, 90, 27, 0.06);
-  animation: fadeUp 0.4s ease forwards;
+  animation: fadeUp 0.4s var(--ease-spring) forwards;
 }
 
 .previewMessageText {
@@ -932,7 +932,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  animation: fadeUp 0.4s ease forwards;
+  animation: fadeUp 0.4s var(--ease-spring) forwards;
 }
 
 .bouquetNoteLabel {
@@ -959,7 +959,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: fadeUp 0.4s ease forwards;
+  animation: fadeUp 0.4s var(--ease-spring) forwards;
 }
 
 .shareTitle {
@@ -1239,4 +1239,15 @@
   .footer {
     display: none !important;
   }
+}
+
+/*
+ * Local, not global. CSS Modules scopes animation names, so a module referencing a keyframe defined
+ * in index.css compiles to a name with no keyframes behind it and the animation silently never
+ * runs. (`itemReveal` below has always been local, which is why that one worked.) The duplication
+ * across modules is the cost of each file standing on its own, and it is four lines.
+ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
