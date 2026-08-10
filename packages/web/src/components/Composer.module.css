@@ -50,6 +50,26 @@
   margin: 0 auto;
 }
 
+/* A recovered note should explain itself once, not hang around as an alert.
+   Kept to the width of its words so it reads as a small reassurance rather
+   than another form section. */
+.recoveredDraft {
+  align-self: center;
+  margin: -0.25rem 0 0;
+  padding: 6px 11px;
+  border: 1px solid var(--green-pale);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-mid);
+  font-size: 12px;
+  animation: recoveredNote 0.35s ease both;
+}
+
+@keyframes recoveredNote {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* On narrow screens the fixed account pill (your gardens / name / sign out)
    spans most of the top and would sit on top of the centered hero. Drop the
    hero below it so nothing overlaps. */

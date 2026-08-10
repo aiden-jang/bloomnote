@@ -185,6 +185,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // so an accidental refresh restores the thought in progress without making
   // it a permanent, cross-device archive of a private message.
   const [recoveredDraft] = useState<Draft | null>(() => readStoredDraft())
+  const [showRecoveredDraft, setShowRecoveredDraft] = useState(() => recoveredDraft !== null)
   const storageKeyRef = useRef(draftStorageKey())
 
   const clearStoredDraft = useCallback(() => {
@@ -194,6 +195,15 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       // Storage is best-effort; never make a local cleanup block the flow.
     }
   }, [])
+
+  // Restoration should be legible, but it does not need to become another
+  // piece of UI to dismiss. A short confirmation answers "why is this filled
+  // in?" and then leaves the note to be the focus again.
+  useEffect(() => {
+    if (!showRecoveredDraft) return
+    const t = window.setTimeout(() => setShowRecoveredDraft(false), 5000)
+    return () => window.clearTimeout(t)
+  }, [showRecoveredDraft])
 
   // Initial input values are computed once at mount.
   //   - In remix mode, pre-fill From/To from the inverse of the seed
@@ -905,6 +915,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             : 'write a note. they get a whole garden.'}
         </p>
       </header>
+      {showRecoveredDraft && (
+        <p className={styles.recoveredDraft} role="status">
+          Your draft is still here.
+        </p>
+      )}
 
       <GardenScene
         flowers={heroFlowers}
