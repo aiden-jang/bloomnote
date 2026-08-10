@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import styles from './SealedView.module.css'
 
 interface Props {
+  /** Stable garden ID, used to make imported calendar events distinct. */
+  gardenId: string
   from?: string | undefined
   to?: string | undefined
   /** ISO 8601 unlock moment. */
@@ -21,7 +23,7 @@ interface Props {
  * The clock is the recipient's own, so spoofing the device opens it early. That's fine — this is
  * choreography for a moment, not a security boundary. Same call as `unlockAt` in garden.ts.
  */
-export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
+export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: Props) {
   const target = new Date(unlockAt).getTime()
   const [now, setNow] = useState(() => Date.now())
   const [calendarSaved, setCalendarSaved] = useState(false)
@@ -62,7 +64,7 @@ export default function SealedView({ from, to, unlockAt, onUnlock }: Props) {
       'VERSION:2.0',
       'PRODID:-//bloomnote//garden//EN',
       'BEGIN:VEVENT',
-      `UID:bloomnote-${stamp(start)}@aidenjang.com`,
+      `UID:bloomnote-${gardenId}@aidenjang.com`,
       `DTSTAMP:${stamp(new Date())}`,
       `DTSTART:${stamp(start)}`,
       `DTEND:${stamp(end)}`,

@@ -179,6 +179,7 @@ function RecipientGateway({ garden, gardenId }: { garden: GardenData; gardenId: 
   if (sealed && garden.unlockAt) {
     return (
       <SealedView
+        gardenId={gardenId}
         from={garden.from}
         to={garden.to}
         unlockAt={garden.unlockAt}
