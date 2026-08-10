@@ -14,6 +14,7 @@ interface Props {
   gardenId: string | null
   recipient: string
   copied: boolean
+  shareStatus: 'sharing' | 'shared' | null
   imageStatus: 'saving' | 'shared' | 'downloaded' | null
   canShare: boolean
   isRerolling: boolean
@@ -34,6 +35,7 @@ export default function ShareCard({
   shareUrl,
   recipient,
   copied,
+  shareStatus,
   imageStatus,
   canShare,
   isRerolling,
@@ -83,8 +85,8 @@ export default function ShareCard({
       <div className={styles.shareActions}>
         <div className={styles.shareActionsPrimary}>
           {canShare && (
-            <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling}>
-              share
+            <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling || shareStatus === 'sharing'}>
+              {shareStatus === 'sharing' ? 'opening…' : shareStatus === 'shared' ? 'shared' : 'share'}
             </button>
           )}
           <button

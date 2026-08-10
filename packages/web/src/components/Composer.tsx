@@ -314,6 +314,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // piece of state than a regex over shareUrl.
   const [gardenId, setGardenId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   // Web Share API is mobile + modern desktop Safari only. We detect on
   // mount and conditionally render — never show a button that won't
@@ -870,6 +871,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // and the user still has the Copy button.
   const handleShare = useCallback(async () => {
     if (!shareUrl) return
+    setShareStatus('sharing')
     const data: ShareData = {
       title: 'bloomnote',
       text: recipient.trim() ? `A garden for ${recipient.trim()}` : 'A garden for you',
@@ -877,8 +879,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     }
     try {
       await navigator.share(data)
+      setShareStatus('shared')
+      window.setTimeout(() => setShareStatus(null), 2500)
       trackShareLinkShared()
     } catch (err) {
+      setShareStatus(null)
       if (err instanceof Error && err.name === 'AbortError') return
       // Otherwise no-op — the Copy button is still there as fallback.
     }
@@ -1207,6 +1212,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             gardenId={gardenId}
             recipient={recipient}
             copied={copied}
+            shareStatus={shareStatus}
             imageStatus={imageStatus}
             canShare={canShare}
             isRerolling={isRerolling}
