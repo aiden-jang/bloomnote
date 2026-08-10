@@ -135,9 +135,10 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
           type="button"
           className={styles.calendarBtn}
           onClick={addToCalendar}
+          disabled={calendarSaved}
           aria-label="Add a calendar reminder 15 minutes before this garden opens"
         >
-          {calendarSaved ? 'reminder ready' : 'add a reminder'}
+          {calendarSaved ? 'reminder file ready' : 'add a reminder'}
         </button>
         {calendarSaved && <span className={styles.calendarHint} role="status">open the file to add a 15-minute reminder</span>}
       </div>
