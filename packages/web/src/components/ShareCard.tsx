@@ -85,7 +85,7 @@ export default function ShareCard({
       <div className={styles.shareActions}>
         <div className={styles.shareActionsPrimary}>
           {canShare && (
-            <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling || shareStatus === 'sharing'}>
+            <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling || shareStatus !== null}>
               {shareStatus === 'sharing' ? 'opening…' : shareStatus === 'shared' ? 'shared' : 'share'}
             </button>
           )}
