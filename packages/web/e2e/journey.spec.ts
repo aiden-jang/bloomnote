@@ -109,6 +109,7 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.getByPlaceholder('your name')).toHaveValue('Aiden')
     await expect(page.getByPlaceholder('their name')).toHaveValue('Nadia')
     await expect(page.locator('textarea')).toHaveValue('I kept thinking about that rainy drive home.')
+    await expect(page.getByRole('status')).toContainText('Your draft is still here.')
 
     // Clear means clear: a deliberate reset must win over recovery.
     await page.getByRole('button', { name: 'clear draft' }).click()
