@@ -63,6 +63,8 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//bloomnote//garden//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
       'BEGIN:VEVENT',
       `UID:bloomnote-${gardenId}@aidenjang.com`,
       `DTSTAMP:${stamp(new Date())}`,
