@@ -102,7 +102,7 @@ export default function ShareCard({
           type="button"
           className={styles.copyBtnSecondary}
           onClick={onSaveImage}
-          disabled={isRerolling}
+          disabled={isRerolling || imageStatus === 'saving'}
         >
           {imageStatus === 'saving'
             ? 'making image…'
