@@ -14,6 +14,7 @@ interface Props {
   gardenId: string | null
   recipient: string
   copied: boolean
+  imageStatus: 'saving' | 'shared' | 'downloaded' | null
   canShare: boolean
   isRerolling: boolean
   errorText: string | null
@@ -33,6 +34,7 @@ export default function ShareCard({
   shareUrl,
   recipient,
   copied,
+  imageStatus,
   canShare,
   isRerolling,
   errorText,
@@ -100,7 +102,13 @@ export default function ShareCard({
           onClick={onSaveImage}
           disabled={isRerolling}
         >
-          save as image
+          {imageStatus === 'saving'
+            ? 'making image…'
+            : imageStatus === 'shared'
+              ? 'image shared'
+              : imageStatus === 'downloaded'
+                ? 'image downloaded'
+                : 'save as image'}
         </button>
 
         <button

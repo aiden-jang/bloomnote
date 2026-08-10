@@ -314,6 +314,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // piece of state than a regex over shareUrl.
   const [gardenId, setGardenId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   // Web Share API is mobile + modern desktop Safari only. We detect on
   // mount and conditionally render — never show a button that won't
   // work. Detection runs in an effect because typeof navigator can
@@ -888,12 +889,20 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const handleSaveImage = useCallback(async () => {
     if (!flowers.length || savingImageRef.current) return
     savingImageRef.current = true
+    setImageStatus('saving')
     try {
-      await saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+      const result = await saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+      if (result === 'dismissed') {
+        setImageStatus(null)
+        return
+      }
+      setImageStatus(result)
       trackCardDownloaded('composer', 'square')
+      window.setTimeout(() => setImageStatus(null), 2500)
     } catch {
       // Rare (canvas/decode failure, or a non-abort share error). Swallow so it isn't an unhandled
       // rejection; the Copy-link button remains as the fallback.
+      setImageStatus(null)
     } finally {
       savingImageRef.current = false
     }
@@ -1198,6 +1207,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             gardenId={gardenId}
             recipient={recipient}
             copied={copied}
+            imageStatus={imageStatus}
             canShare={canShare}
             isRerolling={isRerolling}
             errorText={errorText}
