@@ -14,6 +14,8 @@ export interface GardenImageOpts {
   to?: string | undefined;
 }
 
+export type GardenImageSaveResult = 'shared' | 'downloaded' | 'dismissed';
+
 function ShareImage({ flowers, from, to }: GardenImageOpts) {
   const panelX = 80;
   const panelY = 230;
@@ -149,7 +151,7 @@ function downloadBlob(blob: Blob, filename: string): void {
  *
  * Call from a user gesture: the rasterization is fast, but navigator.share needs user activation.
  */
-export async function saveGardenImage(opts: GardenImageOpts): Promise<void> {
+export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImageSaveResult> {
   const blob = await renderGardenPng(opts);
   const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
   const filename = `bloomnote-${base}.png`;
@@ -163,14 +165,15 @@ export async function saveGardenImage(opts: GardenImageOpts): Promise<void> {
         title: 'bloomnote',
         text: opts.to ? `A garden for ${opts.to}` : 'A garden',
       });
-      return;
+      return 'shared';
     } catch (err) {
       // User dismissed the sheet — done, don't also download.
-      if (err instanceof Error && err.name === 'AbortError') return;
+      if (err instanceof Error && err.name === 'AbortError') return 'dismissed';
       // Anything else (e.g. lost user activation): fall through to a plain download.
     }
   }
   downloadBlob(blob, filename);
+  return 'downloaded';
 }
 
 // --- Link preview card ---------------------------------------------------
