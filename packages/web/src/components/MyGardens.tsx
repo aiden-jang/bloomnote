@@ -4,7 +4,7 @@ import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
 import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
 import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
-import { trackCardDownloaded } from '../lib/analytics'
+import { trackCardDownloaded, trackGardenReshared } from '../lib/analytics'
 import { fetchWatersBatch, watersLabel } from '../lib/water'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
@@ -50,10 +50,12 @@ const undoButtonStyle: CSSProperties = {
 /** Fields GardenRow renders — satisfied by both MineRecord and the server GardenSummary. */
 interface CardData {
   id: string
+  from?: string | undefined
   to: string
   occasion?: string | undefined
   createdAt: string
   unlockAt?: string | undefined
+  receivedAt?: string | undefined
   swatches: string[]
 }
 
@@ -76,7 +78,6 @@ function AccountGardens() {
       : 'sent',
   )
   const [busy, setBusy] = useState(true)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -97,13 +98,6 @@ function AccountGardens() {
       cancelled = true
     }
   }, [])
-
-  const handleCopy = (id: string) => {
-    void navigator.clipboard.writeText(buildShareUrl(id)).then(() => {
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(c => (c === id ? null : c)), 2000)
-    })
-  }
 
   // Remove with a delayed commit so it can be undone: drop the row immediately, but only fire the
   // server DELETE after a grace window. Undo cancels the pending delete and restores the row in
@@ -244,9 +238,8 @@ function AccountGardens() {
             <GardenRow
               key={r.id}
               record={r}
-              copied={copiedId === r.id}
+              kind={tab}
               waters={waters[r.id] ?? 0}
-              onCopy={() => handleCopy(r.id)}
               onRemove={() => handleRemove(r.id)}
             />
           ))}
@@ -261,7 +254,6 @@ function AccountGardens() {
 function LocalGardens() {
   const { login } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
   // anonymous-first, so the sender who never makes an account is the usual sender, and without this
   // they only ever learn a garden was watered by reopening that exact link.
@@ -278,12 +270,6 @@ function LocalGardens() {
     }
   }, [idKey])
 
-  const handleCopy = (id: string) => {
-    void navigator.clipboard.writeText(buildShareUrl(id)).then(() => {
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(c => (c === id ? null : c)), 2000)
-    })
-  }
   const handleRemove = (id: string) => {
     removeSentGarden(id)
     setRecords(rs => rs.filter(r => r.id !== id))
@@ -312,9 +298,8 @@ function LocalGardens() {
             <GardenRow
               key={r.id}
               record={r}
-              copied={copiedId === r.id}
+              kind="sent"
               waters={waters[r.id] ?? 0}
-              onCopy={() => handleCopy(r.id)}
               onRemove={() => handleRemove(r.id)}
             />
           ))}
@@ -343,16 +328,17 @@ function Shell({ subtitle, children }: { subtitle: string; children: React.React
 
 interface RowProps {
   record: CardData
-  copied: boolean
+  /** A received garden is someone else's gift, so its label should lead with them—not its original recipient. */
+  kind: Tab
   /** How many times this garden has been watered. Omitted or 0 means the row says nothing. */
   waters?: number
-  onCopy: () => void
   onRemove?: () => void
 }
 
-function GardenRow({ record, copied, waters = 0, onCopy, onRemove }: RowProps) {
-  const { id, to, occasion, createdAt, unlockAt, swatches } = record
-  const [saving, setSaving] = useState(false)
+function GardenRow({ record, kind, waters = 0, onRemove }: RowProps) {
+  const { id, from, to, occasion, createdAt, unlockAt, receivedAt, swatches } = record
+  const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
+  const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
 
   // The list summary only has color swatches, not full flower specs, so the garden must be fetched
   // before building its share image. Prefetch on interaction-intent (hover / focus / touch-down) and
@@ -370,27 +356,63 @@ function GardenRow({ record, copied, waters = 0, onCopy, onRemove }: RowProps) {
     })
   }
   const handleSaveImage = async (): Promise<void> => {
-    if (saving) return
-    setSaving(true)
+    if (imageStatus) return
+    setImageStatus('saving')
     try {
       const data = await (gardenRef.current ?? (gardenRef.current = fetchGarden(id)))
       if (data?.flowers?.length) {
-        await saveGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
-        trackCardDownloaded('mine', 'square')
+        const result = await saveGardenImage({ flowers: data.flowers, from: data.from, to: data.to })
+        if (result === 'dismissed') {
+          setImageStatus(null)
+          return
+        }
+        setImageStatus(result)
+        if (result === 'downloaded') trackCardDownloaded('mine', 'square')
+        window.setTimeout(() => setImageStatus(null), 2500)
+      } else {
+        setImageStatus(null)
       }
     } catch {
       // Transient fetch failure or a rare canvas/decode error — drop the cached fetch so the next
       // tap retries rather than re-awaiting the rejected promise.
       gardenRef.current = null
-    } finally {
-      setSaving(false)
+      setImageStatus(null)
+    }
+  }
+
+  const handleShare = async (): Promise<void> => {
+    if (shareStatus) return
+    setShareStatus('sharing')
+    const url = buildShareUrl(id)
+    const shareData: ShareData = {
+      title: 'bloomnote',
+      text: kind === 'received' && from ? `A garden from ${from}` : to.trim() ? `A garden for ${to.trim()}` : 'A garden for you',
+      url,
+    }
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share(shareData)
+        setShareStatus('shared')
+        trackGardenReshared('native')
+      } else {
+        await navigator.clipboard.writeText(url)
+        setShareStatus('copied')
+        trackGardenReshared('copy')
+      }
+      window.setTimeout(() => setShareStatus(null), 2500)
+    } catch (err) {
+      setShareStatus(null)
+      if (err instanceof Error && err.name === 'AbortError') return
     }
   }
 
   const sealedUntil =
     unlockAt && new Date(unlockAt).getTime() > Date.now() ? formatGardenDate(unlockAt) : null
   const grownOn = formatGardenDate(createdAt)
+  const keptOn = receivedAt ? formatGardenDate(receivedAt) : null
   const recipientLine = to.trim() ? `for ${to.trim()}` : 'for someone'
+  const receivedLine = from?.trim() ? `from ${from.trim()}` : 'a garden for you'
+  const cardLabel = kind === 'received' ? receivedLine : recipientLine
 
   return (
     <li className={styles.card}>
@@ -403,13 +425,15 @@ function GardenRow({ record, copied, waters = 0, onCopy, onRemove }: RowProps) {
           )}
         </span>
         <span className={styles.cardText}>
-          <span className={styles.recipient}>{recipientLine}</span>
+          <span className={styles.recipient}>{cardLabel}</span>
           <span className={styles.meta}>
             {occasion && <span>{occasionLabel(occasion)}</span>}
             {sealedUntil ? (
               <span className={styles.sealed}>opens {sealedUntil}</span>
             ) : (
-              grownOn && <span>{grownOn}</span>
+              (kind === 'received' ? keptOn ?? grownOn : grownOn) && (
+                <span>{kind === 'received' && keptOn ? `kept ${keptOn}` : grownOn}</span>
+              )
             )}
             {/* The only thing on this page that came back from the other person. Shown only when
                 somebody actually watered it — a "watered 0 times" on every card would bury the ones
@@ -420,8 +444,20 @@ function GardenRow({ record, copied, waters = 0, onCopy, onRemove }: RowProps) {
       </a>
 
       <div className={styles.cardActions}>
-        <button type="button" className={styles.actionBtn} onClick={onCopy}>
-          {copied ? 'copied' : 'copy link'}
+        <button
+          type="button"
+          className={styles.actionBtn}
+          onClick={() => void handleShare()}
+          disabled={shareStatus !== null}
+          aria-label={`Share garden ${cardLabel}`}
+        >
+          {shareStatus === 'sharing'
+            ? 'opening…'
+            : shareStatus === 'shared'
+              ? 'shared'
+              : shareStatus === 'copied'
+                ? 'copied'
+                : 'share'}
         </button>
         <button
           type="button"
@@ -430,16 +466,22 @@ function GardenRow({ record, copied, waters = 0, onCopy, onRemove }: RowProps) {
           onPointerEnter={prefetch}
           onPointerDown={prefetch}
           onFocus={prefetch}
-          disabled={saving}
+          disabled={imageStatus !== null}
         >
-          {saving ? 'saving…' : 'save image'}
+          {imageStatus === 'saving'
+            ? 'making image…'
+            : imageStatus === 'shared'
+              ? 'image shared'
+              : imageStatus === 'downloaded'
+                ? 'image downloaded'
+                : 'save image'}
         </button>
         {onRemove && (
           <button
             type="button"
             className={styles.removeBtn}
             onClick={onRemove}
-            aria-label={`remove ${recipientLine} from your gardens`}
+            aria-label={`remove garden ${cardLabel} from your gardens`}
           >
             remove
           </button>
