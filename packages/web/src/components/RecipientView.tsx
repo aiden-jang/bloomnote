@@ -118,6 +118,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   // the chime + per-flower bloom sounds.
   const [phase, setPhase] = useState<Phase>('sealed')
   const [msgVisible, setMsgVisible] = useState(false)
+  // Re-keying the scene is deliberate: its bloom timeline is local animation state, and replaying
+  // should grow the same garden again rather than trying to reverse a finished set of petals.
+  const [bloomVersion, setBloomVersion] = useState(0)
 
   // Funnel event: garden_opened. Fired once per mount — this is the
   // "delivery confirmed" signal that pairs with `share_link_copied`
@@ -134,6 +137,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     setPhase('blooming')
     playChime()
     trackGardenBloomed()
+  }
+
+  const handleReplayBloom = (): void => {
+    setFocused(null)
+    setMsgVisible(false)
+    setBloomVersion(version => version + 1)
+    // This is still a user gesture, so replaying the gentle chime works on browsers that block
+    // background audio. It is a replay, not a second delivery, so it does not inflate the funnel.
+    playChime()
   }
 
   const handleReplyClick = (): void => {
@@ -221,7 +233,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         // the recipient sees the matching sky tint so the
         // atmosphere reads as deliberate, not random.
         occasion={occasion}
-        key="recipient"
+        key={`recipient-${bloomVersion}`}
       />
 
       {/* "Open the garden" tap target. The bloom is gated on this
@@ -324,6 +336,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             start one for someone new
           </a>
         </p>
+        <button type="button" className={styles.replayBtn} onClick={handleReplayBloom}>
+          ↻ watch it bloom again
+        </button>
       </div>
         </>
       )}

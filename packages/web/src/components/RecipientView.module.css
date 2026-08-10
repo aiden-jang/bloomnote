@@ -214,6 +214,25 @@
   opacity: 0.7;
 }
 
+/* A keepsake action, not a competing CTA. It comes after the reply/share choices and uses the
+   same quiet treatment as their supporting links, while the tiny loop arrow hints that it replays
+   the moment rather than starting a new garden. */
+.replayBtn {
+  border: none;
+  background: none;
+  padding: 2px 0;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.replayBtn:hover {
+  color: var(--green-mid);
+}
+
 /* Save-as-image — sits below the primary CTA and the "start fresh"
    link as a tertiary affordance. Quieter on purpose: recipients who
    want to keep the garden are a minority of viewers, and a louder
