@@ -151,6 +151,28 @@ function summarize(id: string, garden: Record<string, unknown>): GardenSummary {
   return summary;
 }
 
+/*
+ * Index entries carry their summary twice: in the value, and in the key's list metadata.
+ *
+ * The metadata copy is what makes listing cheap. KV `list()` hands metadata back with the keys, so
+ * a whole page of gardens costs one subrequest instead of one per garden — the previous shape did a
+ * `get()` per key with no cap, and `listMine` runs it twice, so roughly thirty sent and thirty
+ * received already exceeded the free tier's 50-subrequest budget. It broke for exactly the people
+ * who had used the app the most.
+ *
+ * The value copy stays because metadata is capped at 1 KiB per key. A summary is a couple of hundred
+ * bytes, but `from` and `to` are user-typed, so a pathological pair could overflow it — in which
+ * case the metadata is dropped and the reader falls back to fetching the value. Nothing is lost,
+ * that entry just costs a subrequest again.
+ */
+const KV_METADATA_LIMIT = 1024;
+
+async function putIndex(env: Env, key: string, summary: GardenSummary): Promise<void> {
+  const body = JSON.stringify(summary);
+  const fits = new TextEncoder().encode(body).length <= KV_METADATA_LIMIT;
+  await env.GARDENS.put(key, body, fits ? { metadata: summary } : {});
+}
+
 /**
  * Share-card image for a garden, as PNG bytes.
  *
@@ -283,7 +305,7 @@ export async function createGarden(env: Env, garden: unknown, ownerId?: string):
     const id = generateId();
     if ((await env.GARDENS.get(`g:${id}`)) === null) {
       await env.GARDENS.put(`g:${id}`, serialized);
-      if (ownerId) await env.GARDENS.put(`sent:${ownerId}:${id}`, JSON.stringify(summarize(id, obj)));
+      if (ownerId) await putIndex(env, `sent:${ownerId}:${id}`, summarize(id, obj));
       return { ok: true, id };
     }
   }
@@ -308,10 +330,10 @@ export async function recordReceived(env: Env, userId: string, id: string): Prom
   if (raw === null) return false;
   const garden = JSON.parse(raw) as Record<string, unknown>;
   if (garden.ownerId === userId) return false; // your own garden isn't "received"
-  await env.GARDENS.put(
-    `recv:${userId}:${id}`,
-    JSON.stringify({ ...summarize(id, garden), receivedAt: new Date().toISOString() }),
-  );
+  await putIndex(env, `recv:${userId}:${id}`, {
+    ...summarize(id, garden),
+    receivedAt: new Date().toISOString(),
+  });
   return true;
 }
 
@@ -327,10 +349,44 @@ export async function removeFromAccount(env: Env, userId: string, id: string): P
   ]);
 }
 
+/**
+ * How many pre-metadata entries one listing may fall back to fetching.
+ *
+ * listMine calls this twice, so the worst case is 2 lists + 2 x this many gets. Ten keeps that at
+ * 22 against the free tier's 50, leaving room for the auth check the route does first. Entries past
+ * the limit are skipped for this load and picked up on the next one, because they heal as they go.
+ */
+const LEGACY_FETCH_LIMIT = 10;
+
 async function listByPrefix(env: Env, prefix: string): Promise<GardenSummary[]> {
-  const listed = await env.GARDENS.list({ prefix });
-  const values = await Promise.all(listed.keys.map((k) => env.GARDENS.get(k.name)));
-  const out = values.filter((v): v is string => v !== null).map((v) => JSON.parse(v) as GardenSummary);
+  const listed = await env.GARDENS.list<GardenSummary>({ prefix });
+  const out: GardenSummary[] = [];
+  const legacy: string[] = [];
+  for (const k of listed.keys) {
+    if (k.metadata) out.push(k.metadata);
+    else legacy.push(k.name);
+  }
+
+  // Entries written before summaries moved into metadata. Fetch a bounded number and write the
+  // metadata back, so each one costs a subrequest exactly once and the list gets cheaper every
+  // time it is opened. Best-effort: a failed heal just means it is fetched again next time.
+  if (legacy.length > 0) {
+    const healed = await Promise.all(
+      legacy.slice(0, LEGACY_FETCH_LIMIT).map(async (name) => {
+        const raw = await env.GARDENS.get(name);
+        if (raw === null) return null;
+        try {
+          const summary = JSON.parse(raw) as GardenSummary;
+          await putIndex(env, name, summary).catch(() => undefined);
+          return summary;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    for (const h of healed) if (h) out.push(h);
+  }
+
   // Newest first, by receivedAt (received) or createdAt (sent).
   out.sort((a, b) => (b.receivedAt ?? b.createdAt).localeCompare(a.receivedAt ?? a.createdAt));
   return out;
@@ -356,7 +412,7 @@ export async function claimGardens(env: Env, userId: string, ids: string[]): Pro
     if (garden.ownerId) continue; // already owned by someone
     garden.ownerId = userId;
     await env.GARDENS.put(`g:${id}`, JSON.stringify(garden));
-    await env.GARDENS.put(`sent:${userId}:${id}`, JSON.stringify(summarize(id, garden)));
+    await putIndex(env, `sent:${userId}:${id}`, summarize(id, garden));
     claimed++;
   }
   return claimed;
