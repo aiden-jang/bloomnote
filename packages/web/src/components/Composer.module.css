@@ -132,6 +132,29 @@
   gap: 12px;
 }
 
+.promptRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.promptLink {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.promptLink:hover {
+  color: var(--green-mid);
+}
+
 .helper {
   font-size: 12px;
   color: var(--text-light);
