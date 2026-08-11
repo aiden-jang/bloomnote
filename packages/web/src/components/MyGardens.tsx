@@ -8,6 +8,7 @@ import { trackCardDownloaded, trackGardenReshared } from '../lib/analytics'
 import { fetchWatersBatch, watersLabel } from '../lib/water'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
+import { gardenMemoryDeck, gardenMemoryLabel } from '../lib/gardenMemories'
 import styles from './MyGardens.module.css'
 
 /**
@@ -480,18 +481,19 @@ function LocalGardens() {
  */
 function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
   const [memoryIndex, setMemoryIndex] = useState(0)
-  const memories = useMemo(
-    () =>
-      [...gardens]
-        .filter(garden => !garden.unlockAt || new Date(garden.unlockAt).getTime() <= Date.now())
-        .sort((a, b) => new Date(a.receivedAt ?? a.createdAt).getTime() - new Date(b.receivedAt ?? b.createdAt).getTime()),
-    [gardens],
-  )
+  // Freeze "today" for this visit. A midnight rollover can wait for the next page open; changing
+  // the card while somebody is looking at it would be a much stranger kind of accuracy.
+  const [today] = useState(() => new Date())
+  const memories = useMemo(() => gardenMemoryDeck(gardens, today), [gardens, today])
 
-  if (memories.length < 3) return null
+  useEffect(() => setMemoryIndex(0), [kind])
+
+  if (memories.length === 0) return null
   const memory = memories[memoryIndex % memories.length]!
   const name = kind === 'received' ? memory.from?.trim() : memory.to.trim()
-  const date = formatGardenDate(memory.receivedAt ?? memory.createdAt)
+  const memoryAt = memory.receivedAt ?? memory.createdAt
+  const date = formatGardenDate(memoryAt)
+  const age = gardenMemoryLabel(memoryAt, today)
 
   return (
     <aside className={styles.memoryLane} aria-label="A garden to revisit">
@@ -502,20 +504,22 @@ function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
           ))}
         </span>
         <span className={styles.memoryCopy}>
-          <span className={styles.memoryEyebrow}>from the garden path</span>
+          <span className={styles.memoryEyebrow}>{age || 'from the garden path'}</span>
           <strong>{kind === 'received' ? `a garden ${name ? `from ${name}` : 'you kept'}` : `the one ${name ? `for ${name}` : 'you grew'}`}</strong>
           {date && <small>{date}</small>}
         </span>
         <span className={styles.memoryOpen} aria-hidden>open →</span>
       </a>
-      <button
-        type="button"
-        className={styles.memoryNext}
-        onClick={() => setMemoryIndex(index => (index + 1) % memories.length)}
-        aria-label="Show another garden memory"
-      >
-        another
-      </button>
+      {memories.length > 1 && (
+        <button
+          type="button"
+          className={styles.memoryNext}
+          onClick={() => setMemoryIndex(index => (index + 1) % memories.length)}
+          aria-label="Show another garden memory"
+        >
+          another
+        </button>
+      )}
     </aside>
   )
 }
