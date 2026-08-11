@@ -76,6 +76,7 @@ interface Draft {
   from: string
   recipient: string
   message: string
+  secret: string
   occasion: string
   mood: string
   scheduleOpen: boolean
@@ -106,6 +107,7 @@ function readStoredDraft(): Draft | null {
       typeof draft.from !== 'string' ||
       typeof draft.recipient !== 'string' ||
       typeof draft.message !== 'string' ||
+      (draft.secret !== undefined && typeof draft.secret !== 'string') ||
       typeof draft.occasion !== 'string' ||
       typeof draft.mood !== 'string' ||
       typeof draft.scheduleOpen !== 'boolean' ||
@@ -113,7 +115,7 @@ function readStoredDraft(): Draft | null {
     ) {
       return null
     }
-    return draft as Draft
+    return { ...draft, secret: typeof draft.secret === 'string' ? draft.secret : '' } as Draft
   } catch {
     // Private browsing and storage-quota failures should never interfere
     // with writing a garden. Recovery is a courtesy, not a dependency.
@@ -212,12 +214,13 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // A matching tab-local recovery draft takes precedence over either
   // default. It expires with the tab, so a new visit still starts fresh.
   const initialInputs = useMemo(() => {
-    const base = { occasion: DEFAULT_OCCASION, mood: DEFAULT_MOOD }
+    const base = { occasion: DEFAULT_OCCASION, mood: DEFAULT_MOOD, secret: '' }
     if (recoveredDraft) {
       return {
         from: recoveredDraft.from,
         recipient: recoveredDraft.recipient,
         message: recoveredDraft.message,
+        secret: recoveredDraft.secret,
         occasion: recoveredDraft.occasion || base.occasion,
         mood: recoveredDraft.mood || base.mood,
       }
@@ -236,6 +239,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [from, setFrom] = useState(initialInputs.from)
   const [recipient, setRecipient] = useState(initialInputs.recipient)
   const [message, setMessage] = useState(initialInputs.message)
+  const [secret, setSecret] = useState(initialInputs.secret)
   const [occasion, setOccasion] = useState(initialInputs.occasion)
   const [mood, setMood] = useState(initialInputs.mood)
   // Curated example that follows the selected occasion + mood, so the empty
@@ -444,6 +448,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         flowers: result.flowers,
         bouquetNote: result.bouquetNote,
         message: message.trim(),
+        ...(secret.trim() ? { secret: secret.trim() } : {}),
         from: from.trim(),
         to: recipient.trim(),
         // Stamp when the sender hit "Grow their garden" — shows up on the
@@ -457,7 +462,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         previous: seedForPrevious,
       }
     },
-    [scheduleOpen, unlockLocal, remixSeed, message, from, recipient, occasion, mood],
+    [scheduleOpen, unlockLocal, remixSeed, message, secret, from, recipient, occasion, mood],
   )
 
   const handleDesign = useCallback(async () => {
@@ -709,6 +714,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setFrom('')
       setRecipient('')
       setMessage('')
+      setSecret('')
       setOccasion(DEFAULT_OCCASION)
       setMood(DEFAULT_MOOD)
       setRerollAttempt(0)
@@ -719,7 +725,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // Only show the clear link when there's something to clear. Trimmed
   // so "  " in a field doesn't count as draft content.
   const hasDraft =
-    from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0
+    from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0 || secret.trim().length > 0
 
   // Save while the person is writing, not on a debounce that can miss the
   // last keystroke before a refresh. This is session-only and removed after
@@ -731,7 +737,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         window.sessionStorage.removeItem(storageKeyRef.current)
         return
       }
-      const draft: Draft = { from, recipient, message, occasion, mood, scheduleOpen, unlockLocal }
+      const draft: Draft = { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal }
       window.sessionStorage.setItem(
         storageKeyRef.current,
         JSON.stringify({ version: DRAFT_STORAGE_VERSION, draft }),
@@ -740,7 +746,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       // See readStoredDraft: persistence is a convenience, never a reason
       // to make the composer feel broken.
     }
-  }, [phase, hasDraft, from, recipient, message, occasion, mood, scheduleOpen, unlockLocal])
+  }, [phase, hasDraft, from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal])
 
   /**
    * The homepage hero used to be an empty plot with a single grey sprout stub in it — 320px of
@@ -798,6 +804,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setFrom(g.from)
     setRecipient(g.to)
     setMessage(g.message)
+    setSecret('')
     setOccasion(g.occasion)
     setMood(g.mood)
     // Defer focus to next tick so the value-change DOM updates flush
@@ -816,7 +823,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     // pending, cancel its timer — the new clear takes precedence.
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
 
-    const snapshot: Draft = { from, recipient, message, occasion, mood, scheduleOpen, unlockLocal }
+    const snapshot: Draft = { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal }
     clearStoredDraft()
 
     // Clearing is a quick local action; no view transition needed.
@@ -824,6 +831,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setFrom('')
     setRecipient('')
     setMessage('')
+    setSecret('')
     setOccasion(DEFAULT_OCCASION)
     setMood(DEFAULT_MOOD)
     // Collapse the schedule picker back to "send now" — a cleared form
@@ -837,7 +845,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setUndoDraft(null)
       undoTimerRef.current = null
     }, 8000)
-  }, [from, recipient, message, occasion, mood, scheduleOpen, unlockLocal, clearStoredDraft])
+  }, [from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal, clearStoredDraft])
 
   const handleUndoClear = useCallback(() => {
     if (!undoDraft) return
@@ -848,6 +856,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setFrom(undoDraft.from)
     setRecipient(undoDraft.recipient)
     setMessage(undoDraft.message)
+    setSecret(undoDraft.secret)
     setOccasion(undoDraft.occasion || DEFAULT_OCCASION)
     setMood(undoDraft.mood || DEFAULT_MOOD)
     setScheduleOpen(undoDraft.scheduleOpen)
@@ -1057,6 +1066,22 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               />
             </section>
           </div>
+
+          <details className={styles.secretNote} open={secret.length > 0 ? true : undefined}>
+            <summary>add a tiny secret</summary>
+            <div className={styles.secretNoteField}>
+              <label htmlFor="secret-note">a little aside they can tap to reveal</label>
+              <textarea
+                id="secret-note"
+                value={secret}
+                onChange={e => setSecret(e.target.value)}
+                placeholder="p.s. I still have that ridiculous photo of us."
+                rows={2}
+                maxLength={140}
+              />
+              <span>{secret.length}/140</span>
+            </div>
+          </details>
 
           {/* Occasion + mood as chip selectors. Occasion is *when*
               (calendar), mood is *how* (emotional register). Both are

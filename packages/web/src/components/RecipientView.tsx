@@ -33,7 +33,7 @@ interface Props {
 type Phase = 'sealed' | 'blooming'
 
 export default function RecipientView({ gardenData, gardenId }: Props) {
-  const { flowers, message, from, to, bouquetNote, previous, createdAt, occasion } = gardenData
+  const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion } = gardenData
   const grownOn = formatGardenDate(createdAt)
 
   // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
@@ -43,6 +43,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [isReading, setIsReading] = useState(false)
   const [noteCopied, setNoteCopied] = useState(false)
+  const [secretRevealed, setSecretRevealed] = useState(false)
   const canReadAloud = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'
   const handleSaveImage = useCallback(async () => {
     if (savingImageRef.current) return
@@ -323,6 +324,20 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             note. `start` is gated on msgVisible so it doesn't type itself
             out before the garden has bloomed and the message faded in. */}
         {bouquetNote && <BouquetNote note={bouquetNote} start={msgVisible} />}
+        {secret && (
+          <div className={styles.secretNote}>
+            <button
+              type="button"
+              className={styles.secretReveal}
+              onClick={() => setSecretRevealed(revealed => !revealed)}
+              aria-expanded={secretRevealed}
+            >
+              <span aria-hidden>{secretRevealed ? '✉' : '💌'}</span>
+              {secretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
+            </button>
+            {secretRevealed && <p className={styles.secretText}>{secret}</p>}
+          </div>
+        )}
         {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
       </div>
 

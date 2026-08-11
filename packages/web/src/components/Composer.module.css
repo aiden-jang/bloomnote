@@ -125,6 +125,66 @@
   box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.12), 0 1px 3px rgba(45, 90, 27, 0.05);
 }
 
+/* Optional and folded away: the main note remains the obvious task, while senders who want a
+   second, private-feeling beat can tuck one short aside into the finished garden. */
+.secretNote {
+  margin-top: -2px;
+  border: 1px solid var(--green-pale);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.secretNote summary {
+  padding: 11px 14px;
+  color: var(--text-mid);
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.secretNote summary::-webkit-details-marker { display: none; }
+.secretNote summary::after { content: ' +'; color: var(--text-light); }
+.secretNote[open] summary::after { content: ' −'; }
+
+.secretNoteField {
+  position: relative;
+  padding: 0 12px 12px;
+}
+
+.secretNoteField label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-light);
+  font-size: 11px;
+}
+
+.secretNoteField textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--green-pale);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 10px 12px 22px;
+  color: var(--text-dark);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  outline: none;
+}
+
+.secretNoteField textarea:focus {
+  border-color: var(--green-light);
+  box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.1);
+}
+
+.secretNoteField span {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  color: var(--text-light);
+  font-size: 10px;
+}
+
 .helperRow {
   display: flex;
   align-items: flex-start;
