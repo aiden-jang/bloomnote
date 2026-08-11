@@ -167,6 +167,113 @@
   border: 0;
 }
 
+/* A quiet resurfacing card, built from the archive's own colors. It gives a mature collection an
+   emotional entry point without making the list into a dashboard or inventing engagement stats. */
+.memoryLane {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(163, 84, 106, 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(224, 145, 159, 0.17), transparent 35%),
+    linear-gradient(135deg, rgba(255, 252, 245, 0.88), rgba(246, 239, 225, 0.72));
+  box-shadow: 0 10px 28px rgba(74, 53, 32, 0.05);
+}
+
+.memoryMain {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  padding: 14px 72px 14px 15px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.memoryMain:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: -3px;
+  border-radius: 18px;
+}
+
+.memoryBouquet {
+  position: relative;
+  width: 44px;
+  height: 42px;
+  flex: 0 0 44px;
+}
+
+.memoryBouquet span {
+  position: absolute;
+  width: 19px;
+  height: 19px;
+  border: 2px solid rgba(255, 252, 245, 0.9);
+  border-radius: 50% 50% 45% 55%;
+  box-shadow: 0 2px 5px rgba(74, 53, 32, 0.1);
+}
+
+.memoryBouquet span:nth-child(1) { left: 1px; top: 11px; }
+.memoryBouquet span:nth-child(2) { left: 13px; top: 1px; }
+.memoryBouquet span:nth-child(3) { left: 24px; top: 12px; }
+.memoryBouquet span:nth-child(4) { left: 9px; top: 22px; }
+.memoryBouquet span:nth-child(5) { left: 22px; top: 24px; }
+
+.memoryCopy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.memoryEyebrow {
+  color: var(--pink-deep);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.memoryCopy strong {
+  overflow: hidden;
+  color: var(--text-dark);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memoryCopy small {
+  color: var(--text-light);
+  font-size: 11px;
+}
+
+.memoryOpen {
+  margin-left: auto;
+  color: var(--green-mid);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.memoryNext {
+  position: absolute;
+  right: 12px;
+  bottom: 9px;
+  border: 0;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.memoryNext:hover {
+  color: var(--pink-deep);
+}
+
 /* --- List --- */
 .list {
   list-style: none;
@@ -361,6 +468,14 @@
 
   .libraryTools {
     grid-template-columns: 1fr;
+  }
+
+  .memoryMain {
+    padding-right: 62px;
+  }
+
+  .memoryOpen {
+    display: none;
   }
 }
 
