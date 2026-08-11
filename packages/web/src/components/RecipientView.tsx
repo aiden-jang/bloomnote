@@ -42,6 +42,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [isReading, setIsReading] = useState(false)
+  const [noteCopied, setNoteCopied] = useState(false)
   const canReadAloud = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'
   const handleSaveImage = useCallback(async () => {
     if (savingImageRef.current) return
@@ -111,6 +112,17 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     setIsReading(true)
     window.speechSynthesis.speak(utterance)
   }, [canReadAloud, isReading, message])
+
+  const handleCopyNote = useCallback(async () => {
+    if (!message || noteCopied) return
+    try {
+      await navigator.clipboard.writeText(`${message}${from ? `\n\n— ${from}` : ''}`)
+      setNoteCopied(true)
+      window.setTimeout(() => setNoteCopied(false), 2200)
+    } catch {
+      // The garden remains legible and selectable, so a clipboard permission failure needs no alert.
+    }
+  }, [from, message, noteCopied])
 
   useEffect(() => () => {
     if (canReadAloud) window.speechSynthesis.cancel()
@@ -301,6 +313,14 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 {isReading ? 'pause the note' : 'listen to the note'}
               </button>
             )}
+            <div className={styles.noteActions}>
+              <button type="button" className={styles.noteAction} onClick={() => void handleCopyNote()} disabled={noteCopied}>
+                {noteCopied ? 'note copied' : 'copy note'}
+              </button>
+              <button type="button" className={styles.noteAction} onClick={() => window.print()}>
+                print this garden
+              </button>
+            </div>
           </>
         ) : (
           <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
