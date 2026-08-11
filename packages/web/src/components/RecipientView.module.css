@@ -56,6 +56,48 @@
   overflow-wrap: anywhere;
 }
 
+/* A sender-written aside stays sealed until the recipient asks for it. The small envelope gives the
+   garden a second reveal without competing with the actual note or pretending the text is secure. */
+.secretNote {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--green-pale);
+}
+
+.secretReveal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  background: transparent;
+  padding: 2px;
+  color: var(--green-mid);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.secretReveal:hover { color: var(--green-deep); }
+
+.secretText {
+  margin-top: 11px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--cream);
+  color: var(--text-mid);
+  font-family: var(--serif);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  animation: secretOpen 0.35s var(--ease-spring) both;
+}
+
+@keyframes secretOpen {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
 .messageText {
   font-family: var(--serif);
   font-size: 20px;

@@ -37,6 +37,8 @@ export interface GardenData {
   bouquetNote: string
   /** The sender's own message. */
   message: string
+  /** An optional sender-written aside the recipient chooses to reveal. */
+  secret?: string | undefined
   from: string
   to?: string | undefined
   /** ISO 8601. Drives the "grown on …" line, which is simply omitted when absent. */
@@ -176,4 +178,3 @@ export function buildShareUrl(id: string): string {
 export function buildRemixUrl(id: string): string {
   return `${buildAppUrl()}/r/${id}`
 }
-
