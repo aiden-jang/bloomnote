@@ -260,7 +260,40 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     ['--sky-bottom' as string]: sky.bottom,
   }
   const [bloomedCount, setBloomedCount] = useState(0)
+  const [flowerShareStatus, setFlowerShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const placed = placeFlowers(flowers)
+
+  useEffect(() => setFlowerShareStatus(null), [focused])
+
+  const shareFocusedFlower = async (): Promise<void> => {
+    const flower = focused === null ? null : flowers[focused]
+    if (!flower || flowerShareStatus) return
+    const meaning = withoutLeadingFlowerName(flower.name, flower.meaning)
+    const text = `${flower.name} — ${meaning}`
+    const finish = (status: 'shared' | 'copied'): void => {
+      setFlowerShareStatus(status)
+      window.setTimeout(() => setFlowerShareStatus(null), 2200)
+    }
+    setFlowerShareStatus('sharing')
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: flower.name, text, url: window.location.href })
+        finish('shared')
+        return
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          setFlowerShareStatus(null)
+          return
+        }
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      finish('copied')
+    } catch {
+      setFlowerShareStatus(null)
+    }
+  }
 
   /*
    * Which flower the bee is heading for.
@@ -408,8 +441,22 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           <span className={styles.flowerPeekCopy}>
             <strong>{flowers[focused].name}</strong>
             <span>{withoutLeadingFlowerName(flowers[focused].name, flowers[focused].meaning)}</span>
+            <button
+              type="button"
+              className={styles.flowerPeekShare}
+              onClick={() => void shareFocusedFlower()}
+              disabled={flowerShareStatus !== null}
+            >
+              {flowerShareStatus === 'sharing'
+                ? 'opening…'
+                : flowerShareStatus === 'shared'
+                  ? 'shared'
+                  : flowerShareStatus === 'copied'
+                    ? 'meaning copied'
+                    : 'share this flower'}
+            </button>
           </span>
-          <button type="button" onClick={() => onFocus?.(null)} aria-label="Close flower meaning">
+          <button type="button" className={styles.flowerPeekClose} onClick={() => onFocus?.(null)} aria-label="Close flower meaning">
             ×
           </button>
         </aside>
