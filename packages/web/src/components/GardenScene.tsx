@@ -37,6 +37,23 @@ const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
   sympathy:       { top: '#d8dde6', bottom: '#e5e9ef' },
 }
 
+/**
+ * The mood is a second, quieter visual axis than the occasion. Occasion paints the sky; mood adds
+ * a small living detail to it. Keeping the vocabulary allowlisted means an old or hand-crafted
+ * garden can never turn an arbitrary stored string into a CSS class.
+ */
+const MOOD_AURAS = {
+  tender: { className: styles.auraTender, marks: ['♡', '·', '♡', '·', '♡', '·'] },
+  playful: { className: styles.auraPlayful, marks: ['✦', '●', '✦', '●', '✦', '●'] },
+  wistful: { className: styles.auraWistful, marks: ['·', '◦', '·', '◦', '·', '◦'] },
+  celebratory: { className: styles.auraCelebratory, marks: ['✦', '✧', '✦', '✧', '✦', '✧'] },
+  steady: { className: styles.auraSteady, marks: ['•', '·', '•', '·', '•', '·'] },
+} as const
+
+function auraFor(mood?: string) {
+  return mood && mood in MOOD_AURAS ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
+}
+
 function gradientFor(occasion?: string): { top: string; bottom: string } {
   if (occasion && occasion in SKY_GRADIENTS) return SKY_GRADIENTS[occasion]!
   return SKY_GRADIENTS['just-because']!
@@ -66,6 +83,8 @@ interface Props {
    * fall through to that default.
    */
   occasion?: string | undefined
+  /** Adds a restrained, animated atmosphere. Old gardens without a mood stay unchanged. */
+  mood?: string | undefined
   /**
    * Bloom without the chime. Sound is on by default, and the homepage demo re-blooms on a loop —
    * without this it would ding at the visitor every few seconds for as long as they sat on the
@@ -251,7 +270,7 @@ function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0 }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0 }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -264,6 +283,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   const [flowerShareStatus, setFlowerShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [flowerImageStatus, setFlowerImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const placed = placeFlowers(flowers)
+  const aura = auraFor(mood)
 
   useEffect(() => {
     setFlowerShareStatus(null)
@@ -454,6 +474,15 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       style={sceneStyle}
     >
       <div className={styles.sky} />
+      {aura && autoBloom && flowers.length > 0 && (
+        <div className={`${styles.aura} ${aura.className}`} aria-hidden>
+          {aura.marks.map((mark, index) => (
+            <span key={`${mood}-${index}`} style={{ animationDelay: `${index * 430}ms` }}>
+              {mark}
+            </span>
+          ))}
+        </div>
+      )}
       {focused !== null && flowers[focused] && (
         <aside className={styles.flowerPeek} aria-live="polite">
           <span className={styles.flowerPeekSwatches} aria-hidden>

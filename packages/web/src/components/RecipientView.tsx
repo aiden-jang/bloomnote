@@ -33,7 +33,7 @@ interface Props {
 type Phase = 'sealed' | 'blooming'
 
 export default function RecipientView({ gardenData, gardenId }: Props) {
-  const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion } = gardenData
+  const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion, mood } = gardenData
   const grownOn = formatGardenDate(createdAt)
 
   // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
@@ -272,6 +272,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         // the recipient sees the matching sky tint so the
         // atmosphere reads as deliberate, not random.
         occasion={occasion}
+        mood={mood}
         key={`recipient-${bloomVersion}`}
       />
 

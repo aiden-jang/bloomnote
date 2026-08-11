@@ -53,7 +53,7 @@ export interface GardenData {
   unlockAt?: string | undefined
   /** Mirrors OCCASIONS in src/lib/occasions.ts. Drives the sky gradient; falls back to the default. */
   occasion?: string | undefined
-  /** Mirrors MOODS in src/lib/moods.ts. Stored but unused, so mood-driven UI needs no re-encoding. */
+  /** Mirrors MOODS in src/lib/moods.ts. Drives the garden's subtle animated atmosphere. */
   mood?: string | undefined
   /**
    * The garden this one replies to. Depth-capped at 1 — a `previous` never has its own — so the
