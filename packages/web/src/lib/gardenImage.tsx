@@ -16,6 +16,61 @@ export interface GardenImageOpts {
 
 export type GardenImageSaveResult = 'shared' | 'downloaded' | 'dismissed';
 
+function wrapMeaning(value: string, max = 38): string[] {
+  const words = value.trim().split(/\s+/);
+  const lines: string[] = [];
+  for (const word of words) {
+    const current = lines[lines.length - 1];
+    if (!current || current.length + word.length + 1 > max) lines.push(word);
+    else lines[lines.length - 1] = `${current} ${word}`;
+  }
+  return lines.slice(0, 4);
+}
+
+function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: string }) {
+  const lines = wrapMeaning(meaning);
+  const svgH = flower.stemHeight + 80;
+  const scale = Math.min(3.5, 500 / svgH);
+  const flowerWidth = 80 * scale;
+
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <defs>
+        <linearGradient id="pressedPaper" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fffaf0" />
+          <stop offset="100%" stopColor="#f1eadb" />
+        </linearGradient>
+        <filter id="pressedShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#60482f" floodOpacity="0.14" />
+        </filter>
+      </defs>
+      <rect width={W} height={H} fill="#e9e1d2" />
+      <rect x="54" y="54" width="972" height="972" rx="34" fill="url(#pressedPaper)" stroke="#d9cfbc" strokeWidth="2" />
+      <text x="92" y="118" fontFamily="system-ui, -apple-system, sans-serif" fontSize="22" fontWeight="650" letterSpacing="4" fill="#829575">
+        PRESSED FROM A BLOOMNOTE
+      </text>
+      <g
+        transform={`translate(${W / 2 - flowerWidth / 2}, ${565 - svgH * scale}) scale(${scale})`}
+        filter="url(#pressedShadow)"
+      >
+        <FlowerSVG flower={flower} index={0} bloomed staticRender />
+      </g>
+      <line x1="150" y1="620" x2="930" y2="620" stroke="#d9cfbc" strokeWidth="2" />
+      <text x={W / 2} y="704" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="58" fontStyle="italic" fill="#3f6b3a">
+        {flower.name}
+      </text>
+      <text x={W / 2} y="770" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="31" fill="#665f54">
+        {lines.map((line, index) => (
+          <tspan key={line} x={W / 2} dy={index === 0 ? 0 : 43}>{line}</tspan>
+        ))}
+      </text>
+      <text x={W / 2} y="980" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="22" fontWeight="650" letterSpacing="3" fill="#829575">
+        BLOOMNOTE
+      </text>
+    </svg>
+  );
+}
+
 function ShareImage({ flowers, from, to }: GardenImageOpts) {
   const panelX = 80;
   const panelY = 230;
@@ -170,6 +225,25 @@ export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImag
       // User dismissed the sheet — done, don't also download.
       if (err instanceof Error && err.name === 'AbortError') return 'dismissed';
       // Anything else (e.g. lost user activation): fall through to a plain download.
+    }
+  }
+  downloadBlob(blob, filename);
+  return 'downloaded';
+}
+
+/** Make one chosen bloom into a square pressed-flower keepsake. */
+export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Promise<GardenImageSaveResult> {
+  const blob = await rasterize(renderToStaticMarkup(<PressedFlowerImage flower={flower} meaning={meaning} />), W, H);
+  const base = flower.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'flower';
+  const filename = `bloomnote-${base}.png`;
+  const file = new File([blob], filename, { type: 'image/png' });
+  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+  if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
+    try {
+      await nav.share({ files: [file], title: flower.name, text: `${flower.name} — ${meaning}` });
+      return 'shared';
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return 'dismissed';
     }
   }
   downloadBlob(blob, filename);

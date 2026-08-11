@@ -4,6 +4,7 @@ import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
 import { playBloom, pulse } from '../sound'
 import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
+import { saveFlowerImage } from '../lib/gardenImage'
 import styles from './GardenScene.module.css'
 
 /**
@@ -261,9 +262,13 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   }
   const [bloomedCount, setBloomedCount] = useState(0)
   const [flowerShareStatus, setFlowerShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
+  const [flowerImageStatus, setFlowerImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const placed = placeFlowers(flowers)
 
-  useEffect(() => setFlowerShareStatus(null), [focused])
+  useEffect(() => {
+    setFlowerShareStatus(null)
+    setFlowerImageStatus(null)
+  }, [focused])
 
   const shareFocusedFlower = async (): Promise<void> => {
     const flower = focused === null ? null : flowers[focused]
@@ -292,6 +297,24 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       finish('copied')
     } catch {
       setFlowerShareStatus(null)
+    }
+  }
+
+  const saveFocusedFlower = async (): Promise<void> => {
+    const flower = focused === null ? null : flowers[focused]
+    if (!flower || flowerImageStatus) return
+    setFlowerImageStatus('saving')
+    try {
+      const meaning = withoutLeadingFlowerName(flower.name, flower.meaning)
+      const result = await saveFlowerImage(flower, meaning)
+      if (result === 'dismissed') {
+        setFlowerImageStatus(null)
+        return
+      }
+      setFlowerImageStatus(result)
+      window.setTimeout(() => setFlowerImageStatus(null), 2200)
+    } catch {
+      setFlowerImageStatus(null)
     }
   }
 
@@ -454,6 +477,20 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
                   : flowerShareStatus === 'copied'
                     ? 'meaning copied'
                     : 'share this flower'}
+            </button>
+            <button
+              type="button"
+              className={styles.flowerPeekShare}
+              onClick={() => void saveFocusedFlower()}
+              disabled={flowerImageStatus !== null}
+            >
+              {flowerImageStatus === 'saving'
+                ? 'pressing flower…'
+                : flowerImageStatus === 'shared'
+                  ? 'keepsake shared'
+                  : flowerImageStatus === 'downloaded'
+                    ? 'keepsake saved'
+                    : 'save a pressed-flower card'}
             </button>
           </span>
           <button type="button" className={styles.flowerPeekClose} onClick={() => onFocus?.(null)} aria-label="Close flower meaning">
