@@ -116,6 +116,7 @@ function AccountGardens() {
   const [query, setQuery] = useState('')
   const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
   const [sort, setSort] = useState<GardenSort>('newest')
+  const [pinnedOnly, setPinnedOnly] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -223,7 +224,11 @@ function AccountGardens() {
   useEffect(() => () => flushPending(), [])
 
   const list = tab === 'sent' ? sent : received
-  const filtered = useMemo(() => orderGardens(filterGardens(list, query), pinned, sort, waters), [list, query, pinned, sort, waters])
+  const visiblePinned = list.filter(garden => pinned.includes(garden.id)).length
+  const filtered = useMemo(() => {
+    const scoped = pinnedOnly ? list.filter(garden => pinned.includes(garden.id)) : list
+    return orderGardens(filterGardens(scoped, query), pinned, sort, waters)
+  }, [list, query, pinned, pinnedOnly, sort, waters])
   const togglePinned = (id: string) => {
     setPinned(current => {
       const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
@@ -289,6 +294,16 @@ function AccountGardens() {
             </button>
           )}
         </label>
+        {visiblePinned > 0 && (
+          <button
+            type="button"
+            className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
+            aria-pressed={pinnedOnly}
+            onClick={() => setPinnedOnly(value => !value)}
+          >
+            ★ pinned ({visiblePinned})
+          </button>
+        )}
         </div>
       )}
 
@@ -309,8 +324,8 @@ function AccountGardens() {
         </div>
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>
-          <p className={styles.emptyText}>no gardens match “{query.trim()}”.</p>
-          <button type="button" className={styles.emptyLink} onClick={() => setQuery('')}>
+          <p className={styles.emptyText}>{pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}</p>
+          <button type="button" className={styles.emptyLink} onClick={() => { setQuery(''); setPinnedOnly(false) }}>
             show them all
           </button>
         </div>
@@ -341,6 +356,7 @@ function LocalGardens() {
   const [query, setQuery] = useState('')
   const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
   const [sort, setSort] = useState<GardenSort>('newest')
+  const [pinnedOnly, setPinnedOnly] = useState(false)
   // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
   // anonymous-first, so the sender who never makes an account is the usual sender, and without this
   // they only ever learn a garden was watered by reopening that exact link.
@@ -361,7 +377,11 @@ function LocalGardens() {
     removeSentGarden(id)
     setRecords(rs => rs.filter(r => r.id !== id))
   }
-  const filtered = useMemo(() => orderGardens(filterGardens(records, query), pinned, sort, waters), [records, query, pinned, sort, waters])
+  const visiblePinned = records.filter(record => pinned.includes(record.id)).length
+  const filtered = useMemo(() => {
+    const scoped = pinnedOnly ? records.filter(record => pinned.includes(record.id)) : records
+    return orderGardens(filterGardens(scoped, query), pinned, sort, waters)
+  }, [records, query, pinned, pinnedOnly, sort, waters])
   const togglePinned = (id: string) => {
     setPinned(current => {
       const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
@@ -410,12 +430,22 @@ function LocalGardens() {
                 </button>
               )}
             </label>
+            {visiblePinned > 0 && (
+              <button
+                type="button"
+                className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
+                aria-pressed={pinnedOnly}
+                onClick={() => setPinnedOnly(value => !value)}
+              >
+                ★ pinned ({visiblePinned})
+              </button>
+            )}
             </div>
           )}
           {filtered.length === 0 ? (
             <div className={styles.empty}>
-              <p className={styles.emptyText}>no gardens match “{query.trim()}”.</p>
-              <button type="button" className={styles.emptyLink} onClick={() => setQuery('')}>
+              <p className={styles.emptyText}>{pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}</p>
+              <button type="button" className={styles.emptyLink} onClick={() => { setQuery(''); setPinnedOnly(false) }}>
                 show them all
               </button>
             </div>
