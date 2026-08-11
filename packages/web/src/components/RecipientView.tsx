@@ -6,7 +6,7 @@ import MemoryTrail from './MemoryTrail'
 import SoundToggle from './SoundToggle'
 import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
-import { saveGardenImage } from '../lib/gardenImage'
+import { saveGardenDuetImage, saveGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
 import { recordReceived } from '../lib/account'
 import {
@@ -39,8 +39,10 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
   // canvas/decode failure so it isn't an unhandled rejection.
   const savingImageRef = useRef(false)
+  const savingDuetRef = useRef(false)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
+  const [duetStatus, setDuetStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [isReading, setIsReading] = useState(false)
   const [noteCopied, setNoteCopied] = useState(false)
   const [secretRevealed, setSecretRevealed] = useState(false)
@@ -65,6 +67,25 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       savingImageRef.current = false
     }
   }, [flowers, from, to])
+  const handleSaveDuet = useCallback(async () => {
+    if (!previous || savingDuetRef.current) return
+    savingDuetRef.current = true
+    setDuetStatus('saving')
+    try {
+      const result = await saveGardenDuetImage({ previous, current: gardenData })
+      if (result === 'dismissed') {
+        setDuetStatus(null)
+        return
+      }
+      setDuetStatus(result)
+      if (result === 'downloaded') trackCardDownloaded('recipient', 'duet')
+      window.setTimeout(() => setDuetStatus(null), 2500)
+    } catch {
+      setDuetStatus(null)
+    } finally {
+      savingDuetRef.current = false
+    }
+  }, [gardenData, previous])
   // Passing a garden along should feel as easy as receiving it. Native share preserves the
   // platform's familiar destinations; clipboard is the reliable fallback for browsers without it.
   const handleShareGarden = useCallback(async () => {
@@ -376,31 +397,47 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         <details className={styles.keepsake}>
           <summary>keep this garden</summary>
           <div className={styles.keepsakeActions}>
-          <button
-            type="button"
-            className={styles.keepsakeAction}
-            onClick={() => void handleSaveImage()}
-            disabled={imageStatus !== null}
-          >
-            {imageStatus === 'saving'
-              ? 'making image…'
-              : imageStatus === 'shared'
-                ? 'image shared'
-                : imageStatus === 'downloaded'
-                  ? 'image downloaded'
-                  : 'save it as an image'}
-          </button>
-          {message && (
-            <button type="button" className={styles.keepsakeAction} onClick={() => void handleCopyNote()} disabled={noteCopied}>
-              {noteCopied ? 'note copied' : 'copy the note'}
+            {previous && (
+              <button
+                type="button"
+                className={styles.keepsakeAction}
+                onClick={() => void handleSaveDuet()}
+                disabled={duetStatus !== null}
+              >
+                {duetStatus === 'saving'
+                  ? 'pressing both gardens…'
+                  : duetStatus === 'shared'
+                    ? 'garden duet shared'
+                    : duetStatus === 'downloaded'
+                      ? 'garden duet saved'
+                      : 'save both as a garden duet'}
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.keepsakeAction}
+              onClick={() => void handleSaveImage()}
+              disabled={imageStatus !== null}
+            >
+              {imageStatus === 'saving'
+                ? 'making image…'
+                : imageStatus === 'shared'
+                  ? 'image shared'
+                  : imageStatus === 'downloaded'
+                    ? 'image downloaded'
+                    : 'save it as an image'}
             </button>
-          )}
-          <button type="button" className={styles.keepsakeAction} onClick={() => window.print()}>
-            print the garden
-          </button>
-          <button type="button" className={styles.keepsakeAction} onClick={handleReplayBloom}>
-            watch it bloom again
-          </button>
+            {message && (
+              <button type="button" className={styles.keepsakeAction} onClick={() => void handleCopyNote()} disabled={noteCopied}>
+                {noteCopied ? 'note copied' : 'copy the note'}
+              </button>
+            )}
+            <button type="button" className={styles.keepsakeAction} onClick={() => window.print()}>
+              print the garden
+            </button>
+            <button type="button" className={styles.keepsakeAction} onClick={handleReplayBloom}>
+              watch it bloom again
+            </button>
           </div>
         </details>
         <p className={styles.ctaSub}>
