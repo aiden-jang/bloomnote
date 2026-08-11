@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import { fetchWaters, hasWatered, rememberWatered, sendWater, watersLabel } from '../lib/water'
+import {
+  fetchGardenResponse,
+  hasWatered,
+  rememberedFeeling,
+  rememberWatered,
+  sendFeeling,
+  sendWater,
+  watersLabel,
+  type Feeling,
+} from '../lib/water'
 import { playWater } from '../sound'
 import styles from './Watering.module.css'
 
@@ -23,11 +32,16 @@ export default function Watering({ gardenId, onWatered }: Props) {
   const [waters, setWaters] = useState(0)
   const [watered, setWatered] = useState(() => hasWatered(gardenId))
   const [busy, setBusy] = useState(false)
+  const [feeling, setFeeling] = useState<Feeling | null>(() => rememberedFeeling(gardenId))
+  const [feelings, setFeelings] = useState<Partial<Record<Feeling, number>>>({})
 
   useEffect(() => {
     let cancelled = false
-    void fetchWaters(gardenId).then(n => {
-      if (!cancelled) setWaters(n)
+    void fetchGardenResponse(gardenId).then(response => {
+      if (!cancelled) {
+        setWaters(response.waters)
+        setFeelings(response.feelings)
+      }
     })
     return () => {
       cancelled = true
@@ -49,17 +63,46 @@ export default function Watering({ gardenId, onWatered }: Props) {
     setBusy(false)
   }
 
+  const respond = async (next: Feeling): Promise<void> => {
+    if (feeling || busy) return
+    setFeeling(next)
+    const response = await sendFeeling(gardenId, next)
+    if (response) setFeelings(response.feelings)
+  }
+
   // Your own tap is already reflected in `waters`, so the rest of them is one fewer.
   const others = watered ? Math.max(0, waters - 1) : waters
 
   return (
     <div className={styles.row}>
       {watered ? (
-        <p className={styles.done}>
-          <Can poured />
-          you watered it
-          {others > 0 && <span className={styles.others}>, and {others === 1 ? 'someone else did too' : `${others} others did too`}</span>}
-        </p>
+        <div className={styles.afterWater}>
+          <p className={styles.done}>
+            <Can poured />
+            you watered it
+            {others > 0 && <span className={styles.others}>, and {others === 1 ? 'someone else did too' : `${others} others did too`}</span>}
+          </p>
+          {feeling ? (
+            <p className={styles.feelingDone}>sent back {FEELING_COPY[feeling].sent}</p>
+          ) : (
+            <div className={styles.feelings} aria-label="Send a feeling back">
+              <span>and it felt like</span>
+              {(Object.keys(FEELING_COPY) as Feeling[]).map(kind => (
+                <button key={kind} type="button" onClick={() => void respond(kind)}>
+                  <span aria-hidden>{FEELING_COPY[kind].emoji}</span> {FEELING_COPY[kind].label}
+                </button>
+              ))}
+            </div>
+          )}
+          {Object.keys(feelings).length > 0 && (
+            <p className={styles.feelingEcho}>
+              {Object.entries(feelings)
+                .filter((entry): entry is [Feeling, number] => typeof entry[1] === 'number' && entry[1] > 0)
+                .map(([kind, count]) => `${FEELING_COPY[kind].emoji} ${count}`)
+                .join('  ·  ')}
+            </p>
+          )}
+        </div>
       ) : (
         <>
           <button type="button" className={styles.btn} onClick={() => void water()}>
@@ -71,6 +114,13 @@ export default function Watering({ gardenId, onWatered }: Props) {
       )}
     </div>
   )
+}
+
+const FEELING_COPY: Record<Feeling, { emoji: string; label: string; sent: string }> = {
+  love: { emoji: '♡', label: 'love', sent: 'a little love' },
+  comfort: { emoji: '☁', label: 'comfort', sent: 'some comfort' },
+  joy: { emoji: '✦', label: 'joy', sent: 'a spark of joy' },
+  hug: { emoji: 'ʕっ•ᴥ•ʔっ', label: 'a hug', sent: 'a tiny hug' },
 }
 
 /** A small can, tipped further over once it has been used. */

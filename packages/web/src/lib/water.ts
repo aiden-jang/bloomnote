@@ -10,6 +10,9 @@
 const KEY = 'bloomnote.watered.v1';
 /** Plenty for one person's gardens, and small enough that the key can never grow unbounded. */
 const REMEMBER_LIMIT = 200;
+const FEELING_KEY = 'bloomnote.feeling.v1';
+export type Feeling = 'love' | 'comfort' | 'joy' | 'hug';
+export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> };
 
 function read(): string[] {
   try {
@@ -35,6 +38,62 @@ export function rememberWatered(id: string): void {
     localStorage.setItem(KEY, JSON.stringify(ids.slice(-REMEMBER_LIMIT)));
   } catch {
     // no-op
+  }
+}
+
+export function rememberedFeeling(id: string): Feeling | null {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>;
+    const value = parsed[id];
+    return value === 'love' || value === 'comfort' || value === 'joy' || value === 'hug' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberFeeling(id: string, feeling: Feeling): void {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>;
+    const entries = Object.entries(parsed).filter(([gardenId]) => gardenId !== id).slice(-(REMEMBER_LIMIT - 1));
+    localStorage.setItem(FEELING_KEY, JSON.stringify(Object.fromEntries([...entries, [id, feeling]])));
+  } catch {
+    // Optional device memory only.
+  }
+}
+
+export async function fetchGardenResponse(id: string): Promise<GardenResponse> {
+  try {
+    const response = await fetch(`/api/garden/${id}/response`);
+    if (!response.ok) return { waters: 0, feelings: {} };
+    return (await response.json()) as GardenResponse;
+  } catch {
+    return { waters: 0, feelings: {} };
+  }
+}
+
+export async function sendFeeling(id: string, feeling: Feeling): Promise<GardenResponse | null> {
+  try {
+    const response = await fetch(`/api/garden/${id}/feeling`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ feeling }),
+    });
+    if (!response.ok) return null;
+    rememberFeeling(id, feeling);
+    return (await response.json()) as GardenResponse;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchResponsesBatch(ids: string[]): Promise<Record<string, GardenResponse>> {
+  if (ids.length === 0) return {};
+  try {
+    const response = await fetch(`/api/responses?ids=${encodeURIComponent(ids.join(','))}`);
+    if (!response.ok) return {};
+    return ((await response.json()) as { responses?: Record<string, GardenResponse> }).responses ?? {};
+  } catch {
+    return {};
   }
 }
 

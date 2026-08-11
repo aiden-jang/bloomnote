@@ -5,10 +5,13 @@ import type { Env } from './env.js';
 import {
   claimGardens,
   createGarden,
+  feelGarden,
   listMine,
   putOgImage,
   readGarden,
   readOgImage,
+  readGardenResponse,
+  readResponsesBatch,
   readWaters,
   readWatersBatch,
   recordReceived,
@@ -148,6 +151,25 @@ app.get('/api/waters', async (c) => {
 app.get('/api/garden/:id/water', async (c) => {
   const waters = await readWaters(c.env, c.req.param('id'));
   return c.json({ waters }, 200, { 'cache-control': 'no-store' });
+});
+
+app.post('/api/garden/:id/feeling', async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  const feeling = body && typeof body === 'object' && 'feeling' in body && typeof body.feeling === 'string'
+    ? body.feeling
+    : '';
+  const result = await feelGarden(c.env, c.req.param('id'), feeling);
+  if (!result.ok) return c.json({ error: result.message }, result.status);
+  return c.json(result.response, 200, { 'cache-control': 'no-store' });
+});
+
+app.get('/api/responses', async (c) => {
+  const ids = (c.req.query('ids') ?? '').split(',').map(value => value.trim()).filter(Boolean);
+  return c.json({ responses: await readResponsesBatch(c.env, ids) }, 200, { 'cache-control': 'no-store' });
+});
+
+app.get('/api/garden/:id/response', async (c) => {
+  return c.json(await readGardenResponse(c.env, c.req.param('id')), 200, { 'cache-control': 'no-store' });
 });
 
 // Record that the signed-in caller opened someone else's garden (adds it to their Received list).

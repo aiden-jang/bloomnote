@@ -233,6 +233,38 @@ export async function readOgImage(env: Env, id: string): Promise<ArrayBuffer | n
  *   Object to protect a decorative number is not.
  */
 const MAX_WATERS = 99;
+export const FEELINGS = ['love', 'comfort', 'joy', 'hug'] as const;
+export type Feeling = (typeof FEELINGS)[number];
+export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> };
+
+function parseResponse(raw: string | null): GardenResponse {
+  if (raw === null) return { waters: 0, feelings: {} };
+  const legacy = Number.parseInt(raw, 10);
+  if (/^\d+$/.test(raw) && Number.isFinite(legacy)) {
+    return { waters: Math.min(MAX_WATERS, Math.max(0, legacy)), feelings: {} };
+  }
+  try {
+    const value = JSON.parse(raw) as Partial<GardenResponse>;
+    const feelings: Partial<Record<Feeling, number>> = {};
+    for (const feeling of FEELINGS) {
+      const count = value.feelings?.[feeling];
+      if (typeof count === 'number' && Number.isFinite(count) && count > 0) {
+        feelings[feeling] = Math.min(MAX_WATERS, Math.floor(count));
+      }
+    }
+    return {
+      waters: typeof value.waters === 'number' ? Math.min(MAX_WATERS, Math.max(0, Math.floor(value.waters))) : 0,
+      feelings,
+    };
+  } catch {
+    return { waters: 0, feelings: {} };
+  }
+}
+
+export async function readGardenResponse(env: Env, id: string): Promise<GardenResponse> {
+  if (!ID_RE.test(id)) return { waters: 0, feelings: {} };
+  return parseResponse(await env.GARDENS.get(`water:${id}`));
+}
 
 export type WaterResult = { ok: true; waters: number } | { ok: false; status: 400; message: string };
 
@@ -242,23 +274,51 @@ export async function waterGarden(env: Env, id: string): Promise<WaterResult> {
   if ((await env.GARDENS.get(`g:${id}`)) === null) {
     return { ok: false, status: 400, message: 'No such garden.' };
   }
-  const current = await readWaters(env, id);
+  const response = await readGardenResponse(env, id);
+  const current = response.waters;
   // At the cap, answer without writing. Math.min alone clamps the number but still put()s it, so a
   // loop against one garden was an unbounded stream of KV writes — and KV writes are the scarce
   // quota here, shared with garden creation. Exhausting it would stop anyone making a new garden,
   // which is a far worse outcome than a counter that stops climbing.
   if (current >= MAX_WATERS) return { ok: true, waters: MAX_WATERS };
   const next = current + 1;
-  await env.GARDENS.put(`water:${id}`, String(next));
+  await env.GARDENS.put(`water:${id}`, JSON.stringify({ ...response, waters: next }));
   return { ok: true, waters: next };
 }
 
 /** How many times this garden has been watered. 0 when never, or when the stored value is junk. */
 export async function readWaters(env: Env, id: string): Promise<number> {
-  if (!ID_RE.test(id)) return 0;
-  const raw = await env.GARDENS.get(`water:${id}`);
-  const n = raw === null ? 0 : Number.parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? Math.min(MAX_WATERS, n) : 0;
+  return (await readGardenResponse(env, id)).waters;
+}
+
+export async function feelGarden(
+  env: Env,
+  id: string,
+  feeling: string,
+): Promise<{ ok: true; response: GardenResponse } | { ok: false; status: 400; message: string }> {
+  if (!ID_RE.test(id) || !FEELINGS.includes(feeling as Feeling)) {
+    return { ok: false, status: 400, message: 'Bad response.' };
+  }
+  if ((await env.GARDENS.get(`g:${id}`)) === null) {
+    return { ok: false, status: 400, message: 'No such garden.' };
+  }
+  const response = await readGardenResponse(env, id);
+  const kind = feeling as Feeling;
+  if ((response.feelings[kind] ?? 0) >= MAX_WATERS) return { ok: true, response };
+  response.feelings[kind] = Math.min(MAX_WATERS, (response.feelings[kind] ?? 0) + 1);
+  await env.GARDENS.put(`water:${id}`, JSON.stringify(response));
+  return { ok: true, response };
+}
+
+export async function readResponsesBatch(env: Env, ids: string[]): Promise<Record<string, GardenResponse>> {
+  const wanted = [...new Set(ids.filter(id => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP);
+  const responses = await Promise.all(wanted.map(id => readGardenResponse(env, id)));
+  const out: Record<string, GardenResponse> = {};
+  wanted.forEach((id, index) => {
+    const response = responses[index]!;
+    if (response.waters > 0 || Object.keys(response.feelings).length > 0) out[id] = response;
+  });
+  return out;
 }
 
 /**
