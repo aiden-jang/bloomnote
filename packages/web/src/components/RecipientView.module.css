@@ -71,6 +71,33 @@
   font-style: italic;
 }
 
+/* A listening option belongs with the handwritten note, not with the sending controls below. It
+   stays understated so reading remains the default, while the active state gives a clear way back
+   out if the browser voice is not the one someone hoped for. */
+.listenBtn {
+  margin-top: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.listenBtn:hover,
+.listenBtn[aria-pressed='true'] {
+  color: var(--green-mid);
+}
+
+.listenBtn:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 /* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
    the foot of the message card the way a date would on a physical
    greeting card. */

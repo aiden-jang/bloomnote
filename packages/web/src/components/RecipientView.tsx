@@ -41,6 +41,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const savingImageRef = useRef(false)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
+  const [isReading, setIsReading] = useState(false)
+  const canReadAloud = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'
   const handleSaveImage = useCallback(async () => {
     if (savingImageRef.current) return
     savingImageRef.current = true
@@ -89,6 +91,30 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       if (err instanceof Error && err.name === 'AbortError') return
     }
   }, [from, shareStatus])
+
+  // Reading a note is an intimate, eyes-up alternative to another share action. Browser speech is
+  // completely local — the note is never sent anywhere — and we cancel it on unmount so a garden
+  // cannot keep talking after someone follows the reply link.
+  const handleReadAloud = useCallback(() => {
+    if (!canReadAloud || !message) return
+    if (isReading) {
+      window.speechSynthesis.cancel()
+      setIsReading(false)
+      return
+    }
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(message)
+    utterance.rate = 0.92
+    utterance.pitch = 1.06
+    utterance.onend = () => setIsReading(false)
+    utterance.onerror = () => setIsReading(false)
+    setIsReading(true)
+    window.speechSynthesis.speak(utterance)
+  }, [canReadAloud, isReading, message])
+
+  useEffect(() => () => {
+    if (canReadAloud) window.speechSynthesis.cancel()
+  }, [canReadAloud])
 
   // If a signed-in visitor opens a garden, keep it in their Received list (cross-device).
   // Best-effort and idempotent; anonymous visitors are unaffected. When it's newly saved (not
@@ -265,6 +291,16 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           <>
             <p className={styles.messageText}>{message}</p>
             {from && <p className={styles.sig}>— {from}</p>}
+            {canReadAloud && (
+              <button
+                type="button"
+                className={styles.listenBtn}
+                onClick={handleReadAloud}
+                aria-pressed={isReading}
+              >
+                {isReading ? 'pause the note' : 'listen to the note'}
+              </button>
+            )}
           </>
         ) : (
           <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
