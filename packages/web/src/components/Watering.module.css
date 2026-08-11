@@ -12,6 +12,50 @@
   animation: waterFade 0.5s ease both;
 }
 
+.afterWater {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+}
+
+.feelings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-light);
+  font-size: 11px;
+}
+
+.feelings button {
+  padding: 5px 9px;
+  border: 1px solid var(--green-pale);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--green-mid);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, transform 0.15s;
+}
+
+.feelings button:hover {
+  border-color: var(--green-light);
+  color: var(--green-deep);
+  transform: translateY(-1px);
+}
+
+.feelingDone,
+.feelingEcho {
+  color: var(--green-mid);
+  font-size: 11px;
+}
+
+.feelingEcho {
+  color: var(--text-light);
+  letter-spacing: 0.04em;
+}
+
 @keyframes waterFade {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }

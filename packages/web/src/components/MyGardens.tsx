@@ -5,7 +5,7 @@ import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '
 import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
 import { trackCardDownloaded, trackGardenReshared } from '../lib/analytics'
-import { fetchWatersBatch, watersLabel } from '../lib/water'
+import { fetchResponsesBatch, watersLabel, type Feeling } from '../lib/water'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenMemoryDeck, gardenMemoryLabel } from '../lib/gardenMemories'
@@ -153,13 +153,17 @@ function AccountGardens() {
    * fetchWatersBatch, so a slow or broken lookup costs the counts and nothing else.
    */
   const [waters, setWaters] = useState<Record<string, number>>({})
+  const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
   const visibleIds = (tab === 'sent' ? sent : received).map(g => g.id)
   const idKey = visibleIds.join(',')
   useEffect(() => {
     if (!idKey) return
     let cancelled = false
-    void fetchWatersBatch(idKey.split(',')).then(w => {
-      if (!cancelled) setWaters(prev => ({ ...prev, ...w }))
+    void fetchResponsesBatch(idKey.split(',')).then(responses => {
+      if (!cancelled) {
+        setWaters(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])) }))
+        setFeelings(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])) }))
+      }
     })
     return () => {
       cancelled = true
@@ -340,6 +344,7 @@ function AccountGardens() {
               record={r}
               kind={tab}
               waters={waters[r.id] ?? 0}
+              feelings={feelings[r.id] ?? {}}
               pinned={pinned.includes(r.id)}
               onPin={() => togglePinned(r.id)}
               onRemove={() => handleRemove(r.id)}
@@ -364,12 +369,16 @@ function LocalGardens() {
   // anonymous-first, so the sender who never makes an account is the usual sender, and without this
   // they only ever learn a garden was watered by reopening that exact link.
   const [waters, setWaters] = useState<Record<string, number>>({})
+  const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
   const idKey = records.map(r => r.id).join(',')
   useEffect(() => {
     if (!idKey) return
     let cancelled = false
-    void fetchWatersBatch(idKey.split(',')).then(w => {
-      if (!cancelled) setWaters(prev => ({ ...prev, ...w }))
+    void fetchResponsesBatch(idKey.split(',')).then(responses => {
+      if (!cancelled) {
+        setWaters(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])) }))
+        setFeelings(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])) }))
+      }
     })
     return () => {
       cancelled = true
@@ -461,6 +470,7 @@ function LocalGardens() {
               record={r}
               kind="sent"
               waters={waters[r.id] ?? 0}
+              feelings={feelings[r.id] ?? {}}
               pinned={pinned.includes(r.id)}
               onPin={() => togglePinned(r.id)}
               onRemove={() => handleRemove(r.id)}
@@ -558,12 +568,13 @@ interface RowProps {
   kind: Tab
   /** How many times this garden has been watered. Omitted or 0 means the row says nothing. */
   waters?: number
+  feelings?: Partial<Record<Feeling, number>>
   pinned?: boolean
   onPin?: () => void
   onRemove?: () => void
 }
 
-function GardenRow({ record, kind, waters = 0, pinned = false, onPin, onRemove }: RowProps) {
+function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, onPin, onRemove }: RowProps) {
   const { id, from, to, occasion, createdAt, unlockAt, receivedAt, swatches } = record
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
@@ -641,6 +652,10 @@ function GardenRow({ record, kind, waters = 0, pinned = false, onPin, onRemove }
   const recipientLine = to.trim() ? `for ${to.trim()}` : 'for someone'
   const receivedLine = from?.trim() ? `from ${from.trim()}` : 'a garden for you'
   const cardLabel = kind === 'received' ? receivedLine : recipientLine
+  const strongestFeeling = (Object.entries(feelings) as [Feeling, number][])
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])[0]
+  const feelingEmoji: Record<Feeling, string> = { love: '♡', comfort: '☁', joy: '✦', hug: 'ʕっ•ᴥ•ʔっ' }
 
   return (
     <li className={styles.card}>
@@ -667,6 +682,11 @@ function GardenRow({ record, kind, waters = 0, pinned = false, onPin, onRemove }
                 somebody actually watered it — a "watered 0 times" on every card would bury the ones
                 that mean something. */}
             {waters > 0 && <span className={styles.watered}>{watersLabel(waters)}</span>}
+            {strongestFeeling && (
+              <span className={styles.watered} title={`${strongestFeeling[1]} felt ${strongestFeeling[0]}`}>
+                {feelingEmoji[strongestFeeling[0]]} felt like {strongestFeeling[0]}
+              </span>
+            )}
           </span>
         </span>
       </a>

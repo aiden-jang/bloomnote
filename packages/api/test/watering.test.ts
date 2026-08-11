@@ -1,6 +1,14 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, test } from 'vitest';
-import { createGarden, readWaters, readWatersBatch, waterGarden } from '../src/gardens.js';
+import {
+  createGarden,
+  feelGarden,
+  readGardenResponse,
+  readResponsesBatch,
+  readWaters,
+  readWatersBatch,
+  waterGarden,
+} from '../src/gardens.js';
 
 const GARDEN = {
   flowers: [
@@ -105,5 +113,39 @@ describe('readWatersBatch', () => {
 
   test('ignores ids that could not be gardens', async () => {
     expect(await readWatersBatch(env as never, ['../../etc', '', 'x'])).toEqual({});
+  });
+});
+
+describe('garden feelings', () => {
+  test('keeps a tiny anonymous feeling alongside the existing water count', async () => {
+    const id = await newGarden();
+    await waterGarden(env as never, id);
+    await feelGarden(env as never, id, 'hug');
+    await feelGarden(env as never, id, 'hug');
+    await feelGarden(env as never, id, 'joy');
+
+    expect(await readGardenResponse(env as never, id)).toEqual({
+      waters: 1,
+      feelings: { hug: 2, joy: 1 },
+    });
+    expect(await readResponsesBatch(env as never, [id])).toEqual({
+      [id]: { waters: 1, feelings: { hug: 2, joy: 1 } },
+    });
+  });
+
+  test('rejects unknown feelings and missing gardens', async () => {
+    const id = await newGarden();
+    expect((await feelGarden(env as never, id, 'shrug')).ok).toBe(false);
+    expect((await feelGarden(env as never, 'zzzzzz', 'love')).ok).toBe(false);
+  });
+
+  test('reads legacy numeric water counters without losing them on a feeling', async () => {
+    const id = await newGarden();
+    await env.GARDENS.put(`water:${id}`, '4');
+    await feelGarden(env as never, id, 'comfort');
+    expect(await readGardenResponse(env as never, id)).toEqual({
+      waters: 4,
+      feelings: { comfort: 1 },
+    });
   });
 });
