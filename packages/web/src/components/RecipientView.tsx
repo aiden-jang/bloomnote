@@ -313,14 +313,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 {isReading ? 'pause the note' : 'listen to the note'}
               </button>
             )}
-            <div className={styles.noteActions}>
-              <button type="button" className={styles.noteAction} onClick={() => void handleCopyNote()} disabled={noteCopied}>
-                {noteCopied ? 'note copied' : 'copy note'}
-              </button>
-              <button type="button" className={styles.noteAction} onClick={() => window.print()}>
-                print this garden
-              </button>
-            </div>
           </>
         ) : (
           <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
@@ -356,10 +348,26 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
           {from ? `grow ${from} a garden` : 'grow one back'}
         </a>
-        <p className={styles.ctaSub}>
+        <button
+          type="button"
+          className={styles.ctaShareBtn}
+          onClick={() => void handleShareGarden()}
+          disabled={shareStatus !== null}
+        >
+          {shareStatus === 'sharing'
+            ? 'opening share sheet…'
+            : shareStatus === 'shared'
+              ? 'garden shared'
+              : shareStatus === 'copied'
+                ? 'link copied'
+                : 'share this garden'}
+        </button>
+        <details className={styles.keepsake}>
+          <summary>keep this garden</summary>
+          <div className={styles.keepsakeActions}>
           <button
             type="button"
-            className={styles.ctaSubLink}
+            className={styles.keepsakeAction}
             onClick={() => void handleSaveImage()}
             disabled={imageStatus !== null}
           >
@@ -371,30 +379,24 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                   ? 'image downloaded'
                   : 'save it as an image'}
           </button>
-          {' · '}
-          <button
-            type="button"
-            className={styles.ctaSubLink}
-            onClick={() => void handleShareGarden()}
-            disabled={shareStatus !== null}
-            aria-label="Share this garden"
-          >
-            {shareStatus === 'sharing'
-              ? 'opening…'
-              : shareStatus === 'shared'
-                ? 'garden shared'
-                : shareStatus === 'copied'
-                  ? 'link copied'
-                  : 'share this garden'}
+          {message && (
+            <button type="button" className={styles.keepsakeAction} onClick={() => void handleCopyNote()} disabled={noteCopied}>
+              {noteCopied ? 'note copied' : 'copy the note'}
+            </button>
+          )}
+          <button type="button" className={styles.keepsakeAction} onClick={() => window.print()}>
+            print the garden
           </button>
-          {' · '}
+          <button type="button" className={styles.keepsakeAction} onClick={handleReplayBloom}>
+            watch it bloom again
+          </button>
+          </div>
+        </details>
+        <p className={styles.ctaSub}>
           <a href="/" className={styles.ctaSubLink}>
             start one for someone new
           </a>
         </p>
-        <button type="button" className={styles.replayBtn} onClick={handleReplayBloom}>
-          ↻ watch it bloom again
-        </button>
       </div>
         </>
       )}

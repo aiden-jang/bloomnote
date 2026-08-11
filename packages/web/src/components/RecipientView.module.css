@@ -100,40 +100,6 @@
 
 /* Keepsake utilities live with the note itself. They are small enough to avoid competing with the
    reply CTA, but make it possible to carry a specific sentence or a paper copy beyond this link. */
-.noteActions {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 14px;
-}
-
-.noteAction {
-  border: none;
-  padding: 0;
-  background: transparent;
-  color: var(--text-light);
-  font: inherit;
-  font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.noteAction:hover {
-  color: var(--green-mid);
-}
-
-.noteAction:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
-
-.noteAction:focus-visible {
-  outline: 2px solid var(--green-mid);
-  outline-offset: 3px;
-  border-radius: 2px;
-}
-
 /* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
    the foot of the message card the way a date would on a physical
    greeting card. */
@@ -277,23 +243,89 @@
   opacity: 0.7;
 }
 
-/* A keepsake action, not a competing CTA. It comes after the reply/share choices and uses the
-   same quiet treatment as their supporting links, while the tiny loop arrow hints that it replays
-   the moment rather than starting a new garden. */
-.replayBtn {
-  border: none;
-  background: none;
-  padding: 2px 0;
-  color: var(--text-light);
+/* Sharing is the clear second action after replying. Keepsake utilities stay available beneath it
+   without turning the ending into a row of tiny links. */
+.ctaShareBtn {
+  min-width: 190px;
+  padding: 9px 20px;
+  border: 1px solid var(--green-pale);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--text-mid);
   font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.ctaShareBtn:hover {
+  border-color: var(--green-light);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--green-mid);
+}
+
+.ctaShareBtn:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.keepsake {
+  width: min(100%, 330px);
+  margin-top: 2px;
+  border-top: 1px solid var(--green-pale);
+  padding-top: 10px;
+}
+
+.keepsake summary {
+  width: fit-content;
+  margin: 0 auto;
+  color: var(--text-light);
   font-size: 12px;
+  cursor: pointer;
+  list-style: none;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.keepsake summary::-webkit-details-marker {
+  display: none;
+}
+
+.keepsake summary::after {
+  content: ' +';
+}
+
+.keepsake[open] summary::after {
+  content: ' −';
+}
+
+.keepsakeActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.keepsakeAction {
+  min-width: 0;
+  padding: 9px 8px;
+  border: 1px solid var(--green-pale);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 11px;
   cursor: pointer;
 }
 
-.replayBtn:hover {
+.keepsakeAction:hover {
+  border-color: var(--green-light);
   color: var(--green-mid);
+}
+
+.keepsakeAction:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 /* Save-as-image — sits below the primary CTA and the "start fresh"
@@ -421,7 +453,7 @@
     display: none !important;
   }
   .listenBtn,
-  .noteActions {
+  .keepsake {
     display: none;
   }
 }
