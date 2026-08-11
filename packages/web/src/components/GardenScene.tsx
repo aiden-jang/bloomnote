@@ -5,6 +5,7 @@ import { prefersReducedMotion } from '../lib/motion'
 import { playBloom, pulse } from '../sound'
 import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
 import { saveFlowerImage } from '../lib/gardenImage'
+import { flowerJournalEntry, saveFlowerJournalEntry } from '../lib/flowerJournal'
 import styles from './GardenScene.module.css'
 
 /**
@@ -106,6 +107,9 @@ interface Props {
    * reset, and a changed `key` on the drop layer is what actually replays the CSS.
    */
   wateredAt?: number
+  /** Recipient-only identity for keeping individual flowers on this device. */
+  journalGardenId?: string | undefined
+  journalFrom?: string | undefined
 }
 
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
@@ -270,7 +274,7 @@ function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0 }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -282,13 +286,22 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   const [bloomedCount, setBloomedCount] = useState(0)
   const [flowerShareStatus, setFlowerShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [flowerImageStatus, setFlowerImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
+  const [journalOpen, setJournalOpen] = useState(false)
+  const [journalMemory, setJournalMemory] = useState('')
+  const [journalSaved, setJournalSaved] = useState(false)
   const placed = placeFlowers(flowers)
   const aura = auraFor(mood)
 
   useEffect(() => {
     setFlowerShareStatus(null)
     setFlowerImageStatus(null)
-  }, [focused])
+    setJournalOpen(false)
+    const existing = focused !== null && journalGardenId
+      ? flowerJournalEntry(journalGardenId, focused)
+      : null
+    setJournalMemory(existing?.memory ?? '')
+    setJournalSaved(existing !== null)
+  }, [focused, journalGardenId])
 
   const shareFocusedFlower = async (): Promise<void> => {
     const flower = focused === null ? null : flowers[focused]
@@ -336,6 +349,21 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     } catch {
       setFlowerImageStatus(null)
     }
+  }
+
+  const keepFocusedFlower = (): void => {
+    if (focused === null || !journalGardenId) return
+    const flower = flowers[focused]
+    if (!flower) return
+    saveFlowerJournalEntry({
+      gardenId: journalGardenId,
+      flowerIndex: focused,
+      flower,
+      memory: journalMemory,
+      from: journalFrom,
+    })
+    setJournalSaved(true)
+    setJournalOpen(false)
   }
 
   /*
@@ -521,6 +549,38 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
                     ? 'keepsake saved'
                     : 'save a pressed-flower card'}
             </button>
+            {journalGardenId && (
+              <>
+                <button
+                  type="button"
+                  className={styles.flowerPeekShare}
+                  onClick={() => setJournalOpen(open => !open)}
+                  aria-expanded={journalOpen}
+                >
+                  {journalSaved ? 'edit journal memory' : 'keep in my flower journal'}
+                </button>
+                {journalOpen && (
+                  <div className={styles.journalEditor}>
+                    <label htmlFor={`flower-memory-${focused}`}>what do you want to remember?</label>
+                    <textarea
+                      id={`flower-memory-${focused}`}
+                      value={journalMemory}
+                      onChange={event => setJournalMemory(event.target.value)}
+                      maxLength={240}
+                      rows={2}
+                      placeholder="the moment, the person, the reason…"
+                      autoFocus
+                    />
+                    <div>
+                      <span>{journalMemory.length}/240</span>
+                      <button type="button" onClick={keepFocusedFlower}>
+                        {journalSaved ? 'update memory' : 'press into journal'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </span>
           <button type="button" className={styles.flowerPeekClose} onClick={() => onFocus?.(null)} aria-label="Close flower meaning">
             ×

@@ -3,6 +3,7 @@ import BouquetNote from './BouquetNote'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import MemoryTrail from './MemoryTrail'
+import FlowerJournalShelf from './FlowerJournalShelf'
 import SoundToggle from './SoundToggle'
 import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
@@ -289,6 +290,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         focused={focused}
         onFocus={setFocused}
         wateredAt={wateredAt}
+        journalGardenId={gardenId}
+        journalFrom={from}
         // The sender chose this occasion when they wrote the note;
         // the recipient sees the matching sky tint so the
         // atmosphere reads as deliberate, not random.
@@ -439,6 +442,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               watch it bloom again
             </button>
           </div>
+          <FlowerJournalShelf currentGardenId={gardenId} />
         </details>
         <p className={styles.ctaSub}>
           <a href="/" className={styles.ctaSubLink}>
