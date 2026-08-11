@@ -791,6 +791,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const demo = EXAMPLE_GARDENS[demoIndex % EXAMPLE_GARDENS.length]!
   const heroFlowers = showDemo ? demo.flowers : flowers
   const heroOccasion = showDemo ? demo.occasion : occasion
+  const heroMood = showDemo ? demo.mood : mood
   // The waiting sprout gives the otherwise empty preview a gentle sense of response while the
   // note takes shape. Keep the thresholds coarse: this should reward writing, not become a meter.
   const draftGrowth: 0 | 1 | 2 | 3 = !message.trim() ? 0 : message.trim().length < 40 ? 1 : message.trim().length < 130 ? 2 : 3
@@ -962,6 +963,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         // gradient, so the user sees the atmosphere respond to their
         // choice within the same composer view — small product win.
         occasion={heroOccasion}
+        mood={heroMood}
         silent={showDemo}
         compact={hasDraft}
         draftGrowth={draftGrowth}

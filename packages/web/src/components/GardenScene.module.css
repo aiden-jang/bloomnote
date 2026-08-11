@@ -39,6 +39,106 @@
   transition: background 0.6s ease;
 }
 
+/*
+ * Garden aura
+ *
+ * Occasion changes the large surface (the sky); mood changes the tiny life inside it. Every aura
+ * uses the same six DOM nodes and animation budget, then swaps colour, glyph treatment and motion.
+ * That keeps the feature decorative and cheap while making "soft" and "hype" gardens feel
+ * unmistakably different. The layer starts only when the garden is opened, preserving the sealed
+ * reveal, and sits behind flowers / field notes so it cannot catch a tap.
+ */
+.aura {
+  position: absolute;
+  inset: 0 0 52px;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aura span {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--aura-color);
+  font-family: Georgia, serif;
+  font-size: var(--aura-size, 15px);
+  line-height: 1;
+  opacity: 0;
+  filter: drop-shadow(0 2px 4px var(--aura-shadow));
+  animation: auraFloat var(--aura-duration, 7s) ease-in-out infinite;
+}
+
+.aura span:nth-child(1) { left: 8%;  top: 62%; }
+.aura span:nth-child(2) { left: 22%; top: 29%; animation-duration: 8.4s; }
+.aura span:nth-child(3) { left: 42%; top: 49%; animation-duration: 6.6s; }
+.aura span:nth-child(4) { left: 61%; top: 20%; animation-duration: 8.8s; }
+.aura span:nth-child(5) { left: 77%; top: 55%; animation-duration: 7.7s; }
+.aura span:nth-child(6) { left: 91%; top: 34%; animation-duration: 9.2s; }
+
+.auraTender {
+  --aura-color: rgba(190, 94, 126, 0.48);
+  --aura-shadow: rgba(190, 94, 126, 0.14);
+  --aura-size: 16px;
+  --aura-duration: 9s;
+}
+
+.auraPlayful {
+  --aura-color: rgba(218, 128, 40, 0.62);
+  --aura-shadow: rgba(218, 128, 40, 0.18);
+  --aura-size: 12px;
+  --aura-duration: 5.6s;
+}
+
+.auraWistful {
+  --aura-color: rgba(94, 105, 148, 0.44);
+  --aura-shadow: rgba(94, 105, 148, 0.14);
+  --aura-size: 22px;
+  --aura-duration: 11s;
+}
+
+.auraCelebratory {
+  --aura-color: rgba(202, 124, 24, 0.72);
+  --aura-shadow: rgba(202, 124, 24, 0.22);
+  --aura-size: 17px;
+  --aura-duration: 4.8s;
+}
+
+.auraSteady {
+  --aura-color: rgba(48, 103, 66, 0.38);
+  --aura-shadow: rgba(48, 103, 66, 0.13);
+  --aura-size: 18px;
+  --aura-duration: 10s;
+}
+
+/* Playful and celebratory moods have a little lateral spring; quiet moods mostly rise and breathe. */
+.auraPlayful span:nth-child(even),
+.auraCelebratory span:nth-child(even) {
+  animation-name: auraPop;
+}
+
+@keyframes auraFloat {
+  0%, 100% { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.75); }
+  18% { opacity: 0.72; }
+  55% { opacity: 0.46; transform: translate3d(5px, -17px, 0) scale(1); }
+  82% { opacity: 0.62; }
+}
+
+@keyframes auraPop {
+  0%, 100% { opacity: 0; transform: translate3d(-4px, 8px, 0) rotate(-12deg) scale(0.45); }
+  22% { opacity: 0.78; transform: translate3d(2px, -2px, 0) rotate(4deg) scale(1.08); }
+  64% { opacity: 0.42; transform: translate3d(9px, -20px, 0) rotate(16deg) scale(0.82); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura span {
+    animation: none;
+    opacity: 0.34;
+  }
+}
+
 /* Tapping a bloom answers beside the bloom. The full legend still tells the whole bouquet story
    below, while this glassy field note removes the mobile scavenger hunt between flower and meaning. */
 .flowerPeek {
