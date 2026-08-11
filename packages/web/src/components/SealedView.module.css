@@ -78,9 +78,15 @@
   letter-spacing: 0.02em;
 }
 
-.calendarBtn {
+.reminderMenu {
   align-self: center;
   margin-top: 8px;
+  min-width: 230px;
+}
+
+.reminderMenu summary {
+  width: fit-content;
+  margin: 0 auto;
   border: 1px solid var(--green-pale);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
@@ -90,11 +96,48 @@
   font-size: 12px;
   padding: 7px 12px;
   transition: border-color 0.15s, color 0.15s, transform 0.1s;
+  list-style: none;
 }
 
-.calendarBtn:hover { border-color: var(--green-light); color: var(--green-deep); }
-.calendarBtn:active { transform: scale(0.97); }
-.calendarBtn:disabled { cursor: default; opacity: 0.72; transform: none; }
+.reminderMenu summary::-webkit-details-marker { display: none; }
+.reminderMenu summary::after { content: ' +'; color: var(--text-light); }
+.reminderMenu[open] summary::after { content: ' −'; }
+.reminderMenu summary:hover { border-color: var(--green-light); color: var(--green-deep); }
+.reminderMenu summary:active { transform: scale(0.97); }
+
+.reminderOptions {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px solid var(--green-pale);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 28px rgba(74, 53, 32, 0.08);
+}
+
+.reminderOptions a,
+.reminderOptions button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  padding: 8px 9px;
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.reminderOptions a:hover,
+.reminderOptions button:hover { background: var(--green-pale); color: var(--green-deep); }
+.reminderOptions button:disabled { cursor: default; opacity: 0.68; }
 
 .calendarHint {
   margin-top: 3px;
