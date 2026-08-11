@@ -3,6 +3,7 @@ import FlowerSVG from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
 import { playBloom, pulse } from '../sound'
+import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
 import styles from './GardenScene.module.css'
 
 /**
@@ -397,6 +398,22 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       style={sceneStyle}
     >
       <div className={styles.sky} />
+      {focused !== null && flowers[focused] && (
+        <aside className={styles.flowerPeek} aria-live="polite">
+          <span className={styles.flowerPeekSwatches} aria-hidden>
+            {flowers[focused].petalColors.slice(0, 4).map((color, index) => (
+              <span key={`${color}-${index}`} style={{ background: color }} />
+            ))}
+          </span>
+          <span className={styles.flowerPeekCopy}>
+            <strong>{flowers[focused].name}</strong>
+            <span>{withoutLeadingFlowerName(flowers[focused].name, flowers[focused].meaning)}</span>
+          </span>
+          <button type="button" onClick={() => onFocus?.(null)} aria-label="Close flower meaning">
+            ×
+          </button>
+        </aside>
+      )}
       <div className={styles.garden}>
         {showGhostSprout && <GhostSprout growth={draftGrowth} />}
         {beeFlying && (() => {
