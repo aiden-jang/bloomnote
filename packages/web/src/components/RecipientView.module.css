@@ -98,6 +98,42 @@
   border-radius: 2px;
 }
 
+/* Keepsake utilities live with the note itself. They are small enough to avoid competing with the
+   reply CTA, but make it possible to carry a specific sentence or a paper copy beyond this link. */
+.noteActions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.noteAction {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.noteAction:hover {
+  color: var(--green-mid);
+}
+
+.noteAction:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.noteAction:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 /* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
    the foot of the message card the way a date would on a physical
    greeting card. */
@@ -353,6 +389,10 @@
 @media print {
   .cta {
     display: none !important;
+  }
+  .listenBtn,
+  .noteActions {
+    display: none;
   }
 }
 
