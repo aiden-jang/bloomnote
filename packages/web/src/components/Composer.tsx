@@ -30,6 +30,7 @@ import { designGarden, type DesignResult } from '../lib/designGarden'
 import { prefersReducedMotion } from '../lib/motion'
 import { saveGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
+import { gardenForecast } from '../lib/gardenForecast'
 import {
   countSentGardens,
   recordSentGarden,
@@ -421,6 +422,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   })()
 
   const canSubmit = disabledReason === null
+  const forecast = useMemo(() => gardenForecast(message, mood, occasion), [message, mood, occasion])
 
   // Assemble the persisted garden record from a fresh design result plus
   // the current form state. Shared by the initial design and re-roll so
@@ -1125,6 +1127,34 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               ))}
             </ChipRow>
           </section>
+
+          {message.trim().length >= 4 && (
+            <section className={styles.forecast} aria-label="Garden forecast" aria-live="polite">
+              <div className={styles.forecastHead}>
+                <span>
+                  <span className={styles.forecastEyebrow}>garden forecast</span>
+                  <strong>{forecast.tone}</strong>
+                </span>
+                <span className={styles.forecastSwatches} aria-label={forecast.palette}>
+                  {forecast.colors.map(color => (
+                    <i key={color} style={{ backgroundColor: color }} />
+                  ))}
+                </span>
+              </div>
+              <p>
+                likely {forecast.shape} in {forecast.palette}, under {forecast.light}.
+              </p>
+              <div className={styles.forecastSoil}>
+                <span className={styles.forecastDots} aria-hidden>
+                  {[1, 2, 3].map(level => (
+                    <i key={level} data-grown={level <= forecast.detailLevel} />
+                  ))}
+                </span>
+                <span>{forecast.detailCopy}</span>
+              </div>
+              <small>direction only. the final garden still gets to surprise you.</small>
+            </section>
+          )}
 
           <ScheduleInput
             open={scheduleOpen}

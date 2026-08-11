@@ -321,6 +321,101 @@
   border-color: var(--green-deep);
 }
 
+/* A local read on the design brief, not a fake AI preview. It turns the otherwise abstract mood
+   and occasion chips into a visible creative direction while keeping the real bloom surprising. */
+.forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--green-pale);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(194, 216, 179, 0.32), transparent 44%),
+    rgba(255, 255, 255, 0.58);
+  box-shadow: 0 8px 24px rgba(45, 90, 27, 0.06);
+}
+
+.forecastHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.forecastHead strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--green-deep);
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 550;
+}
+
+.forecastEyebrow {
+  display: block;
+  color: var(--soil);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.forecastSwatches {
+  display: flex;
+  padding-right: 4px;
+}
+
+.forecastSwatches i {
+  width: 25px;
+  height: 25px;
+  margin-right: -5px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(45, 56, 35, 0.12);
+}
+
+.forecast > p {
+  color: var(--text-mid);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.forecastSoil {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(116, 151, 93, 0.16);
+  color: var(--text-mid);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.forecastDots {
+  display: flex;
+  flex-shrink: 0;
+  gap: 3px;
+  padding-top: 4px;
+}
+
+.forecastDots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-pale);
+}
+
+.forecastDots i[data-grown='true'] {
+  background: var(--green-mid);
+}
+
+.forecast small {
+  color: var(--text-light);
+  font-size: 9.5px;
+  font-style: italic;
+}
+
 /* Schedule (time capsule) — collapsed link, expanded row.
    Sits between message + actions so it's visible but not the first
    thing a new user has to think about. */
