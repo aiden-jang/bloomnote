@@ -39,6 +39,97 @@
   transition: background 0.6s ease;
 }
 
+/* Tapping a bloom answers beside the bloom. The full legend still tells the whole bouquet story
+   below, while this glassy field note removes the mobile scavenger hunt between flower and meaning. */
+.flowerPeek {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 10px 34px 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 14px;
+  background: rgba(255, 252, 245, 0.82);
+  box-shadow: 0 8px 24px rgba(58, 80, 46, 0.12);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  animation: flowerPeekIn 180ms ease-out both;
+}
+
+.flowerPeekSwatches {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  margin-top: 2px;
+}
+
+.flowerPeekSwatches span {
+  position: absolute;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid rgba(255, 252, 245, 0.92);
+  border-radius: 50%;
+}
+
+.flowerPeekSwatches span:nth-child(1) { left: 0; top: 6px; }
+.flowerPeekSwatches span:nth-child(2) { left: 11px; top: 0; }
+.flowerPeekSwatches span:nth-child(3) { left: 13px; top: 13px; }
+.flowerPeekSwatches span:nth-child(4) { left: 2px; top: 15px; }
+
+.flowerPeekCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--text-mid);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.flowerPeekCopy strong {
+  color: var(--green-deep);
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.flowerPeek button {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.flowerPeek button:hover {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-dark);
+}
+
+@keyframes flowerPeekIn {
+  from { opacity: 0; transform: translateY(-5px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flowerPeek { animation: none; }
+}
+
 .garden {
   position: absolute;
   bottom: 52px;

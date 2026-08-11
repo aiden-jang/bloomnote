@@ -1,5 +1,6 @@
 import type { FlowerSpec } from '../garden'
 import { BLOOM_STAGGER_MS } from './GardenScene'
+import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
 import styles from './FlowerLegend.module.css'
 
 interface Props {
@@ -52,32 +53,11 @@ export default function FlowerLegend({ flowers, focused = null, onFocus }: Props
             </span>
             <div className={styles.text}>
               <p className={styles.name}>{f.name}</p>
-              <p className={styles.meaning}>{withoutLeadingName(f.name, f.meaning)}</p>
+              <p className={styles.meaning}>{withoutLeadingFlowerName(f.name, f.meaning)}</p>
             </div>
           </li>
         ))}
       </ul>
     </section>
   )
-}
-
-/**
- * Drop a leading "Rose, " / "Rose " from a meaning, since the name is already the line above it.
- *
- * The model was told to write these as standalone phrases, but the prompt's own example used to
- * include the name, so gardens generated before that was fixed read "Lavender / Lavender, for the
- * calm you bring into every room." Those are stored and immutable, and the response is cached for
- * a year, so the prompt fix can only ever help new gardens. This one covers the rest.
- *
- * Deliberately conservative: it only strips an exact case-insensitive match on the species name
- * followed by a comma or a space. A meaning that genuinely opens with the word (say a flower
- * actually called "Forget-me-not" in a sentence about forgetting) keeps whatever follows, and the
- * worst case is that nothing is stripped, which is exactly today's behaviour.
- */
-function withoutLeadingName(name: string, meaning: string): string {
-  const n = name.trim()
-  if (!n || !meaning.toLowerCase().startsWith(n.toLowerCase())) return meaning
-  const rest = meaning.slice(n.length).replace(/^\s*,\s*|^\s+/, '')
-  if (!rest) return meaning
-  return rest.charAt(0).toUpperCase() + rest.slice(1)
 }
