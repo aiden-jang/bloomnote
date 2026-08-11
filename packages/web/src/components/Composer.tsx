@@ -785,6 +785,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const demo = EXAMPLE_GARDENS[demoIndex % EXAMPLE_GARDENS.length]!
   const heroFlowers = showDemo ? demo.flowers : flowers
   const heroOccasion = showDemo ? demo.occasion : occasion
+  // The waiting sprout gives the otherwise empty preview a gentle sense of response while the
+  // note takes shape. Keep the thresholds coarse: this should reward writing, not become a meter.
+  const draftGrowth: 0 | 1 | 2 | 3 = !message.trim() ? 0 : message.trim().length < 40 ? 1 : message.trim().length < 130 ? 2 : 3
 
   // Example-carousel pick. Pre-fills every input so the user can hit
   // "grow their garden" immediately and experience the bloom moment
@@ -952,6 +955,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         occasion={heroOccasion}
         silent={showDemo}
         compact={hasDraft}
+        draftGrowth={draftGrowth}
         // Re-keying restarts the bloom from sprout, which is what makes each demo garden grow in
         // rather than cut. The demo id has to be part of the key: two examples could otherwise
         // share a flower-name signature and the second would appear fully grown.

@@ -73,6 +73,8 @@ interface Props {
   silent?: boolean
   /** Shrink to a waiting bed. Only meaningful with no flowers — see `.sceneCompact`. */
   compact?: boolean
+  /** How much of a draft exists, letting the empty plot quietly grow with the note. */
+  draftGrowth?: 0 | 1 | 2 | 3
   /** Index of the flower being looked at, from the legend or from the plot itself. */
   focused?: number | null
   /** Pointing at a flower, or letting go of it. */
@@ -215,9 +217,9 @@ function SoilLine() {
  * Pure CSS — no React state, no setInterval, no rerenders. The
  * animation runs entirely off the GPU once the layer is composited.
  */
-function GhostSprout() {
+function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   return (
-    <div className={styles.ghostSprout} aria-hidden>
+    <div className={`${styles.ghostSprout} ${styles[`ghostSproutGrowing${growth}`] ?? ''}`} aria-hidden>
       <svg viewBox="0 0 20 60" className={styles.ghostSproutSvg}>
         <line
           x1="10" y1="60" x2="10" y2="20"
@@ -231,12 +233,23 @@ function GhostSprout() {
           fill="currentColor"
           className={styles.ghostLeaf}
         />
+        <path
+          d="M 10 38 Q 2 31, 5 40 Q 8 40, 10 38"
+          fill="currentColor"
+          className={styles.ghostLeafSecond}
+        />
+        <path
+          d="M 10 20 Q 3 14, 6 23 Q 9 23, 10 20"
+          fill="currentColor"
+          className={styles.ghostLeafThird}
+        />
+        <circle cx="10" cy="17" r="2.2" className={styles.ghostBud} />
       </svg>
     </div>
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false, focused = null, onFocus, wateredAt = 0 }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0 }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -385,7 +398,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     >
       <div className={styles.sky} />
       <div className={styles.garden}>
-        {showGhostSprout && <GhostSprout />}
+        {showGhostSprout && <GhostSprout growth={draftGrowth} />}
         {beeFlying && (() => {
           const target = placed[beeAt % placed.length]!
           /*
