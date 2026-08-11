@@ -16,6 +16,7 @@ import styles from './MyGardens.module.css'
  * back to the on-device archive (localStorage) — anonymous use still works, just per-device.
  */
 type Tab = 'sent' | 'received'
+type GardenSort = 'newest' | 'oldest' | 'watered'
 const PINNED_STORAGE_KEY = 'bloomnote:pinned-gardens'
 
 function readPinnedGardens(): string[] {
@@ -36,9 +37,19 @@ function writePinnedGardens(ids: string[]): void {
   }
 }
 
-function pinnedFirst<T extends CardData>(gardens: T[], pinned: string[]): T[] {
+function orderGardens<T extends CardData>(gardens: T[], pinned: string[], sort: GardenSort, waters: Record<string, number>): T[] {
   const ids = new Set(pinned)
-  return [...gardens].sort((a, b) => Number(ids.has(b.id)) - Number(ids.has(a.id)))
+  return [...gardens].sort((a, b) => {
+    const pinOrder = Number(ids.has(b.id)) - Number(ids.has(a.id))
+    if (pinOrder) return pinOrder
+    if (sort === 'watered') {
+      const waterOrder = (waters[b.id] ?? 0) - (waters[a.id] ?? 0)
+      if (waterOrder) return waterOrder
+    }
+    const aDate = new Date(a.receivedAt ?? a.createdAt).getTime()
+    const bDate = new Date(b.receivedAt ?? b.createdAt).getTime()
+    return sort === 'oldest' ? aDate - bDate : bDate - aDate
+  })
 }
 
 // Undo toast (matches the recipient "saved" pill): a quiet cream chip pinned bottom-center.
@@ -104,6 +115,7 @@ function AccountGardens() {
   const [busy, setBusy] = useState(true)
   const [query, setQuery] = useState('')
   const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
+  const [sort, setSort] = useState<GardenSort>('newest')
 
   useEffect(() => {
     let cancelled = false
@@ -211,7 +223,7 @@ function AccountGardens() {
   useEffect(() => () => flushPending(), [])
 
   const list = tab === 'sent' ? sent : received
-  const filtered = useMemo(() => pinnedFirst(filterGardens(list, query), pinned), [list, query, pinned])
+  const filtered = useMemo(() => orderGardens(filterGardens(list, query), pinned, sort, waters), [list, query, pinned, sort, waters])
   const togglePinned = (id: string) => {
     setPinned(current => {
       const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
@@ -257,6 +269,12 @@ function AccountGardens() {
       </div>
 
       {list.length > 1 && (
+        <div className={styles.libraryTools}>
+        <select className={styles.sort} value={sort} onChange={event => setSort(event.target.value as GardenSort)} aria-label="Sort gardens">
+          <option value="newest">newest first</option>
+          <option value="oldest">oldest first</option>
+          <option value="watered">most watered</option>
+        </select>
         <label className={styles.search}>
           <span className={styles.srOnly}>Find a garden</span>
           <input
@@ -271,6 +289,7 @@ function AccountGardens() {
             </button>
           )}
         </label>
+        </div>
       )}
 
       {busy ? (
@@ -321,6 +340,7 @@ function LocalGardens() {
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
   const [query, setQuery] = useState('')
   const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
+  const [sort, setSort] = useState<GardenSort>('newest')
   // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
   // anonymous-first, so the sender who never makes an account is the usual sender, and without this
   // they only ever learn a garden was watered by reopening that exact link.
@@ -341,7 +361,7 @@ function LocalGardens() {
     removeSentGarden(id)
     setRecords(rs => rs.filter(r => r.id !== id))
   }
-  const filtered = useMemo(() => pinnedFirst(filterGardens(records, query), pinned), [records, query, pinned])
+  const filtered = useMemo(() => orderGardens(filterGardens(records, query), pinned, sort, waters), [records, query, pinned, sort, waters])
   const togglePinned = (id: string) => {
     setPinned(current => {
       const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
@@ -370,6 +390,12 @@ function LocalGardens() {
       ) : (
         <>
           {records.length > 1 && (
+            <div className={styles.libraryTools}>
+            <select className={styles.sort} value={sort} onChange={event => setSort(event.target.value as GardenSort)} aria-label="Sort gardens">
+              <option value="newest">newest first</option>
+              <option value="oldest">oldest first</option>
+              <option value="watered">most watered</option>
+            </select>
             <label className={styles.search}>
               <span className={styles.srOnly}>Find a garden</span>
               <input
@@ -384,6 +410,7 @@ function LocalGardens() {
                 </button>
               )}
             </label>
+            </div>
           )}
           {filtered.length === 0 ? (
             <div className={styles.empty}>
