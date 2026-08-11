@@ -325,6 +325,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // it's used to record the garden in the on-device archive / account. Clearer as its own
   // piece of state than a regex over shareUrl.
   const [gardenId, setGardenId] = useState<string | null>(null)
+  const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
@@ -337,6 +338,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   useEffect(() => {
     setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
   }, [])
+
+  // Every generated garden gets a fresh sealed aside in the sender preview, including re-rolls.
+  useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
 
   // Auto-focus the message textarea on remix mount — From/To are
   // pre-filled, so the natural cursor target is the empty note field.
@@ -1260,6 +1264,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               : 'what they see'}
           </p>
 
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.fullRevealPreview}
+          >
+            <span aria-hidden>◌</span>
+            preview the full reveal
+            <span aria-hidden>↗</span>
+          </a>
+
           <p className={styles.previewSenderLine}>
             {from.trim() ? (
               <>
@@ -1283,6 +1298,24 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   the note. In the preview it types immediately (start
                   defaults true) — the composer has no bloom gate. */}
               {garden.bouquetNote && <BouquetNote note={garden.bouquetNote} />}
+              {secret.trim() && (
+                <div className={styles.previewSecret}>
+                  <button
+                    type="button"
+                    className={styles.previewSecretReveal}
+                    onClick={() => setPreviewSecretRevealed(revealed => !revealed)}
+                    aria-expanded={previewSecretRevealed}
+                  >
+                    <span aria-hidden>{previewSecretRevealed ? '✉' : '💌'}</span>
+                    {previewSecretRevealed
+                      ? 'hide the little secret'
+                      : 'there’s a little secret in here'}
+                  </button>
+                  {previewSecretRevealed && (
+                    <p className={styles.previewSecretText}>{secret.trim()}</p>
+                  )}
+                </div>
+              )}
               <p className={styles.previewGrownOn}>
                 grown {formatGardenDate(new Date().toISOString())}
               </p>
