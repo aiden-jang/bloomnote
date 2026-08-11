@@ -53,11 +53,15 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
 
   const remaining = Math.max(0, target - now)
   const unlockDate = new Date(unlockAt)
+  const eventName = from ? `${from}'s garden opens` : 'A garden for you opens'
+  const eventEnd = new Date(unlockDate.getTime() + 30 * 60_000)
+  const eventDetails = 'A garden is ready to bloom. Open this event to return to it.'
+  const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${stamp(unlockDate)}/${stamp(eventEnd)}&details=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(window.location.href)}`
+  const outlookCalendarUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(eventName)}&startdt=${encodeURIComponent(unlockDate.toISOString())}&enddt=${encodeURIComponent(eventEnd.toISOString())}&body=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(window.location.href)}`
   const addToCalendar = () => {
-    const name = from ? `${from}'s garden` : 'A garden for you'
     const start = new Date(unlockAt)
     const end = new Date(start.getTime() + 30 * 60_000)
-    const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
     const escape = (s: string) => s.replace(/[\\,;\n]/g, (c) => (c === '\n' ? '\\n' : `\\${c}`))
     const body = [
       'BEGIN:VCALENDAR',
@@ -70,9 +74,9 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
       `DTSTAMP:${stamp(new Date())}`,
       `DTSTART:${stamp(start)}`,
       `DTEND:${stamp(end)}`,
-      `SUMMARY:${escape(name)} opens`,
+      `SUMMARY:${escape(eventName)}`,
       `URL:${window.location.href}`,
-      'DESCRIPTION:A garden is ready to bloom. Open this event to return to it.',
+      `DESCRIPTION:${escape(eventDetails)}`,
       'BEGIN:VALARM',
       'TRIGGER:-PT15M',
       'ACTION:DISPLAY',
@@ -132,16 +136,22 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
         <p className={styles.opensLabel}>opens in</p>
         <p className={styles.opensRelative}>{formatRemaining(remaining)}</p>
         <p className={styles.opensExact}>{formatExact(unlockDate)}</p>
-        <button
-          type="button"
-          className={styles.calendarBtn}
-          onClick={addToCalendar}
-          disabled={calendarSaved}
-          aria-label="Add a calendar reminder 15 minutes before this garden opens"
-        >
-          {calendarSaved ? 'reminder file ready' : 'add a reminder'}
-        </button>
-        {calendarSaved && <span className={styles.calendarHint} role="status">open the file to add a 15-minute reminder</span>}
+        <details className={styles.reminderMenu}>
+          <summary>add a reminder</summary>
+          <div className={styles.reminderOptions}>
+            <a href={googleCalendarUrl} target="_blank" rel="noreferrer">
+              <span>Google Calendar</span><span aria-hidden>↗</span>
+            </a>
+            <a href={outlookCalendarUrl} target="_blank" rel="noreferrer">
+              <span>Outlook Calendar</span><span aria-hidden>↗</span>
+            </a>
+            <button type="button" onClick={addToCalendar} disabled={calendarSaved}>
+              <span>{calendarSaved ? 'Calendar file ready' : 'Apple Calendar / other'}</span>
+              <span aria-hidden>↓</span>
+            </button>
+          </div>
+        </details>
+        {calendarSaved && <span className={styles.calendarHint} role="status">open the downloaded file to add its 15-minute reminder</span>}
       </div>
 
       <p className={styles.hint}>come back when it&rsquo;s time.</p>
