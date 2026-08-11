@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
-import RemixContext from './RemixContext'
+import MemoryTrail from './MemoryTrail'
 import SoundToggle from './SoundToggle'
 import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
@@ -345,16 +345,11 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         <FlowerLegend flowers={flowers} focused={focused} onFocus={setFocused} />
       </div>
 
-      {/* Thread context — when this garden is itself a reply, show the
-          garden it was a reply TO. The current viewer (e.g. Sarah) sees
-          Maya's garden, plus a glance back at the note she originally
-          sent Maya. Makes the conversation feel like a conversation. */}
+      {/* A reply carries both notes, so let the recipient unfold them as a chronological keepsake
+          without making the already-long recipient page permanently taller. */}
       {previous && (
         <div className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}>
-          <RemixContext
-            previous={previous}
-            label={`you wrote this to ${previous.to || from || 'them'}`}
-          />
+          <MemoryTrail previous={previous} current={gardenData} />
         </div>
       )}
 
