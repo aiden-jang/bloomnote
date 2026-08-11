@@ -225,6 +225,27 @@
   flex-shrink: 0;
 }
 
+.pinBtn {
+  border: none;
+  background: transparent;
+  padding: 2px 4px;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.pinBtn:hover,
+.pinBtnOn {
+  color: var(--soil);
+}
+
+.pinBtn:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .actionBtn {
   background: transparent;
   border: 1px solid var(--green-light);

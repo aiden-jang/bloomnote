@@ -16,6 +16,30 @@ import styles from './MyGardens.module.css'
  * back to the on-device archive (localStorage) — anonymous use still works, just per-device.
  */
 type Tab = 'sent' | 'received'
+const PINNED_STORAGE_KEY = 'bloomnote:pinned-gardens'
+
+function readPinnedGardens(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(PINNED_STORAGE_KEY) ?? '[]')
+    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function writePinnedGardens(ids: string[]): void {
+  try {
+    window.localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids))
+  } catch {
+    // Pinning is an on-device convenience; storage failures never block the archive.
+  }
+}
+
+function pinnedFirst<T extends CardData>(gardens: T[], pinned: string[]): T[] {
+  const ids = new Set(pinned)
+  return [...gardens].sort((a, b) => Number(ids.has(b.id)) - Number(ids.has(a.id)))
+}
 
 // Undo toast (matches the recipient "saved" pill): a quiet cream chip pinned bottom-center.
 const undoToastStyle: CSSProperties = {
@@ -79,6 +103,7 @@ function AccountGardens() {
   )
   const [busy, setBusy] = useState(true)
   const [query, setQuery] = useState('')
+  const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
 
   useEffect(() => {
     let cancelled = false
@@ -186,7 +211,14 @@ function AccountGardens() {
   useEffect(() => () => flushPending(), [])
 
   const list = tab === 'sent' ? sent : received
-  const filtered = useMemo(() => filterGardens(list, query), [list, query])
+  const filtered = useMemo(() => pinnedFirst(filterGardens(list, query), pinned), [list, query, pinned])
+  const togglePinned = (id: string) => {
+    setPinned(current => {
+      const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
+      writePinnedGardens(next)
+      return next
+    })
+  }
   const switchTab = (nextTab: Tab) => {
     setTab(nextTab)
     // A search for a recipient should not make the other collection appear empty on arrival.
@@ -271,6 +303,8 @@ function AccountGardens() {
               record={r}
               kind={tab}
               waters={waters[r.id] ?? 0}
+              pinned={pinned.includes(r.id)}
+              onPin={() => togglePinned(r.id)}
               onRemove={() => handleRemove(r.id)}
             />
           ))}
@@ -286,6 +320,7 @@ function LocalGardens() {
   const { login } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
   const [query, setQuery] = useState('')
+  const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
   // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
   // anonymous-first, so the sender who never makes an account is the usual sender, and without this
   // they only ever learn a garden was watered by reopening that exact link.
@@ -306,7 +341,14 @@ function LocalGardens() {
     removeSentGarden(id)
     setRecords(rs => rs.filter(r => r.id !== id))
   }
-  const filtered = useMemo(() => filterGardens(records, query), [records, query])
+  const filtered = useMemo(() => pinnedFirst(filterGardens(records, query), pinned), [records, query, pinned])
+  const togglePinned = (id: string) => {
+    setPinned(current => {
+      const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
+      writePinnedGardens(next)
+      return next
+    })
+  }
 
   return (
     <Shell subtitle="the gardens you've grown, saved on this device.">
@@ -358,6 +400,8 @@ function LocalGardens() {
               record={r}
               kind="sent"
               waters={waters[r.id] ?? 0}
+              pinned={pinned.includes(r.id)}
+              onPin={() => togglePinned(r.id)}
               onRemove={() => handleRemove(r.id)}
             />
           ))}
@@ -403,10 +447,12 @@ interface RowProps {
   kind: Tab
   /** How many times this garden has been watered. Omitted or 0 means the row says nothing. */
   waters?: number
+  pinned?: boolean
+  onPin?: () => void
   onRemove?: () => void
 }
 
-function GardenRow({ record, kind, waters = 0, onRemove }: RowProps) {
+function GardenRow({ record, kind, waters = 0, pinned = false, onPin, onRemove }: RowProps) {
   const { id, from, to, occasion, createdAt, unlockAt, receivedAt, swatches } = record
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
@@ -515,6 +561,17 @@ function GardenRow({ record, kind, waters = 0, onRemove }: RowProps) {
       </a>
 
       <div className={styles.cardActions}>
+        {onPin && (
+          <button
+            type="button"
+            className={pinned ? `${styles.pinBtn} ${styles.pinBtnOn}` : styles.pinBtn}
+            onClick={onPin}
+            aria-pressed={pinned}
+            aria-label={`${pinned ? 'Unpin' : 'Pin'} garden ${cardLabel}`}
+          >
+            {pinned ? '★ pinned' : '☆ pin'}
+          </button>
+        )}
         <button
           type="button"
           className={styles.actionBtn}
