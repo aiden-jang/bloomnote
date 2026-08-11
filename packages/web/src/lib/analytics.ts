@@ -67,8 +67,8 @@ export function trackShareLinkShared(): void {
 }
 
 export type DownloadSurface = 'composer' | 'recipient' | 'mine'
-/** 1080×1080 square, or the 1080×1920 story vertical. */
-export type CardFormat = 'square' | 'story'
+/** The standard square, story vertical, or paired reply-exchange keepsake. */
+export type CardFormat = 'square' | 'story' | 'duet'
 
 /** Sender-side saves tend to get posted; recipient-side ones are keepsakes. Worth telling apart. */
 export function trackCardDownloaded(surface: DownloadSurface, format: CardFormat): void {
