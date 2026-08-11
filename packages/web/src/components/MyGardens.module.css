@@ -80,6 +80,29 @@
   background: rgba(255, 255, 255, 0.56);
 }
 
+.libraryTools {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.sort {
+  border: 1px solid var(--green-pale);
+  border-radius: 999px;
+  padding: 7px 28px 7px 12px;
+  background-color: rgba(255, 255, 255, 0.56);
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sort:focus {
+  border-color: var(--green-light);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.1);
+}
+
 .search:focus-within {
   border-color: var(--green-light);
   box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.1);
@@ -315,6 +338,10 @@
     width: 100%;
     justify-content: flex-end;
     gap: 0.75rem;
+  }
+
+  .libraryTools {
+    grid-template-columns: 1fr;
   }
 }
 
