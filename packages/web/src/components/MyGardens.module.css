@@ -82,7 +82,7 @@
 
 .libraryTools {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 8px;
 }
 
@@ -101,6 +101,25 @@
   border-color: var(--green-light);
   outline: none;
   box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.1);
+}
+
+.pinnedFilter {
+  border: 1px solid var(--green-pale);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--text-light);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pinnedFilter:hover,
+.pinnedFilterOn {
+  border-color: var(--soil);
+  color: var(--soil);
+  background: rgba(255, 248, 230, 0.8);
 }
 
 .search:focus-within {
