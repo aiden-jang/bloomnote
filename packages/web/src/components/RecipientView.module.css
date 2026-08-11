@@ -387,6 +387,36 @@
 /* Print: drop the call-to-action ("grow one back?" link) — a screen-only
    affordance. The topLabel and thread context stay; they're part of the card. */
 @media print {
+  :global(body) {
+    background: white;
+    color: #294629;
+  }
+
+  .wrap {
+    max-width: 680px;
+    padding: 0.5in;
+    gap: 1rem;
+    animation: none;
+  }
+
+  .topLabel,
+  .fromText,
+  .grownOn {
+    color: #596b59;
+  }
+
+  .messageWrap {
+    border-color: #cbdcc8;
+    box-shadow: none;
+  }
+
+  /* The garden and note are the keepsake. Interactive controls, audio, and the postscript CTA
+     are screen furniture and would otherwise leave distracting button outlines in a paper copy. */
+  .wrap button,
+  .wrap :global([class*='sound']) {
+    display: none !important;
+  }
+
   .cta {
     display: none !important;
   }
