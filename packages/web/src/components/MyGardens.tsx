@@ -307,6 +307,8 @@ function AccountGardens() {
         </div>
       )}
 
+      {!busy && <MemoryLane gardens={list} kind={tab} />}
+
       {busy ? (
         <p className={styles.emptyText}>loading…</p>
       ) : list.length === 0 ? (
@@ -442,6 +444,7 @@ function LocalGardens() {
             )}
             </div>
           )}
+          <MemoryLane gardens={records} kind="sent" />
           {filtered.length === 0 ? (
             <div className={styles.empty}>
               <p className={styles.emptyText}>{pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}</p>
@@ -467,6 +470,53 @@ function LocalGardens() {
         </>
       )}
     </Shell>
+  )
+}
+
+/**
+ * A small, rotating way back into the archive. Search helps when someone remembers what they want;
+ * this helps when they do not. Future-sealed gardens stay out, and oldest memories come first so a
+ * brand-new send never presents itself as nostalgia.
+ */
+function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
+  const [memoryIndex, setMemoryIndex] = useState(0)
+  const memories = useMemo(
+    () =>
+      [...gardens]
+        .filter(garden => !garden.unlockAt || new Date(garden.unlockAt).getTime() <= Date.now())
+        .sort((a, b) => new Date(a.receivedAt ?? a.createdAt).getTime() - new Date(b.receivedAt ?? b.createdAt).getTime()),
+    [gardens],
+  )
+
+  if (memories.length < 3) return null
+  const memory = memories[memoryIndex % memories.length]!
+  const name = kind === 'received' ? memory.from?.trim() : memory.to.trim()
+  const date = formatGardenDate(memory.receivedAt ?? memory.createdAt)
+
+  return (
+    <aside className={styles.memoryLane} aria-label="A garden to revisit">
+      <a href={`/g/${memory.id}`} className={styles.memoryMain}>
+        <span className={styles.memoryBouquet} aria-hidden>
+          {(memory.swatches.length ? memory.swatches : ['var(--green-pale)']).slice(0, 5).map((color, index) => (
+            <span key={`${color}-${index}`} style={{ background: color }} />
+          ))}
+        </span>
+        <span className={styles.memoryCopy}>
+          <span className={styles.memoryEyebrow}>from the garden path</span>
+          <strong>{kind === 'received' ? `a garden ${name ? `from ${name}` : 'you kept'}` : `the one ${name ? `for ${name}` : 'you grew'}`}</strong>
+          {date && <small>{date}</small>}
+        </span>
+        <span className={styles.memoryOpen} aria-hidden>open →</span>
+      </a>
+      <button
+        type="button"
+        className={styles.memoryNext}
+        onClick={() => setMemoryIndex(index => (index + 1) % memories.length)}
+        aria-label="Show another garden memory"
+      >
+        another
+      </button>
+    </aside>
   )
 }
 
