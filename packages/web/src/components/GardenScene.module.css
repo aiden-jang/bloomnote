@@ -246,6 +246,68 @@
   opacity: 0.72;
 }
 
+.journalEditor {
+  width: min(310px, calc(100vw - 100px));
+  margin-top: 6px;
+  padding: 9px;
+  border: 1px solid rgba(95, 125, 79, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 252, 245, 0.72);
+}
+
+.journalEditor label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--green-deep);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.journalEditor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(95, 125, 79, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-dark);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  outline: none;
+  padding: 7px 8px;
+}
+
+.journalEditor textarea:focus {
+  border-color: var(--green-mid);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green-mid), transparent 82%);
+}
+
+.journalEditor > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.journalEditor span {
+  color: var(--text-light);
+  font-size: 9px;
+}
+
+.journalEditor button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--green-deep);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  padding: 6px 10px;
+}
+
 @keyframes flowerPeekIn {
   from { opacity: 0; transform: translateY(-5px) scale(0.99); }
   to { opacity: 1; transform: translateY(0) scale(1); }
