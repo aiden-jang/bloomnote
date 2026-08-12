@@ -1,15 +1,7 @@
 /*
- * Spoken memories, kept on this device.
- *
- * Attached to a journal entry, never to a garden you send. That is a deliberate boundary rather than a
- * shortcut: audio on a sent garden needs object storage, and the only binding this app has is KV, where
- * writes are the scarce quota and megabytes of audio are the wrong shape entirely. It is also the better
- * product. The journal is the private half of bloomnote, and speaking is easier than typing when the
- * memory is the kind you would rather not compose a sentence about.
- *
- * IndexedDB rather than localStorage, because localStorage holds strings and has a ~5MB ceiling that one
- * minute of audio would eat. Everything here degrades to "no voice memories" rather than throwing: private
- * browsing, a denied microphone and a full disk are all ordinary, and none of them should break a journal.
+ * Journal entries only, never a sent garden: audio needs object storage and this app only has KV.
+ * IndexedDB rather than localStorage, whose ~5MB string ceiling one minute of audio would eat. Every
+ * failure path here degrades to "no voice memories": private browsing and a denied mic are ordinary.
  */
 
 const DB_NAME = 'bloomnote-voice'
@@ -56,13 +48,8 @@ async function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStor
     try {
       const tx = db.transaction(STORE, mode)
       const request = run(tx.objectStore(STORE))
-      /*
-       * `undefined` normalised to null on the way out.
-       *
-       * A `get` for a key that is not there succeeds with `result === undefined`, and the cast below would
-       * happily hand that back as a VoiceMemory. Callers testing truthiness survived it; the declared type
-       * did not, and the first `?? ` or `in` check written against it would have been wrong.
-       */
+      // A `get` on a missing key succeeds with undefined, and the cast below would pass that off as a
+      // VoiceMemory. The declared type says null.
       request.onsuccess = () => resolve((request.result ?? null) as T | null)
       request.onerror = () => resolve(null)
       tx.onabort = () => resolve(null)
@@ -103,13 +90,8 @@ export function canRecord(): boolean {
   )
 }
 
-/**
- * The best container this browser will actually produce.
- *
- * Safari records mp4 and everything else prefers webm/opus, and passing an unsupported mimeType to
- * MediaRecorder throws rather than falling back. Returning undefined lets the browser choose, which is
- * the correct answer when none of the guesses is supported.
- */
+/** An unsupported mimeType makes MediaRecorder throw rather than fall back, so undefined (browser's
+ *  choice) is the right answer when no guess is supported. Safari wants mp4, everything else webm. */
 function bestMimeType(): string | undefined {
   const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
   return candidates.find((type) => MediaRecorder.isTypeSupported?.(type))
@@ -124,12 +106,7 @@ export interface Recording {
   stream: MediaStream
 }
 
-/**
- * Start recording.
- *
- * Throws only for a refused microphone, which the caller has to handle as a normal outcome: somebody
- * dismissing a permission prompt is not an error worth showing an error for.
- */
+/** Throws only for a refused microphone, which is a normal outcome, not an error worth showing. */
 export async function startRecording(maxSeconds = MAX_SECONDS): Promise<Recording> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
   const mimeType = bestMimeType()
