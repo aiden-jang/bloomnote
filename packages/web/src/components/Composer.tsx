@@ -1011,8 +1011,14 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               screen — the one input this page exists for, below the fold, behind four optional
               ones. Everything under it refines a garden that this field alone can already grow. */}
           <section className={styles.section}>
-            <label className={styles.label}>your note</label>
+            {/* Actually associated with the field. It read as a label and was not one: no htmlFor, no
+                id, so the one input this page exists for had no accessible name at all, and the only
+                thing standing in for one was a placeholder that rotates between writing prompts. */}
+            <label className={styles.label} htmlFor="note">
+              your note
+            </label>
             <textarea
+              id="note"
               ref={messageRef}
               className={styles.textarea}
               placeholder={writingPrompt}

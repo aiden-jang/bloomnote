@@ -307,7 +307,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     const flower = focused === null ? null : flowers[focused]
     if (!flower || flowerShareStatus) return
     const meaning = withoutLeadingFlowerName(flower.name, flower.meaning)
-    const text = `${flower.name} — ${meaning}`
+    const text = `${flower.name}: ${meaning}`
     const finish = (status: 'shared' | 'copied'): void => {
       setFlowerShareStatus(status)
       window.setTimeout(() => setFlowerShareStatus(null), 2200)

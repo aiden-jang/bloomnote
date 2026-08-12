@@ -99,7 +99,7 @@ test.describe('compose → bloom → share → recipient', () => {
 
     await page.getByPlaceholder('your name').fill('Aiden')
     await page.getByPlaceholder('their name').fill('Nadia')
-    await page.locator('textarea').fill('I kept thinking about that rainy drive home.')
+    await page.getByLabel('your note').fill('I kept thinking about that rainy drive home.')
 
     // Wait for the tab-local recovery cache rather than assuming React has
     // flushed its effect before the reload starts.
@@ -108,7 +108,7 @@ test.describe('compose → bloom → share → recipient', () => {
 
     await expect(page.getByPlaceholder('your name')).toHaveValue('Aiden')
     await expect(page.getByPlaceholder('their name')).toHaveValue('Nadia')
-    await expect(page.locator('textarea')).toHaveValue('I kept thinking about that rainy drive home.')
+    await expect(page.getByLabel('your note')).toHaveValue('I kept thinking about that rainy drive home.')
     await expect(page.getByRole('status')).toContainText('Your draft is still here.')
 
     // Clear means clear: a deliberate reset must win over recovery.
@@ -116,7 +116,7 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.reload()
     await expect(page.getByPlaceholder('your name')).toHaveValue('')
     await expect(page.getByPlaceholder('their name')).toHaveValue('')
-    await expect(page.locator('textarea')).toHaveValue('')
+    await expect(page.getByLabel('your note')).toHaveValue('')
   })
 
   test('a garden can be grown, shared, and opened', async ({ page }) => {
@@ -140,7 +140,7 @@ test.describe('compose → bloom → share → recipient', () => {
     // --- Write ------------------------------------------------------------------------------
     await page.getByPlaceholder('your name').fill('Aiden');
     await page.getByPlaceholder('their name').fill('Nadia');
-    await page.locator('textarea').fill(NOTE);
+    await page.getByLabel('your note').fill(NOTE);
 
     // Starting a draft clears the demo and shrinks the plot to a waiting bed, so the note field
     // is not pushed below the fold by 260px of empty sky.
@@ -182,8 +182,16 @@ test.describe('compose → bloom → share → recipient', () => {
     }
     // The reply loop is the thing that makes this a conversation rather than a one-way card.
     await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible();
-    await page.getByRole('button', { name: 'Share this garden' }).click();
-    await expect(page.getByRole('button', { name: 'Share this garden' })).toContainText('garden shared');
+    /*
+     * Either outcome counts, because which one happens is the platform's choice, not the app's.
+     * A phone has navigator.share and reports "garden shared"; a desktop browser (and this headless
+     * one) has no share sheet, falls back to the clipboard, and reports "link copied". Asserting only
+     * the native wording meant this could never pass anywhere the fallback runs, which is where it
+     * runs in CI.
+     */
+    const shareButton = page.getByRole('button', { name: 'Share this garden' });
+    await shareButton.click();
+    await expect(page.getByRole('button', { name: /garden shared|link copied/i })).toBeVisible();
   });
 
   test('a dead link says the garden is still there', async ({ page }) => {

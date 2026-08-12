@@ -363,7 +363,7 @@ export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Prom
   const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
   if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
     try {
-      await nav.share({ files: [file], title: flower.name, text: `${flower.name} — ${meaning}` });
+      await nav.share({ files: [file], title: flower.name, text: `${flower.name}: ${meaning}` });
       return 'shared';
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return 'dismissed';
