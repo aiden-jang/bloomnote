@@ -232,6 +232,25 @@ test.describe('compose → bloom → share → recipient', () => {
     // Tapping one names it and links back to the entries it came from.
     await threads.getByRole('button', { name: /Nadia/ }).click();
     await expect(page.getByText(/Nadia is in 3 of your entries/i)).toBeVisible();
+
+    /*
+     * The recap, and quiet mode.
+     *
+     * The seeded entries are dated August 2026, so whether they fall inside the recap's recent window
+     * depends on when this runs. Assert the invariant that holds either way: whatever it says, it never
+     * says it with a number or a cadence, because that is the line between a recap and a scoreboard.
+     */
+    const shelf = page.getByRole('region', { name: /my flower journal/i });
+    await expect(shelf).toBeVisible();
+    const recap = shelf.locator('p').filter({ hasText: /^lately,/ });
+    if (await recap.count()) {
+      await expect(recap.first()).not.toHaveText(/\d|streak|week|day|missed|behind/i);
+    }
+    // Quiet by default, so the tally is absent and the control offers to show it.
+    const quietToggle = shelf.getByRole('button', { name: /show the tallies/i });
+    await expect(quietToggle).toBeVisible();
+    await quietToggle.click();
+    await expect(shelf.getByRole('button', { name: /hide the tallies/i })).toBeVisible();
     /*
      * Either outcome counts, because which one happens is the platform's choice, not the app's.
      * A phone has navigator.share and reports "garden shared"; a desktop browser (and this headless
