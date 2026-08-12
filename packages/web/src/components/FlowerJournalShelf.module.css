@@ -171,3 +171,47 @@
 .quietToggle:hover {
   color: var(--text-mid);
 }
+
+/* A spoken memory under the written one. */
+.voiceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.voiceRow button {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--green-pale);
+  background: white;
+  color: var(--text-mid);
+  cursor: pointer;
+}
+
+/*
+ * The invitation to record, and the marker that a recording exists.
+ *
+ * A link rather than a button with a microphone icon: this is one of several ways to keep a memory, and
+ * giving it a prominent control would make the written note look like the lesser option.
+ */
+.voiceLink {
+  font: inherit;
+  font-size: 11.5px;
+  display: block;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.voiceLink:hover {
+  color: var(--green-deep);
+}

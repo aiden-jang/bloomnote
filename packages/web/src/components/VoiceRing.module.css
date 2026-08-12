@@ -1,0 +1,81 @@
+/*
+ * A voice memory as a ring of petals.
+ *
+ * Sized to sit inside a journal row without becoming the row. It is a second way to keep a memory, not a
+ * headline feature, so it reads as an object on the shelf rather than a media player.
+ */
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ring {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.ring:disabled {
+  cursor: default;
+}
+
+.ring svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.ring:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
+}
+
+.petal {
+  fill: var(--green-light);
+  /* No CSS transition: the position is recomputed per frame from real amplitude, and a transition would
+     smear the response into a lag. Damping lives in the component instead. */
+}
+
+.centre {
+  fill: var(--green-deep);
+}
+
+.glyph {
+  font-size: 8px;
+  fill: white;
+  /* Neither the play glyph nor the petals should ever catch a text selection drag. */
+  user-select: none;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.remove {
+  font: inherit;
+  font-size: 11px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.remove:hover {
+  color: var(--soil-dark);
+}

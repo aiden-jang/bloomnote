@@ -1525,3 +1525,24 @@
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/*
+ * The writing invitation, above the note field.
+ *
+ * Quieter than the label and quieter still on its second line. It is a nudge, and a nudge that competes
+ * with the field it is nudging you toward has failed.
+ */
+.ritual {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-light);
+}
+
+.ritual span {
+  display: block;
+  margin-top: 2px;
+  /* The permission line matters more than the prompt on a hard day, so it is not italic or shrunken
+     further; it just gets its own line so it reads as a second thought rather than a clause. */
+  color: var(--text-mid);
+}
