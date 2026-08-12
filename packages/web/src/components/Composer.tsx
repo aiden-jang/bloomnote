@@ -40,6 +40,7 @@ import {
 import { DEFAULT_MOOD, MOODS } from '../lib/moods'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
+import { ritual } from '../lib/rituals'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
@@ -242,6 +243,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [message, setMessage] = useState(initialInputs.message)
   const [secret, setSecret] = useState(initialInputs.secret)
   const [occasion, setOccasion] = useState(initialInputs.occasion)
+  // Keyed on occasion only: re-reading the clock on every render would let the copy change under
+  // somebody who happens to be writing at 11:59.
+  const [ritualAt] = useState(() => new Date())
+  const todaysRitual = useMemo(() => ritual(occasion, ritualAt), [occasion, ritualAt])
   const [mood, setMood] = useState(initialInputs.mood)
   // Curated example that follows the selected occasion + mood, so the empty
   // field previews the kind of note those choices suggest.
@@ -1017,6 +1022,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <label className={styles.label} htmlFor="note">
               your note
             </label>
+            {/* A way in, keyed to the hour and gentler when the occasion is a hard one. Distinct from
+                the placeholder below, which is an example note rather than an invitation. */}
+            <p className={styles.ritual}>
+              {todaysRitual.invitation}
+              {todaysRitual.permission && <span>{todaysRitual.permission}</span>}
+            </p>
             <textarea
               id="note"
               ref={messageRef}
