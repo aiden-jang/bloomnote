@@ -1,0 +1,130 @@
+/*
+ * The threads through a journal.
+ *
+ * Sits under the flower shelf and is quieter than it on purpose: the shelf is the thing somebody came
+ * for, and this is the thing they did not know was there. Loud framing would make it feel like analytics
+ * about them rather than a small observation.
+ */
+.wrap {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--green-pale);
+  text-align: left;
+}
+
+.heading strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heading small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--text-light);
+}
+
+.threads {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+/*
+ * Chips rather than a list, because these are things you notice at a glance and occasionally follow, not
+ * rows to read top to bottom. Wrapping over scrolling: there are rarely more than a handful, and a
+ * horizontal scroller would hide some behind a gesture for no reason.
+ */
+.thread {
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1.5px solid var(--green-pale);
+  background: white;
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.thread:hover {
+  border-color: var(--green-light);
+  background: #f6faf2;
+}
+
+.thread:active {
+  transform: scale(0.96);
+}
+
+.thread[aria-expanded='true'] {
+  border-color: var(--green-mid);
+  color: var(--green-deep);
+  background: #f2f8ee;
+}
+
+/* A count of subjects, never of days. See constellations.ts for why that distinction is load-bearing. */
+.times {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.kind {
+  font-size: 11px;
+}
+
+.detail {
+  margin: 10px 0 0;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: #f8fbf5;
+  border: 1px solid var(--green-pale);
+}
+
+.detail p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-mid);
+}
+
+.detail ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail li a {
+  font-size: 12.5px;
+  color: var(--green-deep);
+}
+
+.detail li em {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+  /* The model writes these and people paste into them, so a long unbroken token must not widen the card. */
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread {
+    transition: none;
+  }
+  .thread:active {
+    transform: none;
+  }
+}

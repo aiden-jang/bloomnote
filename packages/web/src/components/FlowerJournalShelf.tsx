@@ -6,6 +6,7 @@ import {
   type FlowerJournalEntry,
 } from '../lib/flowerJournal'
 import styles from './FlowerJournalShelf.module.css'
+import { Constellations } from './Constellations'
 
 export default function FlowerJournalShelf({ currentGardenId }: { currentGardenId: string }) {
   const [entries, setEntries] = useState<FlowerJournalEntry[]>(() => loadFlowerJournal())
@@ -53,6 +54,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         ))}
       </ul>
       {entries.length > 8 && <p className={styles.more}>{entries.length - 8} more flowers are tucked away.</p>}
+      <Constellations entries={entries} />
     </section>
   )
 }
