@@ -3,8 +3,11 @@ import {
   FLOWER_JOURNAL_EVENT,
   loadFlowerJournal,
   removeFlowerJournalEntry,
+  setEntryMeaning,
+  setEntryShelves,
   type FlowerJournalEntry,
 } from '../lib/flowerJournal'
+import { entriesOn, isOn, meaningOf, SHELVES, toggled, type ShelfId } from '../lib/shelves'
 import styles from './FlowerJournalShelf.module.css'
 import { Constellations } from './Constellations'
 import { gardenRecap } from '../lib/gardenRecap'
@@ -30,6 +33,10 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   const [recordingFor, setRecordingFor] = useState<string | null>(null)
   const recording = useRef<Recording | null>(null)
   const [voiceError, setVoiceError] = useState<string | null>(null)
+  /** Null shows everything. A shelf id narrows the list to one shelf. */
+  const [shelf, setShelf] = useState<ShelfId | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
 
   // One key scan on mount rather than a blob read per row: audio is only fetched when somebody plays it.
   useEffect(() => {
@@ -104,6 +111,15 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   // Describes subjects, never cadence, which is why quiet mode leaves it alone. See gardenRecap.ts.
   const recapLine = gardenRecap(entries).line
 
+  function saveMeaning(id: string): void {
+    setEntryMeaning(id, draft)
+    setEditing(null)
+    setEntries(loadFlowerJournal())
+  }
+
+  const shown = shelf ? entriesOn(entries, shelf) : entries
+  const emptyShelf = shelf ? SHELVES.find(option => option.id === shelf)?.empty : null
+
   return (
     <section className={styles.shelf} aria-labelledby="flower-journal-heading">
       <div className={styles.heading}>
@@ -115,8 +131,28 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       </div>
       {recapLine && <p className={styles.recap}>{recapLine}</p>}
       {voiceError && <p className={styles.recap}>{voiceError}</p>}
+      {/* Filters, not folders: the flower stays on the one shelf and this only narrows what is shown. */}
+      <div className={styles.shelfRow} role="group" aria-label="Shelves">
+        <button type="button" aria-pressed={shelf === null} onClick={() => setShelf(null)}>
+          everything
+        </button>
+        {SHELVES.map(option => (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={shelf === option.id}
+            onClick={() => setShelf(shelf === option.id ? null : option.id)}
+          >
+            {option.label}
+            {!quiet && entriesOn(entries, option.id).length > 0 && (
+              <i> {entriesOn(entries, option.id).length}</i>
+            )}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 && emptyShelf && <p className={styles.recap}>{emptyShelf}</p>}
       <ul className={styles.entries}>
-        {entries.slice(0, 8).map(entry => (
+        {shown.slice(0, 8).map(entry => (
           <li key={entry.id} className={entry.gardenId === currentGardenId ? styles.current : undefined}>
             <span className={styles.swatches} aria-hidden>
               {entry.colors.slice(0, 3).map((color, index) => <i key={`${color}-${index}`} style={{ background: color }} />)}
@@ -125,6 +161,50 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
               <a href={`/g/${entry.gardenId}`}>{entry.flowerName}</a>
               <small>{entry.from ? `from ${entry.from}` : 'from a bloomnote'}</small>
               {entry.memory && <em>“{entry.memory}”</em>}
+              {/* The sender said what it means; this is what it came to mean to whoever kept it. */}
+              {editing === entry.id ? (
+                <span className={styles.meaningEdit}>
+                  <input
+                    autoFocus
+                    value={draft}
+                    maxLength={240}
+                    aria-label={`What ${entry.flowerName} means to you`}
+                    onChange={event => setDraft(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter') saveMeaning(entry.id)
+                      if (event.key === 'Escape') setEditing(null)
+                    }}
+                  />
+                  <button type="button" onClick={() => saveMeaning(entry.id)}>keep</button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.meaning}
+                  onClick={() => {
+                    setEditing(entry.id)
+                    setDraft(entry.mine ?? '')
+                  }}
+                >
+                  {meaningOf(entry).text}
+                  {!meaningOf(entry).mine && <i> · say what it means to you</i>}
+                </button>
+              )}
+              <span className={styles.shelfChips}>
+                {SHELVES.map(option => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isOn(entry, option.id)}
+                    onClick={() => {
+                      setEntryShelves(entry.id, toggled(entry, option.id))
+                      setEntries(loadFlowerJournal())
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </span>
               {/* A spoken memory sits under the written one: it is another way to keep the same thing. */}
               {recordingFor === entry.id ? (
                 <span className={styles.voiceRow}>
@@ -155,6 +235,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
             </span>
             <button
               type="button"
+              className={styles.remove}
               onClick={() => removeFlowerJournalEntry(entry.id)}
               aria-label={`Remove ${entry.flowerName} from flower journal`}
             >
@@ -163,9 +244,9 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
           </li>
         ))}
       </ul>
-      {entries.length > 8 && (
+      {shown.length > 8 && (
         <p className={styles.more}>
-          {quiet ? 'more flowers are tucked away.' : `${entries.length - 8} more flowers are tucked away.`}
+          {quiet ? 'more flowers are tucked away.' : `${shown.length - 8} more flowers are tucked away.`}
         </p>
       )}
       <Constellations entries={entries} />
