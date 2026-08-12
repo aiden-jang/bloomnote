@@ -1,21 +1,6 @@
 /*
- * Quiet mode.
- *
- * Almost nothing here, and that is the point worth writing down.
- *
- * The usual shape of this feature is a toggle that hides streaks, counts and reminders. That shape is an
- * admission: it says the app has pressure in it by default and offers to turn some of it off for people
- * who ask. Anybody who does not find the setting keeps the pressure.
- *
- * So bloomnote does not have the pressure to begin with. There is no streak anywhere, nothing counts days,
- * and nothing tells you what you missed. The recap describes subjects rather than cadence, and the
- * constellations count entries rather than intervals. Both have tests asserting they never mention days,
- * weeks or streaks, so this is enforced rather than merely intended.
- *
- * What is left for a toggle is the small amount of *quantity* that is genuinely useful: how many flowers
- * are in the journal, how many entries a thread appears in. Those are facts about your writing, not
- * judgements about your consistency, but on a bad day a number is still a number. So quiet mode removes
- * the tallies and keeps everything else, and the default is chosen for the bad day.
+ * Small because there is no pressure to switch off: no streaks anywhere, nothing counts days. All this
+ * hides is the useful tallies, which are still numbers on a bad day. Default is chosen for the bad day.
  */
 
 const STORAGE_KEY = 'bloomnote.quiet.v1'

@@ -3,15 +3,8 @@ import { prefersReducedMotion } from '../lib/motion'
 import styles from './VoiceRing.module.css'
 
 /*
- * A voice memory, drawn as a ring of petals.
- *
- * The ring is driven by the actual amplitude of the audio, not by a canned animation on a timer. That is
- * the whole reason it is worth drawing: a fake pulse is wallpaper, while a ring that swells on the word
- * somebody leaned on is a picture of the recording. Same principle as the purr in mrrp, where the flutter
- * had to be real for it to read as a cat.
- *
- * Reduced motion gets a still ring rather than no ring. The petals are information (roughly how long, and
- * that a recording exists), so removing them entirely would remove content, not just movement.
+ * Driven by real amplitude, not a timer: a fake pulse is wallpaper. Reduced motion gets a still ring
+ * rather than none, since the petals carry information (roughly how long) and not just movement.
  */
 
 const PETALS = 24
@@ -55,12 +48,8 @@ export function VoiceRing({
   const url = useRef<string | null>(null)
   const still = prefersReducedMotion()
 
-  /*
-   * One analyser, fed by either the live microphone or the playing audio element.
-   *
-   * Built lazily and torn down completely, because an AudioContext left open holds the microphone
-   * indicator on in the browser chrome, which looks exactly like an app still listening to you.
-   */
+  // Torn down completely: an open AudioContext keeps the browser's mic indicator lit, which looks
+  // exactly like an app still listening to you.
   const analyse = useCallback(
     (source: MediaStream | HTMLAudioElement) => {
       if (still) return () => undefined
@@ -129,12 +118,8 @@ export function VoiceRing({
       audio.pause()
       return
     }
-    /*
-     * The analyser is attached once and never again.
-     *
-     * createMediaElementSource throws if called twice for the same element, which turns a second tap on
-     * play into a broken player. The teardown is left to unmount rather than to pause for the same reason.
-     */
+    // createMediaElementSource throws if called twice on one element, so a second tap on play would
+    // break the player. Teardown waits for unmount for the same reason.
     if (!audio.dataset.wired) {
       audio.dataset.wired = 'yes'
       analyse(audio)

@@ -1,14 +1,8 @@
 import type { FlowerJournalEntry } from './flowerJournal'
 
 /*
- * Two shelves to put a kept flower on, and no more.
- *
- * The journal holds up to eighty flowers in one flat list, which is a pile rather than a shelf. Naming
- * two groupings is the smallest thing that gives it shape, and the names matter more than the mechanism:
- * "things I survived" and "things I want to remember" are the two reasons somebody keeps a flower at all.
- *
- * Deliberately not free-text tags. A taxonomy you maintain is admin, and admin is the opposite of what a
- * keepsake shelf is for. Two fixed names mean the decision is one tap and there is nothing to tidy later.
+ * Eighty flowers in one flat list is a pile. Two fixed names rather than free-text tags: a taxonomy you
+ * maintain is admin, and admin is the opposite of a keepsake shelf.
  */
 
 export type ShelfId = 'survived' | 'remember'
@@ -29,13 +23,8 @@ export function shelfLabel(id: ShelfId): string {
   return SHELVES.find(shelf => shelf.id === id)?.label ?? id
 }
 
-/**
- * A flower can sit on both shelves at once.
- *
- * The obvious design makes this one field and forces a choice, and the choice is a false one: the thing
- * somebody survived is very often the thing they most want to remember. Making them pick would quietly
- * teach people the shelves are categories rather than feelings.
- */
+/** Both at once. One field forcing a choice makes these categories, and the thing somebody survived is
+ *  very often the thing they most want to remember. */
 export function shelvesOf(entry: FlowerJournalEntry): ShelfId[] {
   const raw = entry.shelves
   if (!Array.isArray(raw)) return []
@@ -57,14 +46,8 @@ export function entriesOn(entries: readonly FlowerJournalEntry[], id: ShelfId): 
   return entries.filter(entry => isOn(entry, id))
 }
 
-/**
- * What a flower means to the person who kept it.
- *
- * The sender's meaning came with the garden and stays; this is the keeper's, and it wins where there is
- * one. They are different things worth holding separately: a flower somebody sent to say "congratulations"
- * can be the one you kept because of the week you got it, and overwriting the first to record the second
- * would edit somebody else's message.
- */
+/** The keeper's meaning wins, and never overwrites the sender's: that would edit somebody else's
+ *  message, and a flower sent to say congratulations can be kept for the week you got it. */
 export function meaningOf(entry: FlowerJournalEntry): { text: string; mine: boolean } {
   const own = entry.mine?.trim()
   return own ? { text: own, mine: true } : { text: entry.meaning, mine: false }

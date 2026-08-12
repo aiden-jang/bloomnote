@@ -1,21 +1,10 @@
 import type { FlowerJournalEntry } from './flowerJournal'
 
 /**
- * The shapes your writing keeps making.
+ * People, places and feelings that recur across journal entries.
  *
- * A constellation is a person, a place or a feeling that turns up in more than one journal entry, and
- * the entries it links. The point is not search. It is being shown a pattern you did not know was
- * there: that Nadia appears in six entries, or that "tired" and "grateful" keep arriving together.
- *
- * Two constraints shaped every decision in here.
- *
- * **Nothing leaves the device.** The journal lives in localStorage precisely because it is the private
- * half of bloomnote, so this is a pure function over local text with no AI call and no network. That
- * rules out the easy version (ask a model to extract entities) and is worth the cost: sending somebody's
- * private journal to a server to find out that it mentions their mother is a bad trade at any accuracy.
- *
- * **Recurrence is the whole idea.** A term seen once is a word; a term seen twice is a thread. So the
- * minimum is two entries, which also does most of the noise filtering for free.
+ * Pure and local, never an AI call: sending somebody's private journal to a server to learn that it
+ * mentions their mother is a bad trade at any accuracy. Two entries minimum, which also filters noise.
  */
 
 export type ConstellationKind = 'person' | 'place' | 'feeling'
@@ -34,13 +23,8 @@ export interface Constellation {
   lastSeenAt: string
 }
 
-/**
- * Feelings worth noticing, in their base form.
- *
- * A closed list rather than sentiment scoring, because the job is not "is this entry positive" but "does
- * this exact feeling keep recurring". Deliberately includes the unglamorous ones: a journal that can
- * only notice happiness is no use on the days somebody most needs to look back.
- */
+/** A closed list, not sentiment scoring: the job is "does this feeling recur", not "is this positive".
+ *  Includes the unglamorous ones, or it is no use on the days somebody most needs to look back. */
 const FEELINGS = [
   'happy', 'sad', 'tired', 'angry', 'calm', 'anxious', 'grateful', 'lonely', 'proud', 'scared',
   'hopeful', 'guilty', 'relieved', 'excited', 'jealous', 'content', 'restless', 'homesick',
@@ -48,13 +32,8 @@ const FEELINGS = [
   'exhausted', 'grieving', 'frustrated', 'ashamed', 'joyful', 'bored', 'stressed', 'better',
 ] as const
 
-/**
- * Inflections folded onto their base feeling.
- *
- * "tiredness", "exhausting" and "exhausted" are one thread, and splitting them means the pattern never
- * reaches the two-entry floor. Kept as an explicit map rather than a stemmer: a general stemmer on a
- * 34-word list is more machinery and more surprises than the list itself.
- */
+/** "tiredness" and "exhausted" are one thread; split, they never reach the two-entry floor. A map
+ *  rather than a stemmer, which on 34 words is more machinery and more surprises than the list. */
 const FEELING_FORMS: Record<string, string> = {
   happiness: 'happy', sadness: 'sad', tiredness: 'tired', anger: 'angry', calmness: 'calm',
   anxiety: 'anxious', gratitude: 'grateful', loneliness: 'lonely', pride: 'proud', fear: 'scared',
@@ -65,13 +44,8 @@ const FEELING_FORMS: Record<string, string> = {
 }
 
 /**
- * Capitalised words that are not names.
- *
- * This list is the main defence now, together with the two-entry floor. Sentence position looked like
- * better evidence and was not: rejecting anything that opens a sentence threw away "Nadia called." and
- * "Theo again.", which is how people actually write in a journal. Recall matters more here than a clean
- * rule, because a missed thread is invisible while a wrong one is merely wrong and filtered by needing
- * to recur.
+ * Don't use sentence position instead: rejecting sentence-openers threw away "Nadia called." and "Theo
+ * again.", which is how people write. A missed thread is invisible; a wrong one is filtered by recurrence.
  */
 const NOT_A_NAME = new Set([
   'i', 'the', 'a', 'an', 'and', 'but', 'so', 'then', 'today', 'yesterday', 'tomorrow', 'this',
@@ -112,12 +86,7 @@ function titleCase(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1)
 }
 
-/**
- * Everything worth noticing in one entry.
- *
- * Deduplicated per entry on purpose: writing "Nadia" four times in one sitting is one entry about
- * Nadia, and counting mentions instead of entries would let a single long entry invent a pattern.
- */
+/** Deduplicated per entry: counting mentions would let one long entry invent a pattern. */
 export function mentionsIn(entry: FlowerJournalEntry): Mention[] {
   const found = new Map<string, Mention>()
   const add = (mention: Mention): void => {
@@ -159,13 +128,7 @@ export function mentionsIn(entry: FlowerJournalEntry): Mention[] {
 /** How many entries a thing has to appear in before it counts as a thread rather than a word. */
 export const MIN_ENTRIES = 2
 
-/**
- * The constellations across a journal.
- *
- * Sorted by recency first and size second, because the useful question is "what has been on my mind",
- * not "what is my all-time top subject". A name from two years ago outranking this month's would make
- * the whole thing feel like an archive.
- */
+/** Recency before size: "what has been on my mind", not an all-time chart, which reads as an archive. */
 export function constellations(entries: FlowerJournalEntry[], minEntries = MIN_ENTRIES): Constellation[] {
   const groups = new Map<string, { label: string; kind: ConstellationKind; ids: Map<string, string> }>()
 
@@ -195,12 +158,7 @@ export function constellations(entries: FlowerJournalEntry[], minEntries = MIN_E
     .sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt) || b.entryCount - a.entryCount)
 }
 
-/**
- * One sentence about a constellation, in bloomnote's lowercase voice.
- *
- * Says what recurs and never how consistently. "four entries" is a fact about subjects; "four weeks in
- * a row" would be a streak, and a journal that can be broken is a chore.
- */
+/** What recurs, never how consistently: "four entries" is a subject, "four weeks running" is a streak. */
 export function constellationLine(c: Constellation): string {
   const times = c.entryCount === 2 ? 'twice' : `${c.entryCount} times`
   if (c.kind === 'feeling') return `you have written about feeling ${c.label} ${times}.`

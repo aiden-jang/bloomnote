@@ -2,20 +2,8 @@ import { constellations, type Constellation } from './constellations'
 import type { FlowerJournalEntry } from './flowerJournal'
 
 /*
- * A recap of what you have been writing about.
- *
- * Built on constellations rather than on counting, and that is the whole design. The obvious version of
- * "weekly recap" is a scoreboard: entries this week, longest streak, percentage change. That version
- * makes a journal into something you can be behind on, and bloomnote's entire premise is the opposite.
- *
- * So this describes *subjects*, never cadence. It will happily say "Nadia and the rain kept coming up"
- * and it will never say how many days you wrote, whether that is more or less than last week, or that
- * you missed any. There is nothing in here to fall behind on, which is also why quiet mode does not need
- * to switch it off: see `quietMode.ts` for the same rule stated from the other side.
- *
- * Windowed rather than genuinely weekly. "The last while" is the honest description of a journal somebody
- * writes in irregularly, and a strict Monday-to-Sunday boundary would produce empty recaps that read as
- * failure reports.
+ * Describes subjects, never cadence: no day counts, no comparison to last week, nothing to fall behind
+ * on. Windowed rather than weekly, or an irregular writer gets empty recaps that read as failure reports.
  */
 
 export const RECENT_WINDOW_DAYS = 14
