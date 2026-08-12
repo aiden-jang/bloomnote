@@ -140,3 +140,34 @@
   margin-bottom: 0;
   text-align: center;
 }
+
+/* The sentence about the flowers, so it reads before them. */
+.recap {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-mid);
+}
+
+/*
+ * Quiet mode's only control.
+ *
+ * Deliberately the plainest thing on the shelf. A prominent toggle would make the numbers feel like the
+ * default state you are opting out of, and the default is the other way round.
+ */
+.quietToggle {
+  font: inherit;
+  font-size: 11.5px;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.quietToggle:hover {
+  color: var(--text-mid);
+}
