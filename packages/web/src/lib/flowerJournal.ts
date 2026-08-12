@@ -14,6 +14,10 @@ export interface FlowerJournalEntry {
   memory: string
   from?: string | undefined
   savedAt: string
+  /** Shelf ids this flower sits on. Optional: entries saved before shelves existed have none. */
+  shelves?: string[]
+  /** What the keeper says it means, which is not the sender's `meaning` and never replaces it. */
+  mine?: string
 }
 
 export function decodeFlowerJournal(raw: string | null): FlowerJournalEntry[] {
@@ -74,6 +78,35 @@ export function saveFlowerJournalEntry(input: {
     // A flower journal is an optional on-device keepsake; storage failures never block the garden.
   }
   return entry
+}
+
+/** Rewrite one entry in place, keeping its position. Returns false when the id is not on the shelf. */
+function updateEntry(id: string, change: (entry: FlowerJournalEntry) => FlowerJournalEntry): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY))
+    const index = current.findIndex(entry => entry.id === id)
+    if (index < 0) return false
+    current[index] = change(current[index]!)
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
+    window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function setEntryShelves(id: string, shelves: string[]): boolean {
+  return updateEntry(id, entry => ({ ...entry, shelves }))
+}
+
+/** An empty string clears it, so the sender's meaning comes back rather than being replaced by nothing. */
+export function setEntryMeaning(id: string, mine: string): boolean {
+  const trimmed = mine.trim().slice(0, 240)
+  return updateEntry(id, entry => {
+    const { mine: _dropped, ...rest } = entry
+    return trimmed ? { ...rest, mine: trimmed } : rest
+  })
 }
 
 export function removeFlowerJournalEntry(id: string): void {
