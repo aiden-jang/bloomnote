@@ -166,6 +166,38 @@ test.describe('compose → bloom → share → recipient', () => {
     const shareUrl = (await link.textContent())!.trim();
     expect(shareUrl).toMatch(/\/g\/[A-Za-z0-9]{6}$/);
 
+    /*
+     * Seed a private journal before arriving as the recipient.
+     *
+     * Written the way people actually write, because the extraction's whole difficulty is false
+     * positives: names opening sentences, a possessive, a weekday, a shouted word, and a capitalised
+     * feeling. If any of those became a "person" the panel would be claiming a relationship with Tuesday.
+     */
+    await page.addInitScript(() => {
+      const memories = [
+        "Nadia's party was loud but I was genuinely happy. we went to Roberta after.",
+        'Theo drove me home on Tuesday. I was exhausted and he did not make it a thing.',
+        'Nadia called. she sounded tired. honestly? Tired too.',
+        'Theo again. we sat at Roberta and said almost nothing.',
+        'Suddenly everything felt lighter. Nadia would laugh at me writing that.',
+      ];
+      window.localStorage.setItem(
+        'bloomnote.flower-journal.v1',
+        JSON.stringify(
+          memories.map((memory, i) => ({
+            id: `seed-${i}`,
+            gardenId: `seed-g-${i}`,
+            flowerIndex: 0,
+            flowerName: ['Hydrangea', 'Peony', 'Aster', 'Freesia', 'Dahlia'][i],
+            meaning: 'a seeded memory',
+            colors: ['#e11d48'],
+            memory,
+            savedAt: new Date(Date.UTC(2026, 7, 1 + i)).toISOString(),
+          })),
+        ),
+      );
+    });
+
     // --- Receive ----------------------------------------------------------------------------
     // A fresh context would be more faithful, but same-page navigation still exercises the part
     // that matters: the recipient route resolving a stored garden from its id alone.
@@ -182,6 +214,24 @@ test.describe('compose → bloom → share → recipient', () => {
     }
     // The reply loop is the thing that makes this a conversation rather than a one-way card.
     await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible();
+
+    // --- Constellations ---------------------------------------------------------------------
+    // Both the journal and its constellations live inside the "keep this garden" disclosure, which is
+    // collapsed until asked for. That is the right home for private-journal content, so open it.
+    await page.getByText('keep this garden').click();
+    const threads = page.getByRole('region', { name: /what keeps coming back/i });
+    await expect(threads).toBeVisible();
+    // Recurring across entries, and Roberta as a place because both mentions follow a preposition.
+    await expect(threads.getByRole('button', { name: /Nadia/ })).toBeVisible();
+    await expect(threads.getByRole('button', { name: /Theo/ })).toBeVisible();
+    await expect(threads.getByRole('button', { name: /Roberta/ })).toBeVisible();
+    // The false positives that would destroy any trust in this panel.
+    for (const wrong of ['Tuesday', 'Suddenly', 'Honestly', 'Tired']) {
+      await expect(threads.getByRole('button', { name: new RegExp(`^\\W*${wrong}`, 'i') })).toHaveCount(0);
+    }
+    // Tapping one names it and links back to the entries it came from.
+    await threads.getByRole('button', { name: /Nadia/ }).click();
+    await expect(page.getByText(/Nadia is in 3 of your entries/i)).toBeVisible();
     /*
      * Either outcome counts, because which one happens is the platform's choice, not the app's.
      * A phone has navigator.share and reports "garden shared"; a desktop browser (and this headless
