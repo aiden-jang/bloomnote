@@ -139,7 +139,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const handleCopyNote = useCallback(async () => {
     if (!message || noteCopied) return
     try {
-      await navigator.clipboard.writeText(`${message}${from ? `\n\n— ${from}` : ''}`)
+      // Matches what is on screen. The copied text is the thing she pastes into a message to
+      // someone else, so a stray em-dash would travel further than the page it came from.
+      await navigator.clipboard.writeText(`${message}${from ? `\n\n${from}` : ''}`)
       setNoteCopied(true)
       window.setTimeout(() => setNoteCopied(false), 2200)
     } catch {
@@ -328,7 +330,14 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         {message ? (
           <>
             <p className={styles.messageText}>{message}</p>
-            {from && <p className={styles.sig}>— {from}</p>}
+            {/*
+              No dash before the name.
+              *
+              * A signed note does not have one. The italic, smaller, indented treatment already reads as
+              * a signature, so the dash was doing no work that the styling was not already doing, and
+              * an em-dash is the one punctuation mark that makes handwritten copy look machine-set.
+            */}
+            {from && <p className={styles.sig}>{from}</p>}
             {canReadAloud && (
               <button
                 type="button"
