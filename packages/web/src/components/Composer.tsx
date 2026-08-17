@@ -994,20 +994,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         />
       )}
 
-      {/* Onboarding carousel — rendered while the composer is idle on a
-          fresh visit (no remix seed). Once the user starts a draft it
-          folds away via the `collapsed` prop rather than unmounting, so
-          the form glides up instead of snapping. Clearing the draft
-          re-expands it. */}
-      {phase === 'idle' && !remixSeed && (
-        <ExampleCarousel
-          onSelect={handleExampleSelect}
-          collapsed={hasDraft}
-          activeId={showDemo ? demo.id : undefined}
-          onPreview={handlePreview}
-        />
-      )}
-
       {phase === 'idle' && (
         <>
           {/* The note comes first because it is the only thing the app actually needs: it is both
@@ -1068,6 +1054,29 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               </div>
             )}
           </section>
+
+          {/*
+            Below the note, not above it.
+            *
+            * This is the second time the note has had to be dug out from under something optional.
+            * The carousel is 200px tall, so sitting above the field put the textarea at y=729 on a
+            * 640px viewport: the one input this page exists for, below the fold, behind a row of
+            * suggestions for not using it.
+            *
+            * It also reads better here. "or steal one of these" is an alternative, and an
+            * alternative only makes sense after the thing it is an alternative to.
+            *
+            * Still folds away via `collapsed` once a draft exists rather than unmounting, so the
+            * form glides rather than snapping, and clearing the draft brings it back.
+          */}
+          {!remixSeed && (
+            <ExampleCarousel
+              onSelect={handleExampleSelect}
+              collapsed={hasDraft}
+              activeId={showDemo ? demo.id : undefined}
+              onPreview={handlePreview}
+            />
+          )}
 
           <div className={styles.nameRow}>
             <section className={styles.section}>
