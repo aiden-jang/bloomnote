@@ -31,11 +31,31 @@
      The transition makes the gradient *animate* when the user
      switches occasions in the composer — pure visual delight, almost
      free since the cross-fade is GPU-composited. */
-  background: linear-gradient(
-    180deg,
-    var(--sky-top, #d4eeff) 0%,
-    var(--sky-bottom, #e8f5d0) 100%
-  );
+  /*
+   * Two layers, because one was flat.
+   *
+   * The linear ramp alone is the largest surface in the app and the only one with no light in it,
+   * which is what made an illustrated garden sit inside what looked like a placeholder. The radial
+   * on top is a sun: warm, off-centre, and falling away by 62%, so the sky has a direction and the
+   * flowers stop being lit from nowhere.
+   *
+   * Top-right on purpose. Every shadow in the scene already falls down and left, so a light source
+   * anywhere else would read as two suns.
+   *
+   * Both states keep the same layer structure, so the occasion cross-fade below still interpolates.
+   */
+  background:
+    radial-gradient(
+      118% 78% at 76% 6%,
+      rgba(255, 250, 235, 0.72) 0%,
+      rgba(255, 249, 232, 0.28) 34%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      var(--sky-top, #d4eeff) 0%,
+      var(--sky-bottom, #e8f5d0) 100%
+    );
   transition: background 0.6s ease;
 }
 
@@ -445,15 +465,39 @@
   right: 0;
 }
 
+/*
+ * Soil, lit from above and deepening downward.
+ *
+ * These were two solid fills with a ruler-straight seam between them, which is the one place the
+ * scene still looked like divs rather than a drawing. Dirt is not one colour: the surface catches
+ * the light, the cut below it falls away. Two short ramps say that in about the same number of bytes
+ * a flat fill costs.
+ */
 .groundTop {
   height: 10px;
-  background: #a0714f;
+  background: linear-gradient(180deg, #b0805c 0%, #a0714f 70%);
   border-radius: 5px 5px 0 0;
 }
 
+/*
+ * Grain, on three tiles that never line up.
+ *
+ * Not a noise texture: noise reads as a photograph and everything else here is drawn. Sparse specks
+ * at low contrast read as soil the way a few dots on a page do.
+ *
+ * The tile sizes are co-prime on purpose, and that is the whole trick. The first attempt put all
+ * three layers on one 22px tile and they stacked into a visible polka-dot lattice, which looks more
+ * like a swatch than the flat fill it replaced. With 23x17, 31x19 and 19x29 the combined pattern
+ * only repeats every few thousand pixels, so the eye reads it as scattered.
+ */
 .groundBase {
   height: 42px;
-  background: #8b5e3c;
+  background:
+    radial-gradient(circle at 18% 30%, rgba(58, 34, 18, 0.13) 0 1.4px, transparent 1.5px),
+    radial-gradient(circle at 67% 68%, rgba(58, 34, 18, 0.1) 0 1.1px, transparent 1.2px),
+    radial-gradient(circle at 88% 18%, rgba(255, 226, 196, 0.14) 0 1px, transparent 1.1px),
+    linear-gradient(180deg, #8b5e3c 0%, #7a5133 62%, #6d4729 100%);
+  background-size: 23px 17px, 31px 19px, 19px 29px, auto;
 }
 
 /* Sits on the soil surface, which is the top of .groundTop. Tufts poke up into the plot and pebbles
