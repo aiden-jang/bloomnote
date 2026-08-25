@@ -1,6 +1,12 @@
+/*
+ * Height comes from `--garden-h` (GardenScene.tsx, from the tallest flower) plus the soil band and
+ * headroom for sway. A fixed height clipped any garden whose flowers were taller than it.
+ */
 .scene {
+  --soil-h: 52px;
+  --sway-headroom: 24px;
   width: 100%;
-  height: 260px;
+  height: calc(var(--garden-h, 200px) + var(--soil-h) + var(--sway-headroom));
   position: relative;
   border-radius: 16px;
   overflow: hidden;
@@ -339,10 +345,10 @@
 
 .garden {
   position: absolute;
-  bottom: 52px;
+  bottom: var(--soil-h);
   left: 0;
   right: 0;
-  height: 200px;
+  height: var(--garden-h, 200px);
 }
 
 .flowerSlot {
@@ -634,9 +640,15 @@
     height: 220px;
   }
 
+  /* Scaled on a phone, so the scene only needs the scaled height back. */
+  .scene {
+    --soil-h: 44px;
+    height: calc(var(--garden-h, 200px) * 0.85 + var(--soil-h) + var(--sway-headroom));
+  }
+
   .garden {
-    bottom: 44px;
-    height: 170px;
+    bottom: var(--soil-h);
+    height: var(--garden-h, 200px);
     transform: scale(0.85);
     transform-origin: bottom center;
   }
