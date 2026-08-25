@@ -53,8 +53,8 @@
   background:
     radial-gradient(
       118% 78% at 76% 6%,
-      rgba(255, 250, 235, 0.72) 0%,
-      rgba(255, 249, 232, 0.28) 34%,
+      rgba(var(--sun-tint, 255, 250, 235), var(--sun-strength, 0.72)) 0%,
+      rgba(var(--sun-tint, 255, 249, 232), calc(var(--sun-strength, 0.72) * 0.39)) 34%,
       transparent 62%
     ),
     linear-gradient(
@@ -779,4 +779,37 @@
 @media (prefers-reduced-motion: reduce) {
   .drop { animation: none; opacity: 0; }
   .flowerSlotPerk { animation: none; }
+}
+
+
+/*
+ * Stars, only after dark.
+ *
+ * Hand-placed rather than random, like the petal drift: a garden has to look identical every time
+ * its owner opens it. Kept clear of the top-right, where the moon's glow already sits, and out of
+ * the bottom third, which the flowers fill.
+ */
+.stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #fdfbff;
+  opacity: 0.85;
+  animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.28; }
+  50% { opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star { animation: none; opacity: 0.7; }
 }

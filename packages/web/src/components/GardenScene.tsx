@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import FlowerSVG, { flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
+import { ritualTime, type RitualTime } from '../lib/rituals'
 import { playBloom, pulse } from '../sound'
 import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
 import { saveFlowerImage } from '../lib/gardenImage'
@@ -56,6 +57,37 @@ const MOOD_AURAS = {
 
 function auraFor(mood?: string) {
   return mood && mood in MOOD_AURAS ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
+}
+
+/*
+ * The hour the garden is opened, folded into the occasion's sky.
+ *
+ * `ritualTime` already told the composer what time it was and shaped the copy around it; the sky
+ * ignored it, so a garden opened at one in the morning arrived under a bright noon blue. Occasion
+ * still owns the hue — it is the emotional signal and must survive — so the time is a blend toward
+ * a base rather than a replacement, and morning leaves the authored colours untouched.
+ */
+const TIME_SKY: Record<RitualTime, { top: string; bottom: string; weight: number; sun: string; sunStrength: number }> = {
+  morning:   { top: '#ffffff', bottom: '#ffffff', weight: 0,    sun: '255, 250, 235', sunStrength: 0.72 },
+  afternoon: { top: '#fff6df', bottom: '#fffaf0', weight: 0.12, sun: '255, 248, 226', sunStrength: 0.78 },
+  evening:   { top: '#f0a679', bottom: '#f8d9b4', weight: 0.42, sun: '255, 214, 170', sunStrength: 0.62 },
+  night:     { top: '#1d2742', bottom: '#33395a', weight: 0.74, sun: '206, 219, 255', sunStrength: 0.20 },
+}
+
+/** left %, top %, twinkle delay. Placed by hand so a garden looks the same every time it opens. */
+const STARS: Array<[number, number, number]> = [
+  [8, 14, 0], [21, 31, 1.6], [34, 9, 0.8], [46, 24, 2.4],
+  [58, 12, 1.1], [12, 44, 3.1], [67, 34, 0.4], [29, 52, 2.0],
+  [52, 44, 1.4], [41, 38, 2.8],
+]
+
+/** Two hex colours, blended. `t` of 0 is all `a`, 1 is all `b`. */
+function mixHex(a: string, b: string, t: number): string {
+  const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+  const [ar, ag, ab] = parse(a)
+  const [br, bg, bb] = parse(b)
+  const ch = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0')
+  return `#${ch(ar!, br!)}${ch(ag!, bg!)}${ch(ab!, bb!)}`
 }
 
 function gradientFor(occasion?: string): { top: string; bottom: string } {
@@ -113,6 +145,8 @@ interface Props {
   /** Recipient-only identity for keeping individual flowers on this device. */
   journalGardenId?: string | undefined
   journalFrom?: string | undefined
+  /** Injectable clock, so the sky's hour can be pinned in a test or a static render. */
+  now?: Date
 }
 
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
@@ -277,7 +311,7 @@ function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom, now = new Date() }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -291,9 +325,14 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
    * desktop. `flowerBoxHeight` is the one number both sides now agree on.
    */
   const gardenHeight = Math.max(GARDEN_MIN_HEIGHT, ...flowers.map(flowerBoxHeight))
+  const hour = ritualTime(now)
+  const time = TIME_SKY[hour]
+  const isNight = hour === 'night'
   const sceneStyle: CSSProperties = {
-    ['--sky-top' as string]: sky.top,
-    ['--sky-bottom' as string]: sky.bottom,
+    ['--sky-top' as string]: mixHex(sky.top, time.top, time.weight),
+    ['--sky-bottom' as string]: mixHex(sky.bottom, time.bottom, time.weight),
+    ['--sun-tint' as string]: time.sun,
+    ['--sun-strength' as string]: String(time.sunStrength),
     ['--garden-h' as string]: `${gardenHeight}px`,
   }
   const [bloomedCount, setBloomedCount] = useState(0)
@@ -515,6 +554,17 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       style={sceneStyle}
     >
       <div className={styles.sky} />
+      {isNight && (
+        <div className={styles.stars} aria-hidden>
+          {STARS.map(([left, top, delay]) => (
+            <span
+              key={`${left}-${top}`}
+              className={styles.star}
+              style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }}
+            />
+          ))}
+        </div>
+      )}
       {aura && autoBloom && flowers.length > 0 && (
         <div className={`${styles.aura} ${aura.className}`} aria-hidden>
           {aura.marks.map((mark, index) => (
