@@ -523,6 +523,48 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   // Honors prefers-reduced-motion by skipping the listener entirely;
   // the CSS variable stays at its 0 fallback so the petals don't move.
   const sceneRef = useRef<HTMLDivElement>(null)
+
+  /*
+   * Depth, from wherever the visitor is pointing.
+   *
+   * Layers move at different rates against the pointer, which is what puts air between them.
+   * Written straight to the element as CSS variables rather than held in state: a pointermove that
+   * re-renders four flowers and their petals every frame is a dropped frame, and none of this is
+   * information React needs.
+   *
+   * Listener on the window with the ref read lazily, like the scroll effect below. Capturing
+   * `sceneRef.current` at effect time gives null — the scene root is not mounted on this
+   * component's first render — and with an empty dep list it would never look again.
+   *
+   * Coarse pointers get nothing here; the petals already lag the scroll below. Reduced motion gets
+   * nothing either, and the layers stay where they were drawn.
+   */
+  useEffect(() => {
+    if (prefersReducedMotion()) return
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
+
+    let raf = 0
+    const onMove = (e: PointerEvent) => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const el = sceneRef.current
+        if (!el) return
+        const r = el.getBoundingClientRect()
+        const inside =
+          e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+        const x = inside ? ((e.clientX - r.left) / r.width) * 2 - 1 : 0
+        const y = inside ? ((e.clientY - r.top) / r.height) * 2 - 1 : 0
+        el.style.setProperty('--px', x.toFixed(3))
+        el.style.setProperty('--py', y.toFixed(3))
+      })
+    }
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('pointermove', onMove)
+    }
+  }, [])
   useEffect(() => {
     if (prefersReducedMotion()) return
 
