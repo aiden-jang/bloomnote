@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
-import FlowerSVG from './FlowerSVG'
+import FlowerSVG, { flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
 import { playBloom, pulse } from '../sound'
@@ -21,6 +21,9 @@ import styles from './GardenScene.module.css'
  * Saturation was deliberately dialed down — premium products use
  * mood-shift, not paint chips.
  */
+/** An empty or sprouting plot still wants a plot-sized bed. */
+const GARDEN_MIN_HEIGHT = 200
+
 const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
   // Default — clear morning sky into pale meadow grass.
   'just-because': { top: '#d4eeff', bottom: '#e8f5d0' },
@@ -279,9 +282,19 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
   const sky = gradientFor(occasion)
+  /*
+   * The plot sizes to its tallest flower rather than to a constant.
+   *
+   * FlowerSVG draws into a box that grows with `stemHeight`, and `stemHeight` is authored up to
+   * 160, so a tall garden needs about 240px where the fixed plot gave it 200. The heads that
+   * exceeded it were clipped by `overflow: hidden` on a phone and spilled onto the page on a
+   * desktop. `flowerBoxHeight` is the one number both sides now agree on.
+   */
+  const gardenHeight = Math.max(GARDEN_MIN_HEIGHT, ...flowers.map(flowerBoxHeight))
   const sceneStyle: CSSProperties = {
     ['--sky-top' as string]: sky.top,
     ['--sky-bottom' as string]: sky.bottom,
+    ['--garden-h' as string]: `${gardenHeight}px`,
   }
   const [bloomedCount, setBloomedCount] = useState(0)
   const [flowerShareStatus, setFlowerShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
@@ -600,7 +613,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
            * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
            * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
            */
-          const headUp = target.spec.stemHeight + 50 - 8
+          const headUp = flowerHeadOffset(target.spec) - 8
           return (
             <div
               className={styles.bee}

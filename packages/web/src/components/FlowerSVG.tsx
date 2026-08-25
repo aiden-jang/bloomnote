@@ -18,6 +18,35 @@ interface PetalGeometry {
   centerRadius: number
 }
 
+/*
+ * How big the head is, relative to the stem carrying it.
+ *
+ * Head geometry used to be fixed per shape while `stemHeight` varies from 40 to 160, so the same
+ * head sat on a stem four times longer — a 160 flower read as a lollipop on a wire. Scaling the
+ * head with the stem keeps the proportion a real flower has at any height.
+ */
+const HEAD_SCALE = { min: 0.85, max: 1.2, atStem: { min: 40, max: 160 } }
+
+export function headScale(stemHeight: number): number {
+  const t = (stemHeight - HEAD_SCALE.atStem.min) / (HEAD_SCALE.atStem.max - HEAD_SCALE.atStem.min)
+  return HEAD_SCALE.min + Math.min(1, Math.max(0, t)) * (HEAD_SCALE.max - HEAD_SCALE.min)
+}
+
+/** The drawing box for a flower. Exported so the plot sizes to the same number the flower uses. */
+export function flowerBoxHeight(flower: unknown): number {
+  const { stemHeight } = drawableFlower(flower as never)
+  return stemHeight + Math.round(80 * headScale(stemHeight))
+}
+
+/** Distance from the bottom of that box up to the head's centre — where the bee lands. */
+export function flowerHeadOffset(flower: unknown): number {
+  const { stemHeight, petalShape } = drawableFlower(flower as never)
+  const scale = headScale(stemHeight)
+  return flowerBoxHeight(flower) - (STEM_TOP + petalGeometry(petalShape).centerRadius * scale)
+}
+
+const STEM_TOP = 20
+
 function petalGeometry(shape: PetalShape): PetalGeometry {
   switch (shape) {
     case 'elongated': return { size: 12, centerRadius: 8 }
@@ -106,11 +135,29 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
   // the check has to happen here — otherwise reduced-motion users still get the infinite sway.
   const still = staticRender || prefersReducedMotion()
 
-  const svgH = stemHeight + 80
+  const scale = headScale(stemHeight)
+  const svgH = flowerBoxHeight(flower)
   const cx = 40
-  const stemTop = 20
-  const geom = petalGeometry(petalShape)
+  const stemTop = STEM_TOP
+  const base = petalGeometry(petalShape)
+  const geom = { size: base.size * scale, centerRadius: base.centerRadius * scale }
   const head = stemTop + geom.centerRadius
+  /*
+   * A tapered, slightly leaning stem rather than a 4px line. A straight uniform rule is most of
+   * what made a long stem read as a wire; real stems are thicker at the soil and never quite
+   * vertical. The lean is derived from the stem height, not random, so a flower is stable across
+   * re-renders and identical in the share image.
+   */
+  const stemBase = 3 + stemHeight / 90
+  const stemTip = 1.6 + stemHeight / 260
+  const lean = ((stemHeight % 7) - 3) * 0.9
+  const stemPath =
+    `M ${cx - stemBase / 2} ${svgH} ` +
+    `Q ${cx - stemTip / 2 + lean} ${head + (svgH - head) * 0.45} ${cx - stemTip / 2 + lean} ${head} ` +
+    `L ${cx + stemTip / 2 + lean} ${head} ` +
+    `Q ${cx + stemTip / 2 + lean} ${head + (svgH - head) * 0.45} ${cx + stemBase / 2} ${svgH} Z`
+  /* One leaf on a short stem, three on a tall one — two fixed leaves left long stems bare. */
+  const leafFractions = stemHeight < 70 ? [0.5] : stemHeight < 120 ? [0.45, 0.62] : [0.36, 0.55, 0.74]
 
   // Subtle center inner color — slightly darker version of centerColor.
   const centerInner = darken(centerColor, 0.2)
@@ -132,12 +179,9 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
     >
       {bloomed && (
         <g ref={groupRef}>
-          <line
-            x1={cx} y1={head}
-            x2={cx} y2={svgH}
-            stroke={stemColor}
-            strokeWidth="4"
-            strokeLinecap="round"
+          <path
+            d={stemPath}
+            fill={stemColor}
             style={{
               transformOrigin: `${cx}px ${svgH}px`,
               animationName: still ? 'none' : 'bloomStem',
@@ -157,20 +201,25 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
               animationFillMode: 'forwards',
             }}
           >
-            <ellipse
-              cx={cx - 10} cy={svgH - stemHeight * 0.45}
-              rx="9" ry="5"
-              fill={stemColor}
-              transform={`rotate(-35, ${cx - 10}, ${svgH - stemHeight * 0.45})`}
-              opacity="0.9"
-            />
-            <ellipse
-              cx={cx + 10} cy={svgH - stemHeight * 0.6}
-              rx="9" ry="5"
-              fill={stemColor}
-              transform={`rotate(35, ${cx + 10}, ${svgH - stemHeight * 0.6})`}
-              opacity="0.9"
-            />
+            {leafFractions.map((f, li) => {
+              // Alternating sides, and smaller the higher they sit — a stem that thins toward the
+              // head should not carry its largest leaf at the top.
+              const side = li % 2 === 0 ? -1 : 1
+              const y = svgH - stemHeight * f
+              const rx = 9 - f * 2.5
+              return (
+                <ellipse
+                  key={f}
+                  cx={cx + side * 10}
+                  cy={y}
+                  rx={rx}
+                  ry={rx * 0.55}
+                  fill={stemColor}
+                  transform={`rotate(${side * 35}, ${cx + side * 10}, ${y})`}
+                  opacity="0.9"
+                />
+              )
+            })}
           </g>
           {/* The head opens only once the stem has arrived to carry it. Previously the petals
               popped at t=0 while the stem was still growing, so for the first half-second the
