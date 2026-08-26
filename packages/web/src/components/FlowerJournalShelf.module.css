@@ -249,6 +249,8 @@
 }
 
 .shelfChips button {
+  /* No opacity dimming: the colour token is already the muted one, and layering transparency on
+     top of it took this under the 4.5:1 that text needs. */
   font: inherit;
   font-size: 10.5px;
   padding: 2px 8px;
@@ -257,7 +259,6 @@
   background: none;
   color: var(--text-light);
   cursor: pointer;
-  opacity: 0.75;
 }
 
 .shelfChips button[aria-pressed='true'] {
@@ -281,8 +282,9 @@
 }
 
 .meaning i {
+  /* No opacity dimming: the colour token is already the muted one, and layering transparency on
+     top of it took this under the 4.5:1 that text needs. */
   font-style: normal;
-  opacity: 0.6;
 }
 
 .meaning:hover {

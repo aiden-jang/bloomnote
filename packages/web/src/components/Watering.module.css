@@ -124,9 +124,10 @@
 }
 
 .count {
+  /* No opacity dimming: the colour token is already the muted one, and layering transparency on
+     top of it took this under the 4.5:1 that text needs. */
   font-size: 0.8rem;
   color: var(--text-mid, #6b6963);
-  opacity: 0.7;
 }
 
 @media (prefers-reduced-motion: reduce) {
