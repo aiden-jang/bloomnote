@@ -242,6 +242,18 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
    */
   const [focused, setFocused] = useState<number | null>(null)
 
+  /*
+   * Whether the recipient has ever opened a flower.
+   *
+   * Tapping a flower is the best thing in here — it is where the meaning and the journal live — and
+   * nothing on the screen said so, which on a phone means most people never find it. The hint
+   * retires itself the moment it has been obeyed rather than sitting there being read twice.
+   */
+  const [flowerTapped, setFlowerTapped] = useState(false)
+  useEffect(() => {
+    if (focused !== null) setFlowerTapped(true)
+  }, [focused])
+
   // Bumped on each watering; GardenScene reads it to replay the drops. A counter, not a flag, so
   // the scene doesn't need this component to time a reset.
   const [wateredAt, setWateredAt] = useState(0)
@@ -342,6 +354,10 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           fade in via msgVisible) collapses that gap and matches the reveal. */}
       {phase === 'blooming' && (
         <>
+      {msgVisible && flowers.length > 0 && !flowerTapped && (
+        <p className={styles.tapHint}>tap a flower to see what it means</p>
+      )}
+
       {/* Gated on msgVisible, not just on the phase: during the bloom itself the flowers are the
           only thing on this screen that matters, and a button under them would take attention the
           moment does not have to spare. */}
