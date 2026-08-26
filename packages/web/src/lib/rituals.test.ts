@@ -62,8 +62,17 @@ describe('a hard note', () => {
    */
   it('never asks for eloquence', () => {
     const heavy = [
-      /meaningful/i, /profound/i, /perfect/i, /right words/i, /special/i, /heartfelt/i,
-      /make it count/i, /do it justice/i, /worthy/i, /eloquent/i, /beautiful/i,
+      /meaningful/i,
+      /profound/i,
+      /perfect/i,
+      /right words/i,
+      /special/i,
+      /heartfelt/i,
+      /make it count/i,
+      /do it justice/i,
+      /worthy/i,
+      /eloquent/i,
+      /beautiful/i,
     ]
     for (const occasion of ['sympathy', 'get-well']) {
       for (const hour of [3, 9, 14, 20]) {
@@ -79,7 +88,9 @@ describe('a hard note', () => {
   it('does not tell somebody awake at 3am to go to bed', () => {
     // They have a reason, and it is not ours to correct.
     const late = ritual('sympathy', at(3))
-    expect(`${late.invitation} ${late.permission}`).not.toMatch(/go to (bed|sleep)|should be asleep|get some rest/i)
+    expect(`${late.invitation} ${late.permission}`).not.toMatch(
+      /go to (bed|sleep)|should be asleep|get some rest/i,
+    )
   })
 
   it('reads gently even for a cheerful mood on a grim occasion', () => {

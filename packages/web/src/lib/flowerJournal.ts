@@ -29,10 +29,16 @@ export function decodeFlowerJournal(raw: string | null): FlowerJournalEntry[] {
     return parsed.filter((entry): entry is FlowerJournalEntry => {
       if (!entry || typeof entry !== 'object') return false
       const value = entry as Partial<FlowerJournalEntry>
-      return typeof value.id === 'string' && typeof value.gardenId === 'string' &&
-        typeof value.flowerName === 'string' && typeof value.meaning === 'string' &&
-        typeof value.memory === 'string' && typeof value.savedAt === 'string' &&
-        typeof value.flowerIndex === 'number' && Array.isArray(value.colors)
+      return (
+        typeof value.id === 'string' &&
+        typeof value.gardenId === 'string' &&
+        typeof value.flowerName === 'string' &&
+        typeof value.meaning === 'string' &&
+        typeof value.memory === 'string' &&
+        typeof value.savedAt === 'string' &&
+        typeof value.flowerIndex === 'number' &&
+        Array.isArray(value.colors)
+      )
     })
   } catch {
     return []
@@ -49,7 +55,7 @@ export function loadFlowerJournal(): FlowerJournalEntry[] {
 }
 
 export function flowerJournalEntry(gardenId: string, flowerIndex: number): FlowerJournalEntry | null {
-  return loadFlowerJournal().find(entry => entry.id === `${gardenId}:${flowerIndex}`) ?? null
+  return loadFlowerJournal().find((entry) => entry.id === `${gardenId}:${flowerIndex}`) ?? null
 }
 
 export function saveFlowerJournalEntry(input: {
@@ -72,7 +78,9 @@ export function saveFlowerJournalEntry(input: {
   }
   if (typeof window === 'undefined') return entry
   try {
-    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).filter(item => item.id !== entry.id)
+    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).filter(
+      (item) => item.id !== entry.id,
+    )
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...current, entry].slice(-MAX_ENTRIES)))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
   } catch {
@@ -86,7 +94,7 @@ function updateEntry(id: string, change: (entry: FlowerJournalEntry) => FlowerJo
   if (typeof window === 'undefined') return false
   try {
     const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY))
-    const index = current.findIndex(entry => entry.id === id)
+    const index = current.findIndex((entry) => entry.id === id)
     if (index < 0) return false
     current[index] = change(current[index]!)
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
@@ -98,13 +106,13 @@ function updateEntry(id: string, change: (entry: FlowerJournalEntry) => FlowerJo
 }
 
 export function setEntryShelves(id: string, shelves: string[]): boolean {
-  return updateEntry(id, entry => ({ ...entry, shelves }))
+  return updateEntry(id, (entry) => ({ ...entry, shelves }))
 }
 
 /** An empty string clears it, so the sender's meaning comes back rather than being replaced by nothing. */
 export function setEntryMeaning(id: string, mine: string): boolean {
   const trimmed = mine.trim().slice(0, MAX_MEANING)
-  return updateEntry(id, entry => {
+  return updateEntry(id, (entry) => {
     const { mine: _dropped, ...rest } = entry
     return trimmed ? { ...rest, mine: trimmed } : rest
   })
@@ -113,7 +121,9 @@ export function setEntryMeaning(id: string, mine: string): boolean {
 export function removeFlowerJournalEntry(id: string): void {
   if (typeof window === 'undefined') return
   try {
-    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).filter(entry => entry.id !== id)
+    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).filter(
+      (entry) => entry.id !== id,
+    )
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
   } catch {

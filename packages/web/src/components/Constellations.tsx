@@ -29,7 +29,9 @@ export function Constellations({ entries }: { entries: FlowerJournalEntry[] }) {
 
   const active = threads.find((t) => `${t.kind}:${t.key}` === open) ?? null
   const linked = active
-    ? active.entryIds.map((id) => entries.find((e) => e.id === id)).filter((e): e is FlowerJournalEntry => !!e)
+    ? active.entryIds
+        .map((id) => entries.find((e) => e.id === id))
+        .filter((e): e is FlowerJournalEntry => !!e)
     : []
 
   return (

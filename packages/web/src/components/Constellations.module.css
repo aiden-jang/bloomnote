@@ -55,7 +55,11 @@
   background: white;
   color: var(--text-mid);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .thread:hover {

@@ -49,7 +49,9 @@
     #000 calc(100% - var(--fade-end)),
     transparent 100%
   );
-  transition: --fade-start 0.2s ease, --fade-end 0.2s ease;
+  transition:
+    --fade-start 0.2s ease,
+    --fade-end 0.2s ease;
 }
 
 .row::-webkit-scrollbar {

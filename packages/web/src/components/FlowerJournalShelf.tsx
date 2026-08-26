@@ -88,8 +88,8 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
     if (!result) return
     const memory: VoiceMemory = { entryId, ...result, savedAt: new Date().toISOString() }
     if (await saveVoiceMemory(memory)) {
-      setLoaded(current => ({ ...current, [entryId]: memory }))
-      setWithVoice(current => new Set(current).add(entryId))
+      setLoaded((current) => ({ ...current, [entryId]: memory }))
+      setWithVoice((current) => new Set(current).add(entryId))
     } else {
       // Out of disk, or private browsing with no store. Losing the audio is bad enough without silence.
       setVoiceError({ id: entryId, text: 'could not keep that recording on this device.' })
@@ -99,17 +99,17 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   async function playVoice(entryId: string): Promise<void> {
     if (loaded[entryId]) return
     const memory = await loadVoiceMemory(entryId)
-    if (memory) setLoaded(current => ({ ...current, [entryId]: memory }))
+    if (memory) setLoaded((current) => ({ ...current, [entryId]: memory }))
   }
 
   async function removeVoice(entryId: string): Promise<void> {
     await deleteVoiceMemory(entryId)
-    setLoaded(current => {
+    setLoaded((current) => {
       const next = { ...current }
       delete next[entryId]
       return next
     })
-    setWithVoice(current => {
+    setWithVoice((current) => {
       const next = new Set(current)
       next.delete(entryId)
       return next
@@ -127,7 +127,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
 
   const shown = shelf ? entriesOn(entries, shelf) : entries
   const visible = showAll ? shown : shown.slice(0, JOURNAL_PREVIEW)
-  const emptyShelf = shelf ? SHELVES.find(option => option.id === shelf)?.empty : null
+  const emptyShelf = shelf ? SHELVES.find((option) => option.id === shelf)?.empty : null
 
   return (
     <section className={styles.shelf} aria-labelledby="flower-journal-heading">
@@ -144,7 +144,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         <button type="button" aria-pressed={shelf === null} onClick={() => setShelf(null)}>
           everything
         </button>
-        {SHELVES.map(option => (
+        {SHELVES.map((option) => (
           <button
             key={option.id}
             type="button"
@@ -160,7 +160,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       </div>
       {shown.length === 0 && emptyShelf && <p className={styles.recap}>{emptyShelf}</p>}
       <ul className={styles.entries}>
-        {visible.map(entry => (
+        {visible.map((entry) => (
           <li key={entry.id} className={entry.gardenId === currentGardenId ? styles.current : undefined}>
             {/* Keyed on the garden and the flower's place in it, which is what the archive card for
                 that same garden uses — so a flower you pressed is drawn the same in both places. */}
@@ -182,13 +182,15 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                     value={draft}
                     maxLength={MAX_MEANING}
                     aria-label={`What ${entry.flowerName} means to you`}
-                    onChange={event => setDraft(event.target.value)}
-                    onKeyDown={event => {
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
                       if (event.key === 'Enter') saveMeaning(entry.id)
                       if (event.key === 'Escape') setEditing(null)
                     }}
                   />
-                  <button type="button" onClick={() => saveMeaning(entry.id)}>keep</button>
+                  <button type="button" onClick={() => saveMeaning(entry.id)}>
+                    keep
+                  </button>
                 </span>
               ) : (
                 <button
@@ -204,7 +206,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                 </button>
               )}
               <span className={styles.shelfChips}>
-                {SHELVES.map(option => (
+                {SHELVES.map((option) => (
                   <button
                     key={option.id}
                     type="button"
@@ -241,7 +243,11 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
               ) : (
                 canRecord() && (
                   <>
-                    <button type="button" className={styles.voiceLink} onClick={() => void beginRecording(entry.id)}>
+                    <button
+                      type="button"
+                      className={styles.voiceLink}
+                      onClick={() => void beginRecording(entry.id)}
+                    >
                       say it out loud instead
                     </button>
                     {voiceError?.id === entry.id && (
@@ -268,7 +274,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         <p className={styles.more}>
           {/* Saying only how many are tucked away is a dead end on a shelf of your own
               keepsakes: the store holds eighty and eight are reachable. */}
-          <button type="button" className={styles.moreBtn} onClick={() => setShowAll(open => !open)}>
+          <button type="button" className={styles.moreBtn} onClick={() => setShowAll((open) => !open)}>
             {showAll
               ? 'tuck them back'
               : quiet

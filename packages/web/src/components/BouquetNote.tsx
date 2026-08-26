@@ -50,7 +50,7 @@ export default function BouquetNote({ note, start = true }: Props) {
     }
     setCount(0)
     timerRef.current = setInterval(() => {
-      setCount(c => {
+      setCount((c) => {
         if (c >= text.length) {
           if (timerRef.current) clearInterval(timerRef.current)
           return c

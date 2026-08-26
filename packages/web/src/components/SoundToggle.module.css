@@ -21,7 +21,11 @@
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 
-  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.1s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.1s;
 }
 
 .toggle:hover {

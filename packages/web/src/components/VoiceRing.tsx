@@ -66,7 +66,9 @@ export function VoiceRing({
       const analyser = ctx.createAnalyser()
       analyser.fftSize = 256
       const node =
-        source instanceof MediaStream ? ctx.createMediaStreamSource(source) : ctx.createMediaElementSource(source)
+        source instanceof MediaStream
+          ? ctx.createMediaStreamSource(source)
+          : ctx.createMediaElementSource(source)
       node.connect(analyser)
       // Playback still has to reach the speakers; a microphone must not, or it echoes.
       if (!(source instanceof MediaStream)) analyser.connect(ctx.destination)
@@ -160,7 +162,12 @@ export function VoiceRing({
       <span className={styles.meta}>
         {liveStream ? 'listening…' : `${seconds}s`}
         {onDelete && !liveStream && (
-          <button type="button" className={styles.remove} onClick={onDelete} aria-label="Delete this voice memory">
+          <button
+            type="button"
+            className={styles.remove}
+            onClick={onDelete}
+            aria-label="Delete this voice memory"
+          >
             remove
           </button>
         )}

@@ -13,9 +13,11 @@ function memoryDate(garden: DatedGardenMemory): Date {
 }
 
 function isAnniversary(date: Date, now: Date): boolean {
-  return date.getFullYear() < now.getFullYear() &&
+  return (
+    date.getFullYear() < now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate()
+  )
 }
 
 /**

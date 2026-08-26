@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vitest/config'
 
 /**
  * Config for the prompt eval only (`pnpm eval`).
@@ -22,4 +22,4 @@ export default defineConfig({
     fileParallelism: false,
     maxConcurrency: 1,
   },
-});
+})

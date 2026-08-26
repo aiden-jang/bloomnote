@@ -19,11 +19,11 @@
  * sampled model tells you very little and a hard fail on one unlucky roll would train everyone to
  * ignore this file.
  */
-import { beforeAll, describe, expect, test } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { generateGarden } from '../src/designGarden.js';
-import { buildPrompt } from '../src/designGarden.js';
-import type { ValidatedGarden } from '../src/prompt.js';
+import { beforeAll, describe, expect, test } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { generateGarden } from '../src/designGarden.js'
+import { buildPrompt } from '../src/designGarden.js'
+import type { ValidatedGarden } from '../src/prompt.js'
 
 /**
  * Generations per fixture.
@@ -37,33 +37,33 @@ import type { ValidatedGarden } from '../src/prompt.js';
  * voting, which is real evidence about a sampled model, and it costs twelve of the twenty. Worth
  * it occasionally, not on every edit.
  */
-const RUNS = Number(process.env.EVAL_RUNS ?? 1);
+const RUNS = Number(process.env.EVAL_RUNS ?? 1)
 /** How many runs must pass a check. A majority, so one unlucky roll isn't a regression. */
-const NEEDED = Math.max(1, Math.ceil(RUNS / 2));
+const NEEDED = Math.max(1, Math.ceil(RUNS / 2))
 
 /**
  * Minimum spacing between calls, to stay clear of the per-minute limit. Small, because per-minute
  * is not the binding constraint here; the per-day cap is.
  */
-const PACE_MS = Number(process.env.EVAL_PACE_MS ?? 4000);
+const PACE_MS = Number(process.env.EVAL_PACE_MS ?? 4000)
 
 /** One short retry, for a genuine per-minute burst. The per-day cap is handled separately. */
-const BURST_WAIT_MS = 15_000;
+const BURST_WAIT_MS = 15_000
 
-let nextCallAt = 0;
+let nextCallAt = 0
 
 async function sleep(ms: number): Promise<void> {
-  if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+  if (ms > 0) await new Promise((r) => setTimeout(r, ms))
 }
 
 async function generatePaced(key: string, prompt: string): Promise<ValidatedGarden> {
   for (let attempt = 0; ; attempt++) {
-    await sleep(nextCallAt - Date.now());
-    nextCallAt = Date.now() + PACE_MS;
+    await sleep(nextCallAt - Date.now())
+    nextCallAt = Date.now() + PACE_MS
     try {
-      return await generateGarden(key, prompt);
+      return await generateGarden(key, prompt)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : String(err)
       // generateGarden already tells the two 429s apart and only uses this wording for the
       // per-day project quota, which will not clear until midnight Pacific. Waiting is pointless
       // and every retry spends another request out of a budget that is already gone.
@@ -72,24 +72,24 @@ async function generatePaced(key: string, prompt: string): Promise<ValidatedGard
           'Gemini daily free-tier quota (20 requests/day) is exhausted. This is a QUOTA failure, ' +
             'NOT a prompt regression: nothing here has told you anything about the prompt. ' +
             'Re-run tomorrow, or with a paid key.',
-        );
+        )
       }
-      const burst = msg.includes('(429)') || msg.includes('(503)');
-      if (!burst || attempt > 0) throw new Error(msg);
-      await sleep(BURST_WAIT_MS);
+      const burst = msg.includes('(429)') || msg.includes('(503)')
+      if (!burst || attempt > 0) throw new Error(msg)
+      await sleep(BURST_WAIT_MS)
     }
   }
 }
 
 interface Fixture {
-  label: string;
-  body: { message: string; recipient: string; from: string; occasion?: string; mood?: string };
+  label: string
+  body: { message: string; recipient: string; from: string; occasion?: string; mood?: string }
   /**
    * The concrete things in the note. Each entry is one detail, listed with the spellings that
    * count as naming it (numerals vs words, singular vs plural stem). A garden has to reach for at
    * least two of them, which is the bar the prompt sets.
    */
-  details: string[][];
+  details: string[][]
 }
 
 const FIXTURES: Fixture[] = [
@@ -103,6 +103,7 @@ const FIXTURES: Fixture[] = [
       occasion: 'thank-you',
       mood: 'steady',
     },
+    // prettier-ignore
     details: [['four hour', '4 hour'], ['rain'], ['car park', 'parking lot', 'hospital'], ['drove', 'driving', 'drive']],
   },
   {
@@ -115,6 +116,7 @@ const FIXTURES: Fixture[] = [
       occasion: 'just-because',
       mood: 'playful',
     },
+    // prettier-ignore
     details: [['eleven', '11'], ['lisbon'], ['dog'], ['photo', 'picture', 'saved']],
   },
   {
@@ -127,6 +129,7 @@ const FIXTURES: Fixture[] = [
       occasion: 'birthday',
       mood: 'playful',
     },
+    // prettier-ignore
     details: [['tide'], ['journal'], ['laugh'], ['joke']],
   },
   {
@@ -140,9 +143,10 @@ const FIXTURES: Fixture[] = [
       occasion: 'birthday',
       mood: 'tender',
     },
+    // prettier-ignore
     details: [],
   },
-];
+]
 
 /** The greeting-card register the prompt bans by name. Any of these is a fail. */
 const BANNED = [
@@ -153,92 +157,101 @@ const BANNED = [
   "words can't express",
   'words cannot express',
   'thank you for being there',
-];
+]
 
-const prose = (g: ValidatedGarden): string[] => [g.bouquet_note, ...g.flowers.map((f) => f.meaning)];
+const prose = (g: ValidatedGarden): string[] => [g.bouquet_note, ...g.flowers.map((f) => f.meaning)]
 
 function namesADetail(g: ValidatedGarden, details: string[][]): number {
-  const text = prose(g).join(' ').toLowerCase();
-  return details.filter((spellings) => spellings.some((s) => text.includes(s))).length;
+  const text = prose(g).join(' ').toLowerCase()
+  return details.filter((spellings) => spellings.some((s) => text.includes(s))).length
 }
 
 /** Read GEMINI_API_KEY out of .dev.vars. Never logged — only its presence is ever reported. */
 function apiKey(): string {
   try {
-    const raw = readFileSync(new URL('../.dev.vars', import.meta.url), 'utf8');
-    const line = raw.split('\n').find((l) => l.trim().startsWith('GEMINI_API_KEY'));
-    return line?.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '') ?? '';
+    const raw = readFileSync(new URL('../.dev.vars', import.meta.url), 'utf8')
+    const line = raw.split('\n').find((l) => l.trim().startsWith('GEMINI_API_KEY'))
+    return (
+      line
+        ?.split('=')
+        .slice(1)
+        .join('=')
+        .trim()
+        .replace(/^["']|["']$/g, '') ?? ''
+    )
   } catch {
-    return process.env.GEMINI_API_KEY ?? '';
+    return process.env.GEMINI_API_KEY ?? ''
   }
 }
 
-const KEY = apiKey();
+const KEY = apiKey()
 
 describe.skipIf(!KEY)('prompt quality', () => {
-  if (!KEY) return;
+  if (!KEY) return
 
   // Say the cost out loud before spending it. The budget is 20 requests a day, so "this run will
   // use 4 of them" is the difference between a tool you reach for and one that strands you.
-  const withDetails = FIXTURES.filter((f) => f.details.length > 0).length;
+  const withDetails = FIXTURES.filter((f) => f.details.length > 0).length
   console.log(
     `[eval] ${FIXTURES.length} fixtures x ${RUNS} run(s) = ${FIXTURES.length * RUNS} Gemini requests ` +
       `(free tier allows 20/day). ${withDetails} fixtures check specificity. ` +
       `Needing ${NEEDED}/${RUNS} to pass each check.`,
-  );
+  )
 
   for (const fx of FIXTURES) {
     describe(fx.label, () => {
-      const gardens: ValidatedGarden[] = [];
+      const gardens: ValidatedGarden[] = []
 
       beforeAll(async () => {
         // Sequential and paced: the design endpoint is rate-limited per IP in production and
         // there is no reason for an eval to be the thing that discovers that.
         for (let i = 0; i < RUNS; i++) {
-          gardens.push(await generatePaced(KEY, buildPrompt(fx.body)));
+          gardens.push(await generatePaced(KEY, buildPrompt(fx.body)))
         }
-      }, 600_000);
+      }, 600_000)
 
       /** How many of the RUNS satisfy `ok`. */
-      const scoring = (ok: (g: ValidatedGarden) => boolean): number => gardens.filter(ok).length;
+      const scoring = (ok: (g: ValidatedGarden) => boolean): number => gardens.filter(ok).length
 
       if (fx.details.length > 0) {
         test(`names at least two details from the note (${NEEDED}/${RUNS})`, () => {
-          const passed = scoring((g) => namesADetail(g, fx.details) >= 2);
+          const passed = scoring((g) => namesADetail(g, fx.details) >= 2)
           expect(
             passed,
             gardens.map((g) => `[${namesADetail(g, fx.details)} details] ${prose(g).join(' / ')}`).join('\n'),
-          ).toBeGreaterThanOrEqual(NEEDED);
-        });
+          ).toBeGreaterThanOrEqual(NEEDED)
+        })
       }
 
       test('avoids the greeting-card register', () => {
         const passed = scoring((g) => {
-          const text = prose(g).join(' ').toLowerCase();
-          return !BANNED.some((p) => text.includes(p));
-        });
-        expect(passed, gardens.map((g) => prose(g).join(' / ')).join('\n')).toBeGreaterThanOrEqual(NEEDED);
-      });
+          const text = prose(g).join(' ').toLowerCase()
+          return !BANNED.some((p) => text.includes(p))
+        })
+        expect(passed, gardens.map((g) => prose(g).join(' / ')).join('\n')).toBeGreaterThanOrEqual(NEEDED)
+      })
 
       test('writes no em dashes', () => {
-        const passed = scoring((g) => !prose(g).some((t) => t.includes('—')));
-        expect(passed, gardens.map((g) => prose(g).join(' / ')).join('\n')).toBeGreaterThanOrEqual(NEEDED);
-      });
+        const passed = scoring((g) => !prose(g).some((t) => t.includes('—')))
+        expect(passed, gardens.map((g) => prose(g).join(' / ')).join('\n')).toBeGreaterThanOrEqual(NEEDED)
+      })
 
       test('does not repeat the flower name inside its meaning', () => {
         const passed = scoring((g) =>
           g.flowers.every((f) => !f.meaning.toLowerCase().startsWith(f.name.toLowerCase())),
-        );
+        )
         expect(
           passed,
           gardens.map((g) => g.flowers.map((f) => `${f.name}: ${f.meaning}`).join(' / ')).join('\n'),
-        ).toBeGreaterThanOrEqual(NEEDED);
-      });
+        ).toBeGreaterThanOrEqual(NEEDED)
+      })
 
       test('uses distinct flowers', () => {
-        const passed = scoring((g) => new Set(g.flowers.map((f) => f.name.toLowerCase())).size === g.flowers.length);
-        expect(passed).toBeGreaterThanOrEqual(NEEDED);
-      });
-    });
+        const passed = scoring(
+          (g) => new Set(g.flowers.map((f) => f.name.toLowerCase())).size === g.flowers.length,
+        )
+        expect(passed).toBeGreaterThanOrEqual(NEEDED)
+      })
+    })
   }
-});
+})

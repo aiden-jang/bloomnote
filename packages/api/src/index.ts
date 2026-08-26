@@ -1,7 +1,7 @@
-import { Hono } from 'hono';
-import { getSessionUser } from '@aidenjang/auth-client';
-import { harden } from './harden.js';
-import type { Env } from './env.js';
+import { Hono } from 'hono'
+import { getSessionUser } from '@aidenjang/auth-client'
+import { harden } from './harden.js'
+import type { Env } from './env.js'
 import {
   claimGardens,
   createGarden,
@@ -17,10 +17,10 @@ import {
   recordReceived,
   removeFromAccount,
   waterGarden,
-} from './gardens.js';
-import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js';
+} from './gardens.js'
+import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js'
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>()
 
 /**
  * Absolute URL for a garden's link-preview card, forced to https off localhost.
@@ -31,21 +31,21 @@ const app = new Hono<{ Bindings: Env }>();
  * broken placeholder. Localhost stays http so the card is still fetchable in development.
  */
 function ogImageUrl(reqUrl: string, id: string): string {
-  const u = new URL(`/og/${id}.png`, reqUrl);
-  if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') u.protocol = 'https:';
-  return u.toString();
+  const u = new URL(`/og/${id}.png`, reqUrl)
+  if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') u.protocol = 'https:'
+  return u.toString()
 }
 
 // Safety net: any error a route does not handle itself is logged server-side (Workers Logs /
 // `wrangler tail`) and returned as a generic 500, so an internal failure never leaks a stack
 // trace or implementation detail to the client.
 app.onError((err, c) => {
-  console.error('Unhandled error:', err);
-  return c.json({ error: 'InternalError' }, 500);
-});
+  console.error('Unhandled error:', err)
+  return c.json({ error: 'InternalError' }, 500)
+})
 
 // Security headers on every response + a same-origin CSRF guard on state-changing requests.
-app.use('*', harden());
+app.use('*', harden())
 
 /**
  * Per-user responses must never be stored.
@@ -60,43 +60,42 @@ app.use('*', harden());
  * middleware does not, and overwriting that would silently undo an intentional decision.
  */
 app.use('*', async (c, next) => {
-  await next();
+  await next()
   if (!c.res.headers.get('cache-control')) {
-    c.header('Cache-Control', 'no-store, max-age=0');
-    c.header('Pragma', 'no-cache');
+    c.header('Cache-Control', 'no-store, max-age=0')
+    c.header('Pragma', 'no-cache')
   }
-});
+})
 
-
-app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }));
+app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }))
 
 // Who is the caller? Same-origin endpoint the web polls so the browser never talks to the
 // auth service cross-origin. Returns { user: null } when signed out — bloomnote is anonymous-
 // first, so accounts are optional and this is never a hard 401.
 app.get('/api/me', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL);
-  return c.json({ user: user ? { id: user.id, email: user.email, displayName: user.displayName } : null });
-});
+  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  return c.json({ user: user ? { id: user.id, email: user.email, displayName: user.displayName } : null })
+})
 
 // Read a garden by short id. Immutable once created, so it's aggressively cacheable.
 app.get('/api/garden', async (c) => {
-  const id = c.req.query('id');
-  if (!id) return c.json({ error: 'Missing or malformed id.' }, 400);
-  const garden = await readGarden(c.env, id);
-  if (garden === null) return c.json({ error: 'Garden not found.' }, 404);
-  c.header('Cache-Control', 'public, max-age=31536000, immutable');
-  return c.json({ garden });
-});
+  const id = c.req.query('id')
+  if (!id) return c.json({ error: 'Missing or malformed id.' }, 400)
+  const garden = await readGarden(c.env, id)
+  if (garden === null) return c.json({ error: 'Garden not found.' }, 404)
+  c.header('Cache-Control', 'public, max-age=31536000, immutable')
+  return c.json({ garden })
+})
 
 // Create a garden, returning its short id. Body is the garden JSON. When the creator is signed
 // in, the garden is stamped with their ownerId and added to their Sent list; anonymous still works.
 app.post('/api/garden', async (c) => {
-  const body = await c.req.json().catch(() => null);
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL);
-  const result = await createGarden(c.env, body, user?.id);
-  if (!result.ok) return c.json({ error: result.message }, result.status);
-  return c.json({ id: result.id });
-});
+  const body = await c.req.json().catch(() => null)
+  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  const result = await createGarden(c.env, body, user?.id)
+  if (!result.ok) return c.json({ error: result.message }, result.status)
+  return c.json({ id: result.id })
+})
 
 /**
  * The share-card PNG for a garden, rendered by the sender's browser right after creating it.
@@ -106,26 +105,26 @@ app.post('/api/garden', async (c) => {
  * the write is once-only and the id is unguessable: see putOgImage.
  */
 app.post('/api/garden/:id/og', async (c) => {
-  const bytes = await c.req.arrayBuffer();
-  const result = await putOgImage(c.env, c.req.param('id'), bytes);
-  if (!result.ok) return c.json({ error: result.message }, result.status);
-  return c.json({ ok: true });
-});
+  const bytes = await c.req.arrayBuffer()
+  const result = await putOgImage(c.env, c.req.param('id'), bytes)
+  if (!result.ok) return c.json({ error: result.message }, result.status)
+  return c.json({ ok: true })
+})
 
 // The card itself. Crawlers fetch this, so it must be a plain immutable image with no session
 // dependence and no redirect: several unfurlers give up on either.
 app.get('/og/:id', async (c) => {
-  const id = c.req.param('id').replace(/\.png$/, '');
-  const png = await readOgImage(c.env, id);
-  if (png === null) return c.notFound();
+  const id = c.req.param('id').replace(/\.png$/, '')
+  const png = await readOgImage(c.env, id)
+  if (png === null) return c.notFound()
   return new Response(png, {
     headers: {
       'content-type': 'image/png',
       // Same reasoning as the garden JSON: it can never change once written.
       'cache-control': 'public, max-age=31536000, immutable',
     },
-  });
-});
+  })
+})
 
 /*
  * Watering: the recipient's one-tap answer, and the count anyone opening the link can see.
@@ -135,59 +134,66 @@ app.get('/og/:id', async (c) => {
  * when the first visitor arrived, and the sender would never see it move.
  */
 app.post('/api/garden/:id/water', async (c) => {
-  const result = await waterGarden(c.env, c.req.param('id'));
-  if (!result.ok) return c.json({ error: result.message }, result.status);
-  return c.json({ waters: result.waters }, 200, { 'cache-control': 'no-store' });
-});
+  const result = await waterGarden(c.env, c.req.param('id'))
+  if (!result.ok) return c.json({ error: result.message }, result.status)
+  return c.json({ waters: result.waters }, 200, { 'cache-control': 'no-store' })
+})
 
 // Water counts for a whole list at once, for the "your gardens" page. Same no-store reasoning as
 // the single-garden route: the count moves, the garden never does.
 app.get('/api/waters', async (c) => {
-  const ids = (c.req.query('ids') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-  if (ids.length === 0) return c.json({ waters: {} }, 200, { 'cache-control': 'no-store' });
-  return c.json({ waters: await readWatersBatch(c.env, ids) }, 200, { 'cache-control': 'no-store' });
-});
+  const ids = (c.req.query('ids') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (ids.length === 0) return c.json({ waters: {} }, 200, { 'cache-control': 'no-store' })
+  return c.json({ waters: await readWatersBatch(c.env, ids) }, 200, { 'cache-control': 'no-store' })
+})
 
 app.get('/api/garden/:id/water', async (c) => {
-  const waters = await readWaters(c.env, c.req.param('id'));
-  return c.json({ waters }, 200, { 'cache-control': 'no-store' });
-});
+  const waters = await readWaters(c.env, c.req.param('id'))
+  return c.json({ waters }, 200, { 'cache-control': 'no-store' })
+})
 
 app.post('/api/garden/:id/feeling', async (c) => {
-  const body: unknown = await c.req.json().catch(() => null);
-  const feeling = body && typeof body === 'object' && 'feeling' in body && typeof body.feeling === 'string'
-    ? body.feeling
-    : '';
-  const result = await feelGarden(c.env, c.req.param('id'), feeling);
-  if (!result.ok) return c.json({ error: result.message }, result.status);
-  return c.json(result.response, 200, { 'cache-control': 'no-store' });
-});
+  const body: unknown = await c.req.json().catch(() => null)
+  const feeling =
+    body && typeof body === 'object' && 'feeling' in body && typeof body.feeling === 'string'
+      ? body.feeling
+      : ''
+  const result = await feelGarden(c.env, c.req.param('id'), feeling)
+  if (!result.ok) return c.json({ error: result.message }, result.status)
+  return c.json(result.response, 200, { 'cache-control': 'no-store' })
+})
 
 app.get('/api/responses', async (c) => {
-  const ids = (c.req.query('ids') ?? '').split(',').map(value => value.trim()).filter(Boolean);
-  return c.json({ responses: await readResponsesBatch(c.env, ids) }, 200, { 'cache-control': 'no-store' });
-});
+  const ids = (c.req.query('ids') ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+  return c.json({ responses: await readResponsesBatch(c.env, ids) }, 200, { 'cache-control': 'no-store' })
+})
 
 app.get('/api/garden/:id/response', async (c) => {
-  return c.json(await readGardenResponse(c.env, c.req.param('id')), 200, { 'cache-control': 'no-store' });
-});
+  return c.json(await readGardenResponse(c.env, c.req.param('id')), 200, { 'cache-control': 'no-store' })
+})
 
 // Record that the signed-in caller opened someone else's garden (adds it to their Received list).
 app.post('/api/garden/:id/receive', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL);
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401);
-  const saved = await recordReceived(c.env, user.id, c.req.param('id'));
-  return c.json({ saved });
-});
+  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  const saved = await recordReceived(c.env, user.id, c.req.param('id'))
+  return c.json({ saved })
+})
 
 // Remove a garden from the signed-in user's Sent/Received lists. Keeps the garden itself, so a
 // link already shared still opens; this just detaches it from this account.
 app.delete('/api/garden/:id', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL);
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401);
-  await removeFromAccount(c.env, user.id, c.req.param('id'));
-  return c.json({ ok: true });
-});
+  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  await removeFromAccount(c.env, user.id, c.req.param('id'))
+  return c.json({ ok: true })
+})
 
 // Funnel analytics. The web app POSTs structural, PII-free events here (usually via sendBeacon);
 // we record them to Workers Logs (query with `wrangler tail` or the dashboard). Only whitelisted
@@ -205,120 +211,161 @@ const TRACKED_EVENTS = new Set([
   'garden_opened',
   'garden_bloomed',
   'reply_started',
-]);
+])
 app.post('/api/event', async (c) => {
-  const raw = await c.req.text().catch(() => '');
-  let name = '';
-  let meta: unknown = {};
+  const raw = await c.req.text().catch(() => '')
+  let name = ''
+  let meta: unknown = {}
   try {
-    const parsed = JSON.parse(raw) as { name?: unknown; meta?: unknown };
-    if (typeof parsed.name === 'string') name = parsed.name;
-    if (parsed.meta && typeof parsed.meta === 'object') meta = parsed.meta;
+    const parsed = JSON.parse(raw) as { name?: unknown; meta?: unknown }
+    if (typeof parsed.name === 'string') name = parsed.name
+    if (parsed.meta && typeof parsed.meta === 'object') meta = parsed.meta
   } catch {
     // malformed body — ignore
   }
   if (TRACKED_EVENTS.has(name)) {
-    console.log(`bloomnote_event ${name} ${JSON.stringify(meta).slice(0, 400)}`);
+    console.log(`bloomnote_event ${name} ${JSON.stringify(meta).slice(0, 400)}`)
   }
-  return c.body(null, 204);
-});
+  return c.body(null, 204)
+})
 
 // The signed-in user's gardens (Sent + Received), read server-side so it's the same on any device.
 app.get('/api/mine', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL);
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401);
-  return c.json(await listMine(c.env, user.id));
-});
+  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  return c.json(await listMine(c.env, user.id))
+})
 
 // First-login claim: adopt anonymous on-device gardens (their ids) into the account.
 app.post('/api/mine/claim', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL);
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401);
-  const body = (await c.req.json().catch(() => ({}))) as { ids?: unknown };
-  const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : [];
-  return c.json({ claimed: await claimGardens(c.env, user.id, ids) });
-});
+  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  const body = (await c.req.json().catch(() => ({}))) as { ids?: unknown }
+  const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : []
+  return c.json({ claimed: await claimGardens(c.env, user.id, ids) })
+})
 
 // Generate a garden from a note (Gemini via REST). Streams SSE (start/thinking/complete/error)
 // to match the existing client. Rate-limited + globally capped to protect the Gemini budget.
 app.post('/api/design-garden', async (c) => {
-  if (!c.env.GEMINI_API_KEY) return c.json({ error: 'Garden generation is not configured yet.' }, 503);
-  const parsed = validateBody(await c.req.json().catch(() => null));
-  if (!parsed.ok) return c.json({ error: parsed.error }, 400);
+  if (!c.env.GEMINI_API_KEY) return c.json({ error: 'Garden generation is not configured yet.' }, 503)
+  const parsed = validateBody(await c.req.json().catch(() => null))
+  if (!parsed.ok) return c.json({ error: parsed.error }, 400)
 
   const ip =
-    c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-  const budget = await checkBudget(c.env, ip);
-  if (!budget.ok) return c.json({ error: budget.message }, budget.status, { 'Retry-After': String(budget.retryAfter) });
+    c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const budget = await checkBudget(c.env, ip)
+  if (!budget.ok)
+    return c.json({ error: budget.message }, budget.status, { 'Retry-After': String(budget.retryAfter) })
 
-  const apiKey = c.env.GEMINI_API_KEY;
-  const userPrompt = buildPrompt(parsed.body);
+  const apiKey = c.env.GEMINI_API_KEY
+  const userPrompt = buildPrompt(parsed.body)
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const enc = new TextEncoder();
+      const enc = new TextEncoder()
       const send = (event: string, data: unknown): void =>
-        controller.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        controller.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
       try {
-        send('start', { ok: true });
-        send('thinking', {});
-        const garden = await generateGarden(apiKey, userPrompt);
-        send('complete', { garden });
+        send('start', { ok: true })
+        send('thinking', {})
+        const garden = await generateGarden(apiKey, userPrompt)
+        send('complete', { garden })
       } catch (err) {
-        send('error', { error: err instanceof Error ? err.message : 'Generation failed.' });
+        send('error', { error: err instanceof Error ? err.message : 'Generation failed.' })
       } finally {
-        controller.close();
+        controller.close()
       }
     },
-  });
+  })
   return new Response(stream, {
     headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
-  });
-});
+  })
+})
 
 // Per-garden link previews. A shared /g/<id> link should unfurl as "X sent Y a garden", not the
 // generic homepage card. We serve the same SPA shell but rewrite its OG/Twitter title+description
 // from the garden. Crawlers read the injected tags; real users still boot the SPA normally.
 app.get('/g/:id', async (c) => {
-  const shell = await c.env.ASSETS.fetch(c.req.raw); // SPA fallback → index.html
-  const garden = await readGarden(c.env, c.req.param('id'));
-  if (garden === null || typeof garden !== 'object') return shell; // unknown id → plain shell (SPA 404s)
+  const shell = await c.env.ASSETS.fetch(c.req.raw) // SPA fallback → index.html
+  const garden = await readGarden(c.env, c.req.param('id'))
+  if (garden === null || typeof garden !== 'object') return shell // unknown id → plain shell (SPA 404s)
 
-  const g = garden as Record<string, unknown>;
-  const from = typeof g.from === 'string' ? g.from.trim() : '';
-  const to = typeof g.to === 'string' ? g.to.trim() : '';
-  const title = from && to ? `${from} grew ${to} a garden` : from ? `${from} grew you a garden` : 'someone grew you a garden';
-  const description = 'a little garden, grown just for you. open it to watch it bloom.';
-  const url = new URL(c.req.url).toString();
+  const g = garden as Record<string, unknown>
+  const from = typeof g.from === 'string' ? g.from.trim() : ''
+  const to = typeof g.to === 'string' ? g.to.trim() : ''
+  const title =
+    from && to
+      ? `${from} grew ${to} a garden`
+      : from
+        ? `${from} grew you a garden`
+        : 'someone grew you a garden'
+  const description = 'a little garden, grown just for you. open it to watch it bloom.'
+  const url = new URL(c.req.url).toString()
   // Only point at a card that exists. A broken og:image is worse than none: most unfurlers show a
   // grey placeholder rather than falling back to the site default, so the link looks broken rather
   // than plain. Gardens made before this shipped have no card and keep the generic one.
-  const ogUrl = (await readOgImage(c.env, c.req.param('id'))) === null ? null : ogImageUrl(c.req.url, c.req.param('id'));
+  const ogUrl =
+    (await readOgImage(c.env, c.req.param('id'))) === null ? null : ogImageUrl(c.req.url, c.req.param('id'))
 
   const rewriter = new HTMLRewriter()
-    .on('title', { element: (e) => { e.setInnerContent(title); } })
-    .on('meta[property="og:title"]', { element: (e) => { e.setAttribute('content', title); } })
-    .on('meta[name="twitter:title"]', { element: (e) => { e.setAttribute('content', title); } })
-    .on('meta[property="og:description"]', { element: (e) => { e.setAttribute('content', description); } })
-    .on('meta[name="twitter:description"]', { element: (e) => { e.setAttribute('content', description); } })
-    .on('meta[property="og:url"]', { element: (e) => { e.setAttribute('content', url); } });
+    .on('title', {
+      element: (e) => {
+        e.setInnerContent(title)
+      },
+    })
+    .on('meta[property="og:title"]', {
+      element: (e) => {
+        e.setAttribute('content', title)
+      },
+    })
+    .on('meta[name="twitter:title"]', {
+      element: (e) => {
+        e.setAttribute('content', title)
+      },
+    })
+    .on('meta[property="og:description"]', {
+      element: (e) => {
+        e.setAttribute('content', description)
+      },
+    })
+    .on('meta[name="twitter:description"]', {
+      element: (e) => {
+        e.setAttribute('content', description)
+      },
+    })
+    .on('meta[property="og:url"]', {
+      element: (e) => {
+        e.setAttribute('content', url)
+      },
+    })
 
   if (ogUrl) {
     rewriter
-      .on('meta[property="og:image"]', { element: (e) => { e.setAttribute('content', ogUrl); } })
-      .on('meta[name="twitter:image"]', { element: (e) => { e.setAttribute('content', ogUrl); } })
+      .on('meta[property="og:image"]', {
+        element: (e) => {
+          e.setAttribute('content', ogUrl)
+        },
+      })
+      .on('meta[name="twitter:image"]', {
+        element: (e) => {
+          e.setAttribute('content', ogUrl)
+        },
+      })
       .on('meta[property="og:image:alt"]', {
-        element: (e) => { e.setAttribute('content', `the garden ${from || 'someone'} grew`); },
-      });
-  // twitter:card is already summary_large_image in the shell, and og:image:width/height already
-  // say 1200x630, so the card the client renders has to be exactly that. Those tags are left
-  // alone rather than restated here: two places setting the same value is how they drift apart.
+        element: (e) => {
+          e.setAttribute('content', `the garden ${from || 'someone'} grew`)
+        },
+      })
+    // twitter:card is already summary_large_image in the shell, and og:image:width/height already
+    // say 1200x630, so the card the client renders has to be exactly that. Those tags are left
+    // alone rather than restated here: two places setting the same value is how they drift apart.
   }
 
-  return rewriter.transform(shell);
-});
+  return rewriter.transform(shell)
+})
 
 // Everything that isn't the API is the web SPA: real files, or index.html for client routes
 // (/g/:id, /r/:id, /mine). run_worker_first routes it all through here.
-app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
+app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw))
 
-export default app;
+export default app

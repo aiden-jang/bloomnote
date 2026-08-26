@@ -9,10 +9,7 @@ export interface GardenImpact {
 }
 
 /** Roll anonymous recipient gestures into a small sender-facing recap. */
-export function gardenImpact(
-  gardenIds: string[],
-  responses: Record<string, GardenResponse>,
-): GardenImpact {
+export function gardenImpact(gardenIds: string[], responses: Record<string, GardenResponse>): GardenImpact {
   const feelingTotals: Partial<Record<Feeling, number>> = {}
   let totalWaters = 0
   let respondedGardens = 0

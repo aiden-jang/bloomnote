@@ -119,7 +119,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     }
   }, [from, shareStatus])
 
-
   const handleCopyNote = useCallback(async () => {
     if (!message || noteCopied) return
     try {
@@ -141,7 +140,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   useEffect(() => {
     if (!user || !gardenId) return
     let cancelled = false
-    void recordReceived(gardenId).then(saved => {
+    void recordReceived(gardenId).then((saved) => {
       if (saved && !cancelled) setSavedToGardens(true)
     })
     return () => {
@@ -189,7 +188,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const handleReplayBloom = (): void => {
     setFocused(null)
     setMsgVisible(false)
-    setBloomVersion(version => version + 1)
+    setBloomVersion((version) => version + 1)
     // This is still a user gesture, so replaying the gentle chime works on browsers that block
     // background audio. It is a replay, not a second delivery, so it does not inflate the funnel.
     playChime()
@@ -309,9 +308,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
           </p>
         ) : (
-          <p className={styles.fromText}>
-            someone grew {to ? to : 'you'} a garden
-          </p>
+          <p className={styles.fromText}>someone grew {to ? to : 'you'} a garden</p>
         )}
       </div>
 
@@ -359,140 +356,150 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           fade in via msgVisible) collapses that gap and matches the reveal. */}
       {phase === 'blooming' && (
         <>
-      {msgVisible && flowers.length > 0 && !flowerTapped && (
-        <p className={styles.tapHint}>tap a flower to see what it means</p>
-      )}
+          {msgVisible && flowers.length > 0 && !flowerTapped && (
+            <p className={styles.tapHint}>tap a flower to see what it means</p>
+          )}
 
-      {/* Gated on msgVisible, not just on the phase: during the bloom itself the flowers are the
+          {/* Gated on msgVisible, not just on the phase: during the bloom itself the flowers are the
           only thing on this screen that matters, and a button under them would take attention the
           moment does not have to spare. */}
-      {msgVisible && gardenId && (
-        <Watering gardenId={gardenId} onWatered={() => setWateredAt(n => n + 1)} />
-      )}
+          {msgVisible && gardenId && (
+            <Watering gardenId={gardenId} onWatered={() => setWateredAt((n) => n + 1)} />
+          )}
 
-      <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
-        {message ? (
-          <>
-            <p className={styles.messageText}>{message}</p>
-            {/*
+          <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
+            {message ? (
+              <>
+                <p className={styles.messageText}>{message}</p>
+                {/*
               No dash before the name.
               *
               * A signed note does not have one. The italic, smaller, indented treatment already reads as
               * a signature, so the dash was doing no work that the styling was not already doing, and
               * an em-dash is the one punctuation mark that makes handwritten copy look machine-set.
             */}
-            {from && <p className={styles.sig}>{from}</p>}
-          </>
-        ) : (
-          <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
-            a garden, for you.
-          </p>
-        )}
-        {/* The AI's bouquet rationale, typed out as a postscript on the
+                {from && <p className={styles.sig}>{from}</p>}
+              </>
+            ) : (
+              <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
+                a garden, for you.
+              </p>
+            )}
+            {/* The AI's bouquet rationale, typed out as a postscript on the
             note. `start` is gated on msgVisible so it doesn't type itself
             out before the garden has bloomed and the message faded in. */}
-        {bouquetNote && <BouquetNote note={bouquetNote} start={msgVisible} />}
-        {secret && (
-          <div className={styles.secretNote}>
-            <button
-              type="button"
-              className={styles.secretReveal}
-              onClick={() => setSecretRevealed(revealed => !revealed)}
-              aria-expanded={secretRevealed}
-            >
-              <SecretEnvelope open={secretRevealed} />
-              {secretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
-            </button>
-            {secretRevealed && <p className={styles.secretText}>{secret}</p>}
+            {bouquetNote && <BouquetNote note={bouquetNote} start={msgVisible} />}
+            {secret && (
+              <div className={styles.secretNote}>
+                <button
+                  type="button"
+                  className={styles.secretReveal}
+                  onClick={() => setSecretRevealed((revealed) => !revealed)}
+                  aria-expanded={secretRevealed}
+                >
+                  <SecretEnvelope open={secretRevealed} />
+                  {secretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
+                </button>
+                {secretRevealed && <p className={styles.secretText}>{secret}</p>}
+              </div>
+            )}
+            {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
           </div>
-        )}
-        {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
-      </div>
 
-      <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
-        <FlowerLegend flowers={flowers} focused={focused} onFocus={focusFlower} onFocusRelease={releaseFlower} />
-      </div>
+          <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
+            <FlowerLegend
+              flowers={flowers}
+              focused={focused}
+              onFocus={focusFlower}
+              onFocusRelease={releaseFlower}
+            />
+          </div>
 
-      {/* A reply carries both notes, so let the recipient unfold them as a chronological keepsake
+          {/* A reply carries both notes, so let the recipient unfold them as a chronological keepsake
           without making the already-long recipient page permanently taller. */}
-      {previous && (
-        <div className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}>
-          <MemoryTrail previous={previous} current={gardenData} />
-        </div>
-      )}
+          {previous && (
+            <div className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}>
+              <MemoryTrail previous={previous} current={gardenData} />
+            </div>
+          )}
 
-      <div className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}>
-        <p className={styles.ctaText}>grow one back?</p>
-        <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
-          {from ? `grow ${from} a garden` : 'grow one back'}
-        </a>
-        <button
-          type="button"
-          className={styles.ctaShareBtn}
-          onClick={() => void handleShareGarden()}
-          disabled={shareStatus !== null}
-        >
-          {shareStatus === 'sharing'
-            ? 'opening share sheet…'
-            : shareStatus === 'shared'
-              ? 'garden shared'
-              : shareStatus === 'copied'
-                ? 'link copied'
-                : 'share this garden'}
-        </button>
-        <details className={styles.keepsake}>
-          <summary>keep this garden</summary>
-          <div className={styles.keepsakeActions}>
-            {previous && (
-              <button
-                type="button"
-                className={styles.keepsakeAction}
-                onClick={() => void handleSaveDuet()}
-                disabled={duetStatus !== null}
-              >
-                {duetStatus === 'saving'
-                  ? 'pressing both gardens…'
-                  : duetStatus === 'shared'
-                    ? 'garden duet shared'
-                    : duetStatus === 'downloaded'
-                      ? 'garden duet saved'
-                      : 'save both as a garden duet'}
-              </button>
-            )}
+          <div className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}>
+            <p className={styles.ctaText}>grow one back?</p>
+            <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
+              {from ? `grow ${from} a garden` : 'grow one back'}
+            </a>
             <button
               type="button"
-              className={styles.keepsakeAction}
-              onClick={() => void handleSaveImage()}
-              disabled={imageStatus !== null}
+              className={styles.ctaShareBtn}
+              onClick={() => void handleShareGarden()}
+              disabled={shareStatus !== null}
             >
-              {imageStatus === 'saving'
-                ? 'making image…'
-                : imageStatus === 'shared'
-                  ? 'image shared'
-                  : imageStatus === 'downloaded'
-                    ? 'image downloaded'
-                    : 'save it as an image'}
+              {shareStatus === 'sharing'
+                ? 'opening share sheet…'
+                : shareStatus === 'shared'
+                  ? 'garden shared'
+                  : shareStatus === 'copied'
+                    ? 'link copied'
+                    : 'share this garden'}
             </button>
-            {message && (
-              <button type="button" className={styles.keepsakeAction} onClick={() => void handleCopyNote()} disabled={noteCopied}>
-                {noteCopied ? 'note copied' : 'copy the note'}
-              </button>
-            )}
-            <button type="button" className={styles.keepsakeAction} onClick={() => window.print()}>
-              print the garden
-            </button>
-            <button type="button" className={styles.keepsakeAction} onClick={handleReplayBloom}>
-              watch it bloom again
-            </button>
+            <details className={styles.keepsake}>
+              <summary>keep this garden</summary>
+              <div className={styles.keepsakeActions}>
+                {previous && (
+                  <button
+                    type="button"
+                    className={styles.keepsakeAction}
+                    onClick={() => void handleSaveDuet()}
+                    disabled={duetStatus !== null}
+                  >
+                    {duetStatus === 'saving'
+                      ? 'pressing both gardens…'
+                      : duetStatus === 'shared'
+                        ? 'garden duet shared'
+                        : duetStatus === 'downloaded'
+                          ? 'garden duet saved'
+                          : 'save both as a garden duet'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={styles.keepsakeAction}
+                  onClick={() => void handleSaveImage()}
+                  disabled={imageStatus !== null}
+                >
+                  {imageStatus === 'saving'
+                    ? 'making image…'
+                    : imageStatus === 'shared'
+                      ? 'image shared'
+                      : imageStatus === 'downloaded'
+                        ? 'image downloaded'
+                        : 'save it as an image'}
+                </button>
+                {message && (
+                  <button
+                    type="button"
+                    className={styles.keepsakeAction}
+                    onClick={() => void handleCopyNote()}
+                    disabled={noteCopied}
+                  >
+                    {noteCopied ? 'note copied' : 'copy the note'}
+                  </button>
+                )}
+                <button type="button" className={styles.keepsakeAction} onClick={() => window.print()}>
+                  print the garden
+                </button>
+                <button type="button" className={styles.keepsakeAction} onClick={handleReplayBloom}>
+                  watch it bloom again
+                </button>
+              </div>
+              <FlowerJournalShelf currentGardenId={gardenId} />
+            </details>
+            <p className={styles.ctaSub}>
+              <a href="/" className={styles.ctaSubLink}>
+                start one for someone new
+              </a>
+            </p>
           </div>
-          <FlowerJournalShelf currentGardenId={gardenId} />
-        </details>
-        <p className={styles.ctaSub}>
-          <a href="/" className={styles.ctaSubLink}>
-            start one for someone new
-          </a>
-        </p>
-      </div>
         </>
       )}
     </div>

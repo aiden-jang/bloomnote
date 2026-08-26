@@ -26,7 +26,11 @@ describe('gardenForecast', () => {
   })
 
   test('always returns a complete safe fallback for old draft values', () => {
-    const forecast = gardenForecast('a note with enough words to grow from', 'retired-mood', 'retired-occasion')
+    const forecast = gardenForecast(
+      'a note with enough words to grow from',
+      'retired-mood',
+      'retired-occasion',
+    )
     expect(forecast.colors).toHaveLength(3)
     expect(forecast.tone).toBe('warm & unforced')
     expect(forecast.light).toBe('easy sunlit warmth')

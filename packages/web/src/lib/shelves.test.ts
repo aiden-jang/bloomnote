@@ -78,8 +78,8 @@ describe('putting a flower on a shelf', () => {
       entry({ id: 'b', shelves: ['survived', 'remember'] }),
       entry({ id: 'c' }),
     ]
-    expect(entriesOn(all, 'survived').map(e => e.id)).toEqual(['a', 'b'])
-    expect(entriesOn(all, 'remember').map(e => e.id)).toEqual(['b'])
+    expect(entriesOn(all, 'survived').map((e) => e.id)).toEqual(['a', 'b'])
+    expect(entriesOn(all, 'remember').map((e) => e.id)).toEqual(['b'])
   })
 })
 

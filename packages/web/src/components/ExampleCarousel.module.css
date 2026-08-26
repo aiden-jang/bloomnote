@@ -126,7 +126,10 @@
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 /* The example currently growing in the hero. Deliberately quiet — a tinted border and a soft ring,
@@ -239,7 +242,9 @@
    onboarding affordances on a printed card). Reduced motion: kill
    the transform on hover so the card doesn't lift. */
 @media print {
-  .wrap { display: none; }
+  .wrap {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

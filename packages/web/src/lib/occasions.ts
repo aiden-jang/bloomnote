@@ -21,16 +21,16 @@ export interface Occasion {
 // jokey: a punchline reads wrong on a grief or sickbed garden.
 export const OCCASIONS: readonly Occasion[] = [
   { value: 'just-because', label: 'just bc' },
-  { value: 'birthday',     label: 'hbd' },
-  { value: 'thank-you',    label: 'ty' },
-  { value: 'anniversary',  label: 'we made it' },
-  { value: 'congrats',     label: 'big w' },
-  { value: 'get-well',     label: 'rest up' },
-  { value: 'sympathy',     label: 'here for u' },
+  { value: 'birthday', label: 'hbd' },
+  { value: 'thank-you', label: 'ty' },
+  { value: 'anniversary', label: 'we made it' },
+  { value: 'congrats', label: 'big w' },
+  { value: 'get-well', label: 'rest up' },
+  { value: 'sympathy', label: 'here for u' },
 ] as const
 
 export const DEFAULT_OCCASION: Occasion['value'] = 'just-because'
 
 export function labelFor(value: string): string {
-  return OCCASIONS.find(o => o.value === value)?.label ?? 'just bc'
+  return OCCASIONS.find((o) => o.value === value)?.label ?? 'just bc'
 }

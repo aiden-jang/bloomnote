@@ -60,6 +60,7 @@ curl https://bloomnote.aidenjang.com/api/me            # {"user":null} when sign
 ```
 
 Then in a browser:
+
 1. Anonymous: create a garden, open its `/g/<id>` link. Works with no account.
 2. Click **Sign in** (top-right) → lands on `accounts.aidenjang.com`, sign in → back to bloomnote.
    If you're already signed into owewell, this should be seamless (shared `.aidenjang.com` cookie).

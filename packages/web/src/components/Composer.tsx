@@ -10,12 +10,7 @@ import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import SoundToggle from './SoundToggle'
 import { EXAMPLE_GARDENS, type ExampleGarden } from '../data/exampleGardens'
-import {
-  buildShareUrl,
-  createShortGarden,
-  type FlowerSpec,
-  type GardenData,
-} from '../garden'
+import { buildShareUrl, createShortGarden, type FlowerSpec, type GardenData } from '../garden'
 import {
   trackCardDownloaded,
   trackComposerOpened,
@@ -32,12 +27,7 @@ import { prefersReducedMotion } from '../lib/motion'
 import { prewarmGardenImage, saveGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
-import {
-  countSentGardens,
-  recordSentGarden,
-  updateSentGardenId,
-  type MineRecord,
-} from '../lib/mine'
+import { countSentGardens, recordSentGarden, updateSentGardenId, type MineRecord } from '../lib/mine'
 import { DEFAULT_MOOD, MOODS } from '../lib/moods'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
@@ -160,7 +150,7 @@ function buildMineRecord(id: string, data: GardenData): MineRecord {
     mood: data.mood,
     createdAt: data.createdAt ?? new Date().toISOString(),
     unlockAt: data.unlockAt,
-    swatches: data.flowers.map(f => f.petalColors[0]).slice(0, 5),
+    swatches: data.flowers.map((f) => f.petalColors[0]).slice(0, 5),
   }
 }
 
@@ -188,7 +178,6 @@ interface ComposerProps {
 }
 
 export default function Composer({ remixSeed }: ComposerProps = {}) {
-
   const [phase, setPhase] = useState<Phase>('idle')
   // Read once on mount. sessionStorage is intentionally scoped to this tab,
   // so an accidental refresh restores the thought in progress without making
@@ -406,10 +395,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // seconds it takes for it to pass, and silently drop the schedule.
   const scheduleError: string | null = (() => {
     if (!scheduleOpen) return null
-    if (!unlockLocal) return null  // empty is "not yet decided", not an error
+    if (!unlockLocal) return null // empty is "not yet decided", not an error
     const t = new Date(unlockLocal).getTime()
     if (!Number.isFinite(t)) return 'that time looks malformed.'
-    if (t <= Date.now() + 30_000) return "that time has already passed. pick something in the future."
+    if (t <= Date.now() + 30_000) return 'that time has already passed. pick something in the future.'
     return null
   })()
 
@@ -468,9 +457,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       // Depth-cap replies at 1: strip `previous` from the seed before
       // attaching it, so a long thread doesn't nest N gardens deep. The
       // recipient view only renders one level back anyway.
-      const seedForPrevious = remixSeed
-        ? { ...remixSeed, previous: undefined }
-        : undefined
+      const seedForPrevious = remixSeed ? { ...remixSeed, previous: undefined } : undefined
       return {
         flowers: result.flowers,
         bouquetNote: result.bouquetNote,
@@ -548,7 +535,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       const SHORTEN_TIMEOUT_MS = 3000
       const shortId = await Promise.race([
         createShortGarden(data, ctrl.signal),
-        new Promise<null>(resolve => setTimeout(() => resolve(null), SHORTEN_TIMEOUT_MS)),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), SHORTEN_TIMEOUT_MS)),
       ])
       if (!shortId) {
         throw new Error("couldn't save your garden. try again?")
@@ -752,7 +739,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // Only show the clear link when there's something to clear. Trimmed
   // so "  " in a field doesn't count as draft content.
   const hasDraft =
-    from.trim().length > 0 || recipient.trim().length > 0 || message.trim().length > 0 || secret.trim().length > 0
+    from.trim().length > 0 ||
+    recipient.trim().length > 0 ||
+    message.trim().length > 0 ||
+    secret.trim().length > 0
 
   // Save while the person is writing, not on a debounce that can miss the
   // last keystroke before a refresh. This is session-only and removed after
@@ -799,7 +789,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   useEffect(() => {
     // One garden, held, for anyone who asked for less motion — cycling is the motion here.
     if (!showDemo || previewId || prefersReducedMotion()) return
-    const t = setInterval(() => setDemoIndex(i => (i + 1) % EXAMPLE_GARDENS.length), DEMO_CYCLE_MS)
+    const t = setInterval(() => setDemoIndex((i) => (i + 1) % EXAMPLE_GARDENS.length), DEMO_CYCLE_MS)
     return () => clearInterval(t)
   }, [showDemo, previewId])
 
@@ -811,7 +801,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const handlePreview = useCallback((id: string | null) => {
     setPreviewId(id)
     if (id === null) return
-    const i = EXAMPLE_GARDENS.findIndex(g => g.id === id)
+    const i = EXAMPLE_GARDENS.findIndex((g) => g.id === id)
     if (i >= 0) setDemoIndex(i)
   }, [])
 
@@ -821,7 +811,13 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const heroMood = showDemo ? demo.mood : mood
   // The waiting sprout gives the otherwise empty preview a gentle sense of response while the
   // note takes shape. Keep the thresholds coarse: this should reward writing, not become a meter.
-  const draftGrowth: 0 | 1 | 2 | 3 = !message.trim() ? 0 : message.trim().length < 40 ? 1 : message.trim().length < 130 ? 2 : 3
+  const draftGrowth: 0 | 1 | 2 | 3 = !message.trim()
+    ? 0
+    : message.trim().length < 40
+      ? 1
+      : message.trim().length < 130
+        ? 2
+        : 3
 
   // Example-carousel pick. Pre-fills every input so the user can hit
   // "grow their garden" immediately and experience the bloom moment
@@ -1002,7 +998,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         // Re-keying restarts the bloom from sprout, which is what makes each demo garden grow in
         // rather than cut. The demo id has to be part of the key: two examples could otherwise
         // share a flower-name signature and the second would appear fully grown.
-        key={showDemo ? `demo-${demo.id}` : garden ? garden.flowers.map(f => f.name).join('-') : 'empty'}
+        key={showDemo ? `demo-${demo.id}` : garden ? garden.flowers.map((f) => f.name).join('-') : 'empty'}
       />
 
       {/* Remix context — shown above the form when the user is replying
@@ -1041,7 +1037,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               className={styles.textarea}
               placeholder={writingPrompt}
               value={message}
-              onChange={e => setMessage(e.target.value)}
+              onChange={(e) => setMessage(e.target.value)}
               rows={6}
               maxLength={400}
             />
@@ -1049,9 +1045,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               <span className={styles.helper}>
                 quirks beat vibes. the weirder the detail, the better the bouquet.
               </span>
-              <span
-                className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}
-              >
+              <span className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}>
                 {message.length}/400
               </span>
             </div>
@@ -1068,7 +1062,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   use this thought
                 </button>
                 {promptOptions.length > 1 && (
-                  <button type="button" className={styles.promptLink} onClick={() => setPromptIndex(index => index + 1)}>
+                  <button
+                    type="button"
+                    className={styles.promptLink}
+                    onClick={() => setPromptIndex((index) => index + 1)}
+                  >
                     another angle ↻
                   </button>
                 )}
@@ -1112,7 +1110,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                 className={styles.input}
                 placeholder="your name"
                 value={from}
-                onChange={e => setFrom(e.target.value)}
+                onChange={(e) => setFrom(e.target.value)}
                 maxLength={60}
               />
             </section>
@@ -1125,7 +1123,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                 className={styles.input}
                 placeholder="their name"
                 value={recipient}
-                onChange={e => setRecipient(e.target.value)}
+                onChange={(e) => setRecipient(e.target.value)}
                 maxLength={60}
               />
             </section>
@@ -1138,7 +1136,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               <textarea
                 id="secret-note"
                 value={secret}
-                onChange={e => setSecret(e.target.value)}
+                onChange={(e) => setSecret(e.target.value)}
                 placeholder="p.s. I still have that ridiculous photo of us."
                 rows={2}
                 maxLength={140}
@@ -1154,9 +1152,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               Rendered as chips rather than dropdowns so every option is
               visible at a glance and selecting is a single tap. */}
           <section className={styles.section}>
-            <span className={styles.label} id="occasion-label">occasion</span>
+            <span className={styles.label} id="occasion-label">
+              occasion
+            </span>
             <ChipRow labelledBy="occasion-label">
-              {OCCASIONS.map(o => (
+              {OCCASIONS.map((o) => (
                 <button
                   key={o.value}
                   type="button"
@@ -1171,9 +1171,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </ChipRow>
           </section>
           <section className={styles.section}>
-            <span className={styles.label} id="mood-label">mood</span>
+            <span className={styles.label} id="mood-label">
+              mood
+            </span>
             <ChipRow labelledBy="mood-label">
-              {MOODS.map(m => (
+              {MOODS.map((m) => (
                 <button
                   key={m.value}
                   type="button"
@@ -1196,7 +1198,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   <strong>{forecast.tone}</strong>
                 </span>
                 <span className={styles.forecastSwatches} aria-label={forecast.palette}>
-                  {forecast.colors.map(color => (
+                  {forecast.colors.map((color) => (
                     <i key={color} style={{ backgroundColor: color }} />
                   ))}
                 </span>
@@ -1206,7 +1208,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               </p>
               <div className={styles.forecastSoil}>
                 <span className={styles.forecastDots} aria-hidden>
-                  {[1, 2, 3].map(level => (
+                  {[1, 2, 3].map((level) => (
                     <i key={level} data-grown={level <= forecast.detailLevel} />
                   ))}
                 </span>
@@ -1235,11 +1237,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <div className={styles.actions}>
-            <button
-              className={styles.generateBtn}
-              onClick={handleDesign}
-              disabled={!canSubmit}
-            >
+            <button className={styles.generateBtn} onClick={handleDesign} disabled={!canSubmit}>
               {remixSeed ? 'grow one back' : 'grow their garden'}
             </button>
           </div>
@@ -1266,11 +1264,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               control on a fresh form. */}
           {!remixSeed && hasDraft && (
             <p className={styles.escape}>
-              <button
-                type="button"
-                className={styles.clearBtn}
-                onClick={handleClear}
-              >
+              <button type="button" className={styles.clearBtn} onClick={handleClear}>
                 clear draft
               </button>
             </p>
@@ -1307,9 +1301,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </div>
       )}
 
-      {phase === 'designed' && garden && (
-        <PetalFall key={gardenId ?? 'fall'} flowers={garden.flowers} />
-      )}
+      {phase === 'designed' && garden && <PetalFall key={gardenId ?? 'fall'} flowers={garden.flowers} />}
 
       {phase === 'designed' && garden && shareUrl && (
         <>
@@ -1319,17 +1311,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               labeled header sets expectation explicitly so the user
               doesn't have to wonder "is this what they'll see?" */}
           <p className={styles.previewLabel}>
-            {recipient.trim()
-              ? `what ${recipient.trim()} sees`
-              : 'what they see'}
+            {recipient.trim() ? `what ${recipient.trim()} sees` : 'what they see'}
           </p>
 
-          <a
-            href={shareUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.fullRevealPreview}
-          >
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className={styles.fullRevealPreview}>
             <span aria-hidden>◌</span>
             preview the full reveal
             <span aria-hidden>↗</span>
@@ -1351,9 +1336,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           {message.trim() && (
             <div className={styles.previewMessage}>
               <p className={styles.previewMessageText}>{message.trim()}</p>
-              {from.trim() && (
-                <p className={styles.previewSig}>— {from.trim()}</p>
-              )}
+              {from.trim() && <p className={styles.previewSig}>— {from.trim()}</p>}
               {/* The AI's bouquet rationale, typed out as a postscript on
                   the note. In the preview it types immediately (start
                   defaults true) — the composer has no bloom gate. */}
@@ -1363,22 +1346,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   <button
                     type="button"
                     className={styles.previewSecretReveal}
-                    onClick={() => setPreviewSecretRevealed(revealed => !revealed)}
+                    onClick={() => setPreviewSecretRevealed((revealed) => !revealed)}
                     aria-expanded={previewSecretRevealed}
                   >
                     <SecretEnvelope open={previewSecretRevealed} />
-                    {previewSecretRevealed
-                      ? 'hide the little secret'
-                      : 'there’s a little secret in here'}
+                    {previewSecretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
                   </button>
-                  {previewSecretRevealed && (
-                    <p className={styles.previewSecretText}>{secret.trim()}</p>
-                  )}
+                  {previewSecretRevealed && <p className={styles.previewSecretText}>{secret.trim()}</p>}
                 </div>
               )}
-              <p className={styles.previewGrownOn}>
-                grown {formatGardenDate(new Date().toISOString())}
-              </p>
+              <p className={styles.previewGrownOn}>grown {formatGardenDate(new Date().toISOString())}</p>
             </div>
           )}
 
@@ -1406,7 +1383,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             onReroll={handleReroll}
             onStartOver={handleStartOver}
           />
-
         </>
       )}
 
@@ -1443,11 +1419,7 @@ function Spinner() {
           strokeLinecap="round"
           className={styles.sproutStem}
         />
-        <path
-          d="M 10 14 Q 17 9, 14 16 Q 11 15, 10 14"
-          fill="currentColor"
-          className={styles.sproutLeaf}
-        />
+        <path d="M 10 14 Q 17 9, 14 16 Q 11 15, 10 14" fill="currentColor" className={styles.sproutLeaf} />
       </svg>
     </span>
   )
@@ -1505,6 +1477,7 @@ function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
  * Hand-placed rather than random: the spread is uneven on purpose, nothing starts in the middle of
  * the copy the sender is about to read, and it looks the same every time so it can be judged.
  */
+// prettier-ignore
 const PETAL_FALL: Array<[number, number, number, number, number, number]> = [
   [6, 10, 0, 3000, 42, 12], [18, 7, 320, 3400, -28, 200], [29, 11, 120, 2700, 60, 74],
   [41, 8, 560, 3200, -46, 310], [52, 9, 240, 3050, 34, 140], [63, 6, 700, 3500, -22, 20],

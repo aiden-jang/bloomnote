@@ -52,7 +52,13 @@ export default function ShareCard({
   return (
     <div className={styles.shareCard}>
       <p className={styles.shareTitle}>
-        {scheduleOpen ? (recipient ? `${recipient}'s garden is sealed` : 'your garden is sealed') : recipient ? `${recipient}'s garden is ready` : 'ready to send'}
+        {scheduleOpen
+          ? recipient
+            ? `${recipient}'s garden is sealed`
+            : 'your garden is sealed'
+          : recipient
+            ? `${recipient}'s garden is ready`
+            : 'ready to send'}
       </p>
       {/* Re-roll failures land here; idle-phase errors render in a
           different slot during composition. */}
@@ -85,7 +91,11 @@ export default function ShareCard({
       <div className={styles.shareActions}>
         <div className={styles.shareActionsPrimary}>
           {canShare && (
-            <button className={styles.shareBtn} onClick={onShare} disabled={isRerolling || shareStatus !== null}>
+            <button
+              className={styles.shareBtn}
+              onClick={onShare}
+              disabled={isRerolling || shareStatus !== null}
+            >
               {shareStatus === 'sharing' ? 'opening…' : shareStatus === 'shared' ? 'shared' : 'share'}
             </button>
           )}
@@ -123,11 +133,7 @@ export default function ShareCard({
           ⟳ different flowers
         </button>
 
-        <button
-          className={styles.resetBtn}
-          onClick={onStartOver}
-          disabled={isRerolling}
-        >
+        <button className={styles.resetBtn} onClick={onStartOver} disabled={isRerolling}>
           make another
         </button>
       </div>

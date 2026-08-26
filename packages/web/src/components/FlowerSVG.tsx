@@ -42,6 +42,7 @@ export function flowerHeadOffset(flower: unknown): number {
 
 const STEM_TOP = 20
 
+// prettier-ignore
 function petalGeometry(shape: PetalShape): PetalGeometry {
   switch (shape) {
     case 'elongated': return { size: 12, centerRadius: 8 }
@@ -54,6 +55,7 @@ function petalGeometry(shape: PetalShape): PetalGeometry {
 
 // Per-shape control points for a single petal in local petal space. The
 // petal points up (negative Y is up); we rotate later.
+// prettier-ignore
 function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
   switch (shape) {
     case 'elongated':

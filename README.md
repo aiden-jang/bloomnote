@@ -19,7 +19,7 @@ and a mood (tender, playful, wistful, celebratory, steady). The note is both you
 design brief, so a specific note produces a specific garden. Occasion and mood bias the palette
 and prose without forcing you through a combinatorial menu.
 
-The Worker hands the note to Gemini, which is *forced* to call a `design_garden` function and
+The Worker hands the note to Gemini, which is _forced_ to call a `design_garden` function and
 returns 3–5 flowers with palettes, petal shapes, and a one-line meaning each. The flowers render
 in SVG and bloom in sequence, streamed over SSE so you see progress. "Different flowers" re-rolls
 with the same inputs.
@@ -76,7 +76,7 @@ appears. If the KV write fails the user sees an error, not a 450-character link.
 a broken-looking share link trains people to distrust the app.
 
 **A budget cap so a public demo can't run up a bill.** Gemini calls are metered in KV (per-IP
-per-minute and a global daily ceiling), and the check fails *open* on KV hiccups so a metering
+per-minute and a global daily ceiling), and the check fails _open_ on KV hiccups so a metering
 blip never blocks a legitimate garden. The key is a wrangler secret; with no key the SSE
 error-path is still exercised.
 
@@ -179,7 +179,7 @@ See [DEPLOY.md](DEPLOY.md) for the production runbook.
 
 The note goes to Google's Gemini for processing and is stored in KV under the short id. Anyone
 with the link can read it. Ids are random 6-char base62 (~56 billion values) so they aren't
-guessable, but the link *is* the access token, so don't write anything you wouldn't forward.
+guessable, but the link _is_ the access token, so don't write anything you wouldn't forward.
 
 ## Tests
 
@@ -206,6 +206,12 @@ The SSE route is the one worth knowing about: `/api/design-garden` always return
 stream, so a failed generation is not an HTTP error but a well-formed response carrying an `error`
 event. Nothing else in the toolchain can see the difference, which is why those cases are tested
 explicitly.
+
+Formatting is Prettier, checked in CI. `.prettierrc.json` describes the style the code was already
+written in (no semicolons, single quotes, 110 columns) rather than the default it was drifting
+against. A handful of hand-laid data tables carry `// prettier-ignore`: the star field, the petal
+fall, the sky gradients, the per-shape petal control points. Those are grids you read by column, and
+one entry per line destroys the thing they exist to show.
 
 `pnpm css-vars` (run by `build` and in CI) fails on a `var(--x)` naming a custom property nothing
 declares. This failure is silent by construction: with a fallback the rule quietly uses it, and

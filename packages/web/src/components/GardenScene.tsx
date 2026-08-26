@@ -25,6 +25,7 @@ import styles from './GardenScene.module.css'
 /** An empty or sprouting plot still wants a plot-sized bed. */
 const GARDEN_MIN_HEIGHT = 200
 
+// prettier-ignore
 const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
   // Default — clear morning sky into pale meadow grass.
   'just-because': { top: '#d4eeff', bottom: '#e8f5d0' },
@@ -60,6 +61,7 @@ function auraFor(mood?: string) {
 }
 
 /* Occasion owns the hue; the hour only blends toward a base, so the emotional signal survives. */
+// prettier-ignore
 const TIME_SKY: Record<RitualTime, { top: string; bottom: string; weight: number; sun: string; sunStrength: number }> = {
   morning:   { top: '#ffffff', bottom: '#ffffff', weight: 0,    sun: '255, 250, 235', sunStrength: 0.72 },
   afternoon: { top: '#fff6df', bottom: '#fffaf0', weight: 0.12, sun: '255, 248, 226', sunStrength: 0.78 },
@@ -68,6 +70,7 @@ const TIME_SKY: Record<RitualTime, { top: string; bottom: string; weight: number
 }
 
 /** left %, top %, twinkle delay. Placed by hand so a garden looks the same every time it opens. */
+// prettier-ignore
 const STARS: Array<[number, number, number]> = [
   [8, 14, 0], [21, 31, 1.6], [34, 9, 0.8], [46, 24, 2.4],
   [58, 12, 1.1], [12, 44, 3.1], [67, 34, 0.4], [29, 52, 2.0],
@@ -78,7 +81,10 @@ function mixHex(a: string, b: string, t: number): string {
   const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
   const [ar, ag, ab] = parse(a)
   const [br, bg, bb] = parse(b)
-  const ch = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0')
+  const ch = (x: number, y: number) =>
+    Math.round(x + (y - x) * t)
+      .toString(16)
+      .padStart(2, '0')
   return `#${ch(ar!, br!)}${ch(ag!, bg!)}${ch(ab!, bb!)}`
 }
 
@@ -202,6 +208,7 @@ function placementKey(spec: FlowerSpec, index: number): string {
 // start delay, total animation duration, visual size, and initial
 // rotation. Colors get filled in at render time from the actual
 // flowers, so the drift visually belongs to this specific garden.
+// prettier-ignore
 const PETAL_DRIFTERS = [
   { startX: 15, driftX:  40, delay:  300, duration: 3800, size:  9, rotate:  25 },
   { startX: 30, driftX: -35, delay:  650, duration: 4200, size: 11, rotate: -40 },
@@ -231,7 +238,12 @@ function Bee() {
       <path d="M7.2 3.9 A4.4 3 0 0 0 7.2 8.9 Z" fill="#4a3b1a" opacity="0.85" />
       <path d="M10.1 4.3 A4.4 3 0 0 0 10.1 8.5 Z" fill="#4a3b1a" opacity="0.85" />
       <circle cx="4.6" cy="6.4" r="1.5" fill="#4a3b1a" />
-      <path d="M3.6 4.9 L2.2 3.4 M4.4 4.6 L3.6 2.9" stroke="#4a3b1a" strokeWidth="0.5" strokeLinecap="round" />
+      <path
+        d="M3.6 4.9 L2.2 3.4 M4.4 4.6 L3.6 2.9"
+        stroke="#4a3b1a"
+        strokeWidth="0.5"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }
@@ -297,11 +309,13 @@ function SoilLine() {
 
 /* The waiting bed while the model works: left %, scale, delay s. Staggered so they rise in
    sequence rather than as a row of copies. */
+// prettier-ignore
 const WAIT_SPROUTS: Array<[number, number, number]> = [
   [16, 0.78, 0], [31, 1, 0.55], [50, 0.88, 1.1], [68, 1.05, 0.3], [84, 0.74, 0.85],
 ]
 
 /** Hand-placed so the sky is unevenly filled, the way real drifting things are. left %, top %, delay s. */
+// prettier-ignore
 const MOTES: Array<[number, number, number]> = [
   [14, 22, 0], [31, 46, 2.7], [48, 16, 5.1], [63, 38, 1.4],
   [77, 27, 3.9], [88, 52, 6.3], [22, 63, 4.6],
@@ -350,34 +364,43 @@ function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
     <div className={`${styles.ghostSprout} ${styles[`ghostSproutGrowing${growth}`] ?? ''}`} aria-hidden>
       <svg viewBox="0 0 20 60" className={styles.ghostSproutSvg}>
         <line
-          x1="10" y1="60" x2="10" y2="20"
+          x1="10"
+          y1="60"
+          x2="10"
+          y2="20"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
           className={styles.ghostStem}
         />
-        <path
-          d="M 10 28 Q 18 22, 15 30 Q 12 29, 10 28"
-          fill="currentColor"
-          className={styles.ghostLeaf}
-        />
-        <path
-          d="M 10 38 Q 2 31, 5 40 Q 8 40, 10 38"
-          fill="currentColor"
-          className={styles.ghostLeafSecond}
-        />
-        <path
-          d="M 10 20 Q 3 14, 6 23 Q 9 23, 10 20"
-          fill="currentColor"
-          className={styles.ghostLeafThird}
-        />
+        <path d="M 10 28 Q 18 22, 15 30 Q 12 29, 10 28" fill="currentColor" className={styles.ghostLeaf} />
+        <path d="M 10 38 Q 2 31, 5 40 Q 8 40, 10 38" fill="currentColor" className={styles.ghostLeafSecond} />
+        <path d="M 10 20 Q 3 14, 6 23 Q 9 23, 10 20" fill="currentColor" className={styles.ghostLeafThird} />
         <circle cx="10" cy="17" r="2.2" className={styles.ghostBud} />
       </svg>
     </div>
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, sprouting = false, sealed = false, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, onFocusRelease, wateredAt = 0, journalGardenId, journalFrom, now = new Date() }: Props) {
+export default function GardenScene({
+  flowers,
+  autoBloom,
+  onAllBloomed,
+  occasion,
+  mood,
+  sprouting = false,
+  sealed = false,
+  silent = false,
+  compact = false,
+  draftGrowth = 0,
+  focused = null,
+  onFocus,
+  onFocusRelease,
+  wateredAt = 0,
+  journalGardenId,
+  journalFrom,
+  now = new Date(),
+}: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -432,9 +455,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     setFlowerShareStatus(null)
     setFlowerImageStatus(null)
     setJournalOpen(false)
-    const existing = focused !== null && journalGardenId
-      ? flowerJournalEntry(journalGardenId, focused)
-      : null
+    const existing = focused !== null && journalGardenId ? flowerJournalEntry(journalGardenId, focused) : null
     setJournalMemory(existing?.memory ?? '')
     setJournalSaved(existing !== null)
   }, [focused, journalGardenId])
@@ -518,7 +539,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     if (!beeFlying) return
     // Uneven dwell: a fixed interval reads as a machine on a track. Prime-ish numbers so the bee
     // never falls into step with the flowers' sway.
-    const t = setInterval(() => setBeeAt(i => (i + 1) % placed.length), 3700)
+    const t = setInterval(() => setBeeAt((i) => (i + 1) % placed.length), 3700)
     return () => clearInterval(t)
   }, [beeFlying, placed.length])
 
@@ -541,7 +562,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   // to reset the bloom — the cleanup function makes this effect
   // idempotent (timers from a prior run are torn down before a new
   // run schedules its own).
-  const flowerSig = flowers.map(f => f.name).join('|')
+  const flowerSig = flowers.map((f) => f.name).join('|')
 
   useEffect(() => {
     if (!autoBloom) return
@@ -555,7 +576,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           playBloom(i)
           pulse()
         }
-        setBloomedCount(prev => {
+        setBloomedCount((prev) => {
           const next = prev + 1
           // Hold the moment after the last flower blooms before the
           // legend + message start fading in. The bloom is the
@@ -575,16 +596,17 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   // Drift petals. Only rendered when there are flowers and the scene
   // is allowed to bloom — re-keyed by flowerSig so the animations
   // restart from 0 on every new garden.
-  const drifters = autoBloom && flowers.length > 0
-    ? PETAL_DRIFTERS.map((cfg, i) => {
-        const flower = flowers[i % flowers.length]!
-        return {
-          ...cfg,
-          color: flower.petalColors[i % flower.petalColors.length]!,
-          key: `${flowerSig}-drift-${i}`,
-        }
-      })
-    : []
+  const drifters =
+    autoBloom && flowers.length > 0
+      ? PETAL_DRIFTERS.map((cfg, i) => {
+          const flower = flowers[i % flowers.length]!
+          return {
+            ...cfg,
+            color: flower.petalColors[i % flower.petalColors.length]!,
+            key: `${flowerSig}-drift-${i}`,
+          }
+        })
+      : []
 
   // Empty-state teaser: a single sprout that grows and retracts on a
   // gentle loop. Sits in the same plot the eventual flowers will fill,
@@ -718,28 +740,29 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           ) : (
             <GhostSprout growth={draftGrowth} />
           ))}
-        {beeFlying && (() => {
-          const target = placed[beeAt % placed.length]!
-          /*
-           * Height comes from the flower, not a constant.
-           *
-           * `bottom: 62%` looked right on whichever garden I happened to be testing and was wrong
-           * everywhere else: stems run from 70 to 115, so a fixed height leaves the bee hovering
-           * below the tall flowers and above the short ones. FlowerSVG draws a head 30px down from
-           * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
-           * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
-           */
-          const headUp = flowerHeadOffset(target.spec) - 8
-          return (
-            <div
-              className={styles.bee}
-              style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
-              aria-hidden
-            >
-              <Bee />
-            </div>
-          )
-        })()}
+        {beeFlying &&
+          (() => {
+            const target = placed[beeAt % placed.length]!
+            /*
+             * Height comes from the flower, not a constant.
+             *
+             * `bottom: 62%` looked right on whichever garden I happened to be testing and was wrong
+             * everywhere else: stems run from 70 to 115, so a fixed height leaves the bee hovering
+             * below the tall flowers and above the short ones. FlowerSVG draws a head 30px down from
+             * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
+             * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
+             */
+            const headUp = flowerHeadOffset(target.spec) - 8
+            return (
+              <div
+                className={styles.bee}
+                style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
+                aria-hidden
+              >
+                <Bee />
+              </div>
+            )
+          })()}
         {/* One drop per flower, aimed at that flower's own column, so it reads as watering these
             flowers rather than as weather. Keyed on the count so a second watering replays it. */}
         {perking && (
@@ -765,47 +788,42 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
            */
           const revealed = i < bloomedCount
           return (
-          <button
-            type="button"
-            disabled={!revealed}
-            aria-hidden={revealed ? undefined : true}
-            aria-label={`${p.spec.name}: ${p.spec.meaning}`}
-            aria-expanded={focused === i}
-            aria-controls="flower-peek"
-            ref={element => {
-              slotRefs.current[i] = element
-            }}
-            key={placementKey(p.spec, i)}
-            className={
-              (focused === i
-                ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
-                : focused !== null
-                  ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
-                  : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
-            }
-            // Focused flowers come forward, so a lifted flower is never behind its neighbour.
-            // The perk waits out its own drop's fall, so each flower answers the water that hit it.
-            style={{
-              left: `${p.left}%`,
-              // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
-              zIndex: focused === i ? 20 : p.zIndex,
-              animationDelay: `${i * 90 + 460}ms`,
-              ['--depth' as string]: String(p.depth),
-            }}
-            title={p.spec.name}
-            onMouseEnter={revealed ? () => onFocus?.(i) : undefined}
-            onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
-            // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
-            // tapping it again lets go, so the link is reachable without a mouse.
-            onClick={revealed ? () => onFocus?.(focused === i ? null : i) : undefined}
-          >
-            <FlowerSVG
-              flower={p.spec}
-              index={i}
-              bloomed={revealed}
-              swayDelay={i}
-            />
-          </button>
+            <button
+              type="button"
+              disabled={!revealed}
+              aria-hidden={revealed ? undefined : true}
+              aria-label={`${p.spec.name}: ${p.spec.meaning}`}
+              aria-expanded={focused === i}
+              aria-controls="flower-peek"
+              ref={(element) => {
+                slotRefs.current[i] = element
+              }}
+              key={placementKey(p.spec, i)}
+              className={
+                (focused === i
+                  ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
+                  : focused !== null
+                    ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
+                    : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
+              }
+              // Focused flowers come forward, so a lifted flower is never behind its neighbour.
+              // The perk waits out its own drop's fall, so each flower answers the water that hit it.
+              style={{
+                left: `${p.left}%`,
+                // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
+                zIndex: focused === i ? 20 : p.zIndex,
+                animationDelay: `${i * 90 + 460}ms`,
+                ['--depth' as string]: String(p.depth),
+              }}
+              title={p.spec.name}
+              onMouseEnter={revealed ? () => onFocus?.(i) : undefined}
+              onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
+              // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
+              // tapping it again lets go, so the link is reachable without a mouse.
+              onClick={revealed ? () => onFocus?.(focused === i ? null : i) : undefined}
+            >
+              <FlowerSVG flower={p.spec} index={i} bloomed={revealed} swayDelay={i} />
+            </button>
           )
         })}
       </div>
@@ -857,7 +875,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
                 <button
                   type="button"
                   className={styles.flowerPeekShare}
-                  onClick={() => setJournalOpen(open => !open)}
+                  onClick={() => setJournalOpen((open) => !open)}
                   aria-expanded={journalOpen}
                 >
                   {journalSaved ? 'edit journal memory' : 'keep in my flower journal'}
@@ -868,7 +886,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
                     <textarea
                       id={`flower-memory-${focused}`}
                       value={journalMemory}
-                      onChange={event => setJournalMemory(event.target.value)}
+                      onChange={(event) => setJournalMemory(event.target.value)}
                       maxLength={240}
                       rows={2}
                       placeholder="the moment, the person, the reason…"
@@ -885,7 +903,12 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
               </>
             )}
           </span>
-          <button type="button" className={styles.flowerPeekClose} onClick={closeAndRestoreFocus} aria-label="Close flower meaning">
+          <button
+            type="button"
+            className={styles.flowerPeekClose}
+            onClick={closeAndRestoreFocus}
+            aria-label="Close flower meaning"
+          >
             ×
           </button>
         </aside>
@@ -911,7 +934,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           via the class so it doesn't catch clicks. */}
       {drifters.length > 0 && (
         <div className={styles.petalLayer} aria-hidden>
-          {drifters.map(p => (
+          {drifters.map((p) => (
             <span
               key={p.key}
               className={styles.driftPetal}

@@ -47,7 +47,7 @@ export default function ExampleCarousel({ onSelect, collapsed = false, activeId,
         <section className={styles.wrap} aria-label="example gardens" aria-hidden={collapsed}>
           <p className={styles.heading}>or steal one of these</p>
           <ul className={styles.list}>
-            {EXAMPLE_GARDENS.map(g => (
+            {EXAMPLE_GARDENS.map((g) => (
               <ExampleCard
                 key={g.id}
                 garden={g}

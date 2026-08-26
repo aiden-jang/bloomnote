@@ -31,7 +31,7 @@ const PLACEHOLDERS: Record<string, MoodVariants> = {
     default: "thanks for the other day. meant more than i said out loud, which wasn't much.",
     tender: 'you showed up without me having to ask. noted. thank you, genuinely.',
     playful: "you're in my will now. it's mostly snacks. thanks for everything.",
-    wistful: "still think about that thing you did for me. never properly said it: thanks.",
+    wistful: 'still think about that thing you did for me. never properly said it: thanks.',
     celebratory: 'you came through big. consider this garden your parade. thank you.',
     steady: "thanks. you're the 2am call person, and that's not nothing.",
   },
@@ -41,7 +41,7 @@ const PLACEHOLDERS: Record<string, MoodVariants> = {
     playful: 'congrats to us for not losing it. mostly. love you.',
     wistful: 'remember that terrible first apartment. look at us now. anyway, love you.',
     celebratory: 'cheers to us. more years, more nonsense. happy anniversary.',
-    steady: "another year, same deal: not going anywhere. happy anniversary.",
+    steady: 'another year, same deal: not going anywhere. happy anniversary.',
   },
   congrats: {
     default: "you did the thing. knew you would. don't make it weird.",
@@ -82,5 +82,9 @@ export function placeholderFor(occasion: string, mood: string): string {
 /** A few distinct human-written angles for the quiet "stuck" state in the composer. */
 export function placeholderOptions(occasion: string, mood: string): string[] {
   const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
-  return [...new Set([set[mood], set.default, ...Object.values(set)].filter((note): note is string => Boolean(note)))]
+  return [
+    ...new Set(
+      [set[mood], set.default, ...Object.values(set)].filter((note): note is string => Boolean(note)),
+    ),
+  ]
 }

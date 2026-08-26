@@ -124,10 +124,7 @@ export function isShortId(value: string): boolean {
 }
 
 /** Null on any failure. The composer surfaces that: a share link that half-works is worse. */
-export async function createShortGarden(
-  data: GardenData,
-  signal?: AbortSignal,
-): Promise<string | null> {
+export async function createShortGarden(data: GardenData, signal?: AbortSignal): Promise<string | null> {
   try {
     const resp = await fetch('/api/garden', {
       method: 'POST',
@@ -149,10 +146,7 @@ export async function createShortGarden(
  * Served `immutable` for a year, so a repeat open never leaves the browser. That cache is also why
  * the normalisation below has to happen here rather than only on the server.
  */
-export async function fetchGarden(
-  id: string,
-  signal?: AbortSignal,
-): Promise<GardenData | null> {
+export async function fetchGarden(id: string, signal?: AbortSignal): Promise<GardenData | null> {
   const resp = await fetch(`/api/garden?id=${encodeURIComponent(id)}`, {
     signal: signal ?? null,
   })

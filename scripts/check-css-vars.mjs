@@ -55,10 +55,10 @@ for (const file of walk(SRC)) {
   }
 }
 
-const undefinedRefs = references.filter(r => !declared.has(r.name))
+const undefinedRefs = references.filter((r) => !declared.has(r.name))
 
 if (undefinedRefs.length === 0) {
-  const unique = new Set(references.map(r => r.name)).size
+  const unique = new Set(references.map((r) => r.name)).size
   console.log(`css-vars: ${references.length} references to ${unique} custom properties, all declared.`)
   process.exit(0)
 }
@@ -69,7 +69,9 @@ for (const ref of undefinedRefs) {
   byName.get(ref.name).push(ref)
 }
 
-console.error(`css-vars: ${byName.size} custom ${byName.size === 1 ? 'property is' : 'properties are'} referenced but never declared.\n`)
+console.error(
+  `css-vars: ${byName.size} custom ${byName.size === 1 ? 'property is' : 'properties are'} referenced but never declared.\n`,
+)
 for (const [name, refs] of byName) {
   console.error(`  ${name}`)
   for (const ref of refs) console.error(`    ${ref.file}:${ref.line}`)
