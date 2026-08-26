@@ -652,6 +652,30 @@
   }
 }
 
+/*
+ * Desktop: grow the plot instead of leaving a phone-sized one in the middle of a monitor.
+ *
+ * At 1280 the column is 520px, so the garden — the entire product — was 41% of the window with the
+ * rest empty cream. Widening the bed was the obvious fix and it is the wrong one: flowers are placed
+ * by percentage, so a 940px bed just spread the same four flowers 200px apart in the same letterbox
+ * and read emptier than before. Scaling grows the flowers themselves and leaves the planting as
+ * tight as it is on a phone.
+ *
+ * The margin hands the layout back the height a transform does not occupy. It repeats the height
+ * expression above deliberately: both must be the same number, and a variable cannot be multiplied
+ * into `height` and `margin` from one place.
+ */
+@media (min-width: 900px) {
+  .scene {
+    --garden-zoom: 1.35;
+    scale: var(--garden-zoom);
+    transform-origin: top center;
+    margin-bottom: calc(
+      (var(--garden-h, 200px) + var(--soil-h) + var(--sway-headroom)) * (var(--garden-zoom) - 1)
+    );
+  }
+}
+
 /* Mobile: scale the scene down so 5 flowers don't visually crowd
    each other at narrow widths. Scaled, not re-laid out — keeps the
    bloom + sway geometry stable. */
