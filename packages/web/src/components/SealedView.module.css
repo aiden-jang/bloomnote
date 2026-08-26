@@ -153,6 +153,15 @@
   text-align: center;
 }
 
+/* Same reason as RecipientView's wrap: on narrow screens the centred header runs under the fixed
+   sign-in / sound chips in the top-right corner. Drop the content below them. Desktop is
+   unaffected, because the centred column never reaches that corner. */
+@media (max-width: 560px) {
+  .wrap {
+    padding-top: 4rem;
+  }
+}
+
 /* Print: a sealed garden in a printed card is confusing — collapse
    to a single line "(scheduled to open on …)". */
 @media print {
