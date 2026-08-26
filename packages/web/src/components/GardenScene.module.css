@@ -854,6 +854,16 @@
  * background here, so the water has to be darker than it rather than lighter.
  */
 .drop {
+  /*
+   * Falls to the soil, not a fixed number.
+   *
+   * This layer is inset in .garden, whose height follows the tallest flower, so a hardcoded 202px
+   * only landed on the ground in a garden of about that height. Measured in a 188px one, all three
+   * drops stopped 25px above the soil and faded in mid-air — the thing the last keyframe below
+   * says it exists to avoid. No mobile term needed, unlike the drifting petals: this layer sits
+   * inside .garden and is scaled along with it, where they sit on .scene and are not.
+   */
+  --drop-fall: var(--garden-h, 200px);
   position: absolute;
   top: -10px;
   width: 6px;
@@ -869,9 +879,9 @@
 @keyframes dropFall {
   0%   { opacity: 0; transform: translateY(0) scaleY(0.8); }
   15%  { opacity: 0.9; }
-  80%  { opacity: 0.9; transform: translateY(190px) scaleY(1.25); }
+  80%  { opacity: 0.9; transform: translateY(calc(var(--drop-fall, 202px) - 12px)) scaleY(1.25); }
   /* Flattens into the soil instead of vanishing mid-air. */
-  100% { opacity: 0; transform: translateY(202px) scaleY(0.4) scaleX(1.6); }
+  100% { opacity: 0; transform: translateY(var(--drop-fall, 202px)) scaleY(0.4) scaleX(1.6); }
 }
 
 .flowerSlotPerk {
