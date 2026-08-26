@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import FlowerSVG, { FlowerHead, flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
@@ -440,6 +440,40 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   const [journalMemory, setJournalMemory] = useState('')
   const [journalSaved, setJournalSaved] = useState(false)
   const placed = placeFlowers(flowers)
+  /*
+   * Closing the flower panel with the keyboard.
+   *
+   * Opening one is a keyboard action now, so dismissing it has to be too: without this, Escape did
+   * nothing and the only way out was to find the × with the mouse. Focus goes back to the flower
+   * that opened the panel rather than being dropped on the body, so tabbing carries on from where
+   * the person was instead of restarting at the top of the page.
+   */
+  const slotRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const closeAndRestoreFocus = useCallback(() => {
+    const previous = focused
+    onFocus?.(null)
+    if (previous !== null) slotRefs.current[previous]?.focus()
+  }, [focused, onFocus])
+
+  useEffect(() => {
+    if (focused === null) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      /*
+       * Escape unwinds one layer at a time. With the memory field open it closes the field and
+       * leaves the panel standing, because escaping out of the whole thing in one press throws away
+       * the sentence someone was in the middle of writing.
+       */
+      if (journalOpen) {
+        setJournalOpen(false)
+        return
+      }
+      closeAndRestoreFocus()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [focused, journalOpen, closeAndRestoreFocus])
+
   const aura = auraFor(mood)
 
   useEffect(() => {
@@ -783,6 +817,9 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
             aria-label={`${p.spec.name}: ${p.spec.meaning}`}
             aria-expanded={focused === i}
             aria-controls="flower-peek"
+            ref={element => {
+              slotRefs.current[i] = element
+            }}
             key={placementKey(p.spec, i)}
             className={
               (focused === i
@@ -892,7 +929,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
               </>
             )}
           </span>
-          <button type="button" className={styles.flowerPeekClose} onClick={() => onFocus?.(null)} aria-label="Close flower meaning">
+          <button type="button" className={styles.flowerPeekClose} onClick={closeAndRestoreFocus} aria-label="Close flower meaning">
             ×
           </button>
         </aside>
