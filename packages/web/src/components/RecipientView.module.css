@@ -552,3 +552,24 @@
 @media (prefers-reduced-motion: reduce) {
   .waitingLine { animation: none; opacity: 1; }
 }
+
+/* The invitation to open a flower. Sits directly under the plot, above the watering can, and is
+   removed for good the first time a flower is opened. */
+.tapHint {
+  margin: 14px auto 0;
+  text-align: center;
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+  color: var(--text-mid);
+  opacity: 0;
+  animation: tapHintIn 600ms ease 260ms forwards;
+}
+
+@keyframes tapHintIn {
+  from { opacity: 0; translate: 0 4px; }
+  to { opacity: 0.9; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tapHint { animation: none; opacity: 0.9; }
+}
