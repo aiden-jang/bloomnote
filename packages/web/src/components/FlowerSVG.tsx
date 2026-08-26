@@ -91,6 +91,17 @@ function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
   }
 }
 
+/*
+ * How far a petal tip reaches from the head's centre, for a given petal size.
+ *
+ * Measured off the control points rather than written down per shape, so editing a silhouette
+ * above cannot leave a stale number here. A Bezier stays inside the hull of its control points, so
+ * the furthest point is an upper bound on the drawn extent.
+ */
+function petalReach(shape: PetalShape, s: number): number {
+  return Math.max(...petalPointsFor(shape, s).map(([x, y]) => Math.hypot(x, y)))
+}
+
 /** How long the stem takes to reach full height. The head waits this out before opening. */
 const STEM_MS = 500
 
@@ -122,6 +133,57 @@ function buildPetalPath(
     `M${p0[0]},${p0[1]} ` +
     `C${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]} ` +
     `C${p4[0]},${p4[1]} ${p5[0]},${p5[1]} ${p6[0]},${p6[1]}`
+  )
+}
+
+/**
+ * Just the head: petals and centre, no stem, no animation, on a fixed square.
+ *
+ * The plot scales a head to the stem carrying it, because there it has to look right on that stem.
+ * A list wants the opposite — every flower the same size regardless of how tall it grew — so this
+ * takes the unscaled geometry. Exported because a legend row and an archive card both want a real
+ * flower small enough to sit beside a line of text, and both were drawing coloured dots instead.
+ */
+export function FlowerHead({ flower, size = 34 }: { flower: FlowerSpec; size?: number }) {
+  const { petalCount, petalColors, centerColor, petalShape } = drawableFlower(flower)
+  const base = petalGeometry(petalShape)
+  /*
+   * Every head drawn to the same outer radius.
+   *
+   * The shapes are not the same size by nature: a `small` petal reaches 22 units and a `star` 42,
+   * which in the plot is correct and in a list is not — one row's flower came out half the size of
+   * the row below it. Zooming petal and centre by the same factor normalises the footprint without
+   * touching the silhouette, so each flower still looks like itself.
+   */
+  const c = 44
+  const zoom = 38 / petalReach(petalShape, base.size)
+  const petalSize = base.size * zoom
+  const centerRadius = base.centerRadius * zoom
+  const centerInner = darken(centerColor, 0.2)
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 88 88" aria-hidden focusable="false">
+      {Array.from({ length: petalCount }).map((_, i) => (
+        <path
+          key={i}
+          d={buildPetalPath(petalShape, petalSize, ((360 / petalCount) * i * Math.PI) / 180, c, c)}
+          fill={petalColors[i % petalColors.length]}
+          opacity="0.92"
+        />
+      ))}
+      <circle cx={c} cy={c} r={centerRadius} fill={centerColor} />
+      <circle cx={c} cy={c} r={centerRadius * 0.55} fill={centerInner} opacity="0.7" />
+      {Array.from({ length: 5 }).map((_, i) => (
+        <circle
+          key={i}
+          cx={c + Math.cos((i / 5) * Math.PI * 2) * (centerRadius * 0.65)}
+          cy={c + Math.sin((i / 5) * Math.PI * 2) * (centerRadius * 0.65)}
+          r={1.5 * zoom}
+          fill={petalColors[0]}
+          opacity="0.6"
+        />
+      ))}
+    </svg>
   )
 }
 

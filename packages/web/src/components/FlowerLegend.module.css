@@ -48,22 +48,17 @@
   }
 }
 
-/* Three small dots showing the petal gradient — small enough not to
-   compete with the actual flowers above, big enough to make the
-   color → flower association legible. */
-.swatchStack {
+/* The flower itself, drawn small, rather than three dots sampled off it. The whole page is
+   hand-drawn flowers; this row is where someone reads what one of them means, so showing a
+   swatch here was the one place the app described a flower instead of drawing it.
+   Pinned to the top of the row so it sits beside the name: centring it on the row would drag the
+   flower halfway down any entry whose meaning wraps to two lines. */
+.bloom {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-top: 5px;
+  align-items: center;
   flex-shrink: 0;
-}
-
-.swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(0, 0, 0, 0.07);
+  align-self: flex-start;
+  margin-top: -3px;
 }
 
 .text {
@@ -113,7 +108,7 @@
   cursor: default;
 }
 
-.item .swatchStack,
+.item .bloom,
 .item .text {
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
@@ -122,7 +117,7 @@
   transform: translateX(3px);
 }
 
-.itemOff .swatchStack,
+.itemOff .bloom,
 .itemOff .text {
   opacity: 0.42;
 }
