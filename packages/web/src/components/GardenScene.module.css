@@ -690,6 +690,17 @@
     height: calc(var(--garden-h, 200px) * 0.85 + var(--soil-h) + var(--sway-headroom));
   }
 
+  /*
+   * Restate the cropped height inside the query.
+   *
+   * `.sceneCompact` sits above this block, so the `.scene` height here beat it on source order and
+   * the waiting bed stayed full-size on exactly the screens it was written to spare: every phone.
+   * Scaled to match the 0.85 the garden layer takes on at this width.
+   */
+  .sceneCompact {
+    height: calc(132px * 0.85);
+  }
+
   .garden {
     bottom: var(--soil-h);
     height: var(--garden-h, 200px);
