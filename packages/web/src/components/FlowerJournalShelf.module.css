@@ -337,3 +337,12 @@
 .moreBtn:hover {
   color: var(--green-mid);
 }
+
+/* Sits under the row's own "say it out loud instead", because that is where the person is looking
+   when a permission prompt is declined. */
+.voiceNote {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-mid);
+  font-size: 11px;
+}

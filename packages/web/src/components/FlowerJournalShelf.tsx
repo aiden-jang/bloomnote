@@ -38,7 +38,9 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   const [loaded, setLoaded] = useState<Record<string, VoiceMemory>>({})
   const [recordingFor, setRecordingFor] = useState<string | null>(null)
   const recording = useRef<Recording | null>(null)
-  const [voiceError, setVoiceError] = useState<string | null>(null)
+  /* Carries the entry it belongs to: this message answers a tap on one row, and the shelf is
+     taller than the screen, so it has to appear at that row rather than at the top of the list. */
+  const [voiceError, setVoiceError] = useState<{ id: string; text: string } | null>(null)
   /** Null shows everything. A shelf id narrows the list to one shelf. */
   const [shelf, setShelf] = useState<ShelfId | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -73,7 +75,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       setRecordingFor(entryId)
     } catch {
       // A dismissed permission prompt is an ordinary choice, not a failure to report loudly.
-      setVoiceError('no microphone, or permission was declined.')
+      setVoiceError({ id: entryId, text: 'no microphone, or permission was declined.' })
     }
   }
 
@@ -90,7 +92,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       setWithVoice(current => new Set(current).add(entryId))
     } else {
       // Out of disk, or private browsing with no store. Losing the audio is bad enough without silence.
-      setVoiceError('could not keep that recording on this device.')
+      setVoiceError({ id: entryId, text: 'could not keep that recording on this device.' })
     }
   }
 
@@ -137,7 +139,6 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         {!quiet && <span className={styles.count}>{entries.length}</span>}
       </div>
       {recapLine && <p className={styles.recap}>{recapLine}</p>}
-      {voiceError && <p className={styles.recap}>{voiceError}</p>}
       {/* Filters, not folders: the flower stays on the one shelf and this only narrows what is shown. */}
       <div className={styles.shelfRow} role="group" aria-label="Shelves">
         <button type="button" aria-pressed={shelf === null} onClick={() => setShelf(null)}>
@@ -239,9 +240,16 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                 </button>
               ) : (
                 canRecord() && (
-                  <button type="button" className={styles.voiceLink} onClick={() => void beginRecording(entry.id)}>
-                    say it out loud instead
-                  </button>
+                  <>
+                    <button type="button" className={styles.voiceLink} onClick={() => void beginRecording(entry.id)}>
+                      say it out loud instead
+                    </button>
+                    {voiceError?.id === entry.id && (
+                      <small className={styles.voiceNote} role="status">
+                        {voiceError.text}
+                      </small>
+                    )}
+                  </>
                 )
               )}
             </span>
