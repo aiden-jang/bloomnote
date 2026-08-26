@@ -10,6 +10,7 @@ import {
   type Feeling,
 } from '../lib/water'
 import { playWater } from '../sound'
+import ChipRow from './ChipRow'
 import styles from './Watering.module.css'
 
 interface Props {
@@ -85,13 +86,21 @@ export default function Watering({ gardenId, onWatered }: Props) {
           {feeling ? (
             <p className={styles.feelingDone}>sent back {FEELING_COPY[feeling].sent}</p>
           ) : (
-            <div className={styles.feelings} aria-label="Send a feeling back">
-              <span>and it felt like</span>
-              {(Object.keys(FEELING_COPY) as Feeling[]).map(kind => (
-                <button key={kind} type="button" onClick={() => void respond(kind)}>
-                  <span aria-hidden>{FEELING_COPY[kind].emoji}</span> {FEELING_COPY[kind].label}
-                </button>
-              ))}
+            // Label and chips on one line. The chips slide rather than wrap, the way the occasion
+            // and mood rows do, so a narrow phone gets a scroller instead of a second row.
+            <div className={styles.feelings}>
+              <span id="felt-like" className={styles.feelingsLabel}>
+                and it felt like
+              </span>
+              <div className={styles.feelingsChips}>
+                <ChipRow labelledBy="felt-like" selectable={false}>
+                  {(Object.keys(FEELING_COPY) as Feeling[]).map(kind => (
+                    <button key={kind} type="button" onClick={() => void respond(kind)}>
+                      <span aria-hidden>{FEELING_COPY[kind].emoji}</span> {FEELING_COPY[kind].label}
+                    </button>
+                  ))}
+                </ChipRow>
+              </div>
             </div>
           )}
           {Object.keys(feelings).length > 0 && (
