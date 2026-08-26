@@ -982,6 +982,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         occasion={heroOccasion}
         mood={heroMood}
         silent={showDemo}
+        // While the model works, the empty bed above the status card puts up a row of sprouts.
+        sprouting={phase === 'designing'}
         compact={hasDraft}
         draftGrowth={draftGrowth}
         // Re-keying restarts the bloom from sprout, which is what makes each demo garden grow in

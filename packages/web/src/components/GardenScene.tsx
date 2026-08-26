@@ -124,6 +124,10 @@ interface Props {
   /** Adds a restrained, animated atmosphere. Old gardens without a mood stay unchanged. */
   mood?: string | undefined
   /**
+   * The model is designing the garden right now. The bed answers by putting up a row of sprouts.
+   */
+  sprouting?: boolean
+  /**
    * The garden is written but not yet opened. The flowers are withheld, so the plot draws the seeds
    * they will grow from instead of an empty bed.
    */
@@ -306,6 +310,17 @@ function SoilLine() {
   )
 }
 
+/*
+ * The waiting bed while the model works. left %, scale, delay s.
+ *
+ * One sprout in the middle of an empty plot is the right idea for someone still writing; it is a
+ * thin answer to someone who has pressed the button and is now watching that plot, waiting for a
+ * whole garden. Staggered so they come up in sequence rather than as a row of copies.
+ */
+const WAIT_SPROUTS: Array<[number, number, number]> = [
+  [16, 0.78, 0], [31, 1, 0.55], [50, 0.88, 1.1], [68, 1.05, 0.3], [84, 0.74, 0.85],
+]
+
 /** Hand-placed so the sky is unevenly filled, the way real drifting things are. left %, top %, delay s. */
 const MOTES: Array<[number, number, number]> = [
   [14, 22, 0], [31, 46, 2.7], [48, 16, 5.1], [63, 38, 1.4],
@@ -389,7 +404,7 @@ function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, sealed = false, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom, now = new Date() }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, sprouting = false, sealed = false, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom, now = new Date() }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -783,7 +798,26 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       )}
       <div className={styles.garden}>
         {sealed && placed.length > 0 && <SeedBed placements={placed} />}
-        {showGhostSprout && <GhostSprout growth={draftGrowth} />}
+        {showGhostSprout &&
+          (sprouting ? (
+            <div className={styles.sproutRow} aria-hidden>
+              {WAIT_SPROUTS.map(([left, scale, delay], i) => (
+                <span
+                  key={i}
+                  className={styles.sproutSlot}
+                  style={{
+                    ['--left' as string]: `${left}%`,
+                    ['--scale' as string]: String(scale),
+                    ['--sprout-delay' as string]: `${delay}s`,
+                  }}
+                >
+                  <GhostSprout growth={3} />
+                </span>
+              ))}
+            </div>
+          ) : (
+            <GhostSprout growth={draftGrowth} />
+          ))}
         {beeFlying && (() => {
           const target = placed[beeAt % placed.length]!
           /*

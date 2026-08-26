@@ -378,6 +378,36 @@
     brightness(calc(1.14 - var(--depth, 1) * 0.14));
 }
 
+/*
+ * The row that comes up while the garden is being designed.
+ *
+ * The slot owns the placement so GhostSprout itself stays the single centred thing it was written
+ * to be; inside a slot it fills its parent instead of positioning itself.
+ */
+.sproutRow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sproutSlot {
+  position: absolute;
+  bottom: 0;
+  left: var(--left);
+  width: 24px;
+  height: 60px;
+  transform: translateX(-50%);
+  scale: var(--scale, 1);
+  transform-origin: bottom center;
+}
+
+.sproutSlot .ghostSprout {
+  position: static;
+  transform: none;
+  width: 100%;
+  height: 100%;
+}
+
 /* Ghost sprout — empty-state teaser. Centered in the plot, color
    drawn from the green-mid token so it harmonizes with the eventual
    garden palette without committing to any specific flower. */
@@ -411,7 +441,7 @@
 .ghostStem {
   stroke-dasharray: 40;
   stroke-dashoffset: 40;
-  animation: ghostStemGrow 4.5s ease-in-out infinite;
+  animation: ghostStemGrow 4.5s ease-in-out var(--sprout-delay, 0s) infinite;
 }
 
 @keyframes ghostStemGrow {
@@ -427,7 +457,7 @@
 .ghostLeaf {
   transform-origin: 10px 28px;
   transform: scale(0);
-  animation: ghostLeafUnfurl 4.5s ease-in-out infinite;
+  animation: ghostLeafUnfurl 4.5s ease-in-out var(--sprout-delay, 0s) infinite;
 }
 
 .ghostLeafSecond,
