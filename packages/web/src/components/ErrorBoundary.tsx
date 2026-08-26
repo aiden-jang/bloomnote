@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import notice from './Notice.module.css'
 
 interface Props {
   children: ReactNode
@@ -22,28 +23,20 @@ export default class ErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (!this.state.hasError) return this.props.children
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '70vh',
-          gap: '0.75rem',
-          textAlign: 'center',
-          padding: '1.5rem',
-        }}
-      >
-        <p style={{ fontFamily: 'Fraunces, serif', fontSize: '1.4rem' }}>something wilted.</p>
-        <p style={{ color: 'var(--color-ink-muted, #6b6963)', fontSize: '0.95rem' }}>
-          a hiccup on our end. refresh, or start a fresh one.
-        </p>
-        <a
-          href="/"
-          style={{ marginTop: '1rem', color: 'var(--color-accent, #4a7c3f)', textDecoration: 'underline' }}
-        >
-          grow a new one
-        </a>
+      /*
+       * The crash screen, on the same card as the other notices.
+       *
+       * It was the last surface still assembled from inline styles, which is a poor place for the
+       * app to look least like itself: this is what somebody sees when everything else has failed.
+       */
+      <div className={notice.page}>
+        <div className={notice.card}>
+          <h1 className={notice.title}>something wilted.</h1>
+          <p className={notice.body}>a hiccup on our end. refresh, or start a fresh one.</p>
+          <a className={notice.action} href="/">
+            grow a new one
+          </a>
+        </div>
       </div>
     )
   }
