@@ -634,6 +634,15 @@
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  /*
+   * How far a petal falls: to the soil, not a fixed number.
+   *
+   * This was a hardcoded 280px in a scene whose height follows the tallest flower, so where a petal
+   * came to rest depended on the garden. Measured in a 256px scene, they finished up to 39px inside
+   * the soil still at full opacity — petals sinking through the ground. The soil surface sits at
+   * `--garden-h + --sway-headroom` from the top of the scene, and a petal starts 24px above it.
+   */
+  --fall-distance: calc(var(--garden-h, 200px) + var(--sway-headroom) + 24px);
   /* Parallax lag: positive multiplier means the layer translates DOWN
      as the user scrolls down — counteracting the natural upward motion
      of the scene scrolling out of viewport. Net effect: petals appear
@@ -678,7 +687,7 @@
   85%  { opacity: 0.85; }
   100% {
     opacity: 0;
-    transform: translate(var(--drift-x), 280px) rotate(calc(var(--rotate) + 270deg));
+    transform: translate(var(--drift-x), var(--fall-distance, 280px)) rotate(calc(var(--rotate) + 270deg));
   }
 }
 
@@ -745,6 +754,11 @@
     height: var(--garden-h, 200px);
     transform: scale(0.85);
     transform-origin: bottom center;
+  }
+
+  /* The scene is shorter here, so the ground the petals are falling to is higher up. */
+  .petalLayer {
+    --fall-distance: calc(var(--garden-h, 200px) * 0.85 + var(--sway-headroom) + 24px);
   }
 }
 
