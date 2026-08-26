@@ -3,6 +3,7 @@ import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import Footer from './components/Footer'
 import { fetchGarden, isShortId, type GardenData } from './garden'
+import notice from './components/Notice.module.css'
 
 /*
  * Everything except the recipient view is split out.
@@ -211,17 +212,7 @@ function RecipientGateway({ garden, gardenId }: { garden: GardenData; gardenId: 
 // while the rest of the bundle is still being parsed.
 function LoadingShell() {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        color: 'var(--color-ink-muted, #6b6963)',
-        fontSize: '0.95rem',
-        letterSpacing: '0.02em',
-      }}
-    >
+    <div className={notice.loading}>
       <span>opening…</span>
     </div>
   )
@@ -242,42 +233,17 @@ function LoadingShell() {
  */
 function NotFoundShell() {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        gap: '0.75rem',
-        textAlign: 'center',
-        padding: '1.5rem',
-      }}
-    >
-      <p style={{ fontFamily: 'Fraunces, serif', fontSize: '1.4rem' }}>
-        that link didn&rsquo;t lead anywhere.
-      </p>
-      <p
-        style={{
-          color: 'var(--color-ink-muted, #6b6963)',
-          fontSize: '0.95rem',
-          maxWidth: '30rem',
-          lineHeight: 1.6,
-        }}
-      >
-        gardens never expire, so if someone grew you one, it&rsquo;s still there. links get cut
-        short in messages more often than you&rsquo;d think. worth asking them to send it again.
-      </p>
-      <a
-        href="/"
-        style={{
-          marginTop: '1rem',
-          color: 'var(--color-accent, #4a7c3f)',
-          textDecoration: 'underline',
-        }}
-      >
-        or grow one for someone
-      </a>
+    <div className={notice.page}>
+      <div className={notice.card}>
+        <h1 className={notice.title}>that link didn&rsquo;t lead anywhere.</h1>
+        <p className={notice.body}>
+          gardens never expire, so if someone grew you one, it&rsquo;s still there. links get cut
+          short in messages more often than you&rsquo;d think. worth asking them to send it again.
+        </p>
+        <a className={notice.action} href="/">
+          or grow one for someone
+        </a>
+      </div>
     </div>
   )
 }
@@ -286,39 +252,14 @@ function NotFoundShell() {
 // probably fine, so offer a retry instead of claiming the link is gone.
 function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        gap: '0.75rem',
-        textAlign: 'center',
-        padding: '1.5rem',
-      }}
-    >
-      <p style={{ fontFamily: 'Fraunces, serif', fontSize: '1.4rem' }}>
-        couldn&rsquo;t load that garden.
-      </p>
-      <p style={{ color: 'var(--color-ink-muted, #6b6963)', fontSize: '0.95rem' }}>
-        looks like a connection hiccup, not a bad link.
-      </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        style={{
-          marginTop: '1rem',
-          color: 'var(--color-accent, #4a7c3f)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          textDecoration: 'underline',
-          font: 'inherit',
-        }}
-      >
-        try again
-      </button>
+    <div className={notice.page}>
+      <div className={notice.card}>
+        <h1 className={notice.title}>couldn&rsquo;t load that garden.</h1>
+        <p className={notice.body}>looks like a connection hiccup, not a bad link.</p>
+        <button type="button" className={notice.action} onClick={onRetry}>
+          try again
+        </button>
+      </div>
     </div>
   )
 }

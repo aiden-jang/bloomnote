@@ -1,0 +1,68 @@
+/*
+ * The pages that are not a garden: loading, a broken link, a failed fetch, privacy, terms.
+ *
+ * These were the last surfaces built from ad-hoc inline styles, and they looked like a different
+ * product: bare text on cream with none of the app's material. They borrow the note card here —
+ * same white, same green-pale hairline, same 16px radius — so a dead end still looks like it
+ * belongs to bloomnote. Deliberately no flowers: the message on most of these is that a garden is
+ * not here, and drawing one would say the opposite.
+ */
+.page {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 4rem 1.25rem 3rem;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--green-pale);
+  border-radius: 16px;
+  padding: 2rem 1.75rem;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--green-deep);
+  letter-spacing: -0.2px;
+}
+
+.body {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-mid);
+}
+
+.action {
+  margin-top: 1.25rem;
+  display: inline-block;
+  padding: 5px 2px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--green-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.action:hover {
+  color: var(--green-deep);
+}
+
+/* Loading is the one that is not an ending, so it stays a quiet line rather than a card: a
+   full card that flashes up for 200ms and vanishes reads as an error, not as progress. */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--text-mid);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}

@@ -1,3 +1,5 @@
+import notice from './Notice.module.css'
+import styles from './LegalPage.module.css'
 // Privacy + terms, rendered by the two static routes. Kept plain and readable on purpose — a legal
 // page nobody can read protects nobody. Content is accurate to how bloomnote actually works: notes
 // go to Gemini to design the garden, gardens live in Cloudflare KV behind an unguessable short id,
@@ -57,7 +59,7 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
   const sections = kind === 'privacy' ? PRIVACY : TERMS
 
   return (
-    <div style={{ maxWidth: '38rem', margin: '0 auto', padding: '4rem 1.5rem 3rem', lineHeight: 1.65 }}>
+    <div className={notice.page}>
       {/*
         * Colour rather than opacity, throughout this page.
         *
@@ -66,19 +68,19 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
         * and it took this link to 2.9:1 and the date under it to 3.7:1, both under the 4.5:1 that
         * body text needs. Naming the colour makes the contrast something you can look up.
         */}
-      <a href="/" style={{ fontWeight: 600, textDecoration: 'none', color: 'var(--green-mid)' }}>
+      <a href="/" className={styles.back}>
         &larr; bloomnote
       </a>
-      <h1 style={{ fontFamily: 'var(--font-display, Fraunces, Georgia, serif)', fontSize: '2.5rem', margin: '1.5rem 0 0.25rem' }}>
-        {title}
-      </h1>
-      <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', margin: 0 }}>Last updated: {UPDATED}</p>
-      {sections.map((s) => (
-        <section key={s.heading} style={{ marginTop: '2rem' }}>
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.4rem' }}>{s.heading}</h2>
-          <p style={{ margin: 0, color: 'var(--text-mid)' }}>{s.body}</p>
-        </section>
-      ))}
+      <div className={notice.card}>
+        <h1 className={styles.title}>{title}</h1>
+        <p className={styles.updated}>Last updated: {UPDATED}</p>
+        {sections.map((s) => (
+          <section key={s.heading} className={styles.section}>
+            <h2 className={styles.heading}>{s.heading}</h2>
+            <p className={styles.body}>{s.body}</p>
+          </section>
+        ))}
+      </div>
     </div>
   )
 }
