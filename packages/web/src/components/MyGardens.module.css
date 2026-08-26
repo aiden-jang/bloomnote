@@ -203,20 +203,23 @@
   flex: 0 0 44px;
 }
 
+/* The hand-placed cluster keeps its arrangement; only what sits at each spot changed, from a
+   coloured blob to the drawn flower the cards below it now use. */
 .memoryBouquet span {
   position: absolute;
-  width: 19px;
-  height: 19px;
-  border: 2px solid rgba(255, 252, 245, 0.9);
-  border-radius: 50% 50% 45% 55%;
-  box-shadow: 0 2px 5px rgba(74, 53, 32, 0.1);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 2px rgba(74, 53, 32, 0.16));
 }
 
-.memoryBouquet span:nth-child(1) { left: 1px; top: 11px; }
-.memoryBouquet span:nth-child(2) { left: 13px; top: 1px; }
-.memoryBouquet span:nth-child(3) { left: 24px; top: 12px; }
-.memoryBouquet span:nth-child(4) { left: 9px; top: 22px; }
-.memoryBouquet span:nth-child(5) { left: 22px; top: 24px; }
+.memoryBouquet span:nth-child(1) { left: 0; top: 10px; }
+.memoryBouquet span:nth-child(2) { left: 12px; top: 0; }
+.memoryBouquet span:nth-child(3) { left: 23px; top: 11px; }
+.memoryBouquet span:nth-child(4) { left: 8px; top: 21px; }
+.memoryBouquet span:nth-child(5) { left: 21px; top: 23px; }
 
 .memoryCopy {
   display: flex;
@@ -421,18 +424,20 @@
   flex-shrink: 0;
 }
 
-/* Overlapping swatch chips — a tiny bouquet thumbnail. The negative
-   margin tucks each behind the previous so a 5-color row stays
-   compact; the white ring keeps them legible where they overlap. */
+/* Overlapping heads — a tiny bouquet thumbnail. The negative margin tucks each behind the previous
+   so a 5-flower row stays compact. These were plain colour circles; every other surface in the app
+   draws the flower, so the archive was the one place a garden was described rather than shown. */
 .swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1.5px var(--cream);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 1.2px var(--cream)) drop-shadow(0 0 1.2px var(--cream));
 }
 
 .swatch:not(:first-child) {
-  margin-left: -5px;
+  margin-left: -7px;
 }
 
 .cardText {
