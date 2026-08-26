@@ -15,6 +15,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "eslint . --ext .ts,.tsx",
+    "css-vars": "node scripts/check-css-vars.mjs",
     "format": "prettier --write ."
   },
   "devDependencies": {
