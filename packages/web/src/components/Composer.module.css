@@ -25,7 +25,11 @@
   letter-spacing: 0.18em;
   color: var(--soil);
   margin-bottom: 10px;
-  opacity: 0.85;
+  /*
+   * No opacity here. It used to sit at 0.85, purely to soften the accent, and that alone dropped
+   * 11px text from 5.2:1 to 3.8:1 — under the threshold, on the first line of the page. The size,
+   * the tracking and the brown already say "quiet"; the transparency only cost legibility.
+   */
 }
 
 .title {
