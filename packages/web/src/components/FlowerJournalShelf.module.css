@@ -317,3 +317,23 @@
   color: var(--green-deep);
   cursor: pointer;
 }
+
+/* The control that opens the rest of the shelf. Styled as the sentence it replaces rather than as a
+   button, so the shelf keeps reading like a note to yourself. */
+.moreBtn {
+  border: none;
+  background: none;
+  padding: 4px 2px;
+  margin: -4px -2px;
+  min-height: 24px;
+  box-sizing: border-box;
+  font: inherit;
+  color: var(--text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.moreBtn:hover {
+  color: var(--green-mid);
+}

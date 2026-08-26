@@ -233,10 +233,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   /*
    * Which flower the recipient is looking at, shared by the scene and the legend.
    *
-   * The two halves of this screen have never been connected: the garden is a picture and the
-   * meanings are a list, and working out which line belongs to which flower means comparing colour
-   * swatches by eye. Since every meaning is written about a specific flower, that link is the
-   * content, not decoration.
+   * The two halves of this screen are a picture and a list, and without this, working out which
+   * line belongs to which flower is left to the reader. Since every meaning is written about a
+   * specific flower, that link is the content, not decoration.
    *
    * Held here rather than in either component because it has to point both ways.
    */

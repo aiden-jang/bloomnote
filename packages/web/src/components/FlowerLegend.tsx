@@ -13,9 +13,9 @@ interface Props {
 }
 
 /**
- * A legend listing every flower in the garden by name + meaning, with
- * a small stack of color swatches on the left so the visual ties back
- * to the bloom above. Shown by default — the per-flower meanings are
+ * A legend listing every flower in the garden by name + meaning, each row led by that flower drawn
+ * small, so the line ties back to the bloom above by being the same thing rather than by matching
+ * colours to it. Shown by default — the per-flower meanings are
  * the AI's most personal output, and hiding them behind a tap means
  * most recipients never see them.
  *
