@@ -21,7 +21,14 @@
   --sky:         #e8f4fd;
   --text-dark:   #1e3a10;
   --text-mid:    #4a6741;
-  --text-light:  #7a9e72;
+  /*
+   * Secondary copy: helper lines, counters, captions, the composer's prompts. 68 rules across 12
+   * files use it, and at #7a9e72 every one of them sat at 2.8:1 on the cream page — well under the
+   * 4.5:1 real text needs, and this token carries real text, not decoration. Same hue and
+   * saturation, walked down in lightness until it passes: 4.54 on cream, 4.89 on the white cards.
+   * Still clearly lighter than --text-mid (5.89), so the two tiers stay distinguishable.
+   */
+  --text-light:  #5a7953;
   /*
    * Standalone text links (the 404 and error shells, /mine, the error boundary).
    *
