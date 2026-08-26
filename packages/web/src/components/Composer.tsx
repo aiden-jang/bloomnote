@@ -29,7 +29,7 @@ import {
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { prefersReducedMotion } from '../lib/motion'
-import { saveGardenImage, uploadOgImage } from '../lib/gardenImage'
+import { prewarmGardenImage, saveGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
 import {
@@ -49,6 +49,10 @@ import styles from './Composer.module.css'
 // Two phases instead of four. The message is the input; the garden +
 // share link are the output. No second-phase "now add a message" step,
 // because the message is already there.
+/* Enough of a note that the model has something to work from. Named so the copy under the disabled
+   button and the rule that disables it can never drift apart. */
+const MIN_MESSAGE_CHARS = 4
+
 type Phase = 'idle' | 'designing' | 'designed'
 
 /**
@@ -416,10 +420,18 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // ("From" is optional, so it's never a blocker.)
   const disabledReason: string | null = (() => {
     const noRecipient = recipient.trim().length < 1
-    const noMessage = message.trim().length < 4
-    if (noRecipient && noMessage) return 'add who it’s for and a message to get started'
+    const written = message.trim().length
+    const noMessage = written < MIN_MESSAGE_CHARS
+    /*
+     * "write them a note first" is the wrong sentence for somebody who has written three letters:
+     * they can see that they wrote something, so a message telling them to start reads as the app
+     * being broken rather than as a rule. Once there is anything in the field, say what is missing.
+     */
+    const startedWriting = written > 0
+    if (noRecipient && noMessage && !startedWriting) return 'add who it’s for and a message to get started'
+    if (noRecipient && noMessage) return 'add who it’s for, and a few more words'
     if (noRecipient) return 'add who it’s for in the “to” field'
-    if (noMessage) return 'write them a note first'
+    if (noMessage) return startedWriting ? 'a few more words and it’s ready' : 'write them a note first'
     // Past/malformed schedule time: the picker shows the specifics inline,
     // so point back to it rather than repeating its sentence here. (An
     // empty unlockLocal keeps scheduleError null — that's the next case,
@@ -430,6 +442,13 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     }
     return null
   })()
+
+  /* The share card is on screen now, so start the PNG: the tap that shares it must not have to
+     wait for a render (see prewarmGardenImage). */
+  useEffect(() => {
+    if (phase !== 'designed' || flowers.length === 0) return
+    prewarmGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+  }, [phase, flowers, from, recipient])
 
   const canSubmit = disabledReason === null
   const forecast = useMemo(() => gardenForecast(message, mood, occasion), [message, mood, occasion])

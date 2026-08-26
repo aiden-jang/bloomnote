@@ -377,8 +377,44 @@ function downloadBlob(blob: Blob, filename: string): void {
  *
  * Call from a user gesture: the rasterization is fast, but navigator.share needs user activation.
  */
+/*
+ * The PNG, rendered before it is asked for.
+ *
+ * `navigator.share` only works while a user gesture is still live, and a 2160px garden takes about
+ * a second to rasterize on a laptop and longer on a phone. Rendering it inside the tap handler
+ * spent the activation before the sheet could open, share threw, and the code fell through to a
+ * plain download — which on iOS lands in Files rather than Photos, which is the whole reason the
+ * share path exists. Warming it when the share card appears means the tap has a blob already and
+ * calls share straight away.
+ */
+let warmed: { key: string; png: Promise<Blob> } | null = null;
+
+function warmKey(opts: GardenImageOpts): string {
+  return JSON.stringify([opts.from, opts.to, opts.flowers.map((f) => `${f.name}:${f.stemHeight}:${f.petalColors[0]}`)]);
+}
+
+export function prewarmGardenImage(opts: GardenImageOpts): void {
+  const key = warmKey(opts);
+  if (warmed?.key === key) return;
+  // Failures are swallowed here and re-thrown at save time, where there is a person to tell.
+  warmed = { key, png: renderGardenPng(opts) };
+  void warmed.png.catch(() => undefined);
+}
+
+async function gardenPng(opts: GardenImageOpts): Promise<Blob> {
+  const key = warmKey(opts);
+  if (warmed?.key === key) {
+    try {
+      return await warmed.png;
+    } catch {
+      warmed = null; // a failed warm should not poison every later attempt
+    }
+  }
+  return renderGardenPng(opts);
+}
+
 export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImageSaveResult> {
-  const blob = await renderGardenPng(opts);
+  const blob = await gardenPng(opts);
   const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
   const filename = `bloomnote-${base}.png`;
   const file = new File([blob], filename, { type: 'image/png' });

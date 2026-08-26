@@ -18,14 +18,27 @@
   gap: 9px;
 }
 
+/* One line: the words, then the chips. The chips are the part that gives way on a narrow screen. */
 .feelings {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  color: var(--text-light);
+  gap: 8px;
+  color: var(--text-mid);
   font-size: 11px;
+}
+
+.feelingsLabel {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* min-width: 0 is what lets the scroller actually shrink inside the flex row instead of forcing
+   the whole line wider than the card. */
+.feelingsChips {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .feelings button {

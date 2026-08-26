@@ -791,9 +791,11 @@
 /* Inline hint explaining a disabled submit button. Sits just under the
    actions row, quiet enough not to read as an error (which is reserved
    for an actually-wrong pick). */
+/* Sits under a dead button and is the only thing explaining it, so it reads at the same weight as
+   the helper text elsewhere rather than as fine print. */
 .actionHint {
-  font-size: 12px;
-  color: var(--text-light);
+  font-size: 13px;
+  color: var(--text-mid);
   text-align: center;
   letter-spacing: 0.01em;
   margin-top: -2px;
@@ -992,7 +994,10 @@
   .input,
   .textarea,
   .select,
-  .scheduleTimeInput {
+  .scheduleTimeInput,
+  /* The secret field is styled by descendant selector rather than by its own class, so it sat
+     outside this list and kept zooming the page on focus while every field around it did not. */
+  .secretNoteField textarea {
     font-size: 16px;
   }
 }

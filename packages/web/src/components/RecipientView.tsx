@@ -7,7 +7,7 @@ import FlowerJournalShelf from './FlowerJournalShelf'
 import SoundToggle from './SoundToggle'
 import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
-import { saveGardenDuetImage, saveGardenImage } from '../lib/gardenImage'
+import { prewarmGardenImage, saveGardenDuetImage, saveGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
 import { recordReceived } from '../lib/account'
 import {
@@ -49,10 +49,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [duetStatus, setDuetStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
-  const [isReading, setIsReading] = useState(false)
   const [noteCopied, setNoteCopied] = useState(false)
   const [secretRevealed, setSecretRevealed] = useState(false)
-  const canReadAloud = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'
   const handleSaveImage = useCallback(async () => {
     if (savingImageRef.current) return
     savingImageRef.current = true
@@ -121,25 +119,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     }
   }, [from, shareStatus])
 
-  // Reading a note is an intimate, eyes-up alternative to another share action. Browser speech is
-  // completely local — the note is never sent anywhere — and we cancel it on unmount so a garden
-  // cannot keep talking after someone follows the reply link.
-  const handleReadAloud = useCallback(() => {
-    if (!canReadAloud || !message) return
-    if (isReading) {
-      window.speechSynthesis.cancel()
-      setIsReading(false)
-      return
-    }
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(message)
-    utterance.rate = 0.92
-    utterance.pitch = 1.06
-    utterance.onend = () => setIsReading(false)
-    utterance.onerror = () => setIsReading(false)
-    setIsReading(true)
-    window.speechSynthesis.speak(utterance)
-  }, [canReadAloud, isReading, message])
 
   const handleCopyNote = useCallback(async () => {
     if (!message || noteCopied) return
@@ -153,10 +132,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       // The garden remains legible and selectable, so a clipboard permission failure needs no alert.
     }
   }, [from, message, noteCopied])
-
-  useEffect(() => () => {
-    if (canReadAloud) window.speechSynthesis.cancel()
-  }, [canReadAloud])
 
   // If a signed-in visitor opens a garden, keep it in their Received list (cross-device).
   // Best-effort and idempotent; anonymous visitors are unaffected. When it's newly saved (not
@@ -295,6 +270,13 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     if (focused !== null) setFlowerTapped(true)
   }, [focused])
 
+  /* Same reason as the composer: have the PNG ready before anybody taps "save it as an image", so
+     the share sheet opens while the tap still counts as a gesture. */
+  useEffect(() => {
+    if (!msgVisible || flowers.length === 0) return
+    prewarmGardenImage({ flowers, from, to })
+  }, [msgVisible, flowers, from, to])
+
   // Bumped on each watering; GardenScene reads it to replay the drops. A counter, not a flag, so
   // the scene doesn't need this component to time a reset.
   const [wateredAt, setWateredAt] = useState(0)
@@ -419,16 +401,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               * an em-dash is the one punctuation mark that makes handwritten copy look machine-set.
             */}
             {from && <p className={styles.sig}>{from}</p>}
-            {canReadAloud && (
-              <button
-                type="button"
-                className={styles.listenBtn}
-                onClick={handleReadAloud}
-                aria-pressed={isReading}
-              >
-                {isReading ? 'pause the note' : 'listen to the note'}
-              </button>
-            )}
           </>
         ) : (
           <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>

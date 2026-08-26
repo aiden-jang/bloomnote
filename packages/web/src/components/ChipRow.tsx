@@ -4,6 +4,15 @@ import styles from './ChipRow.module.css'
 interface Props {
   /** Labels the group for screen readers — the id of the visible `occasion` / `mood` label. */
   labelledBy: string
+  /**
+   * Whether the chips are a single choice among many.
+   *
+   * True gives the row radio-group semantics and the keyboard behaviour that promises: arrows move
+   * between chips and select as they go. Some rows are not a choice — the watering feelings are one
+   * irreversible tap each — and there arrowing would send something on the way past, so they take
+   * the scrolling and the edge fade without the selection.
+   */
+  selectable?: boolean
   children: ReactNode
 }
 
@@ -37,13 +46,13 @@ const DRAG_SLOP_PX = 4
  * hijacking the wheel would steal page scroll from anyone whose cursor happens to cross the row
  * mid-flick, which trades a reachability bug for a much more annoying one.
  */
-export default function ChipRow({ labelledBy, children }: Props) {
+export default function ChipRow({ labelledBy, selectable = true, children }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   /* Only the chosen chip is tabbable, so the whole row is a single stop on the way down the page. */
   useEffect(() => {
     const row = ref.current
-    if (!row) return
+    if (!row || !selectable) return
     const apply = (): void => {
       const radios = Array.from(row.querySelectorAll<HTMLElement>('[role="radio"]'))
       const checked = radios.findIndex(radio => radio.getAttribute('aria-checked') === 'true')
@@ -58,7 +67,7 @@ export default function ChipRow({ labelledBy, children }: Props) {
     const observer = new MutationObserver(apply)
     observer.observe(row, { subtree: true, attributes: true, attributeFilter: ['aria-checked'] })
     return () => observer.disconnect()
-  }, [])
+  }, [selectable])
 
   const measure = useCallback(() => {
     const el = ref.current
@@ -159,7 +168,7 @@ export default function ChipRow({ labelledBy, children }: Props) {
    */
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     const row = ref.current
-    if (!row) return
+    if (!row || !selectable) return
     const radios = Array.from(row.querySelectorAll<HTMLElement>('[role="radio"]'))
     if (radios.length === 0) return
 
@@ -183,7 +192,7 @@ export default function ChipRow({ labelledBy, children }: Props) {
     <div
       ref={ref}
       className={styles.row}
-      role="radiogroup"
+      role={selectable ? 'radiogroup' : 'group'}
       aria-labelledby={labelledBy}
       onScroll={measure}
       onKeyDown={onKeyDown}
