@@ -19,6 +19,7 @@ import {
 } from '../lib/analytics'
 import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
+import { withViewTransition } from '../lib/viewTransition'
 import styles from './RecipientView.module.css'
 
 interface Props {
@@ -197,7 +198,18 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   }, [flowers.length, from, previous])
 
   const handleOpen = (): void => {
-    setPhase('blooming')
+    /*
+     * The unlock is the one moment this whole product exists for, and it was a plain state swap:
+     * the button vanished and the note, the legend and the actions appeared under it in the same
+     * frame. `withViewTransition` was already in the codebase, wired only to the composer.
+     *
+     * Kept short on purpose (see .module.css). The transition cross-fades a snapshot, and the first
+     * petal does not open until 460ms, so a 220ms fade is over before the bloom has anything to
+     * show — the reveal itself still plays live rather than as a still image.
+     */
+    withViewTransition(() => {
+      setPhase('blooming')
+    })
     playChime()
     trackGardenBloomed()
   }
