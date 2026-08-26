@@ -714,8 +714,111 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           ))}
         </div>
       )}
+      <div className={styles.garden}>
+        {sealed && placed.length > 0 && <SeedBed placements={placed} />}
+        {showGhostSprout &&
+          (sprouting ? (
+            <div className={styles.sproutRow} aria-hidden>
+              {WAIT_SPROUTS.map(([left, scale, delay], i) => (
+                <span
+                  key={i}
+                  className={styles.sproutSlot}
+                  style={{
+                    ['--left' as string]: `${left}%`,
+                    ['--scale' as string]: String(scale),
+                    ['--sprout-delay' as string]: `${delay}s`,
+                  }}
+                >
+                  <GhostSprout growth={3} />
+                </span>
+              ))}
+            </div>
+          ) : (
+            <GhostSprout growth={draftGrowth} />
+          ))}
+        {beeFlying && (() => {
+          const target = placed[beeAt % placed.length]!
+          /*
+           * Height comes from the flower, not a constant.
+           *
+           * `bottom: 62%` looked right on whichever garden I happened to be testing and was wrong
+           * everywhere else: stems run from 70 to 115, so a fixed height leaves the bee hovering
+           * below the tall flowers and above the short ones. FlowerSVG draws a head 30px down from
+           * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
+           * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
+           */
+          const headUp = flowerHeadOffset(target.spec) - 8
+          return (
+            <div
+              className={styles.bee}
+              style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
+              aria-hidden
+            >
+              <Bee />
+            </div>
+          )
+        })()}
+        {/* One drop per flower, aimed at that flower's own column, so it reads as watering these
+            flowers rather than as weather. Keyed on the count so a second watering replays it. */}
+        {perking && (
+          <div className={styles.dropLayer} key={wateredAt} aria-hidden>
+            {placed.map((p, i) => (
+              <span
+                key={i}
+                className={styles.drop}
+                style={{ left: `${p.left}%`, animationDelay: `${i * 90}ms` }}
+              />
+            ))}
+          </div>
+        )}
+        {placed.map((p, i) => (
+          /*
+           * A button, not a div. These were plain divs with onClick, so the whole per-flower panel —
+           * its meaning, "share this flower", "save a pressed-flower card", "keep in my flower
+           * journal" — could only be opened with a mouse or a tap. Nothing here was reachable from
+           * a keyboard at all.
+           */
+          <button
+            type="button"
+            aria-label={`${p.spec.name}: ${p.spec.meaning}`}
+            aria-expanded={focused === i}
+            aria-controls="flower-peek"
+            key={placementKey(p.spec, i)}
+            className={
+              (focused === i
+                ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
+                : focused !== null
+                  ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
+                  : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
+            }
+            // Focused flowers come forward, so a lifted flower is never behind its neighbour.
+            // The perk waits out its own drop's fall, so each flower answers the water that hit it.
+            style={{
+              left: `${p.left}%`,
+              // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
+              zIndex: focused === i ? 20 : p.zIndex,
+              animationDelay: `${i * 90 + 460}ms`,
+              ['--depth' as string]: String(p.depth),
+            }}
+            title={p.spec.name}
+            onMouseEnter={() => onFocus?.(i)}
+            onMouseLeave={() => onFocusRelease?.()}
+            // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
+            // tapping it again lets go, so the link is reachable without a mouse.
+            onClick={() => onFocus?.(focused === i ? null : i)}
+          >
+            <FlowerSVG
+              flower={p.spec}
+              index={i}
+              bloomed={i < bloomedCount}
+              swayDelay={i}
+            />
+          </button>
+        ))}
+      </div>
       {focused !== null && flowers[focused] && (
         <aside
+          id="flower-peek"
           className={styles.flowerPeek}
           aria-live="polite"
           data-flower-peek=""
@@ -805,98 +908,6 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           ))}
         </div>
       )}
-      <div className={styles.garden}>
-        {sealed && placed.length > 0 && <SeedBed placements={placed} />}
-        {showGhostSprout &&
-          (sprouting ? (
-            <div className={styles.sproutRow} aria-hidden>
-              {WAIT_SPROUTS.map(([left, scale, delay], i) => (
-                <span
-                  key={i}
-                  className={styles.sproutSlot}
-                  style={{
-                    ['--left' as string]: `${left}%`,
-                    ['--scale' as string]: String(scale),
-                    ['--sprout-delay' as string]: `${delay}s`,
-                  }}
-                >
-                  <GhostSprout growth={3} />
-                </span>
-              ))}
-            </div>
-          ) : (
-            <GhostSprout growth={draftGrowth} />
-          ))}
-        {beeFlying && (() => {
-          const target = placed[beeAt % placed.length]!
-          /*
-           * Height comes from the flower, not a constant.
-           *
-           * `bottom: 62%` looked right on whichever garden I happened to be testing and was wrong
-           * everywhere else: stems run from 70 to 115, so a fixed height leaves the bee hovering
-           * below the tall flowers and above the short ones. FlowerSVG draws a head 30px down from
-           * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
-           * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
-           */
-          const headUp = flowerHeadOffset(target.spec) - 8
-          return (
-            <div
-              className={styles.bee}
-              style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
-              aria-hidden
-            >
-              <Bee />
-            </div>
-          )
-        })()}
-        {/* One drop per flower, aimed at that flower's own column, so it reads as watering these
-            flowers rather than as weather. Keyed on the count so a second watering replays it. */}
-        {perking && (
-          <div className={styles.dropLayer} key={wateredAt} aria-hidden>
-            {placed.map((p, i) => (
-              <span
-                key={i}
-                className={styles.drop}
-                style={{ left: `${p.left}%`, animationDelay: `${i * 90}ms` }}
-              />
-            ))}
-          </div>
-        )}
-        {placed.map((p, i) => (
-          <div
-            key={placementKey(p.spec, i)}
-            className={
-              (focused === i
-                ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
-                : focused !== null
-                  ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
-                  : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
-            }
-            // Focused flowers come forward, so a lifted flower is never behind its neighbour.
-            // The perk waits out its own drop's fall, so each flower answers the water that hit it.
-            style={{
-              left: `${p.left}%`,
-              // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
-              zIndex: focused === i ? 20 : p.zIndex,
-              animationDelay: `${i * 90 + 460}ms`,
-              ['--depth' as string]: String(p.depth),
-            }}
-            title={p.spec.name}
-            onMouseEnter={() => onFocus?.(i)}
-            onMouseLeave={() => onFocusRelease?.()}
-            // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
-            // tapping it again lets go, so the link is reachable without a mouse.
-            onClick={() => onFocus?.(focused === i ? null : i)}
-          >
-            <FlowerSVG
-              flower={p.spec}
-              index={i}
-              bloomed={i < bloomedCount}
-              swayDelay={i}
-            />
-          </div>
-        ))}
-      </div>
       <div className={styles.ground}>
         <div className={styles.groundTop} />
         <SoilLine />

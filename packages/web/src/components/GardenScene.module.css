@@ -369,6 +369,14 @@
   transform: translateX(-50%);
   display: flex;
   align-items: flex-end;
+  /* It is a <button> now, so the user-agent chrome has to come off before it can look like a
+     flower again. The focus ring is deliberately left alone: index.css draws one for everything. */
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
   /* The depth value IS the scale, so 0.68 really is two-thirds the size of the subject. */
   scale: var(--depth, 1);
   transform-origin: bottom center;
