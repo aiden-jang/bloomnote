@@ -1,3 +1,4 @@
+import GardenScene from './GardenScene'
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
@@ -407,7 +408,7 @@ function LocalGardens() {
   }
 
   return (
-    <Shell subtitle="the gardens you've grown, saved on this device.">
+    <Shell subtitle="the gardens you've grown, saved on this device." hideBackLink={records.length === 0}>
       {records.length > 0 && (
         <p className={styles.emptyText}>
           <button type="button" className={styles.emptyLink} onClick={() => login()}>
@@ -418,6 +419,11 @@ function LocalGardens() {
       )}
       {records.length === 0 ? (
         <div className={styles.empty}>
+          {/* The same waiting bed the composer shows before anything is written. This page is made
+              of drawn flowers everywhere except here, where it was a sentence on bare cream. */}
+          <div className={styles.emptyPlot}>
+            <GardenScene flowers={[]} autoBloom={false} silent draftGrowth={2} />
+          </div>
           <p className={styles.emptyText}>you haven&rsquo;t grown any yet.</p>
           <a href="/" className={styles.emptyLink}>
             grow one
@@ -641,7 +647,16 @@ function filterGardens<T extends CardData>(gardens: T[], query: string): T[] {
   )
 }
 
-function Shell({ subtitle, children }: { subtitle: string; children: React.ReactNode }) {
+function Shell({
+  subtitle,
+  children,
+  hideBackLink = false,
+}: {
+  subtitle: string
+  children: React.ReactNode
+  /** The empty state carries its own "grow one", and two links to the same page read as a mistake. */
+  hideBackLink?: boolean
+}) {
   return (
     <div className={styles.wrap}>
       <header className={styles.header}>
@@ -649,11 +664,13 @@ function Shell({ subtitle, children }: { subtitle: string; children: React.React
         {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       </header>
       {children}
-      <footer className={styles.footer}>
-        <a href="/" className={styles.backLink}>
-          ← grow another
-        </a>
-      </footer>
+      {!hideBackLink && (
+        <footer className={styles.footer}>
+          <a href="/" className={styles.backLink}>
+            ← grow another
+          </a>
+        </footer>
+      )}
     </div>
   )
 }
