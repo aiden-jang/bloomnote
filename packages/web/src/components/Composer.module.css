@@ -1036,6 +1036,22 @@
   animation: sproutLeaf 2.4s ease-in-out infinite;
 }
 
+/*
+ * The one looping animation in the app with nothing switching it off, and it runs during the
+ * five-to-fifteen seconds everyone spends waiting for their garden.
+ *
+ * Stopping it leaves something to look at rather than an empty box: both keyframe sets start from
+ * scaleY(0) / scale(0), but the SVG underneath is authored full size, so with no animation the
+ * stem draws its whole length and the leaf sits open. The wait still reports itself — the status
+ * line beside this rotates its copy, and that is a text change, not motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .sproutStem,
+  .sproutLeaf {
+    animation: none;
+  }
+}
+
 @keyframes sproutStem {
   0%, 100% { transform: scaleY(0); }
   35%, 75% { transform: scaleY(1); }
