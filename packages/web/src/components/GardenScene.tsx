@@ -805,15 +805,23 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
             ))}
           </div>
         )}
-        {placed.map((p, i) => (
+        {placed.map((p, i) => {
           /*
-           * A button, not a div. These were plain divs with onClick, so the whole per-flower panel —
-           * its meaning, "share this flower", "save a pressed-flower card", "keep in my flower
-           * journal" — could only be opened with a mouse or a tap. Nothing here was reachable from
-           * a keyboard at all.
+           * A flower is only a control once it has actually bloomed.
+           *
+           * The slots are in the DOM from the start so the bloom has something to animate, but until
+           * `bloomed` they draw nothing. Left interactive, that meant a sealed garden had invisible
+           * buttons over it: hovering the closed plot opened the panel and read out a flower's name
+           * and meaning before the recipient had opened anything, which gives away the one thing the
+           * whole screen is built to withhold. Disabled rather than unmounted, because swapping the
+           * element out would remount it and restart the bloom it is waiting for.
            */
+          const revealed = i < bloomedCount
+          return (
           <button
             type="button"
+            disabled={!revealed}
+            aria-hidden={revealed ? undefined : true}
             aria-label={`${p.spec.name}: ${p.spec.meaning}`}
             aria-expanded={focused === i}
             aria-controls="flower-peek"
@@ -838,20 +846,21 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
               ['--depth' as string]: String(p.depth),
             }}
             title={p.spec.name}
-            onMouseEnter={() => onFocus?.(i)}
-            onMouseLeave={() => onFocusRelease?.()}
+            onMouseEnter={revealed ? () => onFocus?.(i) : undefined}
+            onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
             // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
             // tapping it again lets go, so the link is reachable without a mouse.
-            onClick={() => onFocus?.(focused === i ? null : i)}
+            onClick={revealed ? () => onFocus?.(focused === i ? null : i) : undefined}
           >
             <FlowerSVG
               flower={p.spec}
               index={i}
-              bloomed={i < bloomedCount}
+              bloomed={revealed}
               swayDelay={i}
             />
           </button>
-        ))}
+          )
+        })}
       </div>
       {focused !== null && flowers[focused] && (
         <aside

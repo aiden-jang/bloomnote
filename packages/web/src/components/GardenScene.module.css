@@ -813,6 +813,11 @@
   cursor: pointer;
 }
 
+/* Nothing drawn yet, so nothing to point at. */
+.flowerSlot:disabled {
+  cursor: default;
+}
+
 .flowerSlotOn {
   transform: translateX(-50%) translateY(-6px);
   filter: drop-shadow(0 6px 10px rgba(60, 80, 40, 0.22));
