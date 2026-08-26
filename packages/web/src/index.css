@@ -33,6 +33,16 @@
    */
   --color-accent: #4a7c3f;
   /*
+   * Muted chrome text: the footer, the account chip, the loading and error shells.
+   *
+   * Seven inline styles across six files ask for this and it was never declared anywhere, so all of
+   * them quietly fell back to the #6b6963 written beside each `var()` — a neutral grey, in an app
+   * whose every other muted colour is green. Declaring it both fixes the palette and makes the
+   * indirection real: those seven sites can now be changed from here, which is what they were
+   * written to allow.
+   */
+  --color-ink-muted: var(--text-mid);
+  /*
    * Alias for --text-dark. Four rules across SealedView and Composer ask for --text-deep, which
    * never existed, and none of them pass a fallback. `color` is inherited, so an invalid var()
    * silently resolves to the parent's colour instead of failing: the countdown and the hovered
