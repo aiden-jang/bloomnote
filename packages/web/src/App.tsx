@@ -1,11 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import Composer from './components/Composer'
-import MyGardens from './components/MyGardens'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import Footer from './components/Footer'
-import { LegalPage } from './components/LegalPage'
 import { fetchGarden, isShortId, type GardenData } from './garden'
+
+/*
+ * Everything except the recipient view is split out.
+ *
+ * The whole app shipped as one chunk, so somebody opening a garden link on their phone downloaded
+ * the composer, the schedule picker, the archive and the legal pages before they could see it —
+ * roughly as much code again as the view they actually came for. The recipient stays in the main
+ * chunk because that is the moment this product exists for and it should never wait on a second
+ * request; the routes below all sit behind a click and can afford one.
+ */
+const Composer = lazy(() => import('./components/Composer'))
+const MyGardens = lazy(() => import('./components/MyGardens'))
+const LegalPage = lazy(() => import('./components/LegalPage').then(m => ({ default: m.LegalPage })))
 
 /**
  * Route shapes:
@@ -152,7 +162,11 @@ export default function App() {
       {/* Every route's content, in one landmark. There was no <main> anywhere except the legal
           pages, so assistive tech had nothing to jump to and had to walk the header chips on the
           way into every screen. LegalPage's own <main> became a <div> so this stays the only one. */}
-      <main>{view}</main>
+      {/* The shell is already the app's loading state, so a route still arriving looks like a route
+          still loading rather than like a blank page. */}
+      <main>
+        <Suspense fallback={<LoadingShell />}>{view}</Suspense>
+      </main>
       <Footer />
     </>
   )
