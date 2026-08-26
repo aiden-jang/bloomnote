@@ -149,7 +149,23 @@ button {
   font-family: var(--sans);
   cursor: pointer;
   border: none;
-  outline: none;
+}
+
+/*
+ * One focus ring for everything that can hold focus.
+ *
+ * `outline: none` used to sit in the button rule above, unconditionally. It removed the browser's
+ * ring and put nothing back, so a keyboard user tabbing the composer got no indication at all on
+ * five buttons including "grow their garden", the primary action on the page. Eight components had
+ * already noticed and drawn their own ring; this is that same ring, applied once.
+ *
+ * :focus-visible and not :focus, so it appears for keyboard focus and never on a mouse click. A
+ * component wanting something different still wins on specificity — a class beats a bare
+ * pseudo-class — which is how the eight that already style focus keep their own treatment.
+ */
+:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 2px;
 }
 
 textarea, input {
