@@ -170,9 +170,16 @@
 
 /* Tapping a bloom answers beside the bloom. The full legend still tells the whole bouquet story
    below, while this glassy field note removes the mobile scavenger hunt between flower and meaning. */
+/*
+ * Anchored to the bottom of the plot, not the top.
+ *
+ * At `top: 12px` this panel opened directly over the flower heads — so tapping a flower to read
+ * about it hid the flower, which is the one thing the panel exists to talk about. Down here it
+ * covers stems and soil instead, and the subject stays in view above it.
+ */
 .flowerPeek {
   position: absolute;
-  top: 12px;
+  bottom: 12px;
   left: 12px;
   right: 12px;
   z-index: 8;
@@ -191,26 +198,17 @@
   animation: flowerPeekIn 180ms ease-out both;
 }
 
+/* The flower itself, the same drawing the legend and the archive cards use. This was a cluster of
+   four colour dots sampled off it, on a panel whose entire subject is that one flower. */
 .flowerPeekSwatches {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   flex: 0 0 30px;
   margin-top: 2px;
 }
-
-.flowerPeekSwatches span {
-  position: absolute;
-  width: 17px;
-  height: 17px;
-  border: 1.5px solid rgba(255, 252, 245, 0.92);
-  border-radius: 50%;
-}
-
-.flowerPeekSwatches span:nth-child(1) { left: 0; top: 6px; }
-.flowerPeekSwatches span:nth-child(2) { left: 11px; top: 0; }
-.flowerPeekSwatches span:nth-child(3) { left: 13px; top: 13px; }
-.flowerPeekSwatches span:nth-child(4) { left: 2px; top: 15px; }
 
 .flowerPeekCopy {
   display: flex;
@@ -338,7 +336,8 @@
 }
 
 @keyframes flowerPeekIn {
-  from { opacity: 0; transform: translateY(-5px) scale(0.99); }
+  /* Rises now, since it sits at the foot of the plot rather than the top of it. */
+  from { opacity: 0; transform: translateY(5px) scale(0.99); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
