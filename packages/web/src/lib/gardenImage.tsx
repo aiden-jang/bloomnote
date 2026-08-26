@@ -5,14 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { FlowerSpec, GardenData } from '../garden';
 import FlowerSVG from '../components/FlowerSVG';
 
-/*
- * Soil, shared by every picture this file exports.
- *
- * All three exports drew it as two flat rectangles meeting on a ruler-straight seam, which is the
- * thing GardenScene's own soil comment describes having fixed in the app ("the one place the scene
- * still looked like divs rather than a drawing"). The scene got the treatment and the pictures did
- * not, including the link preview — the first bloomnote most people ever see.
- */
+/* Soil, shared by every picture this file exports, so the exports match the app's own ground. */
 function SoilDefs() {
   return (
     <>
@@ -25,8 +18,7 @@ function SoilDefs() {
         <stop offset="0%" stopColor="#b0805c" />
         <stop offset="100%" stopColor="#a0714f" />
       </linearGradient>
-      {/* Tile sizes that do not divide into each other, so the specks never settle into a lattice —
-          the same reason the scene's grain uses co-prime tiles. */}
+      {/* Co-prime tiles, or the specks settle into a visible lattice. */}
       <pattern id="bnGrainA" width="47" height="31" patternUnits="userSpaceOnUse">
         <circle cx="9" cy="12" r="3" fill="#3a2212" opacity="0.13" />
       </pattern>
@@ -95,12 +87,8 @@ function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: 
   const lines = wrapMeaning(meaning);
   const svgH = flower.stemHeight + 80;
   /*
-   * The flower stands between the specimen label and the rule, and no further up.
-   *
-   * The band used to be 500 tall against a baseline of 565, which put the top of every flower at
-   * y=65 — the scale is capped by the band, so the top lands in the same place whatever the stem
-   * height. The label's baseline is 118 and it runs to roughly x=548, the flower starts at x=434,
-   * so the head sat on the words: the card read "PRESSED FROM A BLOOMN…" with petals over the rest.
+   * The band caps the scale, so every flower's top lands at the same y whatever its stem height.
+   * Keep it clear of the label's 118 baseline or the head sits on the words.
    */
   const FLOWER_BAND = 415;
   const scale = Math.min(3.5, FLOWER_BAND / svgH);
@@ -378,14 +366,11 @@ function downloadBlob(blob: Blob, filename: string): void {
  * Call from a user gesture: the rasterization is fast, but navigator.share needs user activation.
  */
 /*
- * The PNG, rendered before it is asked for.
+ * Render the PNG before it is asked for.
  *
- * `navigator.share` only works while a user gesture is still live, and a 2160px garden takes about
- * a second to rasterize on a laptop and longer on a phone. Rendering it inside the tap handler
- * spent the activation before the sheet could open, share threw, and the code fell through to a
- * plain download — which on iOS lands in Files rather than Photos, which is the whole reason the
- * share path exists. Warming it when the share card appears means the tap has a blob already and
- * calls share straight away.
+ * `navigator.share` needs a live user gesture, and a 2160px garden takes ~1s to rasterize on a
+ * laptop and longer on a phone. Rendering inside the tap handler spends the activation, share
+ * throws, and it falls back to a download — which on iOS lands in Files, not Photos.
  */
 let warmed: { key: string; png: Promise<Blob> } | null = null;
 

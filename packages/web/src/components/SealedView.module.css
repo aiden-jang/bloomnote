@@ -170,13 +170,9 @@
   }
 }
 
-/*
- * Desktop: let the envelope be the size of the thing it is asking someone to wait for.
- *
- * Capped at 380px it was 30% of a 1280 window with 313px of empty page under it — the same
- * phone-sized-object-on-a-monitor problem the garden plot had, on the one screen whose entire job
- * is anticipation. The column opens up with it so the envelope still has margin around it.
- */
+/* Desktop: let the envelope be the size of the thing it is asking someone to wait for. The same
+   phone-sized-object-on-a-monitor problem the garden plot has, on the one screen whose whole job
+   is anticipation. The column opens up with it so the envelope keeps its margin. */
 @media (min-width: 900px) {
   .wrap {
     max-width: 620px;

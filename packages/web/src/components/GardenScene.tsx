@@ -59,14 +59,7 @@ function auraFor(mood?: string) {
   return mood && mood in MOOD_AURAS ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
 }
 
-/*
- * The hour the garden is opened, folded into the occasion's sky.
- *
- * `ritualTime` already told the composer what time it was and shaped the copy around it; the sky
- * ignored it, so a garden opened at one in the morning arrived under a bright noon blue. Occasion
- * still owns the hue — it is the emotional signal and must survive — so the time is a blend toward
- * a base rather than a replacement, and morning leaves the authored colours untouched.
- */
+/* Occasion owns the hue; the hour only blends toward a base, so the emotional signal survives. */
 const TIME_SKY: Record<RitualTime, { top: string; bottom: string; weight: number; sun: string; sunStrength: number }> = {
   morning:   { top: '#ffffff', bottom: '#ffffff', weight: 0,    sun: '255, 250, 235', sunStrength: 0.72 },
   afternoon: { top: '#fff6df', bottom: '#fffaf0', weight: 0.12, sun: '255, 248, 226', sunStrength: 0.78 },
@@ -81,7 +74,6 @@ const STARS: Array<[number, number, number]> = [
   [52, 44, 1.4], [41, 38, 2.8],
 ]
 
-/** Two hex colours, blended. `t` of 0 is all `a`, 1 is all `b`. */
 function mixHex(a: string, b: string, t: number): string {
   const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
   const [ar, ag, ab] = parse(a)
@@ -121,10 +113,7 @@ interface Props {
    * fall through to that default.
    */
   occasion?: string | undefined
-  /**
-   * The pointer left a flower or the panel. Not the same as closing: the owner holds both this
-   * component and the legend, so it decides how long a panel survives being left.
-   */
+  /** Pointer left a flower or the panel. Not a close — the owner decides how long it survives. */
   onFocusRelease?: () => void
   /** Adds a restrained, animated atmosphere. Old gardens without a mood stay unchanged. */
   mood?: string | undefined
@@ -132,10 +121,7 @@ interface Props {
    * The model is designing the garden right now. The bed answers by putting up a row of sprouts.
    */
   sprouting?: boolean
-  /**
-   * The garden is written but not yet opened. The flowers are withheld, so the plot draws the seeds
-   * they will grow from instead of an empty bed.
-   */
+  /** Written but not opened yet: the plot shows seeds instead of flowers. */
   sealed?: boolean
   /**
    * Bloom without the chime. Sound is on by default, and the homepage demo re-blooms on a loop —
@@ -166,14 +152,8 @@ interface Props {
 }
 
 /*
- * Depth per flower, by how many there are.
- *
- * Every flower used to sit at one scale on one plane, evenly spaced far enough apart that nothing
- * ever overlapped — a row of stickers rather than a garden. Real planting has a front and a back.
- *
- * Hand-written rather than computed so neighbours always differ: alternating near and far is what
- * makes an overlap read as one flower in front of another, instead of two colliding. Each row also
- * gives exactly one flower depth 1, so there is a subject.
+ * Depth per flower count. Hand-written, not computed: neighbours must alternate near/far or an
+ * overlap reads as two flowers colliding. Every row gives exactly one flower depth 1, the subject.
  */
 const DEPTHS: Record<number, number[]> = {
   1: [1],
@@ -190,7 +170,7 @@ function placeFlowers(flowers: FlowerSpec[]): Placement[] {
   const count = flowers.length
   if (count === 0) return []
 
-  // Tighter than the old 80: at this spread the sprites genuinely overlap, which is the point.
+  // Tight enough that the sprites genuinely overlap, which is the point.
   const spread = 70
   const center = 50
   const step = count > 1 ? spread / (count - 1) : 0
@@ -315,13 +295,8 @@ function SoilLine() {
   )
 }
 
-/*
- * The waiting bed while the model works. left %, scale, delay s.
- *
- * One sprout in the middle of an empty plot is the right idea for someone still writing; it is a
- * thin answer to someone who has pressed the button and is now watching that plot, waiting for a
- * whole garden. Staggered so they come up in sequence rather than as a row of copies.
- */
+/* The waiting bed while the model works: left %, scale, delay s. Staggered so they rise in
+   sequence rather than as a row of copies. */
 const WAIT_SPROUTS: Array<[number, number, number]> = [
   [16, 0.78, 0], [31, 1, 0.55], [50, 0.88, 1.1], [68, 1.05, 0.3], [84, 0.74, 0.85],
 ]
@@ -332,14 +307,7 @@ const MOTES: Array<[number, number, number]> = [
   [77, 27, 3.9], [88, 52, 6.3], [22, 63, 4.6],
 ]
 
-/**
- * The sealed plot.
- *
- * Before it is opened the bed was bare: a gradient, some soil, and a button. That reads as a page
- * that has not loaded rather than as a gift being withheld. Each flower puts a seed in its own
- * column, in its own colour, so the reveal grows out of something the recipient was already looking
- * at, and the wait has a subject.
- */
+/** One seed per flower, in that flower's own column and colour, so the reveal grows out of it. */
 function SeedBed({ placements }: { placements: Placement[] }) {
   return (
     <div className={styles.seedBed} aria-hidden>
@@ -414,14 +382,8 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
   const sky = gradientFor(occasion)
-  /*
-   * The plot sizes to its tallest flower rather than to a constant.
-   *
-   * FlowerSVG draws into a box that grows with `stemHeight`, and `stemHeight` is authored up to
-   * 160, so a tall garden needs about 240px where the fixed plot gave it 200. The heads that
-   * exceeded it were clipped by `overflow: hidden` on a phone and spilled onto the page on a
-   * desktop. `flowerBoxHeight` is the one number both sides now agree on.
-   */
+  /* Size to the tallest flower, never a constant: stems run to 160 and a fixed plot clips the
+     heads. `flowerBoxHeight` is the one number the plot and the flower both use. */
   const gardenHeight = Math.max(GARDEN_MIN_HEIGHT, ...flowers.map(flowerBoxHeight))
   const hour = ritualTime(now)
   const time = TIME_SKY[hour]
@@ -440,14 +402,8 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   const [journalMemory, setJournalMemory] = useState('')
   const [journalSaved, setJournalSaved] = useState(false)
   const placed = placeFlowers(flowers)
-  /*
-   * Closing the flower panel with the keyboard.
-   *
-   * Opening one is a keyboard action now, so dismissing it has to be too: without this, Escape did
-   * nothing and the only way out was to find the × with the mouse. Focus goes back to the flower
-   * that opened the panel rather than being dropped on the body, so tabbing carries on from where
-   * the person was instead of restarting at the top of the page.
-   */
+  /* Escape closes the panel, and focus returns to the flower that opened it so tabbing carries on
+     from there rather than restarting at the top of the page. */
   const slotRefs = useRef<Array<HTMLButtonElement | null>>([])
   const closeAndRestoreFocus = useCallback(() => {
     const previous = focused
@@ -459,11 +415,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
     if (focused === null) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      /*
-       * Escape unwinds one layer at a time. With the memory field open it closes the field and
-       * leaves the panel standing, because escaping out of the whole thing in one press throws away
-       * the sentence someone was in the middle of writing.
-       */
+      // One layer at a time: closing the whole panel here would discard a half-written memory.
       if (journalOpen) {
         setJournalOpen(false)
         return
@@ -660,16 +612,12 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
    * Depth, from wherever the visitor is pointing.
    *
    * Layers move at different rates against the pointer, which is what puts air between them.
-   * Written straight to the element as CSS variables rather than held in state: a pointermove that
-   * re-renders four flowers and their petals every frame is a dropped frame, and none of this is
-   * information React needs.
    *
-   * Listener on the window with the ref read lazily, like the scroll effect below. Capturing
-   * `sceneRef.current` at effect time gives null — the scene root is not mounted on this
-   * component's first render — and with an empty dep list it would never look again.
+   * Two gotchas. Write straight to the element as CSS variables, never state: a pointermove that
+   * re-renders four flowers every frame drops frames. And read the ref lazily inside the handler,
+   * because `sceneRef.current` is null at effect time and an empty dep list never looks again.
    *
-   * Coarse pointers get nothing here; the petals already lag the scroll below. Reduced motion gets
-   * nothing either, and the layers stay where they were drawn.
+   * Coarse pointers and reduced motion get nothing; the layers stay where they were drawn.
    */
   useEffect(() => {
     if (prefersReducedMotion()) return
@@ -810,11 +758,10 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
            * A flower is only a control once it has actually bloomed.
            *
            * The slots are in the DOM from the start so the bloom has something to animate, but until
-           * `bloomed` they draw nothing. Left interactive, that meant a sealed garden had invisible
-           * buttons over it: hovering the closed plot opened the panel and read out a flower's name
-           * and meaning before the recipient had opened anything, which gives away the one thing the
-           * whole screen is built to withhold. Disabled rather than unmounted, because swapping the
-           * element out would remount it and restart the bloom it is waiting for.
+           * `bloomed` they draw nothing. Leaving them interactive puts invisible buttons over a
+           * sealed garden, and hovering one reads out a flower's name before the recipient has
+           * opened anything. Disabled rather than unmounted: swapping the element out would remount
+           * it and restart the bloom it is waiting for.
            */
           const revealed = i < bloomedCount
           return (

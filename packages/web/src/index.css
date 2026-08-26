@@ -9,11 +9,9 @@
    * popIn deliberately does not use this: its overshoot is hand-authored in the keyframes (70% at
    * scale 1.1), which is the better tool when the bounce should be that large and that specific.
    *
-   * Declared twice on purpose. `linear()` arrived in Safari 17.2 and Firefox 112; where it is not
-   * understood the second declaration is dropped and the bezier above stands, so those browsers get
-   * a close approximation without the overshoot instead of a `var()` that resolves to nothing.
-   * That distinction matters more than the easing: an unresolvable var() invalidates the whole
-   * `animation` shorthand it sits in, which would stop the animation rather than restyle it.
+   * Declared twice on purpose. Where `linear()` is not understood the second declaration is dropped
+   * and the bezier above stands. That matters more than the easing: an unresolvable var() would
+   * invalidate the whole `animation` shorthand and stop the animation rather than restyle it.
    */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: linear(0, 0.038, 0.13, 0.248, 0.373, 0.494, 0.604, 0.699, 0.778, 0.842, 0.893, 0.931, 0.959, 0.98, 0.993, 1.002, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
@@ -28,13 +26,9 @@
   --sky:         #e8f4fd;
   --text-dark:   #1e3a10;
   --text-mid:    #4a6741;
-  /*
-   * Secondary copy: helper lines, counters, captions, the composer's prompts. 68 rules across 12
-   * files use it, and at #7a9e72 every one of them sat at 2.8:1 on the cream page — well under the
-   * 4.5:1 real text needs, and this token carries real text, not decoration. Same hue and
-   * saturation, walked down in lightness until it passes: 4.54 on cream, 4.89 on the white cards.
-   * Still clearly lighter than --text-mid (5.89), so the two tiers stay distinguishable.
-   */
+  /* Secondary copy: helper lines, counters, captions, the composer's prompts. This carries real
+     text, not decoration, so it has to clear 4.5:1 — it sits at 4.54 on cream and 4.89 on the
+     white cards, still clearly lighter than --text-mid (5.89). */
   --text-light:  #5a7953;
   /*
    * Standalone text links (the 404 and error shells, /mine, the error boundary).
@@ -46,15 +40,8 @@
    * navigation link quietly spends the signal too.
    */
   --color-accent: #4a7c3f;
-  /*
-   * Muted chrome text: the footer, the account chip, the loading and error shells.
-   *
-   * Seven inline styles across six files ask for this and it was never declared anywhere, so all of
-   * them quietly fell back to the #6b6963 written beside each `var()` — a neutral grey, in an app
-   * whose every other muted colour is green. Declaring it both fixes the palette and makes the
-   * indirection real: those seven sites can now be changed from here, which is what they were
-   * written to allow.
-   */
+  /* Muted chrome text: the footer, the account chip, the loading and error shells. Seven inline
+     styles across six files read this, so change it here rather than in any of them. */
   --color-ink-muted: var(--text-mid);
   /*
    * Alias for --text-dark. Four rules across SealedView and Composer ask for --text-deep, which
@@ -99,12 +86,9 @@
    */
   --font-display: var(--serif);
   --sans:  'DM Sans', system-ui, sans-serif;
-  /*
-   * The two fixed corner chips: the sound toggle and the account pill. They sit side by side and
-   * are drawn by different components, one in a CSS module and one in inline styles, so each used
-   * to carry its own copy of the geometry and they drifted — different heights on desktop,
-   * different top edges on a phone. One source, so they move together.
-   */
+  /* The two fixed corner chips: the sound toggle and the account pill. They sit side by side but
+     are drawn by different components, one in a CSS module and one in inline styles, so keep the
+     geometry here or they drift apart. */
   --chip-edge: 14px;
   --chip-size: 38px;
   --chip-gap: 12px;
@@ -159,16 +143,11 @@ button {
 }
 
 /*
- * One focus ring for everything that can hold focus.
+ * One focus ring for everything that can hold focus. Don't add `outline: none` to the button rule
+ * above without putting a ring back; that left five composer buttons with no keyboard indication.
  *
- * `outline: none` used to sit in the button rule above, unconditionally. It removed the browser's
- * ring and put nothing back, so a keyboard user tabbing the composer got no indication at all on
- * five buttons including "grow their garden", the primary action on the page. Eight components had
- * already noticed and drawn their own ring; this is that same ring, applied once.
- *
- * :focus-visible and not :focus, so it appears for keyboard focus and never on a mouse click. A
- * component wanting something different still wins on specificity — a class beats a bare
- * pseudo-class — which is how the eight that already style focus keep their own treatment.
+ * :focus-visible, not :focus, so it never appears on a mouse click. A component wanting something
+ * different wins on specificity, since a class beats a bare pseudo-class.
  */
 :focus-visible {
   outline: 2px solid var(--green-mid);
@@ -258,13 +237,9 @@ p { text-wrap: pretty; }
     background: white !important;
   }
 
-  /*
-   * Fixed corner chrome never belongs on a keepsake.
-   *
-   * The sound toggle hides itself from its own module. The account pill is built from inline styles
-   * with no stylesheet to put a media query in, so it carries a flag instead — otherwise a printed
-   * garden has "sign in" floating in the corner of it.
-   */
+  /* Fixed corner chrome never belongs on a keepsake. The sound toggle hides itself from its own
+     module; the account pill is inline styles with no stylesheet for a media query, so it carries
+     a flag instead. */
   [data-screen-chrome] {
     display: none !important;
   }

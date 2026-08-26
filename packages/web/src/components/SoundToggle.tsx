@@ -9,14 +9,11 @@ import styles from './SoundToggle.module.css'
  * haptic. The on/off state lives in the sound module and persists to
  * localStorage, so this component only mirrors it locally for the icon.
  *
- * Rendered on the views that actually make noise — the composer and the recipient view.
+ * Rendered on the views that make noise: the composer and the recipient view.
  *
- * Portalled to <body>, and that is load-bearing. `position: fixed` is measured against the nearest
- * ancestor carrying a transform, filter or perspective, and only against the viewport when there is
- * none. RecipientView's wrapper animates in with a transform and keeps it afterwards, because the
- * animation fills forwards — so the button silently pinned itself to the right edge of a 560px
- * column instead of the window, landing 360px inside the corner it was written for, on desktop,
- * permanently. Rendering outside that subtree is what makes the rule in the stylesheet true.
+ * Keep the portal to <body>. `position: fixed` measures against the nearest ancestor carrying a
+ * transform, and RecipientView's wrapper animates in with one that fills forwards — inside that
+ * subtree the button pins to the column's edge instead of the window's.
  */
 export default function SoundToggle() {
   const [enabled, setEnabled] = useState(() => isSoundEnabled())

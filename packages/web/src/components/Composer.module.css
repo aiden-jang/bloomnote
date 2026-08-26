@@ -25,11 +25,8 @@
   letter-spacing: 0.18em;
   color: var(--soil);
   margin-bottom: 10px;
-  /*
-   * No opacity here. It used to sit at 0.85, purely to soften the accent, and that alone dropped
-   * 11px text from 5.2:1 to 3.8:1 — under the threshold, on the first line of the page. The size,
-   * the tracking and the brown already say "quiet"; the transparency only cost legibility.
-   */
+  /* No opacity here. Softening this to 0.85 drops 11px text from 5.2:1 to 3.8:1, under the
+     threshold, on the first line of the page. The size and tracking already say "quiet". */
 }
 
 .title {
@@ -105,13 +102,9 @@
   letter-spacing: 0.06em;
 }
 
-/*
- * The placeholder is a suggestion someone can adopt ("use this thought" copies it), so it stays
- * legible rather than being faded out of the way. What it should not be is the browser's default
- * #757575: a neutral grey was the one colour on this page that came from Chrome rather than from
- * the palette, and at that weight it read as text already typed. The palette's light green is
- * both on-brand and a clear step down from the deep green real input uses.
- */
+/* The placeholder is a suggestion someone can adopt ("use this thought" copies it), so keep it
+   legible rather than faded away. Don't fall back to the browser's #757575: it is the one colour
+   here that comes from Chrome rather than the palette, and it reads as text already typed. */
 .textarea::placeholder {
   color: var(--text-light);
 }
@@ -289,11 +282,6 @@
    visible at a glance (no hunting through a select), and tapping one is
    a single gesture. Both groups are single-select (role=radiogroup on
    the container, role=radio + aria-checked on each chip). */
-.chipRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
 
 .chip {
   font-family: inherit;
@@ -993,10 +981,8 @@
      difference from 14px is minimal; it just prevents the zoom. */
   .input,
   .textarea,
-  .select,
   .scheduleTimeInput,
-  /* The secret field is styled by descendant selector rather than by its own class, so it sat
-     outside this list and kept zooming the page on focus while every field around it did not. */
+  /* The secret field is styled by descendant selector, so it needs naming here too. */
   .secretNoteField textarea {
     font-size: 16px;
   }
@@ -1066,13 +1052,11 @@
 }
 
 /*
- * The one looping animation in the app with nothing switching it off, and it runs during the
- * five-to-fifteen seconds everyone spends waiting for their garden.
+ * The one looping animation with nothing switching it off, running through the wait for a garden.
  *
- * Stopping it leaves something to look at rather than an empty box: both keyframe sets start from
- * scaleY(0) / scale(0), but the SVG underneath is authored full size, so with no animation the
- * stem draws its whole length and the leaf sits open. The wait still reports itself — the status
- * line beside this rotates its copy, and that is a text change, not motion.
+ * Stopping it still leaves something to look at: the keyframes start from scaleY(0)/scale(0) but
+ * the SVG underneath is authored full size, so with no animation the stem draws its whole length.
+ * The wait still reports itself in the status line beside this, which is text, not motion.
  */
 @media (prefers-reduced-motion: reduce) {
   .sproutStem,
@@ -1254,14 +1238,6 @@
   animation: fadeUp 0.4s var(--ease-spring) forwards;
 }
 
-.bouquetNoteLabel {
-  font-size: 10px;
-  font-weight: 600;
-  color: #8a6914;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
 .bouquetNote p {
   font-family: var(--serif);
   font-size: 16px;
@@ -1330,29 +1306,6 @@
 
 .shareActionsPrimary > button {
   flex: 1;
-}
-
-.shareDownloads {
-  margin: 2px 0;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-light);
-  letter-spacing: 0.01em;
-}
-
-.shareDownloadLink {
-  color: var(--text-mid);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.shareDownloadLink:hover {
-  color: var(--green-deep);
-}
-
-.shareDownloadSep {
-  margin: 0 8px;
-  opacity: 0.5;
 }
 
 /* Default Copy — primary action when there's no Share button (desktop
@@ -1450,33 +1403,6 @@
 /* Save-as-image — styled as a button but it's an anchor underneath so
    right-click → "save link as" also works. Matches the visual weight
    of resetBtn (tertiary action), not the primary share/copy buttons. */
-.downloadBtn {
-  padding: 11px 16px;
-  border-radius: 22px;
-  border: 1.5px solid var(--green-pale);
-  background: white;
-  color: var(--text-mid);
-  font-size: 14px;
-  text-align: center;
-  text-decoration: none;
-  transition: all 0.15s;
-  /* Inherit the row's flex layout so it shares space with siblings. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.downloadBtn:hover {
-  border-color: var(--green-light);
-  background: #f5fbf0;
-  color: var(--text-deep);
-  transform: translateY(-1px);
-}
-
-.downloadBtn:active {
-  transform: translateY(0);
-}
 
 /* Re-roll button. Same tertiary visual weight as resetBtn /
    downloadBtn — these are all "after the bloom" iteration actions,

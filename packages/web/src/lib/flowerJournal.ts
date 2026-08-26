@@ -1,4 +1,5 @@
 import type { FlowerSpec } from '../garden'
+import { MAX_MEANING } from './shelves'
 
 const STORAGE_KEY = 'bloomnote.flower-journal.v1'
 const MAX_ENTRIES = 80
@@ -102,7 +103,7 @@ export function setEntryShelves(id: string, shelves: string[]): boolean {
 
 /** An empty string clears it, so the sender's meaning comes back rather than being replaced by nothing. */
 export function setEntryMeaning(id: string, mine: string): boolean {
-  const trimmed = mine.trim().slice(0, 240)
+  const trimmed = mine.trim().slice(0, MAX_MEANING)
   return updateEntry(id, entry => {
     const { mine: _dropped, ...rest } = entry
     return trimmed ? { ...rest, mine: trimmed } : rest

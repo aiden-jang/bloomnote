@@ -7,10 +7,9 @@ interface Props {
   /**
    * Whether the chips are a single choice among many.
    *
-   * True gives the row radio-group semantics and the keyboard behaviour that promises: arrows move
-   * between chips and select as they go. Some rows are not a choice — the watering feelings are one
-   * irreversible tap each — and there arrowing would send something on the way past, so they take
-   * the scrolling and the edge fade without the selection.
+   * True gives the row radio-group semantics: arrows move between chips and select as they go.
+   * Leave it off for rows that are not a choice, like the watering feelings, where each tap is
+   * irreversible and arrowing past one would send it.
    */
   selectable?: boolean
   children: ReactNode
@@ -62,8 +61,8 @@ export default function ChipRow({ labelledBy, selectable = true, children }: Pro
       })
     }
     apply()
-    // React re-renders the chips when the selection changes; watching the attribute keeps the
-    // single tab stop on the chip that is actually chosen without ChipRow knowing what they are.
+    // Watching aria-checked keeps the tab stop on the chosen chip without ChipRow having to know
+    // what the chips are.
     const observer = new MutationObserver(apply)
     observer.observe(row, { subtree: true, attributes: true, attributeFilter: ['aria-checked'] })
     return () => observer.disconnect()
@@ -158,14 +157,7 @@ export default function ChipRow({ labelledBy, selectable = true, children }: Pro
     }
   }, [])
 
-  /*
-   * The keyboard half of `role="radiogroup"`.
-   *
-   * The roles and aria-checked were already right, but nothing implemented the behaviour they
-   * promise: arrows did nothing, and every chip was its own tab stop, so occasion and mood together
-   * cost sixteen presses to get past. A radio group is one stop, arrows move within it, and the stop
-   * lands on whichever chip is currently chosen.
-   */
+  /* The keyboard half of `role="radiogroup"`: one tab stop for the row, arrows move within it. */
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     const row = ref.current
     if (!row || !selectable) return

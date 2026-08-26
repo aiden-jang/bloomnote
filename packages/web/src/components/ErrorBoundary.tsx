@@ -23,12 +23,8 @@ export default class ErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (!this.state.hasError) return this.props.children
     return (
-      /*
-       * The crash screen, on the same card as the other notices.
-       *
-       * It was the last surface still assembled from inline styles, which is a poor place for the
-       * app to look least like itself: this is what somebody sees when everything else has failed.
-       */
+      /* The crash screen, on the same card as the other notices. This is what somebody sees
+         when everything else has failed, so it should not be built from inline styles. */
       <div className={notice.page}>
         <div className={notice.card}>
           <h1 className={notice.title}>something wilted.</h1>

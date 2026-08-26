@@ -60,14 +60,9 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
 
   return (
     <div className={notice.page}>
-      {/*
-        * Colour rather than opacity, throughout this page.
-        *
-        * Every muted thing here was a full-strength colour dimmed with `opacity`, which is the same
-        * mistake the composer's kicker made: it reads as "lighter" but it is really "less contrast",
-        * and it took this link to 2.9:1 and the date under it to 3.7:1, both under the 4.5:1 that
-        * body text needs. Naming the colour makes the contrast something you can look up.
-        */}
+      {/* Colour rather than opacity throughout this page. Dimming a full-strength colour reads
+          as "lighter" but means "less contrast", and it took this link to 2.9:1 against the
+          4.5:1 body text needs. Naming the colour makes the contrast something you can look up. */}
       <a href="/" className={styles.back}>
         &larr; bloomnote
       </a>

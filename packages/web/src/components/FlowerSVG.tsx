@@ -18,13 +18,8 @@ interface PetalGeometry {
   centerRadius: number
 }
 
-/*
- * How big the head is, relative to the stem carrying it.
- *
- * Head geometry used to be fixed per shape while `stemHeight` varies from 40 to 160, so the same
- * head sat on a stem four times longer — a 160 flower read as a lollipop on a wire. Scaling the
- * head with the stem keeps the proportion a real flower has at any height.
- */
+/* Head scales with its stem. Stems run 40 to 160, and a fixed head on a long one reads as a
+   lollipop on a wire. */
 const HEAD_SCALE = { min: 0.85, max: 1.2, atStem: { min: 40, max: 160 } }
 
 export function headScale(stemHeight: number): number {
@@ -91,13 +86,8 @@ function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
   }
 }
 
-/*
- * How far a petal tip reaches from the head's centre, for a given petal size.
- *
- * Measured off the control points rather than written down per shape, so editing a silhouette
- * above cannot leave a stale number here. A Bezier stays inside the hull of its control points, so
- * the furthest point is an upper bound on the drawn extent.
- */
+/* Measured off the control points, not written down per shape, so editing a silhouette above
+   can't leave a stale number here. A Bezier stays inside its hull, so this is an upper bound. */
 function petalReach(shape: PetalShape, s: number): number {
   return Math.max(...petalPointsFor(shape, s).map(([x, y]) => Math.hypot(x, y)))
 }
@@ -139,22 +129,14 @@ function buildPetalPath(
 /**
  * Just the head: petals and centre, no stem, no animation, on a fixed square.
  *
- * The plot scales a head to the stem carrying it, because there it has to look right on that stem.
- * A list wants the opposite — every flower the same size regardless of how tall it grew — so this
- * takes the unscaled geometry. Exported because a legend row and an archive card both want a real
- * flower small enough to sit beside a line of text, and both were drawing coloured dots instead.
+ * Takes the unscaled geometry on purpose. The plot sizes a head to its stem; a list wants every
+ * flower the same size however tall it grew.
  */
 export function FlowerHead({ flower, size = 34 }: { flower: FlowerSpec; size?: number }) {
   const { petalCount, petalColors, centerColor, petalShape } = drawableFlower(flower)
   const base = petalGeometry(petalShape)
-  /*
-   * Every head drawn to the same outer radius.
-   *
-   * The shapes are not the same size by nature: a `small` petal reaches 22 units and a `star` 42,
-   * which in the plot is correct and in a list is not — one row's flower came out half the size of
-   * the row below it. Zooming petal and centre by the same factor normalises the footprint without
-   * touching the silhouette, so each flower still looks like itself.
-   */
+  /* Normalise the footprint: a `small` petal reaches 22 units and a `star` 42, so without this one
+     row's flower is half the size of the row below. Zoom both petal and centre to keep the shape. */
   const c = 44
   const zoom = 38 / petalReach(petalShape, base.size)
   const petalSize = base.size * zoom
@@ -204,12 +186,8 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
   const base = petalGeometry(petalShape)
   const geom = { size: base.size * scale, centerRadius: base.centerRadius * scale }
   const head = stemTop + geom.centerRadius
-  /*
-   * A tapered, slightly leaning stem rather than a 4px line. A straight uniform rule is most of
-   * what made a long stem read as a wire; real stems are thicker at the soil and never quite
-   * vertical. The lean is derived from the stem height, not random, so a flower is stable across
-   * re-renders and identical in the share image.
-   */
+  /* Tapered and slightly leaning, or a long stem reads as wire. The lean comes from stemHeight,
+     not random, so a flower is identical across re-renders and in the share image. */
   const stemBase = 3 + stemHeight / 90
   const stemTip = 1.6 + stemHeight / 260
   const lean = ((stemHeight % 7) - 3) * 0.9
@@ -218,7 +196,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
     `Q ${cx - stemTip / 2 + lean} ${head + (svgH - head) * 0.45} ${cx - stemTip / 2 + lean} ${head} ` +
     `L ${cx + stemTip / 2 + lean} ${head} ` +
     `Q ${cx + stemTip / 2 + lean} ${head + (svgH - head) * 0.45} ${cx + stemBase / 2} ${svgH} Z`
-  /* One leaf on a short stem, three on a tall one — two fixed leaves left long stems bare. */
+  /* One leaf on a short stem, three on a tall one, so a long stem is never bare. */
   const leafFractions = stemHeight < 70 ? [0.5] : stemHeight < 120 ? [0.45, 0.62] : [0.36, 0.55, 0.74]
 
   // Subtle center inner color — slightly darker version of centerColor.
@@ -264,7 +242,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
             }}
           >
             {leafFractions.map((f, li) => {
-              // Alternating sides, and smaller the higher they sit — a stem that thins toward the
+              // Alternating sides, and smaller the higher they sit: a stem that thins toward the
               // head should not carry its largest leaf at the top.
               const side = li % 2 === 0 ? -1 : 1
               const y = svgH - stemHeight * f

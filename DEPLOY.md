@@ -18,7 +18,7 @@ All commands run from `packages/api`.
 #    replacing "local-dev-placeholder" under [[kv_namespaces]].
 pnpm exec wrangler kv namespace create GARDENS
 
-# 2. Garden generation key (Gemini). Optional — without it, /api/design-garden returns 503
+# 2. Garden generation key (Gemini). Optional: without it, /api/design-garden returns 503
 #    gracefully and the rest of the app still works.
 echo "<gemini-api-key>" | pnpm exec wrangler secret put GEMINI_API_KEY
 
@@ -33,6 +33,11 @@ pnpm run deploy            # redeploy to attach bloomnote.aidenjang.com
   auth secret to set. The account already has a `workers.dev` subdomain, so `error 10063` won't recur.
 
 ## Routine redeploy
+
+CI deploys on merge to `main`, after typecheck, lint, `css-vars`, build and tests pass
+(`.github/workflows/ci.yml`). Nothing to run by hand.
+
+The manual commands are break-glass only, for when CI itself is broken:
 
 ```bash
 pnpm run deploy            # builds the SPA + deploys (use whenever web/ changed)
@@ -55,7 +60,7 @@ curl https://bloomnote.aidenjang.com/api/me            # {"user":null} when sign
 ```
 
 Then in a browser:
-1. Anonymous: create a garden, open its `/g/<id>` link — works with no account.
+1. Anonymous: create a garden, open its `/g/<id>` link. Works with no account.
 2. Click **Sign in** (top-right) → lands on `accounts.aidenjang.com`, sign in → back to bloomnote.
    If you're already signed into owewell, this should be seamless (shared `.aidenjang.com` cookie).
 3. `/mine` → your **Sent** garden appears; any anonymous gardens made on this device get claimed.

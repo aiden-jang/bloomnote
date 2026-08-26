@@ -117,8 +117,6 @@
    stays understated so reading remains the default, while the active state gives a clear way back
    out if the browser voice is not the one someone hoped for. */
 
-
-
 /* Keepsake utilities live with the note itself. They are small enough to avoid competing with the
    reply CTA, but make it possible to carry a specific sentence or a paper copy beyond this link. */
 /* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
@@ -358,33 +356,10 @@
 /* Two download links rendered side-by-side as a single line with a
    centered dot separator. Same visual weight as before, just an extra
    option. */
-.downloadRow {
-  margin-top: 18px;
-  font-size: 12px;
-  color: var(--text-light);
-  letter-spacing: 0.01em;
-}
-
-.downloadLink {
-  display: inline;
-  color: var(--text-light);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.downloadLink:hover {
-  color: var(--text-mid);
-}
-
-.downloadSep {
-  margin: 0 8px;
-  color: var(--text-light);
-  opacity: 0.5;
-}
 
 /* Print: a save-link doesn't belong on a physical card. */
 @media print {
-  .downloadRow { display: none; }
+
 }
 
 .threadWrap {
@@ -492,13 +467,9 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/*
- * The unlock cross-fade.
- *
- * Short deliberately: a view transition paints a snapshot of the old and new DOM, so anything
- * animating underneath it is a still frame until the fade ends. The first petal opens at 460ms, so
- * 220ms lands well clear of it and the bloom itself is never what is being cross-faded.
- */
+/* The unlock cross-fade, kept short on purpose. A view transition paints a snapshot, so anything
+   animating underneath is a still frame until the fade ends. The first petal opens at 460ms, so
+   220ms lands clear of it and the bloom is never what gets cross-faded. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 220ms;
@@ -512,7 +483,7 @@
   }
 }
 
-/* Sits under the open button on the sealed screen, where the page used to simply stop. */
+/* Sits under the open button on the sealed screen. */
 .waitingLine {
   margin: 18px auto 0;
   max-width: 26ch;

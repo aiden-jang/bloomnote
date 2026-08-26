@@ -32,8 +32,8 @@ interface Props {
   gardenId: string
 }
 
-/* Long enough to cross the gap to the panel deliberately, short enough that leaving for good still
-   feels like letting go. */
+/* Long enough to cross the gap to the panel on purpose, short enough that leaving still feels
+   like letting go. */
 const FLOWER_PANEL_GRACE_MS = 260
 
 type Phase = 'sealed' | 'blooming'
@@ -177,15 +177,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   }, [flowers.length, from, previous])
 
   const handleOpen = (): void => {
-    /*
-     * The unlock is the one moment this whole product exists for, and it was a plain state swap:
-     * the button vanished and the note, the legend and the actions appeared under it in the same
-     * frame. `withViewTransition` was already in the codebase, wired only to the composer.
-     *
-     * Kept short on purpose (see .module.css). The transition cross-fades a snapshot, and the first
-     * petal does not open until 460ms, so a 220ms fade is over before the bloom has anything to
-     * show — the reveal itself still plays live rather than as a still image.
-     */
+    /* Kept to 220ms (see .module.css). A view transition cross-fades a snapshot, so anything
+       animating underneath is frozen; the first petal opens at 460ms and the bloom must play live. */
     withViewTransition(() => {
       setPhase('blooming')
     })
@@ -212,23 +205,18 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   /*
    * Which flower the recipient is looking at, shared by the scene and the legend.
    *
-   * The two halves of this screen are a picture and a list, and without this, working out which
-   * line belongs to which flower is left to the reader. Since every meaning is written about a
-   * specific flower, that link is the content, not decoration.
+   * Links the picture to the list. Every meaning is written about one specific flower, so which
+   * line belongs to which is content, not decoration.
    *
    * Held here rather than in either component because it has to point both ways.
    */
   const [focused, setFocused] = useState<number | null>(null)
 
   /*
-   * Hover intent for the flower panel, owned here because both halves of the link feed it.
-   *
-   * The panel is not attached to the flower — it sits at the foot of the plot — so reaching its
-   * links means crossing sky that belongs to neither, and the legend rows that open it are in a
-   * different card entirely. Clearing focus the moment a flower or row was left made
-   * "share this flower", "save a pressed-flower card" and "keep in my flower journal" unreachable
-   * with a mouse: the panel vanished on the way there. One timer, not one per component, because
-   * two would race — the plot cancelling its own countdown would not stop the legend's.
+   * Hover intent for the flower panel. The panel sits at the foot of the plot, so reaching its
+   * links means crossing space belonging to neither it nor the flower, and closing on leave makes
+   * them unreachable by mouse. Keep the timer here, not one per component: two would race, and the
+   * plot cancelling its own countdown would not stop the legend's.
    */
   const releaseTimer = useRef<number | null>(null)
   const focusFlower = useCallback((index: number | null) => {
@@ -243,9 +231,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     releaseTimer.current = window.setTimeout(() => {
       releaseTimer.current = null
       /*
-       * Someone writing a memory has their hands on the keyboard, not the mouse. The pointer
-       * drifting off the panel is not a decision to throw away the sentence they are halfway
-       * through, so a panel holding focus stays until it is closed on purpose.
+       * A panel holding focus stays open: someone typing a memory has their hands off the mouse,
+       * and a drifting pointer must not discard a half-written sentence.
        */
       if (document.activeElement?.closest('[data-flower-peek]')) return
       setFocused(null)
@@ -259,19 +246,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   )
 
   /*
-   * Whether the recipient has ever opened a flower.
-   *
-   * Tapping a flower is the best thing in here — it is where the meaning and the journal live — and
-   * nothing on the screen said so, which on a phone means most people never find it. The hint
-   * retires itself the moment it has been obeyed rather than sitting there being read twice.
+   * Whether a flower has ever been opened. Nothing else on screen says they are tappable, and the
+   * hint retires the moment it has been obeyed rather than being read twice.
    */
   const [flowerTapped, setFlowerTapped] = useState(false)
   useEffect(() => {
     if (focused !== null) setFlowerTapped(true)
   }, [focused])
 
-  /* Same reason as the composer: have the PNG ready before anybody taps "save it as an image", so
-     the share sheet opens while the tap still counts as a gesture. */
+  /* Render the PNG before the tap: navigator.share needs the gesture still live. */
   useEffect(() => {
     if (!msgVisible || flowers.length === 0) return
     prewarmGardenImage({ flowers, from, to })
@@ -361,9 +344,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           <button type="button" className={styles.openBtn} onClick={handleOpen}>
             open the garden
           </button>
-          {/* The sealed screen ended at the button and left half a phone of empty page under it.
-              Naming the count is also the only honest thing to say here: the garden is already
-              grown and written, and nothing about opening it is a lottery. */}
+          {/* The garden is already grown and written — say so, rather than implying a lottery. */}
           <p className={styles.waitingLine}>
             {flowers.length} {flowers.length === 1 ? 'flower' : 'flowers'}, already grown.
             <br />
@@ -521,10 +502,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
 /*
  * The little envelope on the secret row.
  *
- * This was a 💌 next to a ✉ — a full-colour raster emoji swapping to a monochrome text glyph, so
- * the icon changed typeface as well as state, and neither was drawn by us. Same reasoning as the
- * wax seal on the countdown: an emoji is whatever the reader's OS decides to draw, on a page where
- * everything else is ours. Strokes are currentColor so it takes the link's colour and its hover.
+ * Drawn rather than an emoji, for the same reason as the wax seal on the countdown: an emoji is
+ * whatever the reader's OS decides to draw, on a page where everything else is ours. Strokes are
+ * currentColor so it takes the link's colour and its hover.
  */
 export function SecretEnvelope({ open }: { open: boolean }) {
   return (
@@ -548,10 +528,9 @@ export function SecretEnvelope({ open }: { open: boolean }) {
         strokeLinejoin="round"
       />
       {/*
-       * The silhouette does not change between states, only the wax does, because the state this
-       * button reports is exactly that: sealed or unsealed. Two attempts at a drawn "open" envelope
-       * — a raised flap, then a note lifting out of a pocket — both died at 18px, where a three-unit
-       * triangle reads as a bump and a cream note on a cream card is a stray line.
+       * Only the wax changes between states, because sealed-or-unsealed is exactly what this
+       * button reports. Don't try a drawn "open" envelope: at 18px a raised flap reads as a bump
+       * and a cream note on a cream card is a stray line.
        */}
       {!open && (
         <circle cx="10" cy="9.2" r="2.1" fill="var(--pink-mid)" stroke="var(--pink-deep)" strokeWidth="0.8" />

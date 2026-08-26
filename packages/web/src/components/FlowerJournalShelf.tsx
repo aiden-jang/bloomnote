@@ -7,7 +7,7 @@ import {
   setEntryShelves,
   type FlowerJournalEntry,
 } from '../lib/flowerJournal'
-import { entriesOn, isOn, meaningOf, SHELVES, toggled, type ShelfId } from '../lib/shelves'
+import { entriesOn, isOn, MAX_MEANING, meaningOf, SHELVES, toggled, type ShelfId } from '../lib/shelves'
 import styles from './FlowerJournalShelf.module.css'
 import { Constellations } from './Constellations'
 import { gardenRecap } from '../lib/gardenRecap'
@@ -180,7 +180,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                   <input
                     autoFocus
                     value={draft}
-                    maxLength={240}
+                    maxLength={MAX_MEANING}
                     aria-label={`What ${entry.flowerName} means to you`}
                     onChange={event => setDraft(event.target.value)}
                     onKeyDown={event => {
@@ -266,8 +266,8 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       </ul>
       {shown.length > JOURNAL_PREVIEW && (
         <p className={styles.more}>
-          {/* This used to say how many were tucked away and stop there, which on a shelf of your own
-              keepsakes is a dead end: the store holds eighty and only eight were ever reachable. */}
+          {/* Saying only how many are tucked away is a dead end on a shelf of your own
+              keepsakes: the store holds eighty and eight are reachable. */}
           <button type="button" className={styles.moreBtn} onClick={() => setShowAll(open => !open)}>
             {showAll
               ? 'tuck them back'
