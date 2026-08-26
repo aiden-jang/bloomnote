@@ -58,22 +58,25 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
 
   return (
     <div style={{ maxWidth: '38rem', margin: '0 auto', padding: '4rem 1.5rem 3rem', lineHeight: 1.65 }}>
-      {/* Colour included: without it this fell through to the user agent's default link blue, which
-          on a cream and green page was the one thing on it that came from the browser. */}
-      <a
-        href="/"
-        style={{ fontWeight: 600, textDecoration: 'none', opacity: 0.75, color: 'var(--green-mid)' }}
-      >
+      {/*
+        * Colour rather than opacity, throughout this page.
+        *
+        * Every muted thing here was a full-strength colour dimmed with `opacity`, which is the same
+        * mistake the composer's kicker made: it reads as "lighter" but it is really "less contrast",
+        * and it took this link to 2.9:1 and the date under it to 3.7:1, both under the 4.5:1 that
+        * body text needs. Naming the colour makes the contrast something you can look up.
+        */}
+      <a href="/" style={{ fontWeight: 600, textDecoration: 'none', color: 'var(--green-mid)' }}>
         &larr; bloomnote
       </a>
       <h1 style={{ fontFamily: 'var(--font-display, Fraunces, Georgia, serif)', fontSize: '2.5rem', margin: '1.5rem 0 0.25rem' }}>
         {title}
       </h1>
-      <p style={{ opacity: 0.6, fontSize: '0.9rem', margin: 0 }}>Last updated: {UPDATED}</p>
+      <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', margin: 0 }}>Last updated: {UPDATED}</p>
       {sections.map((s) => (
         <section key={s.heading} style={{ marginTop: '2rem' }}>
           <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.4rem' }}>{s.heading}</h2>
-          <p style={{ margin: 0, opacity: 0.85 }}>{s.body}</p>
+          <p style={{ margin: 0, color: 'var(--text-mid)' }}>{s.body}</p>
         </section>
       ))}
     </div>
