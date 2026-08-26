@@ -58,6 +58,19 @@
    * Dusty rose rather than a true red: it has to read as sealing wax next to forest green on
    * cream without turning into a warning colour.
    */
+  /*
+   * Error text. Three rules in the composer ask for --error and each carries the same #c44e4e as a
+   * fallback, so this is the colour they have always drawn — declared, not changed, so the next
+   * rule that needs it has somewhere to point.
+   */
+  --error: #c44e4e;
+  /*
+   * Hairline borders. Three rules in the journal shelf ask for --line and fall back to black at a
+   * tenth opacity, on a cream page where the other 57 borders are var(--green-pale). They were the
+   * only neutral lines in the app, and only by accident.
+   */
+  --line: var(--green-pale);
+
   --pink-mid:  #e0919f;
   --pink-deep: #a3546a;
   /* Fraunces is a variable serif with personality — slight wobble in
@@ -65,6 +78,12 @@
      stays in the stack as a graceful fallback if Fraunces ever fails
      to load. */
   --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
+  /*
+   * Alias for --serif. LegalPage's heading asks for --font-display and passes its own stack as a
+   * fallback, which had quietly drifted from this one: it omits 'Playfair Display', so the legal
+   * pages skipped straight to Georgia wherever Fraunces had not loaded.
+   */
+  --font-display: var(--serif);
   --sans:  'DM Sans', system-ui, sans-serif;
   /*
    * The two fixed corner chips: the sound toggle and the account pill. They sit side by side and
