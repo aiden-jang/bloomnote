@@ -5,6 +5,65 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { FlowerSpec, GardenData } from '../garden';
 import FlowerSVG from '../components/FlowerSVG';
 
+/*
+ * Soil, shared by every picture this file exports.
+ *
+ * All three exports drew it as two flat rectangles meeting on a ruler-straight seam, which is the
+ * thing GardenScene's own soil comment describes having fixed in the app ("the one place the scene
+ * still looked like divs rather than a drawing"). The scene got the treatment and the pictures did
+ * not, including the link preview — the first bloomnote most people ever see.
+ */
+function SoilDefs() {
+  return (
+    <>
+      <linearGradient id="bnSoil" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#8b5e3c" />
+        <stop offset="62%" stopColor="#7a5133" />
+        <stop offset="100%" stopColor="#6d4729" />
+      </linearGradient>
+      <linearGradient id="bnSoilTop" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#b0805c" />
+        <stop offset="100%" stopColor="#a0714f" />
+      </linearGradient>
+      {/* Tile sizes that do not divide into each other, so the specks never settle into a lattice —
+          the same reason the scene's grain uses co-prime tiles. */}
+      <pattern id="bnGrainA" width="47" height="31" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="12" r="3" fill="#3a2212" opacity="0.13" />
+      </pattern>
+      <pattern id="bnGrainB" width="61" height="43" patternUnits="userSpaceOnUse">
+        <circle cx="34" cy="27" r="2.4" fill="#3a2212" opacity="0.1" />
+      </pattern>
+      <pattern id="bnGrainC" width="37" height="53" patternUnits="userSpaceOnUse">
+        <circle cx="21" cy="8" r="2.2" fill="#ffe2c4" opacity="0.15" />
+      </pattern>
+    </>
+  );
+}
+
+/** Fixed control points, not random: the same garden has to export the same picture every time. */
+function soilPaths(x: number, w: number, surfaceY: number, bottomY: number) {
+  const seg = w / 4;
+  const edge =
+    `M ${x} ${surfaceY + 7} ` +
+    `C ${x + seg * 0.6} ${surfaceY - 5}, ${x + seg * 1.4} ${surfaceY + 13}, ${x + seg * 2} ${surfaceY + 3} ` +
+    `C ${x + seg * 2.6} ${surfaceY - 4}, ${x + seg * 3.4} ${surfaceY + 12}, ${x + w} ${surfaceY + 5}`;
+  return { edge, body: `${edge} L ${x + w} ${bottomY} L ${x} ${bottomY} Z` };
+}
+
+/** The soil itself: body, three grains, then the lit surface stroked along the same curve. */
+function Soil({ x, w, surfaceY, bottomY }: { x: number; w: number; surfaceY: number; bottomY: number }) {
+  const { edge, body } = soilPaths(x, w, surfaceY, bottomY);
+  return (
+    <>
+      <path d={body} fill="url(#bnSoil)" />
+      <path d={body} fill="url(#bnGrainA)" />
+      <path d={body} fill="url(#bnGrainB)" />
+      <path d={body} fill="url(#bnGrainC)" />
+      <path d={edge} fill="none" stroke="url(#bnSoilTop)" strokeWidth="17" />
+    </>
+  );
+}
+
 const W = 1080;
 const H = 1080;
 
@@ -83,6 +142,7 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
   const panelH = 540;
   const groundH = 150;
   const groundSurface = panelY + panelH - groundH;
+
   const scale = 1.7;
   const n = Math.max(1, flowers.length);
   // Names allow 60 chars, but the headline is one non-wrapping line — truncate so it can't run off
@@ -104,6 +164,7 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
           <stop offset="0%" stopColor="#dbe7f2" />
           <stop offset="100%" stopColor="#eef3e4" />
         </linearGradient>
+        <SoilDefs />
         <clipPath id="bnPanel">
           <rect x={panelX} y={panelY} width={panelW} height={panelH} rx="28" />
         </clipPath>
@@ -116,8 +177,7 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
 
       <g clipPath="url(#bnPanel)">
         <rect x={panelX} y={panelY} width={panelW} height={panelH} fill="url(#bnSky)" />
-        <rect x={panelX} y={groundSurface} width={panelW} height={groundH} fill="#8a6a4a" />
-        <rect x={panelX} y={groundSurface} width={panelW} height="14" fill="#9c7c5a" />
+        <Soil x={panelX} w={panelW} surfaceY={groundSurface} bottomY={panelY + panelH} />
         {flowers.map((f, i) => {
           const svgH = f.stemHeight + 80;
           const dispW = 80 * scale;
@@ -185,8 +245,7 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
       <g clipPath={`url(#duetPanel${indexOffset})`}>
         <rect x={x} y={panelY} width={panelW} height={panelH} fill="url(#duetSky)" />
         <circle cx={x + 72} cy={panelY + 78} r="40" fill="#fff7cf" opacity="0.72" />
-        <rect x={x} y={groundSurface} width={panelW} height={panelY + panelH - groundSurface} fill="#8a6a4a" />
-        <rect x={x} y={groundSurface} width={panelW} height="12" fill="#9c7c5a" />
+        <Soil x={x} w={panelW} surfaceY={groundSurface} bottomY={panelY + panelH} />
         {visibleFlowers.map((flower, index) => {
           const svgH = flower.stemHeight + 80;
           const displayWidth = 80 * scale;
@@ -230,6 +289,7 @@ function GardenDuetImage({ previous, current }: GardenDuetImageOpts) {
           <stop offset="0%" stopColor="#dce9f2" />
           <stop offset="100%" stopColor="#edf1df" />
         </linearGradient>
+        <SoilDefs />
       </defs>
       <rect width={W} height={H} fill="#e8e0d3" />
       <rect x="42" y="42" width="996" height="996" rx="38" fill="url(#duetPaper)" stroke="#d7cebd" strokeWidth="2" />
@@ -424,6 +484,7 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
           <stop offset="0%" stopColor="#dbe7f2" />
           <stop offset="100%" stopColor="#eef3e4" />
         </linearGradient>
+        <SoilDefs />
         <clipPath id="ogPanel">
           <rect x={panelX} y={panelY} width={panelW} height={panelH} rx="26" />
         </clipPath>
@@ -436,8 +497,7 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
 
       <g clipPath="url(#ogPanel)">
         <rect x={panelX} y={panelY} width={panelW} height={panelH} fill="url(#ogSky)" />
-        <rect x={panelX} y={groundSurface} width={panelW} height={groundH} fill="#8a6a4a" />
-        <rect x={panelX} y={groundSurface} width={panelW} height="12" fill="#9c7c5a" />
+        <Soil x={panelX} w={panelW} surfaceY={groundSurface} bottomY={groundSurface + groundH} />
         {flowers.map((f, i) => {
           const svgH = f.stemHeight + 80;
           const dispW = 80 * scale;
