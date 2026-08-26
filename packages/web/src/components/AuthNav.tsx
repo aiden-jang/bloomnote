@@ -64,7 +64,7 @@ export function AuthNav(): ReactNode {
 
   if (!user) {
     return (
-      <div style={wrap}>
+      <div style={wrap} data-screen-chrome="">
         <button type="button" style={link} onClick={() => login()}>
           sign in
         </button>
@@ -73,7 +73,7 @@ export function AuthNav(): ReactNode {
   }
 
   return (
-    <div style={wrap}>
+    <div style={wrap} data-screen-chrome="">
       <a style={link} href="/mine">
         your gardens
       </a>

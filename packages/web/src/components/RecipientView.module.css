@@ -498,6 +498,12 @@
   .keepsake {
     display: none;
   }
+
+  /* An instruction to tap something, on paper. It is the only line on the printed keepsake that
+     asks the reader to do something they cannot do. */
+  .tapHint {
+    display: none !important;
+  }
 }
 
 /*

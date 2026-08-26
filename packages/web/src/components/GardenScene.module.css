@@ -510,6 +510,8 @@
 /* Print: the empty teaser doesn't need to appear on paper. */
 @media print {
   .ghostSprout { display: none; }
+  /* The zoom is off on paper (see index.css), so the height it was borrowing goes back too. */
+  .scene { margin-bottom: 0 !important; }
 }
 
 .ground {

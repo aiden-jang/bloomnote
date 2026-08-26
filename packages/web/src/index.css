@@ -226,10 +226,18 @@ p { text-wrap: pretty; }
   }
 
   /* Force every animated/transitioned element to its visible end
-     state. */
+     state.
+
+     `scale`, `translate` and `rotate` are listed alongside `transform` because they are separate
+     properties, not shorthand for it: clearing `transform` leaves them applied. The plot's desktop
+     zoom is a `scale`, and on a wide print canvas it survived this reset and printed the garden a
+     third larger than the column it sits in. */
   *, *::before, *::after {
     opacity: 1 !important;
     transform: none !important;
+    scale: none !important;
+    translate: none !important;
+    rotate: none !important;
     animation: none !important;
     transition: none !important;
   }
@@ -241,6 +249,17 @@ p { text-wrap: pretty; }
 
   body {
     background: white !important;
+  }
+
+  /*
+   * Fixed corner chrome never belongs on a keepsake.
+   *
+   * The sound toggle hides itself from its own module. The account pill is built from inline styles
+   * with no stylesheet to put a media query in, so it carries a flag instead — otherwise a printed
+   * garden has "sign in" floating in the corner of it.
+   */
+  [data-screen-chrome] {
+    display: none !important;
   }
 
   @page {
