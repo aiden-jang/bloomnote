@@ -8,7 +8,14 @@
    *
    * popIn deliberately does not use this: its overshoot is hand-authored in the keyframes (70% at
    * scale 1.1), which is the better tool when the bounce should be that large and that specific.
+   *
+   * Declared twice on purpose. `linear()` arrived in Safari 17.2 and Firefox 112; where it is not
+   * understood the second declaration is dropped and the bezier above stands, so those browsers get
+   * a close approximation without the overshoot instead of a `var()` that resolves to nothing.
+   * That distinction matters more than the easing: an unresolvable var() invalidates the whole
+   * `animation` shorthand it sits in, which would stop the animation rather than restyle it.
    */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: linear(0, 0.038, 0.13, 0.248, 0.373, 0.494, 0.604, 0.699, 0.778, 0.842, 0.893, 0.931, 0.959, 0.98, 0.993, 1.002, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
 
   --green-deep:  #2d5a1b;
