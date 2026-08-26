@@ -31,12 +31,11 @@ picked. bloomnote works fully signed out; an account just gives you a synced lis
 you've sent and received.
 
 Two smaller things on the recipient's side, both aimed at the same gap. Pointing at a flower
-highlights its line in the legend and vice versa, because otherwise the garden is a picture and
-the meanings are a list and matching them up means comparing colour swatches by eye — and every
-meaning was written about one specific flower, so that link is the content rather than decoration.
-And a watering can under the plot gives them a one-tap way to answer: the sender used to hear
-nothing at all unless someone composed a whole garden back, which is far more than most people
-will do for a feeling that only needs acknowledging.
+highlights its line in the legend and vice versa: every meaning was written about one specific
+flower, so without that link the garden is a picture, the meanings are a list, and matching them
+up means comparing colour swatches by eye. And a watering can under the plot gives a one-tap way
+to answer, because otherwise the sender hears nothing at all unless someone composes a whole
+garden back, which is more than most people will do for a feeling that only needs acknowledging.
 
 ## Architecture
 
@@ -98,6 +97,20 @@ No cron, no server timer. `SealedView.tsx` counts down in the browser with an in
 as the unlock recedes, so it isn't running a 60Hz timer for a two-week wait. Editing your device
 clock opens it early; this is choreography, not a vault.
 
+**The recipient's view is the only thing in the main bundle.** Every other route (composer,
+archive, legal) is a `React.lazy` chunk. The whole app used to ship as one file, so opening a
+garden link on a phone downloaded the composer, the schedule picker and the archive before the
+garden could draw. The recipient view stays eagerly loaded because that is the moment this product
+exists for and it should never wait on a second request; everything else sits behind a click and
+can afford one.
+
+**Saving a garden puts it in Photos, not Files.** The share card rasterises the garden to a PNG and
+hands it to `navigator.share({ files })`, which on a phone opens the OS sheet with "Save Image" in
+it. The catch is that `share` only works while a user gesture is still live, and a 2160px garden
+takes about a second to rasterize. Rendering it inside the tap handler spent the activation before
+the sheet opened, `share` threw, and the code fell through to a plain download, which lands in
+Files. The PNG is now rendered when the share card first appears, so the tap has a blob waiting.
+
 **Accounts are optional and additive.** Anonymous create + public links always work. Signing in
 adds a synced archive: gardens are indexed under `sent:<uid>:<id>` and `recv:<uid>:<id>` prefixes
 in the same KV, and a first-login claim step attaches anonymously-created gardens to the new
@@ -117,7 +130,7 @@ the browser never talks to accounts cross-origin.
   gift; first write wins and the rest get a 409. Gardens created before this shipped have no card
   and unfurl with the homepage image, which is the honest outcome of not backfilling.
 - **Watering is an anonymous counter, not a vote.** The recipient taps a watering can and the
-  sender sees it next time they open their own link — the only signal that a garden landed, short of
+  sender sees it next time they open their own link, the only signal that a garden landed short of
   composing a whole one back. There is no identity to hang it on, so the client remembers its own tap
   and the server caps the total at 99. Someone determined can walk a garden they were given up to the
   cap; the worst outcome is a number that reads "a lot", which isn't a lie about anything that
@@ -138,7 +151,9 @@ web/                     React + Vite SPA
   src/components/        Composer, RecipientView, SealedView, GardenScene, FlowerSVG, MyGardens …
   src/garden.ts          schema + short-link client helpers
   src/auth/, AuthNav     optional shared-auth integration
+  src/lib/gardenImage     the garden as a PNG: share card, link preview, pressed-flower card
   public/                favicon + generated icons + manifest + og.svg (see gen:icons)
+scripts/check-css-vars.mjs  fails the build on a var() naming an undeclared custom property
 ```
 
 ## Running locally
@@ -174,7 +189,7 @@ pnpm -r test                         # 154 tests: 69 API, 85 web
 pnpm --filter @bloomnote/web e2e     # Playwright: compose → bloom → share → recipient
 ```
 
-Fast, offline, and safe to run on every commit. Gemini is stubbed at `fetch` throughout — in the
+Fast, offline, and safe to run on every commit. Gemini is stubbed at `fetch` throughout: in the
 unit tests and again in the browser, where the one call that would cost money is intercepted and
 fulfilled with a canned SSE stream. Neither suite touches the daily quota.
 
@@ -184,7 +199,7 @@ tokens, a mini-garden clipped by a `transform` that doesn't affect layout. Typec
 tests were green through every one of them. Only a render catches that class of bug.
 
 One trap worth knowing: `reducedMotion` set in the Playwright config's `use` block never reaches
-the page — `matchMedia` keeps reporting false, so it looks configured and does nothing. It's
+the page. `matchMedia` keeps reporting false, so it looks configured and does nothing. It is
 emulated per-page with `page.emulateMedia()` in a `beforeEach` instead.
 
 The SSE route is the one worth knowing about: `/api/design-garden` always returns 200 with a
@@ -192,8 +207,11 @@ stream, so a failed generation is not an HTTP error but a well-formed response c
 event. Nothing else in the toolchain can see the difference, which is why those cases are tested
 explicitly.
 
-`pnpm --filter @bloomnote/web check:tokens` (also run by `build`) fails on a `var(--token)` that
-was never defined and has no fallback. Three of those had shipped before it existed.
+`pnpm css-vars` (run by `build` and in CI) fails on a `var(--x)` naming a custom property nothing
+declares. This failure is silent by construction: with a fallback the rule quietly uses it, and
+without one `color` inherits while `fill` renders black. Six of these shipped before the check
+existed, including a wax seal that rendered as a black dot on the screen it is the centrepiece of.
+A fallback does not make the reference legitimate, so it is reported either way.
 
 ### Prompt eval
 

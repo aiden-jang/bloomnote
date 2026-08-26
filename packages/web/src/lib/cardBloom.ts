@@ -24,11 +24,9 @@ function lighten(hex: string, amount: number): string {
 /**
  * A drawable flower for an archive card.
  *
- * The colour is real — it is the flower's own first petal colour, saved with the garden. The
- * silhouette is not, and cannot be: the archive stores one colour per flower and nothing else, and
- * the signed-in list comes from an API that returns the same shape. So the card is a token, not a
- * preview, and the shape comes from the garden's own id: stable every time that card is drawn, and
- * different from the card above it, which is all a row of tokens has to do.
+ * The colour is real; the silhouette is not. The archive stores one colour per flower and nothing
+ * else, so the shape comes from the garden's id — a token, not a preview. Same id, same shape,
+ * which is how a pressed flower matches its card in the journal.
  */
 export function cardBloom(color: string, gardenId: string, index: number): FlowerSpec {
   const h = hash(`${gardenId}:${index}`)

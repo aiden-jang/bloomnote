@@ -41,11 +41,8 @@ const link: CSSProperties = {
   font: 'inherit',
   padding: 0,
   whiteSpace: 'nowrap',
-  /*
-   * Fill the chip's height rather than sitting as an 18px line inside a 38px pill. The pill is a
-   * plain div, so it was never the pointer target — only this was, and it was well under the 24px
-   * minimum with a lot of apparently-clickable chrome around it that did nothing.
-   */
+  /* Fill the chip's height. The pill around this is a plain div and never the pointer target, so
+     an 18px line inside a 38px pill left the real target under the 24px minimum. */
   alignSelf: 'stretch',
   display: 'flex',
   alignItems: 'center',

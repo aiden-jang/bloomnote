@@ -86,8 +86,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
           {feeling ? (
             <p className={styles.feelingDone}>sent back {FEELING_COPY[feeling].sent}</p>
           ) : (
-            // Label and chips on one line. The chips slide rather than wrap, the way the occasion
-            // and mood rows do, so a narrow phone gets a scroller instead of a second row.
+            // Label and chips on one line; the chips slide rather than wrap, like occasion and mood.
             <div className={styles.feelings}>
               <span id="felt-like" className={styles.feelingsLabel}>
                 and it felt like

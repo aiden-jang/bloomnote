@@ -421,8 +421,8 @@ function LocalGardens() {
       )}
       {records.length === 0 ? (
         <div className={styles.empty}>
-          {/* The same waiting bed the composer shows before anything is written. This page is made
-              of drawn flowers everywhere except here, where it was a sentence on bare cream. */}
+          {/* The same waiting bed the composer shows before anything is written, so the empty
+              page is drawn flowers like the rest of it. */}
           <div className={styles.emptyPlot}>
             <GardenScene flowers={[]} autoBloom={false} silent draftGrowth={2} />
           </div>

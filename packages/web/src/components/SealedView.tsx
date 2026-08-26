@@ -117,13 +117,11 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
           feels like *this exact place* opening, not a new page. */}
       <div className={styles.plot} aria-hidden>
         <svg viewBox="0 0 200 120" className={styles.envelope}>
-          {/* Sealed envelope — folded flap, wax seal. Deliberately not a flower; the flowers stay
-              hidden, and this screen is the only one that has to hold someone's attention without
-              showing them anything.
+          {/* Sealed envelope, folded flap, wax seal. Deliberately not a flower: the flowers
+              stay hidden, and this screen has to hold attention without showing anything.
 
-              Drawn as paths rather than a rect and two straight lines: every corner here is very
-              slightly off square and the flap sags a little, because a ruler-true envelope was the
-              one piece of art in the app that looked constructed instead of drawn. */}
+              Paths rather than a rect and two lines, so every corner sits slightly off square
+              and the flap sags. A ruler-true envelope looked constructed rather than drawn. */}
           <ellipse cx="100" cy="109" rx="58" ry="4.5" fill="var(--green-deep)" opacity="0.07" />
 
           <path

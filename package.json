@@ -11,7 +11,7 @@
   "scripts": {
     "dev:api": "pnpm --filter @bloomnote/api dev",
     "dev:web": "pnpm --filter @bloomnote/web dev",
-    "build": "pnpm -r build",
+    "build": "pnpm css-vars && pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "eslint . --ext .ts,.tsx",

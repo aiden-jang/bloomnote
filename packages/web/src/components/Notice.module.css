@@ -1,11 +1,9 @@
 /*
  * The pages that are not a garden: loading, a broken link, a failed fetch, privacy, terms.
  *
- * These were the last surfaces built from ad-hoc inline styles, and they looked like a different
- * product: bare text on cream with none of the app's material. They borrow the note card here —
- * same white, same green-pale hairline, same 16px radius — so a dead end still looks like it
- * belongs to bloomnote. Deliberately no flowers: the message on most of these is that a garden is
- * not here, and drawing one would say the opposite.
+ * They borrow the note card's material, same white and green-pale hairline and 16px radius, so a
+ * dead end still looks like bloomnote. Deliberately no flowers: most of these say a garden is not
+ * here, and drawing one would say the opposite.
  */
 .page {
   max-width: 34rem;

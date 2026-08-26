@@ -2,14 +2,11 @@
 /*
  * Fails the build when a `var(--x)` names a custom property nothing declares.
  *
- * Three of these have now shipped and been found by accident, because the failure is silent by
- * construction. An undefined `var()` with a fallback quietly uses the fallback, so seven inline
- * styles wore an off-palette grey. Without a fallback it is worse and quieter: `color` inherits, so
- * four rules wore whatever colour they sat inside, and `fill` does not, so the wax seal on the
- * sealed screen rendered as a black dot nobody ever saw.
+ * This failure mode is silent by construction: with a fallback the rule quietly uses the fallback,
+ * and without one `color` inherits while `fill` renders black. Six of these shipped before the
+ * check existed, and every one was found by accident.
  *
- * A fallback does not make a reference legitimate. It is exactly what hid the first one, so a
- * reference is reported whether or not it passes a default.
+ * A fallback does not make a reference legitimate, so a reference is reported either way.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -17,10 +14,8 @@ import { join, relative } from 'node:path'
 const ROOT = new URL('..', import.meta.url).pathname
 const SRC = join(ROOT, 'packages/web/src')
 
-/*
- * Properties set by something this scan cannot see. Nothing here yet, and the aim is to keep it
- * that way — an entry is a promise that some runtime really does set it.
- */
+/* Properties set by something this scan cannot see. An entry here is a promise that some runtime
+   really does set it. */
 const EXTERNAL = new Set([])
 
 function walk(dir) {
@@ -46,11 +41,8 @@ for (const file of walk(SRC)) {
     for (const m of source.matchAll(/(?:^|[;{}\s])(--[\w-]+)\s*:/g)) declared.add(m[1])
     for (const m of source.matchAll(/@property\s+(--[\w-]+)/g)) declared.add(m[1])
   } else {
-    /*
-     * In TS a custom property is declared by naming it as a style key or passing it to
-     * setProperty, both of which are a string literal holding the name and nothing else. Matching
-     * the whole literal is what keeps `'var(--chip-edge)'` a reference rather than a declaration.
-     */
+    /* In TS a property is declared as a style key or a setProperty argument, both bare string
+       literals. Match the whole literal, or `'var(--chip-edge)'` counts as a declaration. */
     for (const m of source.matchAll(/['"`](--[\w-]+)['"`]/g)) declared.add(m[1])
   }
 

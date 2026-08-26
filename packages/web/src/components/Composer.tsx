@@ -49,8 +49,8 @@ import styles from './Composer.module.css'
 // Two phases instead of four. The message is the input; the garden +
 // share link are the output. No second-phase "now add a message" step,
 // because the message is already there.
-/* Enough of a note that the model has something to work from. Named so the copy under the disabled
-   button and the rule that disables it can never drift apart. */
+/* Enough of a note that the model has something to work from. Named so the copy under the
+   disabled button and the rule that disables it cannot drift apart. */
 const MIN_MESSAGE_CHARS = 4
 
 type Phase = 'idle' | 'designing' | 'designed'
@@ -422,11 +422,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     const noRecipient = recipient.trim().length < 1
     const written = message.trim().length
     const noMessage = written < MIN_MESSAGE_CHARS
-    /*
-     * "write them a note first" is the wrong sentence for somebody who has written three letters:
-     * they can see that they wrote something, so a message telling them to start reads as the app
-     * being broken rather than as a rule. Once there is anything in the field, say what is missing.
-     */
+    // Somebody who has already typed can see that they typed, so "write them a note first" reads
+    // as a bug rather than a rule. Once the field has anything in it, say what is missing.
     const startedWriting = written > 0
     if (noRecipient && noMessage && !startedWriting) return 'add who it’s for and a message to get started'
     if (noRecipient && noMessage) return 'add who it’s for, and a few more words'
@@ -443,8 +440,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     return null
   })()
 
-  /* The share card is on screen now, so start the PNG: the tap that shares it must not have to
-     wait for a render (see prewarmGardenImage). */
+  /* Start the PNG now: the tap that shares it must not wait on a render (see prewarmGardenImage). */
   useEffect(() => {
     if (phase !== 'designed' || flowers.length === 0) return
     prewarmGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
@@ -976,8 +972,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </h1>
         <p className={styles.subtitle}>
           {phase === 'designed'
-            ? // The page still said "write a note" to someone who had just finished writing one.
-              recipient.trim()
+            ? recipient.trim()
               ? `it's ${recipient.trim()}'s now. send it when you're ready.`
               : "it's theirs now. send it when you're ready."
             : remixSeed
@@ -1001,7 +996,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         occasion={heroOccasion}
         mood={heroMood}
         silent={showDemo}
-        // While the model works, the empty bed above the status card puts up a row of sprouts.
         sprouting={phase === 'designing'}
         compact={hasDraft}
         draftGrowth={draftGrowth}
@@ -1106,10 +1100,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <div className={styles.nameRow}>
-            {/* htmlFor/id, not just adjacency: these two labels sat beside their inputs rather than
-                wrapping them, so the only name either field carried was its placeholder — which
-                disappears the moment someone types, and is not a label. The pairing also makes the
-                visible word clickable to focus the field. */}
+            {/* htmlFor/id, not adjacency: these labels sit beside their inputs rather than
+                wrapping them, so without the pairing the only name each field has is its
+                placeholder. */}
             <section className={styles.section}>
               <label className={styles.label} htmlFor="garden-from">
                 from
@@ -1463,14 +1456,9 @@ function Spinner() {
 /*
  * One fall of petals when a garden is finished.
  *
- * The moment the sender's garden arrives had a chime and nothing to look at: the page kept its
- * compose-mode header and the "ready" card sat below a full preview, so the emotional peak of
- * making something for someone read as a form result. This marks it.
- *
- * Deliberately not the ambient drift the plot already runs. That one loops forever and belongs to
- * the scene; this happens once, across the whole page, in the colours of the flowers they just
- * grew, and then removes itself. Keyed on the garden id upstream so re-rolling replays it, which is
- * right: a different garden is a different moment.
+ * Don't merge this with the plot's ambient drift. That one loops forever and belongs to the scene;
+ * this happens once, across the whole page, then removes itself. Keyed on the garden id upstream so
+ * re-rolling replays it.
  */
 const FALL_MS = 4200
 
@@ -1483,8 +1471,8 @@ function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
     return () => clearTimeout(t)
   }, [])
 
-  // Unmounted rather than left at opacity 0: there is no reason for eighteen absolutely-positioned
-  // nodes to outlive the four seconds they are visible for.
+  // Unmounted rather than left at opacity 0: eighteen absolutely-positioned nodes should not
+  // outlive the four seconds they are visible for.
   if (done || flowers.length === 0) return null
 
   return (

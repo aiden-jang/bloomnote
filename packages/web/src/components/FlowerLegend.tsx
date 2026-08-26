@@ -15,11 +15,9 @@ interface Props {
 }
 
 /**
- * A legend listing every flower in the garden by name + meaning, each row led by that flower drawn
- * small, so the line ties back to the bloom above by being the same thing rather than by matching
- * colours to it. Shown by default — the per-flower meanings are
- * the AI's most personal output, and hiding them behind a tap means
- * most recipients never see them.
+ * Every flower in the garden by name and meaning, each row led by that flower drawn small so the
+ * line ties back to the bloom above by being the same thing. Shown by default: the per-flower
+ * meanings are the model's most personal output, and behind a tap most recipients never see them.
  *
  * The overall bouquet rationale now lives in BouquetNote (attached to
  * the message with a typewriter reveal), so this component is purely

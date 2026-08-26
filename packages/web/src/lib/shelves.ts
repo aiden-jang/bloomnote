@@ -19,10 +19,6 @@ export const SHELVES: Shelf[] = [
   { id: 'remember', label: 'things i want to remember', empty: 'nothing on this shelf yet.' },
 ]
 
-export function shelfLabel(id: ShelfId): string {
-  return SHELVES.find(shelf => shelf.id === id)?.label ?? id
-}
-
 /** Both at once. One field forcing a choice makes these categories, and the thing somebody survived is
  *  very often the thing they most want to remember. */
 export function shelvesOf(entry: FlowerJournalEntry): ShelfId[] {
