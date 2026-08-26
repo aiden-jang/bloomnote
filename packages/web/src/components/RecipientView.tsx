@@ -405,7 +405,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               onClick={() => setSecretRevealed(revealed => !revealed)}
               aria-expanded={secretRevealed}
             >
-              <span aria-hidden>{secretRevealed ? '✉' : '💌'}</span>
+              <SecretEnvelope open={secretRevealed} />
               {secretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
             </button>
             {secretRevealed && <p className={styles.secretText}>{secret}</p>}
@@ -501,5 +501,47 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         </>
       )}
     </div>
+  )
+}
+
+/*
+ * The little envelope on the secret row.
+ *
+ * This was a 💌 next to a ✉ — a full-colour raster emoji swapping to a monochrome text glyph, so
+ * the icon changed typeface as well as state, and neither was drawn by us. Same reasoning as the
+ * wax seal on the countdown: an emoji is whatever the reader's OS decides to draw, on a page where
+ * everything else is ours. Strokes are currentColor so it takes the link's colour and its hover.
+ */
+function SecretEnvelope({ open }: { open: boolean }) {
+  return (
+    <svg width="18" height="14" viewBox="0 0 20 15" fill="none" aria-hidden focusable="false">
+      <rect
+        x="1"
+        y="2.6"
+        width="18"
+        height="11.8"
+        rx="2.2"
+        fill="var(--cream)"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M1.7 3.3 L10 9.1 L18.3 3.3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/*
+       * The silhouette does not change between states, only the wax does, because the state this
+       * button reports is exactly that: sealed or unsealed. Two attempts at a drawn "open" envelope
+       * — a raised flap, then a note lifting out of a pocket — both died at 18px, where a three-unit
+       * triangle reads as a bump and a cream note on a cream card is a stray line.
+       */}
+      {!open && (
+        <circle cx="10" cy="9.2" r="2.1" fill="var(--pink-mid)" stroke="var(--pink-deep)" strokeWidth="0.8" />
+      )}
+    </svg>
   )
 }
