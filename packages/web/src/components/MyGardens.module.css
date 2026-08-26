@@ -623,3 +623,11 @@
   color: var(--green-mid);
   font-weight: 500;
 }
+
+/* Holds the waiting bed on the empty archive. Narrower than the page so it reads as one small
+   drawing rather than a header image, and capped so the desktop plot zoom cannot make it the
+   loudest thing on a page whose subject is a sentence. */
+.emptyPlot {
+  width: min(100%, 320px);
+  margin-bottom: 0.5rem;
+}
