@@ -124,6 +124,11 @@ interface Props {
   /** Adds a restrained, animated atmosphere. Old gardens without a mood stay unchanged. */
   mood?: string | undefined
   /**
+   * The garden is written but not yet opened. The flowers are withheld, so the plot draws the seeds
+   * they will grow from instead of an empty bed.
+   */
+  sealed?: boolean
+  /**
    * Bloom without the chime. Sound is on by default, and the homepage demo re-blooms on a loop —
    * without this it would ding at the visitor every few seconds for as long as they sat on the
    * page. The bloom sound should mark *their* garden arriving, which is the whole reason it's
@@ -301,6 +306,49 @@ function SoilLine() {
   )
 }
 
+/** Hand-placed so the sky is unevenly filled, the way real drifting things are. left %, top %, delay s. */
+const MOTES: Array<[number, number, number]> = [
+  [14, 22, 0], [31, 46, 2.7], [48, 16, 5.1], [63, 38, 1.4],
+  [77, 27, 3.9], [88, 52, 6.3], [22, 63, 4.6],
+]
+
+/**
+ * The sealed plot.
+ *
+ * Before it is opened the bed was bare: a gradient, some soil, and a button. That reads as a page
+ * that has not loaded rather than as a gift being withheld. Each flower puts a seed in its own
+ * column, in its own colour, so the reveal grows out of something the recipient was already looking
+ * at, and the wait has a subject.
+ */
+function SeedBed({ placements }: { placements: Placement[] }) {
+  return (
+    <div className={styles.seedBed} aria-hidden>
+      {placements.map((p, i) => (
+        <span
+          key={i}
+          className={styles.seed}
+          style={{
+            left: `${p.left}%`,
+            ['--depth' as string]: String(p.depth),
+            // Staggered so the bed breathes in sequence rather than pulsing as one block.
+            animationDelay: `${i * 620}ms`,
+          }}
+        >
+          <svg viewBox="0 0 16 22" className={styles.seedSvg}>
+            <path
+              d="M8 8.4 C 4.8 7.2 3.5 4.2 5.4 2.6 C 7.3 3.7 8 6.1 8 8.4 Z"
+              fill={p.spec.stemColor}
+              opacity="0.9"
+            />
+            <ellipse cx="8" cy="14.6" rx="5" ry="6.4" fill={p.spec.petalColors[0]} />
+            <ellipse cx="6.3" cy="11.8" rx="1.5" ry="2.2" fill="#fff" opacity="0.38" />
+          </svg>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 /**
  * Empty-plot teaser. A single ground-anchored sprout that grows up,
  * unfurls a leaf, then retracts on a slow loop. Hints at the bloom
@@ -341,7 +389,7 @@ function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   )
 }
 
-export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom, now = new Date() }: Props) {
+export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion, mood, sealed = false, silent = false, compact = false, draftGrowth = 0, focused = null, onFocus, wateredAt = 0, journalGardenId, journalFrom, now = new Date() }: Props) {
   // Resolve the gradient once per render; the cost is a Record lookup,
   // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
   // get consumed by the CSS module on the .sky element.
@@ -722,7 +770,19 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
           </button>
         </aside>
       )}
+      {sealed && (
+        <div className={styles.moteLayer} aria-hidden>
+          {MOTES.map(([left, top, delay], i) => (
+            <span
+              key={i}
+              className={styles.mote}
+              style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }}
+            />
+          ))}
+        </div>
+      )}
       <div className={styles.garden}>
+        {sealed && placed.length > 0 && <SeedBed placements={placed} />}
         {showGhostSprout && <GhostSprout growth={draftGrowth} />}
         {beeFlying && (() => {
           const target = placed[beeAt % placed.length]!

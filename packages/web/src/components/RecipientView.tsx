@@ -311,6 +311,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         // atmosphere reads as deliberate, not random.
         occasion={occasion}
         mood={mood}
+        sealed={phase === 'sealed'}
         key={`recipient-${bloomVersion}`}
       />
 
@@ -320,9 +321,19 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           playback. Also makes the moment feel deliberate, like
           opening an envelope. The button hides once tapped. */}
       {phase === 'sealed' && (
-        <button type="button" className={styles.openBtn} onClick={handleOpen}>
-          open the garden
-        </button>
+        <>
+          <button type="button" className={styles.openBtn} onClick={handleOpen}>
+            open the garden
+          </button>
+          {/* The sealed screen ended at the button and left half a phone of empty page under it.
+              Naming the count is also the only honest thing to say here: the garden is already
+              grown and written, and nothing about opening it is a lottery. */}
+          <p className={styles.waitingLine}>
+            {flowers.length} {flowers.length === 1 ? 'flower' : 'flowers'}, already grown.
+            <br />
+            they have been waiting under there for you.
+          </p>
+        </>
       )}
 
       {/* Everything below the plot renders only AFTER the garden is opened. While sealed these
