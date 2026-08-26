@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Browser end-to-end tests: compose → bloom → share → recipient, in a real browser.
@@ -57,4 +57,4 @@ export default defineConfig({
       cwd: '../..',
     },
   ],
-});
+})

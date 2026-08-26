@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import type { CSSProperties, ReactNode } from 'react'
+import { useAuth } from '../auth/AuthContext'
 
 // A quiet corner entry point. Accounts are optional (anonymous create + links always work),
 // so this stays out of the way: "sign in" when signed out; name + "your gardens" + sign-out when
@@ -31,7 +31,7 @@ const wrap: CSSProperties = {
   borderRadius: 999,
   backdropFilter: 'blur(6px)',
   WebkitBackdropFilter: 'blur(6px)',
-};
+}
 const link: CSSProperties = {
   color: 'var(--color-ink-muted, #6b6963)',
   textDecoration: 'none',
@@ -46,18 +46,18 @@ const link: CSSProperties = {
   alignSelf: 'stretch',
   display: 'flex',
   alignItems: 'center',
-};
+}
 // The display name is user-controlled and unbounded — truncate it so it can't grow the pill.
 const nameLink: CSSProperties = {
   ...link,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   maxWidth: '8rem',
-};
+}
 
 export function AuthNav(): ReactNode {
-  const { user, loading, login, logout, accountUrl } = useAuth();
-  if (loading) return null;
+  const { user, loading, login, logout, accountUrl } = useAuth()
+  if (loading) return null
 
   if (!user) {
     return (
@@ -66,7 +66,7 @@ export function AuthNav(): ReactNode {
           sign in
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -81,5 +81,5 @@ export function AuthNav(): ReactNode {
         sign out
       </button>
     </div>
-  );
+  )
 }

@@ -1,9 +1,9 @@
 // Renders a garden into a downloadable PNG "share card" (garden scene + who-it's-from + wordmark).
 // Composed as a self-contained SVG (no external assets, so the canvas isn't tainted) and reuses
 // FlowerSVG in staticRender mode so the flowers rasterize fully open, not mid-animation.
-import { renderToStaticMarkup } from 'react-dom/server';
-import type { FlowerSpec, GardenData } from '../garden';
-import FlowerSVG from '../components/FlowerSVG';
+import { renderToStaticMarkup } from 'react-dom/server'
+import type { FlowerSpec, GardenData } from '../garden'
+import FlowerSVG from '../components/FlowerSVG'
 
 /* Soil, shared by every picture this file exports, so the exports match the app's own ground. */
 function SoilDefs() {
@@ -29,22 +29,22 @@ function SoilDefs() {
         <circle cx="21" cy="8" r="2.2" fill="#ffe2c4" opacity="0.15" />
       </pattern>
     </>
-  );
+  )
 }
 
 /** Fixed control points, not random: the same garden has to export the same picture every time. */
 function soilPaths(x: number, w: number, surfaceY: number, bottomY: number) {
-  const seg = w / 4;
+  const seg = w / 4
   const edge =
     `M ${x} ${surfaceY + 7} ` +
     `C ${x + seg * 0.6} ${surfaceY - 5}, ${x + seg * 1.4} ${surfaceY + 13}, ${x + seg * 2} ${surfaceY + 3} ` +
-    `C ${x + seg * 2.6} ${surfaceY - 4}, ${x + seg * 3.4} ${surfaceY + 12}, ${x + w} ${surfaceY + 5}`;
-  return { edge, body: `${edge} L ${x + w} ${bottomY} L ${x} ${bottomY} Z` };
+    `C ${x + seg * 2.6} ${surfaceY - 4}, ${x + seg * 3.4} ${surfaceY + 12}, ${x + w} ${surfaceY + 5}`
+  return { edge, body: `${edge} L ${x + w} ${bottomY} L ${x} ${bottomY} Z` }
 }
 
 /** The soil itself: body, three grains, then the lit surface stroked along the same curve. */
 function Soil({ x, w, surfaceY, bottomY }: { x: number; w: number; surfaceY: number; bottomY: number }) {
-  const { edge, body } = soilPaths(x, w, surfaceY, bottomY);
+  const { edge, body } = soilPaths(x, w, surfaceY, bottomY)
   return (
     <>
       <path d={body} fill="url(#bnSoil)" />
@@ -53,46 +53,46 @@ function Soil({ x, w, surfaceY, bottomY }: { x: number; w: number; surfaceY: num
       <path d={body} fill="url(#bnGrainC)" />
       <path d={edge} fill="none" stroke="url(#bnSoilTop)" strokeWidth="17" />
     </>
-  );
+  )
 }
 
-const W = 1080;
-const H = 1080;
+const W = 1080
+const H = 1080
 
 export interface GardenImageOpts {
-  flowers: FlowerSpec[];
-  from?: string | undefined;
-  to?: string | undefined;
+  flowers: FlowerSpec[]
+  from?: string | undefined
+  to?: string | undefined
 }
 
-export type GardenImageSaveResult = 'shared' | 'downloaded' | 'dismissed';
+export type GardenImageSaveResult = 'shared' | 'downloaded' | 'dismissed'
 
 export interface GardenDuetImageOpts {
-  previous: GardenData;
-  current: GardenData;
+  previous: GardenData
+  current: GardenData
 }
 
 function wrapMeaning(value: string, max = 38): string[] {
-  const words = value.trim().split(/\s+/);
-  const lines: string[] = [];
+  const words = value.trim().split(/\s+/)
+  const lines: string[] = []
   for (const word of words) {
-    const current = lines[lines.length - 1];
-    if (!current || current.length + word.length + 1 > max) lines.push(word);
-    else lines[lines.length - 1] = `${current} ${word}`;
+    const current = lines[lines.length - 1]
+    if (!current || current.length + word.length + 1 > max) lines.push(word)
+    else lines[lines.length - 1] = `${current} ${word}`
   }
-  return lines.slice(0, 4);
+  return lines.slice(0, 4)
 }
 
 function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: string }) {
-  const lines = wrapMeaning(meaning);
-  const svgH = flower.stemHeight + 80;
+  const lines = wrapMeaning(meaning)
+  const svgH = flower.stemHeight + 80
   /*
    * The band caps the scale, so every flower's top lands at the same y whatever its stem height.
    * Keep it clear of the label's 118 baseline or the head sits on the words.
    */
-  const FLOWER_BAND = 415;
-  const scale = Math.min(3.5, FLOWER_BAND / svgH);
-  const flowerWidth = 80 * scale;
+  const FLOWER_BAND = 415
+  const scale = Math.min(3.5, FLOWER_BAND / svgH)
+  const flowerWidth = 80 * scale
 
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -106,8 +106,25 @@ function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: 
         </filter>
       </defs>
       <rect width={W} height={H} fill="#e9e1d2" />
-      <rect x="54" y="54" width="972" height="972" rx="34" fill="url(#pressedPaper)" stroke="#d9cfbc" strokeWidth="2" />
-      <text x="92" y="118" fontFamily="system-ui, -apple-system, sans-serif" fontSize="22" fontWeight="650" letterSpacing="4" fill="#829575">
+      <rect
+        x="54"
+        y="54"
+        width="972"
+        height="972"
+        rx="34"
+        fill="url(#pressedPaper)"
+        stroke="#d9cfbc"
+        strokeWidth="2"
+      />
+      <text
+        x="92"
+        y="118"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontSize="22"
+        fontWeight="650"
+        letterSpacing="4"
+        fill="#829575"
+      >
         PRESSED FROM A BLOOMNOTE
       </text>
       <g
@@ -117,36 +134,62 @@ function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: 
         <FlowerSVG flower={flower} index={0} bloomed staticRender />
       </g>
       <line x1="150" y1="620" x2="930" y2="620" stroke="#d9cfbc" strokeWidth="2" />
-      <text x={W / 2} y="704" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="58" fontStyle="italic" fill="#3f6b3a">
+      <text
+        x={W / 2}
+        y="704"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="58"
+        fontStyle="italic"
+        fill="#3f6b3a"
+      >
         {flower.name}
       </text>
-      <text x={W / 2} y="770" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="31" fill="#665f54">
+      <text
+        x={W / 2}
+        y="770"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="31"
+        fill="#665f54"
+      >
         {lines.map((line, index) => (
-          <tspan key={line} x={W / 2} dy={index === 0 ? 0 : 43}>{line}</tspan>
+          <tspan key={line} x={W / 2} dy={index === 0 ? 0 : 43}>
+            {line}
+          </tspan>
         ))}
       </text>
-      <text x={W / 2} y="980" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="22" fontWeight="650" letterSpacing="3" fill="#829575">
+      <text
+        x={W / 2}
+        y="980"
+        textAnchor="middle"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontSize="22"
+        fontWeight="650"
+        letterSpacing="3"
+        fill="#829575"
+      >
         BLOOMNOTE
       </text>
     </svg>
-  );
+  )
 }
 
 function ShareImage({ flowers, from, to }: GardenImageOpts) {
-  const panelX = 80;
-  const panelY = 230;
-  const panelW = 920;
-  const panelH = 540;
-  const groundH = 150;
-  const groundSurface = panelY + panelH - groundH;
+  const panelX = 80
+  const panelY = 230
+  const panelW = 920
+  const panelH = 540
+  const groundH = 150
+  const groundSurface = panelY + panelH - groundH
 
-  const scale = 1.7;
-  const n = Math.max(1, flowers.length);
+  const scale = 1.7
+  const n = Math.max(1, flowers.length)
   // Names allow 60 chars, but the headline is one non-wrapping line — truncate so it can't run off
   // both edges of the exported PNG.
-  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s);
-  const toName = to ? clipName(to) : 'you';
-  const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`;
+  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s)
+  const toName = to ? clipName(to) : 'you'
+  const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`
 
   return (
     <svg
@@ -176,16 +219,16 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
         <rect x={panelX} y={panelY} width={panelW} height={panelH} fill="url(#bnSky)" />
         <Soil x={panelX} w={panelW} surfaceY={groundSurface} bottomY={panelY + panelH} />
         {flowers.map((f, i) => {
-          const svgH = f.stemHeight + 80;
-          const dispW = 80 * scale;
-          const cx = panelX + (panelW * (i + 0.5)) / n;
-          const x = cx - dispW / 2;
-          const y = groundSurface + 6 - svgH * scale; // base tucked just into the soil
+          const svgH = f.stemHeight + 80
+          const dispW = 80 * scale
+          const cx = panelX + (panelW * (i + 0.5)) / n
+          const x = cx - dispW / 2
+          const y = groundSurface + 6 - svgH * scale // base tucked just into the soil
           return (
             <g key={i} transform={`translate(${x}, ${y}) scale(${scale})`}>
               <FlowerSVG flower={f} index={i} bloomed staticRender />
             </g>
-          );
+          )
         })}
       </g>
       <rect
@@ -199,7 +242,14 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
         strokeWidth="2"
       />
 
-      <text x={W / 2} y={panelY + panelH + 96} textAnchor="middle" fontSize="54" fontWeight="bold" fill="#3f6b3a">
+      <text
+        x={W / 2}
+        y={panelY + panelH + 96}
+        textAnchor="middle"
+        fontSize="54"
+        fontWeight="bold"
+        fill="#3f6b3a"
+      >
         bloomnote
       </text>
       <text
@@ -213,26 +263,26 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
         bloomnote.aidenjang.com
       </text>
     </svg>
-  );
+  )
 }
 
 function duetLabel(garden: GardenData): string {
-  const clip = (value: string): string => (value.length > 16 ? `${value.slice(0, 15)}…` : value);
-  if (garden.from && garden.to) return `${clip(garden.from)} → ${clip(garden.to)}`;
-  if (garden.from) return `from ${clip(garden.from)}`;
-  if (garden.to) return `for ${clip(garden.to)}`;
-  return 'a little garden';
+  const clip = (value: string): string => (value.length > 16 ? `${value.slice(0, 15)}…` : value)
+  if (garden.from && garden.to) return `${clip(garden.from)} → ${clip(garden.to)}`
+  if (garden.from) return `from ${clip(garden.from)}`
+  if (garden.to) return `for ${clip(garden.to)}`
+  return 'a little garden'
 }
 
 function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number; indexOffset: number }) {
-  const panelY = 254;
-  const panelW = 410;
-  const panelH = 520;
-  const groundSurface = 650;
-  const visibleFlowers = garden.flowers.slice(0, 7);
-  const tallest = Math.max(150, ...visibleFlowers.map((flower) => flower.stemHeight + 80));
-  const scale = Math.min(1.65, 350 / tallest);
-  const count = Math.max(1, visibleFlowers.length);
+  const panelY = 254
+  const panelW = 410
+  const panelH = 520
+  const groundSurface = 650
+  const visibleFlowers = garden.flowers.slice(0, 7)
+  const tallest = Math.max(150, ...visibleFlowers.map((flower) => flower.stemHeight + 80))
+  const scale = Math.min(1.65, 350 / tallest)
+  const count = Math.max(1, visibleFlowers.length)
 
   return (
     <g>
@@ -244,9 +294,9 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
         <circle cx={x + 72} cy={panelY + 78} r="40" fill="#fff7cf" opacity="0.72" />
         <Soil x={x} w={panelW} surfaceY={groundSurface} bottomY={panelY + panelH} />
         {visibleFlowers.map((flower, index) => {
-          const svgH = flower.stemHeight + 80;
-          const displayWidth = 80 * scale;
-          const centerX = x + (panelW * (index + 0.5)) / count;
+          const svgH = flower.stemHeight + 80
+          const displayWidth = 80 * scale
+          const centerX = x + (panelW * (index + 0.5)) / count
           return (
             <g
               key={`${flower.name}-${index}`}
@@ -254,10 +304,19 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
             >
               <FlowerSVG flower={flower} index={index + indexOffset} bloomed staticRender />
             </g>
-          );
+          )
         })}
       </g>
-      <rect x={x} y={panelY} width={panelW} height={panelH} rx="28" fill="none" stroke="#d8dfd0" strokeWidth="2" />
+      <rect
+        x={x}
+        y={panelY}
+        width={panelW}
+        height={panelH}
+        rx="28"
+        fill="none"
+        stroke="#d8dfd0"
+        strokeWidth="2"
+      />
       <text
         x={x + panelW / 2}
         y="820"
@@ -270,7 +329,7 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
         {duetLabel(garden)}
       </text>
     </g>
-  );
+  )
 }
 
 /** A two-garden keepsake for a reply exchange. It deliberately omits private note copy. */
@@ -289,28 +348,89 @@ function GardenDuetImage({ previous, current }: GardenDuetImageOpts) {
         <SoilDefs />
       </defs>
       <rect width={W} height={H} fill="#e8e0d3" />
-      <rect x="42" y="42" width="996" height="996" rx="38" fill="url(#duetPaper)" stroke="#d7cebd" strokeWidth="2" />
-      <text x={W / 2} y="118" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="50" fontStyle="italic" fill="#3f6b3a">
+      <rect
+        x="42"
+        y="42"
+        width="996"
+        height="996"
+        rx="38"
+        fill="url(#duetPaper)"
+        stroke="#d7cebd"
+        strokeWidth="2"
+      />
+      <text
+        x={W / 2}
+        y="118"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="50"
+        fontStyle="italic"
+        fill="#3f6b3a"
+      >
         two gardens, one little story
       </text>
-      <text x={W / 2} y="164" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="19" letterSpacing="3" fill="#829575">
+      <text
+        x={W / 2}
+        y="164"
+        textAnchor="middle"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontSize="19"
+        letterSpacing="3"
+        fill="#829575"
+      >
         A BLOOMNOTE DUET
       </text>
       <DuetBouquet garden={previous} x={92} indexOffset={0} />
       <DuetBouquet garden={current} x={578} indexOffset={20} />
-      <path d="M 510 502 C 528 480, 552 480, 570 502" fill="none" stroke="#829575" strokeWidth="3" strokeLinecap="round" />
-      <path d="M 564 492 L 572 502 L 560 507" fill="none" stroke="#829575" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <text x={W / 2} y="884" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="31" fontStyle="italic" fill="#625f58">
+      <path
+        d="M 510 502 C 528 480, 552 480, 570 502"
+        fill="none"
+        stroke="#829575"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 564 492 L 572 502 L 560 507"
+        fill="none"
+        stroke="#829575"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <text
+        x={W / 2}
+        y="884"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="31"
+        fontStyle="italic"
+        fill="#625f58"
+      >
         grown, received, and grown back
       </text>
-      <text x={W / 2} y="966" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif" fontSize="43" fontWeight="bold" fill="#3f6b3a">
+      <text
+        x={W / 2}
+        y="966"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="43"
+        fontWeight="bold"
+        fill="#3f6b3a"
+      >
         bloomnote
       </text>
-      <text x={W / 2} y="1002" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="19" fill="#8a877f">
+      <text
+        x={W / 2}
+        y="1002"
+        textAnchor="middle"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontSize="19"
+        fill="#8a877f"
+      >
         bloomnote.aidenjang.com
       </text>
     </svg>
-  );
+  )
 }
 
 /**
@@ -320,42 +440,42 @@ function GardenDuetImage({ previous, current }: GardenDuetImageOpts) {
  * so its resolution should not depend on the screen that happened to make it.
  */
 async function rasterize(svg: string, w: number, h: number, dpr = 2): Promise<Blob> {
-  const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+  const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
   try {
     return await new Promise<Blob>((resolve, reject) => {
-      const img = new Image();
+      const img = new Image()
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('canvas unavailable'));
-        ctx.scale(dpr, dpr);
-        ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob((png) => (png ? resolve(png) : reject(new Error('encode failed'))), 'image/png');
-      };
-      img.onerror = () => reject(new Error('svg render failed'));
-      img.src = svgUrl;
-    });
+        const canvas = document.createElement('canvas')
+        canvas.width = w * dpr
+        canvas.height = h * dpr
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject(new Error('canvas unavailable'))
+        ctx.scale(dpr, dpr)
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob((png) => (png ? resolve(png) : reject(new Error('encode failed'))), 'image/png')
+      }
+      img.onerror = () => reject(new Error('svg render failed'))
+      img.src = svgUrl
+    })
   } finally {
-    URL.revokeObjectURL(svgUrl);
+    URL.revokeObjectURL(svgUrl)
   }
 }
 
 /** Rasterize the square download card. */
 async function renderGardenPng(opts: GardenImageOpts): Promise<Blob> {
-  return rasterize(renderToStaticMarkup(<ShareImage {...opts} />), W, H);
+  return rasterize(renderToStaticMarkup(<ShareImage {...opts} />), W, H)
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.download = filename;
-  a.href = href;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(href);
+  const href = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.download = filename
+  a.href = href
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(href)
 }
 
 /**
@@ -372,95 +492,111 @@ function downloadBlob(blob: Blob, filename: string): void {
  * laptop and longer on a phone. Rendering inside the tap handler spends the activation, share
  * throws, and it falls back to a download — which on iOS lands in Files, not Photos.
  */
-let warmed: { key: string; png: Promise<Blob> } | null = null;
+let warmed: { key: string; png: Promise<Blob> } | null = null
 
 function warmKey(opts: GardenImageOpts): string {
-  return JSON.stringify([opts.from, opts.to, opts.flowers.map((f) => `${f.name}:${f.stemHeight}:${f.petalColors[0]}`)]);
+  return JSON.stringify([
+    opts.from,
+    opts.to,
+    opts.flowers.map((f) => `${f.name}:${f.stemHeight}:${f.petalColors[0]}`),
+  ])
 }
 
 export function prewarmGardenImage(opts: GardenImageOpts): void {
-  const key = warmKey(opts);
-  if (warmed?.key === key) return;
+  const key = warmKey(opts)
+  if (warmed?.key === key) return
   // Failures are swallowed here and re-thrown at save time, where there is a person to tell.
-  warmed = { key, png: renderGardenPng(opts) };
-  void warmed.png.catch(() => undefined);
+  warmed = { key, png: renderGardenPng(opts) }
+  void warmed.png.catch(() => undefined)
 }
 
 async function gardenPng(opts: GardenImageOpts): Promise<Blob> {
-  const key = warmKey(opts);
+  const key = warmKey(opts)
   if (warmed?.key === key) {
     try {
-      return await warmed.png;
+      return await warmed.png
     } catch {
-      warmed = null; // a failed warm should not poison every later attempt
+      warmed = null // a failed warm should not poison every later attempt
     }
   }
-  return renderGardenPng(opts);
+  return renderGardenPng(opts)
 }
 
 export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImageSaveResult> {
-  const blob = await gardenPng(opts);
-  const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-  const filename = `bloomnote-${base}.png`;
-  const file = new File([blob], filename, { type: 'image/png' });
+  const blob = await gardenPng(opts)
+  const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+  const filename = `bloomnote-${base}.png`
+  const file = new File([blob], filename, { type: 'image/png' })
 
-  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
   if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
     try {
       await nav.share({
         files: [file],
         title: 'bloomnote',
         text: opts.to ? `A garden for ${opts.to}` : 'A garden',
-      });
-      return 'shared';
+      })
+      return 'shared'
     } catch (err) {
       // User dismissed the sheet — done, don't also download.
-      if (err instanceof Error && err.name === 'AbortError') return 'dismissed';
+      if (err instanceof Error && err.name === 'AbortError') return 'dismissed'
       // Anything else (e.g. lost user activation): fall through to a plain download.
     }
   }
-  downloadBlob(blob, filename);
-  return 'downloaded';
+  downloadBlob(blob, filename)
+  return 'downloaded'
 }
 
 /** Save both sides of a reply as one private-copy-free image keepsake. */
 export async function saveGardenDuetImage(opts: GardenDuetImageOpts): Promise<GardenImageSaveResult> {
-  const blob = await rasterize(renderToStaticMarkup(<GardenDuetImage {...opts} />), W, H);
-  const participant = opts.current.to || opts.current.from || 'garden-duet';
-  const base = participant.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'garden-duet';
-  const filename = `bloomnote-duet-${base}.png`;
-  const file = new File([blob], filename, { type: 'image/png' });
-  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+  const blob = await rasterize(renderToStaticMarkup(<GardenDuetImage {...opts} />), W, H)
+  const participant = opts.current.to || opts.current.from || 'garden-duet'
+  const base =
+    participant
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'garden-duet'
+  const filename = `bloomnote-duet-${base}.png`
+  const file = new File([blob], filename, { type: 'image/png' })
+  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
 
   if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
     try {
-      await nav.share({ files: [file], title: 'a bloomnote duet', text: 'Two gardens, one little story' });
-      return 'shared';
+      await nav.share({ files: [file], title: 'a bloomnote duet', text: 'Two gardens, one little story' })
+      return 'shared'
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return 'dismissed';
+      if (error instanceof Error && error.name === 'AbortError') return 'dismissed'
     }
   }
-  downloadBlob(blob, filename);
-  return 'downloaded';
+  downloadBlob(blob, filename)
+  return 'downloaded'
 }
 
 /** Make one chosen bloom into a square pressed-flower keepsake. */
 export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Promise<GardenImageSaveResult> {
-  const blob = await rasterize(renderToStaticMarkup(<PressedFlowerImage flower={flower} meaning={meaning} />), W, H);
-  const base = flower.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'flower';
-  const filename = `bloomnote-${base}.png`;
-  const file = new File([blob], filename, { type: 'image/png' });
-  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+  const blob = await rasterize(
+    renderToStaticMarkup(<PressedFlowerImage flower={flower} meaning={meaning} />),
+    W,
+    H,
+  )
+  const base =
+    flower.name
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'flower'
+  const filename = `bloomnote-${base}.png`
+  const file = new File([blob], filename, { type: 'image/png' })
+  const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
   if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
     try {
-      await nav.share({ files: [file], title: flower.name, text: `${flower.name}: ${meaning}` });
-      return 'shared';
+      await nav.share({ files: [file], title: flower.name, text: `${flower.name}: ${meaning}` })
+      return 'shared'
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return 'dismissed';
+      if (error instanceof Error && error.name === 'AbortError') return 'dismissed'
     }
   }
-  downloadBlob(blob, filename);
-  return 'downloaded';
+  downloadBlob(blob, filename)
+  return 'downloaded'
 }
 
 // --- Link preview card ---------------------------------------------------
@@ -474,17 +610,17 @@ export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Prom
 // FlowerSVG and a palette; folding them together means every future tweak to the download card
 // silently changes what strangers see in a chat preview.
 
-const OG_W = 1200;
-const OG_H = 630;
+const OG_W = 1200
+const OG_H = 630
 
 function OgCard({ flowers, from, to }: GardenImageOpts) {
-  const panelX = 70;
-  const panelY = 128;
-  const panelW = OG_W - panelX * 2;
-  const panelH = 372;
-  const groundH = 104;
-  const groundSurface = panelY + panelH - groundH;
-  const n = Math.max(1, flowers.length);
+  const panelX = 70
+  const panelY = 128
+  const panelW = OG_W - panelX * 2
+  const panelH = 372
+  const groundH = 104
+  const groundSurface = panelY + panelH - groundH
+  const n = Math.max(1, flowers.length)
   /*
    * Fit the tallest flower, rather than trusting a constant.
    *
@@ -494,12 +630,12 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
    * sliced the tops off the two tallest. Deriving it from the actual garden means every card fills
    * the panel and none of them lose a flower head.
    */
-  const tallest = Math.max(150, ...flowers.map((f) => f.stemHeight + 80));
-  const headroom = 18;
-  const scale = Math.min(1.9, (groundSurface + 5 - (panelY + headroom)) / tallest);
-  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s);
-  const toName = to ? clipName(to) : 'you';
-  const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`;
+  const tallest = Math.max(150, ...flowers.map((f) => f.stemHeight + 80))
+  const headroom = 18
+  const scale = Math.min(1.9, (groundSurface + 5 - (panelY + headroom)) / tallest)
+  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s)
+  const toName = to ? clipName(to) : 'you'
+  const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`
 
   return (
     <svg
@@ -529,9 +665,9 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
         <rect x={panelX} y={panelY} width={panelW} height={panelH} fill="url(#ogSky)" />
         <Soil x={panelX} w={panelW} surfaceY={groundSurface} bottomY={groundSurface + groundH} />
         {flowers.map((f, i) => {
-          const svgH = f.stemHeight + 80;
-          const dispW = 80 * scale;
-          const cx = panelX + (panelW * (i + 0.5)) / n;
+          const svgH = f.stemHeight + 80
+          const dispW = 80 * scale
+          const cx = panelX + (panelW * (i + 0.5)) / n
           return (
             <g
               key={i}
@@ -539,7 +675,7 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
             >
               <FlowerSVG flower={f} index={i} bloomed staticRender />
             </g>
-          );
+          )
         })}
       </g>
       <rect
@@ -553,11 +689,18 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
         strokeWidth="2"
       />
 
-      <text x={OG_W / 2} y={panelY + panelH + 60} textAnchor="middle" fontSize="40" fontWeight="bold" fill="#3f6b3a">
+      <text
+        x={OG_W / 2}
+        y={panelY + panelH + 60}
+        textAnchor="middle"
+        fontSize="40"
+        fontWeight="bold"
+        fill="#3f6b3a"
+      >
         bloomnote
       </text>
     </svg>
-  );
+  )
 }
 
 /**
@@ -570,15 +713,15 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
  */
 export async function uploadOgImage(id: string, opts: GardenImageOpts): Promise<void> {
   try {
-    const svg = renderToStaticMarkup(<OgCard {...opts} />);
+    const svg = renderToStaticMarkup(<OgCard {...opts} />)
     // 1x for the card: 1200x630 is already the declared size, and a 2x PNG of this is around
     // a megabyte, which is both over the Worker's cap and slower to unfurl than it is prettier.
-    const png = await rasterize(svg, OG_W, OG_H, 1);
+    const png = await rasterize(svg, OG_W, OG_H, 1)
     await fetch(`/api/garden/${id}/og`, {
       method: 'POST',
       headers: { 'content-type': 'image/png' },
       body: png,
-    });
+    })
   } catch {
     // Swallowed on purpose. See above.
   }

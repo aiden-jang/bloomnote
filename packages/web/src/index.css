@@ -1,4 +1,10 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 :root {
   /*
@@ -14,22 +20,52 @@
    * invalidate the whole `animation` shorthand and stop the animation rather than restyle it.
    */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: linear(0, 0.038, 0.13, 0.248, 0.373, 0.494, 0.604, 0.699, 0.778, 0.842, 0.893, 0.931, 0.959, 0.98, 0.993, 1.002, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
+  --ease-spring: linear(
+    0,
+    0.038,
+    0.13,
+    0.248,
+    0.373,
+    0.494,
+    0.604,
+    0.699,
+    0.778,
+    0.842,
+    0.893,
+    0.931,
+    0.959,
+    0.98,
+    0.993,
+    1.002,
+    1.008,
+    1.01,
+    1.011,
+    1.011,
+    1.01,
+    1.009,
+    1.007,
+    1.006,
+    1.005,
+    1.004,
+    1.003,
+    1.002,
+    1
+  );
 
-  --green-deep:  #2d5a1b;
-  --green-mid:   #4a7c3f;
+  --green-deep: #2d5a1b;
+  --green-mid: #4a7c3f;
   --green-light: #7db56a;
-  --green-pale:  #c8e6b0;
-  --cream:       #faf6ee;
-  --soil:        #8b5e3c;
-  --soil-dark:   #6b4423;
-  --sky:         #e8f4fd;
-  --text-dark:   #1e3a10;
-  --text-mid:    #4a6741;
+  --green-pale: #c8e6b0;
+  --cream: #faf6ee;
+  --soil: #8b5e3c;
+  --soil-dark: #6b4423;
+  --sky: #e8f4fd;
+  --text-dark: #1e3a10;
+  --text-mid: #4a6741;
   /* Secondary copy: helper lines, counters, captions, the composer's prompts. This carries real
      text, not decoration, so it has to clear 4.5:1 — it sits at 4.54 on cream and 4.89 on the
      white cards, still clearly lighter than --text-mid (5.89). */
-  --text-light:  #5a7953;
+  --text-light: #5a7953;
   /*
    * Standalone text links (the 404 and error shells, /mine, the error boundary).
    *
@@ -72,7 +108,7 @@
    */
   --line: var(--green-pale);
 
-  --pink-mid:  #e0919f;
+  --pink-mid: #e0919f;
   --pink-deep: #a3546a;
   /* Fraunces is a variable serif with personality — slight wobble in
      the heavier weights that reads as "deliberately set." Playfair
@@ -85,7 +121,7 @@
    * pages skipped straight to Georgia wherever Fraunces had not loaded.
    */
   --font-display: var(--serif);
-  --sans:  'DM Sans', system-ui, sans-serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
   /* The two fixed corner chips: the sound toggle and the account pill. They sit side by side but
      are drawn by different components, one in a CSS module and one in inline styles, so keep the
      geometry here or they drift apart. */
@@ -94,7 +130,9 @@
   --chip-gap: 12px;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
@@ -105,9 +143,7 @@ body {
      the base cream, so the page reads as a lit surface rather than a
      flat fill. Fixed so it stays put as the composer scrolls. Layers
      under the paper-grain overlay for a printed-paper feel. */
-  background:
-    radial-gradient(115% 75% at 50% -8%, #fffdf7 0%, var(--cream) 58%),
-    var(--cream);
+  background: radial-gradient(115% 75% at 50% -8%, #fffdf7 0%, var(--cream) 58%), var(--cream);
   background-attachment: fixed;
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
@@ -154,40 +190,76 @@ button {
   outline-offset: 2px;
 }
 
-textarea, input {
+textarea,
+input {
   font-family: var(--sans);
   outline: none;
 }
 
-h1, h2, h3 { text-wrap: balance; }
-p { text-wrap: pretty; }
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
 
 @keyframes sway {
-  0%, 100% { transform: rotate(-1deg); }
-  50%       { transform: rotate(1deg); }
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
 }
 
 @keyframes popIn {
-  0%   { transform: scale(0); opacity: 0; }
-  70%  { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes petalSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes bloomStem {
-  from { transform: scaleY(0); }
-  to   { transform: scaleY(1); }
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
 }
 
 @keyframes drift {
-  0%   { transform: translateX(0px) translateY(0px); }
-  33%  { transform: translateX(4px) translateY(-3px); }
-  66%  { transform: translateX(-3px) translateY(2px); }
-  100% { transform: translateX(0px) translateY(0px); }
+  0% {
+    transform: translateX(0px) translateY(0px);
+  }
+  33% {
+    transform: translateX(4px) translateY(-3px);
+  }
+  66% {
+    transform: translateX(-3px) translateY(2px);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px);
+  }
 }
 
 /* Print stylesheet.
@@ -218,7 +290,9 @@ p { text-wrap: pretty; }
      properties, not shorthand for it: clearing `transform` leaves them applied. The plot's desktop
      zoom is a `scale`, and on a wide print canvas it survived this reset and printed the garden a
      third larger than the column it sits in. */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     opacity: 1 !important;
     transform: none !important;
     scale: none !important;

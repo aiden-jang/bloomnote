@@ -40,7 +40,10 @@
      this point size; the small SOFT + WONK values give the wordmark
      the slight wobble that Fraunces is known for without going
      full-novelty. */
-  font-variation-settings: 'opsz' 96, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 96,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 .subtitle {
@@ -67,8 +70,14 @@
 }
 
 @keyframes recoveredNote {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* On narrow screens the fixed account pill (your gardens / name / sign out)
@@ -122,7 +131,9 @@
   /* Soft green-tinted lift so the field reads as a raised surface on
      the warm page gradient rather than a flat cutout. */
   box-shadow: 0 1px 3px rgba(45, 90, 27, 0.05);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .textarea:focus {
@@ -130,7 +141,9 @@
   /* Soft green focus ring (over the resting lift) — clearer focus
      target than a border shift alone, consistent with the
      lifted-surface language. */
-  box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.12), 0 1px 3px rgba(45, 90, 27, 0.05);
+  box-shadow:
+    0 0 0 3px rgba(74, 124, 63, 0.12),
+    0 1px 3px rgba(45, 90, 27, 0.05);
 }
 
 /* Optional and folded away: the main note remains the obvious task, while senders who want a
@@ -150,9 +163,16 @@
   list-style: none;
 }
 
-.secretNote summary::-webkit-details-marker { display: none; }
-.secretNote summary::after { content: ' +'; color: var(--text-light); }
-.secretNote[open] summary::after { content: ' −'; }
+.secretNote summary::-webkit-details-marker {
+  display: none;
+}
+.secretNote summary::after {
+  content: ' +';
+  color: var(--text-light);
+}
+.secretNote[open] summary::after {
+  content: ' −';
+}
 
 .secretNoteField {
   position: relative;
@@ -270,12 +290,16 @@
   color: var(--text-dark);
   background: white;
   box-shadow: 0 1px 3px rgba(45, 90, 27, 0.05);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .input:focus {
   border-color: var(--green-mid);
-  box-shadow: 0 0 0 3px rgba(74, 124, 63, 0.12), 0 1px 3px rgba(45, 90, 27, 0.05);
+  box-shadow:
+    0 0 0 3px rgba(74, 124, 63, 0.12),
+    0 1px 3px rgba(45, 90, 27, 0.05);
 }
 
 /* Occasion + mood as pill chips instead of dropdowns — every option is
@@ -304,7 +328,11 @@
   background: white;
   color: var(--text-mid);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .chip:hover {
@@ -343,8 +371,7 @@
   border: 1px solid var(--green-pale);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 92% 0%, rgba(194, 216, 179, 0.32), transparent 44%),
-    rgba(255, 255, 255, 0.58);
+    radial-gradient(circle at 92% 0%, rgba(194, 216, 179, 0.32), transparent 44%), rgba(255, 255, 255, 0.58);
   box-shadow: 0 8px 24px rgba(45, 90, 27, 0.06);
 }
 
@@ -467,12 +494,20 @@
 }
 
 @keyframes scheduleIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scheduleBlock { animation: none; }
+  .scheduleBlock {
+    animation: none;
+  }
 }
 
 /* Title + cancel on one line. */
@@ -506,7 +541,11 @@
   padding: 6px 12px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .presetChip:hover {
@@ -583,7 +622,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .calNav:hover:not(:disabled) {
@@ -630,7 +671,10 @@
   font-size: 13px;
   color: var(--text-dark);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .calDay:hover:not(:disabled) {
@@ -699,7 +743,9 @@
   background: white;
   border: 1px solid var(--green-pale);
   border-radius: 8px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .scheduleTimeInput:focus {
@@ -757,7 +803,10 @@
   font-size: 15px;
   font-weight: 500;
   box-shadow: 0 4px 14px rgba(45, 90, 27, 0.22);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    opacity 0.15s;
 }
 
 .generateBtn:hover:not(:disabled) {
@@ -866,7 +915,9 @@
   padding: 4px 12px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .undoBtn:hover {
@@ -893,7 +944,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .undoDismiss:hover {
@@ -1066,13 +1119,29 @@
 }
 
 @keyframes sproutStem {
-  0%, 100% { transform: scaleY(0); }
-  35%, 75% { transform: scaleY(1); }
+  0%,
+  100% {
+    transform: scaleY(0);
+  }
+  35%,
+  75% {
+    transform: scaleY(1);
+  }
 }
 
 @keyframes sproutLeaf {
-  0%, 30%, 80%, 100% { opacity: 0; transform: scale(0); }
-  50%, 70%           { opacity: 1; transform: scale(1); }
+  0%,
+  30%,
+  80%,
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50%,
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .cancelBtn {
@@ -1129,7 +1198,10 @@
   font-size: 11px;
   font-weight: 600;
   text-decoration: none;
-  transition: border-color 0.15s, color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.15s;
 }
 
 .fullRevealPreview:hover {
@@ -1206,8 +1278,14 @@
 }
 
 @keyframes secretPreviewOpen {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .previewGrownOn {
@@ -1321,7 +1399,10 @@
   font-weight: 500;
   border: none;
   box-shadow: 0 3px 12px rgba(45, 90, 27, 0.2);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    opacity 0.15s;
 }
 
 .copyBtn:hover:not(:disabled) {
@@ -1345,7 +1426,10 @@
   font-weight: 500;
   border: none;
   box-shadow: 0 3px 12px rgba(45, 90, 27, 0.2);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    opacity 0.15s;
 }
 
 .shareBtn:hover:not(:disabled) {
@@ -1493,8 +1577,14 @@
  * across modules is the cost of each file standing on its own, and it is four lines.
  */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /*
@@ -1549,14 +1639,26 @@
 }
 
 @keyframes petalFall {
-  0% { opacity: 0; transform: translate(0, 0) rotate(var(--rotate)); }
-  10% { opacity: 0.55; }
-  80% { opacity: 0.55; }
-  100% { opacity: 0; transform: translate(var(--drift), 112vh) rotate(calc(var(--rotate) + 320deg)); }
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(var(--rotate));
+  }
+  10% {
+    opacity: 0.55;
+  }
+  80% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), 112vh) rotate(calc(var(--rotate) + 320deg));
+  }
 }
 
 /* The component already returns nothing under reduced motion; this is the belt to that braces,
    in case it is ever rendered from somewhere that does not check. */
 @media (prefers-reduced-motion: reduce) {
-  .petalFall { display: none; }
+  .petalFall {
+    display: none;
+  }
 }

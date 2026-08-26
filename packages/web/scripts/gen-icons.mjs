@@ -47,7 +47,10 @@ for (const [name, size, background] of TARGETS) {
   // fitTo: width tells resvg to render at exactly `size` pixels wide.
   // Since our SVG has a square viewBox (32×32) and we want square
   // outputs, that's all we need to pin the aspect ratio.
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: size }, ...(background ? { background } : {}) })
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'width', value: size },
+    ...(background ? { background } : {}),
+  })
   const png = resvg.render().asPng()
   const outPath = resolve(ROOT, 'public', name)
   writeFileSync(outPath, png)

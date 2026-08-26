@@ -7,35 +7,35 @@
  * say "this was nice" would cost more than the gesture is worth.
  */
 
-const KEY = 'bloomnote.watered.v1';
+const KEY = 'bloomnote.watered.v1'
 /** Plenty for one person's gardens, and small enough that the key can never grow unbounded. */
-const REMEMBER_LIMIT = 200;
-const FEELING_KEY = 'bloomnote.feeling.v1';
-export type Feeling = 'love' | 'comfort' | 'joy' | 'hug';
-export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> };
+const REMEMBER_LIMIT = 200
+const FEELING_KEY = 'bloomnote.feeling.v1'
+export type Feeling = 'love' | 'comfort' | 'joy' | 'hug'
+export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> }
 
 function read(): string[] {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+    const raw = localStorage.getItem(KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
   } catch {
     // Private mode, disabled storage, or junk in the key. Forgetting is harmless: the button comes
     // back and the server still counts.
-    return [];
+    return []
   }
 }
 
 export function hasWatered(id: string): boolean {
-  return read().includes(id);
+  return read().includes(id)
 }
 
 export function rememberWatered(id: string): void {
   try {
-    const ids = read().filter(x => x !== id);
-    ids.push(id);
-    localStorage.setItem(KEY, JSON.stringify(ids.slice(-REMEMBER_LIMIT)));
+    const ids = read().filter((x) => x !== id)
+    ids.push(id)
+    localStorage.setItem(KEY, JSON.stringify(ids.slice(-REMEMBER_LIMIT)))
   } catch {
     // no-op
   }
@@ -43,19 +43,21 @@ export function rememberWatered(id: string): void {
 
 export function rememberedFeeling(id: string): Feeling | null {
   try {
-    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>;
-    const value = parsed[id];
-    return value === 'love' || value === 'comfort' || value === 'joy' || value === 'hug' ? value : null;
+    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>
+    const value = parsed[id]
+    return value === 'love' || value === 'comfort' || value === 'joy' || value === 'hug' ? value : null
   } catch {
-    return null;
+    return null
   }
 }
 
 function rememberFeeling(id: string, feeling: Feeling): void {
   try {
-    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>;
-    const entries = Object.entries(parsed).filter(([gardenId]) => gardenId !== id).slice(-(REMEMBER_LIMIT - 1));
-    localStorage.setItem(FEELING_KEY, JSON.stringify(Object.fromEntries([...entries, [id, feeling]])));
+    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>
+    const entries = Object.entries(parsed)
+      .filter(([gardenId]) => gardenId !== id)
+      .slice(-(REMEMBER_LIMIT - 1))
+    localStorage.setItem(FEELING_KEY, JSON.stringify(Object.fromEntries([...entries, [id, feeling]])))
   } catch {
     // Optional device memory only.
   }
@@ -63,11 +65,11 @@ function rememberFeeling(id: string, feeling: Feeling): void {
 
 export async function fetchGardenResponse(id: string): Promise<GardenResponse> {
   try {
-    const response = await fetch(`/api/garden/${id}/response`);
-    if (!response.ok) return { waters: 0, feelings: {} };
-    return (await response.json()) as GardenResponse;
+    const response = await fetch(`/api/garden/${id}/response`)
+    if (!response.ok) return { waters: 0, feelings: {} }
+    return (await response.json()) as GardenResponse
   } catch {
-    return { waters: 0, feelings: {} };
+    return { waters: 0, feelings: {} }
   }
 }
 
@@ -77,35 +79,35 @@ export async function sendFeeling(id: string, feeling: Feeling): Promise<GardenR
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ feeling }),
-    });
-    if (!response.ok) return null;
-    rememberFeeling(id, feeling);
-    return (await response.json()) as GardenResponse;
+    })
+    if (!response.ok) return null
+    rememberFeeling(id, feeling)
+    return (await response.json()) as GardenResponse
   } catch {
-    return null;
+    return null
   }
 }
 
 export async function fetchResponsesBatch(ids: string[]): Promise<Record<string, GardenResponse>> {
-  if (ids.length === 0) return {};
+  if (ids.length === 0) return {}
   try {
-    const response = await fetch(`/api/responses?ids=${encodeURIComponent(ids.join(','))}`);
-    if (!response.ok) return {};
-    return ((await response.json()) as { responses?: Record<string, GardenResponse> }).responses ?? {};
+    const response = await fetch(`/api/responses?ids=${encodeURIComponent(ids.join(','))}`)
+    if (!response.ok) return {}
+    return ((await response.json()) as { responses?: Record<string, GardenResponse> }).responses ?? {}
   } catch {
-    return {};
+    return {}
   }
 }
 
 /** How many times this garden has been watered. 0 on any failure — never blocks the view. */
 export async function fetchWaters(id: string): Promise<number> {
   try {
-    const r = await fetch(`/api/garden/${id}/water`);
-    if (!r.ok) return 0;
-    const n = ((await r.json()) as { waters?: unknown }).waters;
-    return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0;
+    const r = await fetch(`/api/garden/${id}/water`)
+    if (!r.ok) return 0
+    const n = ((await r.json()) as { waters?: unknown }).waters
+    return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0
   } catch {
-    return 0;
+    return 0
   }
 }
 
@@ -118,38 +120,38 @@ export async function fetchWaters(id: string): Promise<number> {
  * mention watering.
  */
 export async function fetchWatersBatch(ids: string[]): Promise<Record<string, number>> {
-  if (ids.length === 0) return {};
+  if (ids.length === 0) return {}
   try {
-    const r = await fetch(`/api/waters?ids=${encodeURIComponent(ids.join(','))}`);
-    if (!r.ok) return {};
-    const raw = ((await r.json()) as { waters?: unknown }).waters;
-    if (!raw || typeof raw !== 'object') return {};
-    const out: Record<string, number> = {};
+    const r = await fetch(`/api/waters?ids=${encodeURIComponent(ids.join(','))}`)
+    if (!r.ok) return {}
+    const raw = ((await r.json()) as { waters?: unknown }).waters
+    if (!raw || typeof raw !== 'object') return {}
+    const out: Record<string, number> = {}
     for (const [id, n] of Object.entries(raw as Record<string, unknown>)) {
-      if (typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = n;
+      if (typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = n
     }
-    return out;
+    return out
   } catch {
-    return {};
+    return {}
   }
 }
 
 /** Water it. Resolves to the new count, or null if the write failed. */
 export async function sendWater(id: string): Promise<number | null> {
   try {
-    const r = await fetch(`/api/garden/${id}/water`, { method: 'POST' });
-    if (!r.ok) return null;
-    const n = ((await r.json()) as { waters?: unknown }).waters;
-    return typeof n === 'number' && Number.isFinite(n) ? n : null;
+    const r = await fetch(`/api/garden/${id}/water`, { method: 'POST' })
+    if (!r.ok) return null
+    const n = ((await r.json()) as { waters?: unknown }).waters
+    return typeof n === 'number' && Number.isFinite(n) ? n : null
   } catch {
-    return null;
+    return null
   }
 }
 
 /** "watered once" / "watered twice" / "watered 5 times" — the count as a sentence. */
 export function watersLabel(n: number): string {
-  if (n <= 0) return '';
-  if (n === 1) return 'watered once';
-  if (n === 2) return 'watered twice';
-  return `watered ${n} times`;
+  if (n <= 0) return ''
+  if (n === 1) return 'watered once'
+  if (n === 2) return 'watered twice'
+  return `watered ${n} times`
 }

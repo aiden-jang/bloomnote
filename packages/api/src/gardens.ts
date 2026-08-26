@@ -1,13 +1,13 @@
-import type { Env } from './env.js';
+import type { Env } from './env.js'
 
 // 6 chars of a curated base62 (no 0/O/1/l/I) = ~56 billion ids; collisions are effectively
 // impossible for this app's volume, but we still retry on the rare hit. The short code IS the
 // primary key — KV stores work this way.
-const ID_ALPHABET = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ID_LENGTH = 6;
-const MAX_COLLISION_RETRIES = 4;
-const MAX_GARDEN_BYTES = 16 * 1024; // real gardens are ~2KB; reject anything that would blow the budget
-const ID_RE = /^[A-Za-z0-9]{4,12}$/;
+const ID_ALPHABET = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+const ID_LENGTH = 6
+const MAX_COLLISION_RETRIES = 4
+const MAX_GARDEN_BYTES = 16 * 1024 // real gardens are ~2KB; reject anything that would blow the budget
+const ID_RE = /^[A-Za-z0-9]{4,12}$/
 
 // KV layout:
 //   g:<id>              -> full garden JSON (immutable; may carry ownerId once claimed/created signed-in)
@@ -21,23 +21,23 @@ const ID_RE = /^[A-Za-z0-9]{4,12}$/;
 
 /** Thin per-garden card data for /mine, so listing never reads every full garden. */
 export interface GardenSummary {
-  id: string;
-  from: string;
-  to: string;
-  occasion?: string;
-  createdAt: string;
-  unlockAt?: string;
-  swatches: string[];
+  id: string
+  from: string
+  to: string
+  occasion?: string
+  createdAt: string
+  unlockAt?: string
+  swatches: string[]
   /** Set only on received items. */
-  receivedAt?: string;
+  receivedAt?: string
 }
 
 function generateId(): string {
-  const bytes = new Uint8Array(ID_LENGTH);
-  crypto.getRandomValues(bytes);
-  let id = '';
-  for (let i = 0; i < ID_LENGTH; i++) id += ID_ALPHABET[bytes[i]! % ID_ALPHABET.length];
-  return id;
+  const bytes = new Uint8Array(ID_LENGTH)
+  crypto.getRandomValues(bytes)
+  let id = ''
+  for (let i = 0; i < ID_LENGTH; i++) id += ID_ALPHABET[bytes[i]! % ID_ALPHABET.length]
+  return id
 }
 
 // --- Flower shape -------------------------------------------------------
@@ -52,27 +52,27 @@ function generateId(): string {
 // one, because gardens stored before this check existed are already in KV and a keepsake link has
 // to keep working.
 
-const HEX_RE = /^#[0-9a-fA-F]{6}$/;
-const SHAPES = new Set(['round', 'elongated', 'bell', 'small', 'star']);
+const HEX_RE = /^#[0-9a-fA-F]{6}$/
+const SHAPES = new Set(['round', 'elongated', 'bell', 'small', 'star'])
 // Wider than the design prompt's own ranges (petalCount 5–14, stemHeight 70–115) on purpose. The
 // door only has to guarantee the thing is drawable; tuning what looks *good* belongs to the prompt,
 // and coupling the two would mean a prompt tweak silently starts rejecting writes.
-const PETAL_COUNT = { min: 3, max: 20, fallback: 8 };
-const STEM_HEIGHT = { min: 40, max: 160, fallback: 90 };
-const FALLBACK_PETALS = ['#F2B8C6', '#F7CBD6', '#FADEE5'];
-const FALLBACK_CENTER = '#FFC53D';
-const FALLBACK_STEM = '#7C9A6E';
+const PETAL_COUNT = { min: 3, max: 20, fallback: 8 }
+const STEM_HEIGHT = { min: 40, max: 160, fallback: 90 }
+const FALLBACK_PETALS = ['#F2B8C6', '#F7CBD6', '#FADEE5']
+const FALLBACK_CENTER = '#FFC53D'
+const FALLBACK_STEM = '#7C9A6E'
 
-const isHex = (v: unknown): v is string => typeof v === 'string' && HEX_RE.test(v);
+const isHex = (v: unknown): v is string => typeof v === 'string' && HEX_RE.test(v)
 
 function isCount(v: unknown, { min, max }: { min: number; max: number }): v is number {
-  return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
+  return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max
 }
 
 /** Can every renderer draw this flower without producing a NaN? */
 function isRenderableFlower(value: unknown): boolean {
-  if (!value || typeof value !== 'object') return false;
-  const f = value as Record<string, unknown>;
+  if (!value || typeof value !== 'object') return false
+  const f = value as Record<string, unknown>
   return (
     Array.isArray(f.petalColors) &&
     f.petalColors.length === 3 &&
@@ -83,13 +83,13 @@ function isRenderableFlower(value: unknown): boolean {
     SHAPES.has(f.petalShape) &&
     isCount(f.petalCount, PETAL_COUNT) &&
     isCount(f.stemHeight, STEM_HEIGHT)
-  );
+  )
 }
 
 /** Substitute a drawable value for anything missing or out of range. Never throws. */
 function repairFlower(value: unknown): Record<string, unknown> {
-  const f = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
-  const petals = Array.isArray(f.petalColors) ? f.petalColors.filter(isHex) : [];
+  const f = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
+  const petals = Array.isArray(f.petalColors) ? f.petalColors.filter(isHex) : []
   return {
     ...f,
     name: typeof f.name === 'string' && f.name.trim() ? f.name : 'a flower',
@@ -100,44 +100,44 @@ function repairFlower(value: unknown): Record<string, unknown> {
     petalShape: typeof f.petalShape === 'string' && SHAPES.has(f.petalShape) ? f.petalShape : 'round',
     petalCount: isCount(f.petalCount, PETAL_COUNT) ? f.petalCount : PETAL_COUNT.fallback,
     stemHeight: isCount(f.stemHeight, STEM_HEIGHT) ? f.stemHeight : STEM_HEIGHT.fallback,
-  };
+  }
 }
 
 /** Structural check: shaped like a garden, drawable, and not absurdly large. */
 export function looksLikeGarden(value: unknown): boolean {
-  if (!value || typeof value !== 'object') return false;
-  const g = value as Record<string, unknown>;
+  if (!value || typeof value !== 'object') return false
+  const g = value as Record<string, unknown>
   // The design path produces 3–5 flowers and both renderers (GardenScene, the share image) are
   // laid out for that; cap the write at 5 so a crafted payload can't store a garden that overlaps.
-  if (!Array.isArray(g.flowers) || g.flowers.length === 0 || g.flowers.length > 5) return false;
-  if (!g.flowers.every(isRenderableFlower)) return false;
+  if (!Array.isArray(g.flowers) || g.flowers.length === 0 || g.flowers.length > 5) return false
+  if (!g.flowers.every(isRenderableFlower)) return false
   // A reply carries the garden it answers, and the recipient view renders that one too. Depth is
   // capped at 1 by the composer, so one level of recursion covers it.
-  if (g.previous !== undefined && !looksLikeGarden(g.previous)) return false;
-  return true;
+  if (g.previous !== undefined && !looksLikeGarden(g.previous)) return false
+  return true
 }
 
 /** Make a stored garden drawable. Applied on read so pre-validation records still open. */
 export function repairGarden(value: unknown): unknown {
-  if (!value || typeof value !== 'object') return value;
-  const g = value as Record<string, unknown>;
-  if (!Array.isArray(g.flowers)) return value;
-  const out: Record<string, unknown> = { ...g, flowers: g.flowers.map(repairFlower) };
-  if (g.previous && typeof g.previous === 'object') out.previous = repairGarden(g.previous);
-  return out;
+  if (!value || typeof value !== 'object') return value
+  const g = value as Record<string, unknown>
+  if (!Array.isArray(g.flowers)) return value
+  const out: Record<string, unknown> = { ...g, flowers: g.flowers.map(repairFlower) }
+  if (g.previous && typeof g.previous === 'object') out.previous = repairGarden(g.previous)
+  return out
 }
 
 function str(v: unknown): string {
-  return typeof v === 'string' ? v : '';
+  return typeof v === 'string' ? v : ''
 }
 
 function summarize(id: string, garden: Record<string, unknown>): GardenSummary {
-  const flowers = Array.isArray(garden.flowers) ? garden.flowers : [];
-  const swatches: string[] = [];
+  const flowers = Array.isArray(garden.flowers) ? garden.flowers : []
+  const swatches: string[] = []
   for (const f of flowers.slice(0, 5)) {
-    const pc = (f as Record<string, unknown> | null)?.petalColors;
-    const first = Array.isArray(pc) ? pc[0] : undefined;
-    if (typeof first === 'string') swatches.push(first);
+    const pc = (f as Record<string, unknown> | null)?.petalColors
+    const first = Array.isArray(pc) ? pc[0] : undefined
+    if (typeof first === 'string') swatches.push(first)
   }
   const summary: GardenSummary = {
     id,
@@ -145,10 +145,10 @@ function summarize(id: string, garden: Record<string, unknown>): GardenSummary {
     to: str(garden.to),
     createdAt: str(garden.createdAt) || new Date().toISOString(),
     swatches,
-  };
-  if (typeof garden.occasion === 'string') summary.occasion = garden.occasion;
-  if (typeof garden.unlockAt === 'string') summary.unlockAt = garden.unlockAt;
-  return summary;
+  }
+  if (typeof garden.occasion === 'string') summary.occasion = garden.occasion
+  if (typeof garden.unlockAt === 'string') summary.unlockAt = garden.unlockAt
+  return summary
 }
 
 /*
@@ -165,12 +165,12 @@ function summarize(id: string, garden: Record<string, unknown>): GardenSummary {
  * case the metadata is dropped and the reader falls back to fetching the value. Nothing is lost,
  * that entry just costs a subrequest again.
  */
-const KV_METADATA_LIMIT = 1024;
+const KV_METADATA_LIMIT = 1024
 
 async function putIndex(env: Env, key: string, summary: GardenSummary): Promise<void> {
-  const body = JSON.stringify(summary);
-  const fits = new TextEncoder().encode(body).length <= KV_METADATA_LIMIT;
-  await env.GARDENS.put(key, body, fits ? { metadata: summary } : {});
+  const body = JSON.stringify(summary)
+  const fits = new TextEncoder().encode(body).length <= KV_METADATA_LIMIT
+  await env.GARDENS.put(key, body, fits ? { metadata: summary } : {})
 }
 
 /**
@@ -184,34 +184,35 @@ async function putIndex(env: Env, key: string, summary: GardenSummary): Promise<
  * the picture on somebody's gift; first write wins and the rest are refused. Combined with the
  * 6-char id being unguessable, that is the whole threat model.
  */
-const MAX_OG_BYTES = 400 * 1024;
+const MAX_OG_BYTES = 400 * 1024
 
-export type OgResult = { ok: true } | { ok: false; status: 400 | 409 | 413; message: string };
+export type OgResult = { ok: true } | { ok: false; status: 400 | 409 | 413; message: string }
 
 export async function putOgImage(env: Env, id: string, bytes: ArrayBuffer): Promise<OgResult> {
-  if (!ID_RE.test(id)) return { ok: false, status: 400, message: 'Bad id.' };
-  if (bytes.byteLength === 0) return { ok: false, status: 400, message: 'Empty image.' };
+  if (!ID_RE.test(id)) return { ok: false, status: 400, message: 'Bad id.' }
+  if (bytes.byteLength === 0) return { ok: false, status: 400, message: 'Empty image.' }
   if (bytes.byteLength > MAX_OG_BYTES) {
-    return { ok: false, status: 413, message: `Image exceeds ${MAX_OG_BYTES} bytes.` };
+    return { ok: false, status: 413, message: `Image exceeds ${MAX_OG_BYTES} bytes.` }
   }
   // A PNG always starts with these eight bytes. Cheap, and it stops the store being used as a
   // dumping ground for arbitrary blobs that would then be served with an image content type.
-  const head = new Uint8Array(bytes.slice(0, 8));
-  const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  if (!PNG.every((b, i) => head[i] === b)) return { ok: false, status: 400, message: 'Not a PNG.' };
+  const head = new Uint8Array(bytes.slice(0, 8))
+  const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+  if (!PNG.every((b, i) => head[i] === b)) return { ok: false, status: 400, message: 'Not a PNG.' }
   // The garden has to exist, so an image cannot be parked against an id nobody has claimed.
-  if ((await env.GARDENS.get(`g:${id}`)) === null) return { ok: false, status: 400, message: 'No such garden.' };
+  if ((await env.GARDENS.get(`g:${id}`)) === null)
+    return { ok: false, status: 400, message: 'No such garden.' }
   if ((await env.GARDENS.get(`og:${id}`, 'stream')) !== null) {
-    return { ok: false, status: 409, message: 'Already has an image.' };
+    return { ok: false, status: 409, message: 'Already has an image.' }
   }
-  await env.GARDENS.put(`og:${id}`, bytes);
-  return { ok: true };
+  await env.GARDENS.put(`og:${id}`, bytes)
+  return { ok: true }
 }
 
 /** The stored PNG, or null. */
 export async function readOgImage(env: Env, id: string): Promise<ArrayBuffer | null> {
-  if (!ID_RE.test(id)) return null;
-  return env.GARDENS.get(`og:${id}`, 'arrayBuffer');
+  if (!ID_RE.test(id)) return null
+  return env.GARDENS.get(`og:${id}`, 'arrayBuffer')
 }
 
 /*
@@ -232,63 +233,64 @@ export async function readOgImage(env: Env, id: string): Promise<ArrayBuffer | n
  *   into one. A counter that undercounts by one during a tie is fine; taking a lock on a Durable
  *   Object to protect a decorative number is not.
  */
-const MAX_WATERS = 99;
-export const FEELINGS = ['love', 'comfort', 'joy', 'hug'] as const;
-export type Feeling = (typeof FEELINGS)[number];
-export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> };
+const MAX_WATERS = 99
+export const FEELINGS = ['love', 'comfort', 'joy', 'hug'] as const
+export type Feeling = (typeof FEELINGS)[number]
+export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> }
 
 function parseResponse(raw: string | null): GardenResponse {
-  if (raw === null) return { waters: 0, feelings: {} };
-  const legacy = Number.parseInt(raw, 10);
+  if (raw === null) return { waters: 0, feelings: {} }
+  const legacy = Number.parseInt(raw, 10)
   if (/^\d+$/.test(raw) && Number.isFinite(legacy)) {
-    return { waters: Math.min(MAX_WATERS, Math.max(0, legacy)), feelings: {} };
+    return { waters: Math.min(MAX_WATERS, Math.max(0, legacy)), feelings: {} }
   }
   try {
-    const value = JSON.parse(raw) as Partial<GardenResponse>;
-    const feelings: Partial<Record<Feeling, number>> = {};
+    const value = JSON.parse(raw) as Partial<GardenResponse>
+    const feelings: Partial<Record<Feeling, number>> = {}
     for (const feeling of FEELINGS) {
-      const count = value.feelings?.[feeling];
+      const count = value.feelings?.[feeling]
       if (typeof count === 'number' && Number.isFinite(count) && count > 0) {
-        feelings[feeling] = Math.min(MAX_WATERS, Math.floor(count));
+        feelings[feeling] = Math.min(MAX_WATERS, Math.floor(count))
       }
     }
     return {
-      waters: typeof value.waters === 'number' ? Math.min(MAX_WATERS, Math.max(0, Math.floor(value.waters))) : 0,
+      waters:
+        typeof value.waters === 'number' ? Math.min(MAX_WATERS, Math.max(0, Math.floor(value.waters))) : 0,
       feelings,
-    };
+    }
   } catch {
-    return { waters: 0, feelings: {} };
+    return { waters: 0, feelings: {} }
   }
 }
 
 export async function readGardenResponse(env: Env, id: string): Promise<GardenResponse> {
-  if (!ID_RE.test(id)) return { waters: 0, feelings: {} };
-  return parseResponse(await env.GARDENS.get(`water:${id}`));
+  if (!ID_RE.test(id)) return { waters: 0, feelings: {} }
+  return parseResponse(await env.GARDENS.get(`water:${id}`))
 }
 
-export type WaterResult = { ok: true; waters: number } | { ok: false; status: 400; message: string };
+export type WaterResult = { ok: true; waters: number } | { ok: false; status: 400; message: string }
 
 export async function waterGarden(env: Env, id: string): Promise<WaterResult> {
-  if (!ID_RE.test(id)) return { ok: false, status: 400, message: 'Bad id.' };
+  if (!ID_RE.test(id)) return { ok: false, status: 400, message: 'Bad id.' }
   // The garden has to exist, so nobody can park a counter against an unclaimed id.
   if ((await env.GARDENS.get(`g:${id}`)) === null) {
-    return { ok: false, status: 400, message: 'No such garden.' };
+    return { ok: false, status: 400, message: 'No such garden.' }
   }
-  const response = await readGardenResponse(env, id);
-  const current = response.waters;
+  const response = await readGardenResponse(env, id)
+  const current = response.waters
   // At the cap, answer without writing. Math.min alone clamps the number but still put()s it, so a
   // loop against one garden was an unbounded stream of KV writes — and KV writes are the scarce
   // quota here, shared with garden creation. Exhausting it would stop anyone making a new garden,
   // which is a far worse outcome than a counter that stops climbing.
-  if (current >= MAX_WATERS) return { ok: true, waters: MAX_WATERS };
-  const next = current + 1;
-  await env.GARDENS.put(`water:${id}`, JSON.stringify({ ...response, waters: next }));
-  return { ok: true, waters: next };
+  if (current >= MAX_WATERS) return { ok: true, waters: MAX_WATERS }
+  const next = current + 1
+  await env.GARDENS.put(`water:${id}`, JSON.stringify({ ...response, waters: next }))
+  return { ok: true, waters: next }
 }
 
 /** How many times this garden has been watered. 0 when never, or when the stored value is junk. */
 export async function readWaters(env: Env, id: string): Promise<number> {
-  return (await readGardenResponse(env, id)).waters;
+  return (await readGardenResponse(env, id)).waters
 }
 
 export async function feelGarden(
@@ -297,28 +299,28 @@ export async function feelGarden(
   feeling: string,
 ): Promise<{ ok: true; response: GardenResponse } | { ok: false; status: 400; message: string }> {
   if (!ID_RE.test(id) || !FEELINGS.includes(feeling as Feeling)) {
-    return { ok: false, status: 400, message: 'Bad response.' };
+    return { ok: false, status: 400, message: 'Bad response.' }
   }
   if ((await env.GARDENS.get(`g:${id}`)) === null) {
-    return { ok: false, status: 400, message: 'No such garden.' };
+    return { ok: false, status: 400, message: 'No such garden.' }
   }
-  const response = await readGardenResponse(env, id);
-  const kind = feeling as Feeling;
-  if ((response.feelings[kind] ?? 0) >= MAX_WATERS) return { ok: true, response };
-  response.feelings[kind] = Math.min(MAX_WATERS, (response.feelings[kind] ?? 0) + 1);
-  await env.GARDENS.put(`water:${id}`, JSON.stringify(response));
-  return { ok: true, response };
+  const response = await readGardenResponse(env, id)
+  const kind = feeling as Feeling
+  if ((response.feelings[kind] ?? 0) >= MAX_WATERS) return { ok: true, response }
+  response.feelings[kind] = Math.min(MAX_WATERS, (response.feelings[kind] ?? 0) + 1)
+  await env.GARDENS.put(`water:${id}`, JSON.stringify(response))
+  return { ok: true, response }
 }
 
 export async function readResponsesBatch(env: Env, ids: string[]): Promise<Record<string, GardenResponse>> {
-  const wanted = [...new Set(ids.filter(id => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP);
-  const responses = await Promise.all(wanted.map(id => readGardenResponse(env, id)));
-  const out: Record<string, GardenResponse> = {};
+  const wanted = [...new Set(ids.filter((id) => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP)
+  const responses = await Promise.all(wanted.map((id) => readGardenResponse(env, id)))
+  const out: Record<string, GardenResponse> = {}
   wanted.forEach((id, index) => {
-    const response = responses[index]!;
-    if (response.waters > 0 || Object.keys(response.feelings).length > 0) out[id] = response;
-  });
-  return out;
+    const response = responses[index]!
+    if (response.waters > 0 || Object.keys(response.feelings).length > 0) out[id] = response
+  })
+  return out
 }
 
 /**
@@ -336,47 +338,48 @@ export async function readResponsesBatch(env: Env, ids: string[]): Promise<Recor
  * Beyond the cap the extra cards simply show no count, which is the same as never having watered.
  * A wrong number would be worse than a missing one.
  */
-const MAX_WATER_LOOKUP = 40;
+const MAX_WATER_LOOKUP = 40
 
 export async function readWatersBatch(env: Env, ids: string[]): Promise<Record<string, number>> {
-  const wanted = [...new Set(ids.filter((id) => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP);
-  const counts = await Promise.all(wanted.map((id) => readWaters(env, id)));
-  const out: Record<string, number> = {};
+  const wanted = [...new Set(ids.filter((id) => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP)
+  const counts = await Promise.all(wanted.map((id) => readWaters(env, id)))
+  const out: Record<string, number> = {}
   wanted.forEach((id, i) => {
-    const n = counts[i] ?? 0;
-    if (n > 0) out[id] = n;
-  });
-  return out;
+    const n = counts[i] ?? 0
+    if (n > 0) out[id] = n
+  })
+  return out
 }
 
-export type CreateResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 500; message: string };
+export type CreateResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 500; message: string }
 
 /** Create a garden. When `ownerId` is set (a signed-in creator), stamp it and index it as Sent. */
 export async function createGarden(env: Env, garden: unknown, ownerId?: string): Promise<CreateResult> {
-  if (!looksLikeGarden(garden)) return { ok: false, status: 400, message: 'Body does not look like a garden.' };
+  if (!looksLikeGarden(garden))
+    return { ok: false, status: 400, message: 'Body does not look like a garden.' }
   // Shallow-copy so we never mutate the caller's object when stamping ownerId.
-  const obj = { ...(garden as Record<string, unknown>) };
-  if (ownerId) obj.ownerId = ownerId;
-  const serialized = JSON.stringify(obj);
+  const obj = { ...(garden as Record<string, unknown>) }
+  if (ownerId) obj.ownerId = ownerId
+  const serialized = JSON.stringify(obj)
   if (serialized.length > MAX_GARDEN_BYTES) {
-    return { ok: false, status: 413, message: `Garden exceeds ${MAX_GARDEN_BYTES} bytes.` };
+    return { ok: false, status: 413, message: `Garden exceeds ${MAX_GARDEN_BYTES} bytes.` }
   }
   for (let attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt++) {
-    const id = generateId();
+    const id = generateId()
     if ((await env.GARDENS.get(`g:${id}`)) === null) {
-      await env.GARDENS.put(`g:${id}`, serialized);
-      if (ownerId) await putIndex(env, `sent:${ownerId}:${id}`, summarize(id, obj));
-      return { ok: true, id };
+      await env.GARDENS.put(`g:${id}`, serialized)
+      if (ownerId) await putIndex(env, `sent:${ownerId}:${id}`, summarize(id, obj))
+      return { ok: true, id }
     }
   }
-  return { ok: false, status: 500, message: 'Could not generate a unique id. Try again.' };
+  return { ok: false, status: 500, message: 'Could not generate a unique id. Try again.' }
 }
 
 /** Read a garden by short id, or null if the id is malformed or unknown. */
 export async function readGarden(env: Env, id: string): Promise<unknown | null> {
-  if (!ID_RE.test(id)) return null;
-  const raw = await env.GARDENS.get(`g:${id}`);
-  return raw === null ? null : repairGarden(JSON.parse(raw) as unknown);
+  if (!ID_RE.test(id)) return null
+  const raw = await env.GARDENS.get(`g:${id}`)
+  return raw === null ? null : repairGarden(JSON.parse(raw) as unknown)
 }
 
 /**
@@ -385,16 +388,16 @@ export async function readGarden(env: Env, id: string): Promise<unknown | null> 
  * UI can show a "saved to your gardens" confirmation only when something really happened.
  */
 export async function recordReceived(env: Env, userId: string, id: string): Promise<boolean> {
-  if (!ID_RE.test(id)) return false;
-  const raw = await env.GARDENS.get(`g:${id}`);
-  if (raw === null) return false;
-  const garden = JSON.parse(raw) as Record<string, unknown>;
-  if (garden.ownerId === userId) return false; // your own garden isn't "received"
+  if (!ID_RE.test(id)) return false
+  const raw = await env.GARDENS.get(`g:${id}`)
+  if (raw === null) return false
+  const garden = JSON.parse(raw) as Record<string, unknown>
+  if (garden.ownerId === userId) return false // your own garden isn't "received"
   await putIndex(env, `recv:${userId}:${id}`, {
     ...summarize(id, garden),
     receivedAt: new Date().toISOString(),
-  });
-  return true;
+  })
+  return true
 }
 
 /**
@@ -402,11 +405,8 @@ export async function recordReceived(env: Env, userId: string, id: string): Prom
  * any link already shared still opens — this only detaches it from this account's lists.
  */
 export async function removeFromAccount(env: Env, userId: string, id: string): Promise<void> {
-  if (!ID_RE.test(id)) return;
-  await Promise.all([
-    env.GARDENS.delete(`sent:${userId}:${id}`),
-    env.GARDENS.delete(`recv:${userId}:${id}`),
-  ]);
+  if (!ID_RE.test(id)) return
+  await Promise.all([env.GARDENS.delete(`sent:${userId}:${id}`), env.GARDENS.delete(`recv:${userId}:${id}`)])
 }
 
 /**
@@ -416,15 +416,15 @@ export async function removeFromAccount(env: Env, userId: string, id: string): P
  * 22 against the free tier's 50, leaving room for the auth check the route does first. Entries past
  * the limit are skipped for this load and picked up on the next one, because they heal as they go.
  */
-const LEGACY_FETCH_LIMIT = 10;
+const LEGACY_FETCH_LIMIT = 10
 
 async function listByPrefix(env: Env, prefix: string): Promise<GardenSummary[]> {
-  const listed = await env.GARDENS.list<GardenSummary>({ prefix });
-  const out: GardenSummary[] = [];
-  const legacy: string[] = [];
+  const listed = await env.GARDENS.list<GardenSummary>({ prefix })
+  const out: GardenSummary[] = []
+  const legacy: string[] = []
   for (const k of listed.keys) {
-    if (k.metadata) out.push(k.metadata);
-    else legacy.push(k.name);
+    if (k.metadata) out.push(k.metadata)
+    else legacy.push(k.name)
   }
 
   // Entries written before summaries moved into metadata. Fetch a bounded number and write the
@@ -433,47 +433,50 @@ async function listByPrefix(env: Env, prefix: string): Promise<GardenSummary[]> 
   if (legacy.length > 0) {
     const healed = await Promise.all(
       legacy.slice(0, LEGACY_FETCH_LIMIT).map(async (name) => {
-        const raw = await env.GARDENS.get(name);
-        if (raw === null) return null;
+        const raw = await env.GARDENS.get(name)
+        if (raw === null) return null
         try {
-          const summary = JSON.parse(raw) as GardenSummary;
-          await putIndex(env, name, summary).catch(() => undefined);
-          return summary;
+          const summary = JSON.parse(raw) as GardenSummary
+          await putIndex(env, name, summary).catch(() => undefined)
+          return summary
         } catch {
-          return null;
+          return null
         }
       }),
-    );
-    for (const h of healed) if (h) out.push(h);
+    )
+    for (const h of healed) if (h) out.push(h)
   }
 
   // Newest first, by receivedAt (received) or createdAt (sent).
-  out.sort((a, b) => (b.receivedAt ?? b.createdAt).localeCompare(a.receivedAt ?? a.createdAt));
-  return out;
+  out.sort((a, b) => (b.receivedAt ?? b.createdAt).localeCompare(a.receivedAt ?? a.createdAt))
+  return out
 }
 
 /** The signed-in user's gardens: ones they grew (Sent) and ones they opened (Received). */
-export async function listMine(env: Env, userId: string): Promise<{ sent: GardenSummary[]; received: GardenSummary[] }> {
+export async function listMine(
+  env: Env,
+  userId: string,
+): Promise<{ sent: GardenSummary[]; received: GardenSummary[] }> {
   const [sent, received] = await Promise.all([
     listByPrefix(env, `sent:${userId}:`),
     listByPrefix(env, `recv:${userId}:`),
-  ]);
-  return { sent, received };
+  ])
+  return { sent, received }
 }
 
 /** Adopt anonymous on-device gardens into an account (first-login claim). Only unowned ones. */
 export async function claimGardens(env: Env, userId: string, ids: string[]): Promise<number> {
-  let claimed = 0;
+  let claimed = 0
   for (const id of ids.slice(0, 100)) {
-    if (!ID_RE.test(id)) continue;
-    const raw = await env.GARDENS.get(`g:${id}`);
-    if (raw === null) continue;
-    const garden = JSON.parse(raw) as Record<string, unknown>;
-    if (garden.ownerId) continue; // already owned by someone
-    garden.ownerId = userId;
-    await env.GARDENS.put(`g:${id}`, JSON.stringify(garden));
-    await putIndex(env, `sent:${userId}:${id}`, summarize(id, garden));
-    claimed++;
+    if (!ID_RE.test(id)) continue
+    const raw = await env.GARDENS.get(`g:${id}`)
+    if (raw === null) continue
+    const garden = JSON.parse(raw) as Record<string, unknown>
+    if (garden.ownerId) continue // already owned by someone
+    garden.ownerId = userId
+    await env.GARDENS.put(`g:${id}`, JSON.stringify(garden))
+    await putIndex(env, `sent:${userId}:${id}`, summarize(id, garden))
+    claimed++
   }
-  return claimed;
+  return claimed
 }

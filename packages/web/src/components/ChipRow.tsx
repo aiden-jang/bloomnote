@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react'
 import styles from './ChipRow.module.css'
 
 interface Props {
@@ -54,7 +60,7 @@ export default function ChipRow({ labelledBy, selectable = true, children }: Pro
     if (!row || !selectable) return
     const apply = (): void => {
       const radios = Array.from(row.querySelectorAll<HTMLElement>('[role="radio"]'))
-      const checked = radios.findIndex(radio => radio.getAttribute('aria-checked') === 'true')
+      const checked = radios.findIndex((radio) => radio.getAttribute('aria-checked') === 'true')
       const stop = checked === -1 ? 0 : checked
       radios.forEach((radio, index) => {
         radio.tabIndex = index === stop ? 0 : -1
@@ -168,8 +174,10 @@ export default function ChipRow({ labelledBy, selectable = true, children }: Pro
     let next: number
     if (event.key === 'Home') next = 0
     else if (event.key === 'End') next = radios.length - 1
-    else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = ((current < 0 ? -1 : current) + 1 + radios.length) % radios.length
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = ((current < 0 ? 1 : current) - 1 + radios.length) % radios.length
+    else if (event.key === 'ArrowRight' || event.key === 'ArrowDown')
+      next = ((current < 0 ? -1 : current) + 1 + radios.length) % radios.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
+      next = ((current < 0 ? 1 : current) - 1 + radios.length) % radios.length
     else return
 
     event.preventDefault()

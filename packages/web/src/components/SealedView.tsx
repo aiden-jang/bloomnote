@@ -37,10 +37,13 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
     const tick = () => setNow(Date.now())
     const remaining = target - Date.now()
     const interval =
-      remaining < 60_000 ? 250 :       // under a minute → 4Hz
-      remaining < 3600_000 ? 1000 :    // under an hour  → 1Hz
-      remaining < 86400_000 ? 30_000 : // under a day    → every 30s
-      300_000                          // longer         → every 5m
+      remaining < 60_000
+        ? 250 // under a minute → 4Hz
+        : remaining < 3600_000
+          ? 1000 // under an hour  → 1Hz
+          : remaining < 86400_000
+            ? 30_000 // under a day    → every 30s
+            : 300_000 // longer         → every 5m
     const id = setInterval(tick, interval)
     return () => clearInterval(id)
   }, [target, now])
@@ -56,7 +59,11 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
   const eventName = from ? `${from}'s garden opens` : 'A garden for you opens'
   const eventEnd = new Date(unlockDate.getTime() + 30 * 60_000)
   const eventDetails = 'A garden is ready to bloom. Open this event to return to it.'
-  const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const stamp = (d: Date) =>
+    d
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '')
   const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${stamp(unlockDate)}/${stamp(eventEnd)}&details=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(window.location.href)}`
   const outlookCalendarUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(eventName)}&startdt=${encodeURIComponent(unlockDate.toISOString())}&enddt=${encodeURIComponent(eventEnd.toISOString())}&body=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(window.location.href)}`
   const addToCalendar = () => {
@@ -107,9 +114,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
             <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
           </p>
         ) : (
-          <p className={styles.fromText}>
-            someone grew {to ? to : 'you'} a garden
-          </p>
+          <p className={styles.fromText}>someone grew {to ? to : 'you'} a garden</p>
         )}
       </div>
 
@@ -134,11 +139,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
           />
 
           {/* The fold, shaded so the flap reads as paper lying over paper rather than as a drawn V. */}
-          <path
-            d="M 31 37 Q 62 60 100 79.5 Q 138 60 169 37 Z"
-            fill="var(--green-deep)"
-            opacity="0.055"
-          />
+          <path d="M 31 37 Q 62 60 100 79.5 Q 138 60 169 37 Z" fill="var(--green-deep)" opacity="0.055" />
           <path
             d="M 31 36.6 Q 62 60 100 79.5 Q 138 60 169 36.6"
             fill="none"
@@ -167,7 +168,15 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
             )
           })}
           <circle cx="100" cy="80" r="1.9" fill="var(--pink-deep)" />
-          <ellipse cx="96.6" cy="76.4" rx="2.6" ry="1.7" fill="#fff" opacity="0.3" transform="rotate(-35, 96.6, 76.4)" />
+          <ellipse
+            cx="96.6"
+            cy="76.4"
+            rx="2.6"
+            ry="1.7"
+            fill="#fff"
+            opacity="0.3"
+            transform="rotate(-35, 96.6, 76.4)"
+          />
         </svg>
       </div>
 
@@ -179,10 +188,12 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
           <summary>add a reminder</summary>
           <div className={styles.reminderOptions}>
             <a href={googleCalendarUrl} target="_blank" rel="noreferrer">
-              <span>Google Calendar</span><span aria-hidden>↗</span>
+              <span>Google Calendar</span>
+              <span aria-hidden>↗</span>
             </a>
             <a href={outlookCalendarUrl} target="_blank" rel="noreferrer">
-              <span>Outlook Calendar</span><span aria-hidden>↗</span>
+              <span>Outlook Calendar</span>
+              <span aria-hidden>↗</span>
             </a>
             <button type="button" onClick={addToCalendar} disabled={calendarSaved}>
               <span>{calendarSaved ? 'Calendar file ready' : 'Apple Calendar / other'}</span>
@@ -190,7 +201,11 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
             </button>
           </div>
         </details>
-        {calendarSaved && <span className={styles.calendarHint} role="status">open the downloaded file to add its 15-minute reminder</span>}
+        {calendarSaved && (
+          <span className={styles.calendarHint} role="status">
+            open the downloaded file to add its 15-minute reminder
+          </span>
+        )}
       </div>
 
       <p className={styles.hint}>come back when it&rsquo;s time.</p>

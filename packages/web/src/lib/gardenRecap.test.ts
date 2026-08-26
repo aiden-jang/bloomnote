@@ -79,7 +79,9 @@ describe('the recap', () => {
       entry('Nadia. grateful.', 9),
     ]
     const line = gardenRecap(many, NOW).line ?? ''
-    expect(line).not.toMatch(/streak|day|week|month|row|consecutive|missed|behind|more than|less than|last week/i)
+    expect(line).not.toMatch(
+      /streak|day|week|month|row|consecutive|missed|behind|more than|less than|last week/i,
+    )
     // No bare numbers either: "3 entries" is a tally wearing a sentence.
     expect(line).not.toMatch(/\d/)
   })

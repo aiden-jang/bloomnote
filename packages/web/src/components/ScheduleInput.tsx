@@ -67,11 +67,7 @@ function startOfDay(d: Date): Date {
 }
 
 function sameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
 // nth occurrence of a weekday in a month (e.g. 2nd Sunday of May). Used
@@ -103,7 +99,7 @@ function atTime(d: Date, h: number, m: number): Date {
 // Friendly time for the confirmation line: a preset's label when the
 // time matches one, otherwise a 12-hour clock string (e.g. "2:30 pm").
 function timeLabel(h: number, m: number): string {
-  const preset = TIME_OPTIONS.find(t => t.h === h && t.m === m)
+  const preset = TIME_OPTIONS.find((t) => t.h === h && t.m === m)
   if (preset) return preset.label
   const period = h < 12 ? 'am' : 'pm'
   const hour12 = h % 12 === 0 ? 12 : h % 12
@@ -117,23 +113,23 @@ function timeLabel(h: number, m: number): string {
 // playful internet days, since that's the energy people send a garden
 // with. Times default to morning at use sites.
 const OCCASIONS: { label: string; forYear: (y: number) => Date }[] = [
-  { label: "new year's", forYear: y => new Date(y, 0, 1) },
-  { label: "galentine's", forYear: y => new Date(y, 1, 13) },
-  { label: "valentine's day", forYear: y => new Date(y, 1, 14) },
-  { label: "st. patrick's", forYear: y => new Date(y, 2, 17) },
-  { label: "april fools'", forYear: y => new Date(y, 3, 1) },
-  { label: 'may the 4th', forYear: y => new Date(y, 4, 4) },
-  { label: "mother's day", forYear: y => nthWeekday(y, 4, 0, 2) },
-  { label: 'best friends day', forYear: y => new Date(y, 5, 8) },
-  { label: "father's day", forYear: y => nthWeekday(y, 5, 0, 3) },
-  { label: 'friendship day', forYear: y => new Date(y, 6, 30) },
-  { label: 'girlfriends day', forYear: y => new Date(y, 7, 1) },
-  { label: 'dog day', forYear: y => new Date(y, 7, 26) },
-  { label: 'daughters day', forYear: y => new Date(y, 8, 25) },
-  { label: 'boyfriend day', forYear: y => new Date(y, 9, 3) },
-  { label: 'halloween', forYear: y => new Date(y, 9, 31) },
-  { label: 'thanksgiving', forYear: y => nthWeekday(y, 10, 4, 4) },
-  { label: 'christmas', forYear: y => new Date(y, 11, 25) },
+  { label: "new year's", forYear: (y) => new Date(y, 0, 1) },
+  { label: "galentine's", forYear: (y) => new Date(y, 1, 13) },
+  { label: "valentine's day", forYear: (y) => new Date(y, 1, 14) },
+  { label: "st. patrick's", forYear: (y) => new Date(y, 2, 17) },
+  { label: "april fools'", forYear: (y) => new Date(y, 3, 1) },
+  { label: 'may the 4th', forYear: (y) => new Date(y, 4, 4) },
+  { label: "mother's day", forYear: (y) => nthWeekday(y, 4, 0, 2) },
+  { label: 'best friends day', forYear: (y) => new Date(y, 5, 8) },
+  { label: "father's day", forYear: (y) => nthWeekday(y, 5, 0, 3) },
+  { label: 'friendship day', forYear: (y) => new Date(y, 6, 30) },
+  { label: 'girlfriends day', forYear: (y) => new Date(y, 7, 1) },
+  { label: 'dog day', forYear: (y) => new Date(y, 7, 26) },
+  { label: 'daughters day', forYear: (y) => new Date(y, 8, 25) },
+  { label: 'boyfriend day', forYear: (y) => new Date(y, 9, 3) },
+  { label: 'halloween', forYear: (y) => new Date(y, 9, 31) },
+  { label: 'thanksgiving', forYear: (y) => nthWeekday(y, 10, 4, 4) },
+  { label: 'christmas', forYear: (y) => new Date(y, 11, 25) },
 ]
 
 // The next few occasions from now, soonest first — "whatever's coming up
@@ -142,7 +138,7 @@ const OCCASIONS: { label: string; forYear: (y: number) => Date }[] = [
 function upcomingOccasions(count: number): { label: string; date: Date }[] {
   const now = Date.now()
   const thisYear = new Date().getFullYear()
-  return OCCASIONS.map(o => {
+  return OCCASIONS.map((o) => {
     let date = atTime(o.forYear(thisYear), 9, 0)
     if (date.getTime() <= now) date = atTime(o.forYear(thisYear + 1), 9, 0)
     return { label: o.label, date }
@@ -153,14 +149,7 @@ function upcomingOccasions(count: number): { label: string; date: Date }[] {
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-export default function ScheduleInput({
-  open,
-  value,
-  error,
-  onOpen,
-  onChange,
-  onCancel,
-}: Props) {
+export default function ScheduleInput({ open, value, error, onOpen, onChange, onCancel }: Props) {
   const selected = parseLocal(value)
   const today = startOfDay(new Date())
 
@@ -210,7 +199,7 @@ export default function ScheduleInput({
       onClick: () => pickDayDate(tomorrow),
     },
   ]
-  const occasionChips = upcomingOccasions(4).map(o => ({
+  const occasionChips = upcomingOccasions(4).map((o) => ({
     label: o.label,
     active: value === toLocalInputValue(o.date),
     disabled: false,
@@ -277,15 +266,14 @@ export default function ScheduleInput({
   }
 
   function shiftMonth(delta: number) {
-    setView(v => {
+    setView((v) => {
       const d = new Date(v.year, v.month + delta, 1)
       return { year: d.getFullYear(), month: d.getMonth() }
     })
   }
 
   // Can't navigate to a month entirely in the past.
-  const atCurrentMonth =
-    view.year === today.getFullYear() && view.month === today.getMonth()
+  const atCurrentMonth = view.year === today.getFullYear() && view.month === today.getMonth()
 
   const firstWeekday = new Date(view.year, view.month, 1).getDay()
   const daysInMonth = new Date(view.year, view.month + 1, 0).getDate()
@@ -307,7 +295,7 @@ export default function ScheduleInput({
         {/* Quick-pick chips: today / tomorrow + the next few upcoming
             occasions. Tapping one sets both the day and the time. */}
         <div className={styles.schedulePresets}>
-          {presetChips.map(chip => (
+          {presetChips.map((chip) => (
             <button
               key={chip.label}
               type="button"
@@ -388,7 +376,7 @@ export default function ScheduleInput({
         <div className={styles.scheduleTimeRow}>
           <span className={styles.scheduleAt}>at</span>
           <div className={styles.schedulePresets}>
-            {TIME_OPTIONS.map(t => {
+            {TIME_OPTIONS.map((t) => {
               const active = t.h === time.h && t.m === time.m
               // When the chosen day is today, gray out times that have
               // already passed — they'd only make a past datetime.
@@ -426,7 +414,7 @@ export default function ScheduleInput({
                 ? toTimeInputValue(new Date().getHours(), new Date().getMinutes())
                 : undefined
             }
-            onChange={e => pickExactTime(e.target.value)}
+            onChange={(e) => pickExactTime(e.target.value)}
             aria-label="exact time"
           />
         </label>

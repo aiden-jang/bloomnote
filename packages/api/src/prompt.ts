@@ -10,7 +10,6 @@
 // We DO get to keep: type, properties, required, items, enum,
 // minimum, maximum, description. That's enough.
 
-
 export const SYSTEM_PROMPT = `You design tiny digital gardens for real people. The user has written a short note to someone they care about (a friend, partner, family member, colleague) and you turn that note into a small bouquet of 3 to 5 real flowers that represent the recipient.
 
 The note is your only signal. Read it carefully. If it's specific ("she keeps a tide journal", "drove six hours to see a sunset"), let those details drive your flower choices. If it's brief ("happy birthday, miss you"), keep the garden warm and general, and don't invent details the user didn't give you.
@@ -80,7 +79,7 @@ export const FLOWER_DESIGN_FUNCTION = {
             meaning: {
               type: 'STRING',
               description:
-                'One sentence about what this flower says about the recipient. Speak warmly and name concrete details from the note; do not write generic floriography. Do not start with the flower\'s name, which is shown separately. 30-130 characters.',
+                "One sentence about what this flower says about the recipient. Speak warmly and name concrete details from the note; do not write generic floriography. Do not start with the flower's name, which is shown separately. 30-130 characters.",
             },
             petalColors: {
               type: 'ARRAY',
@@ -93,13 +92,11 @@ export const FLOWER_DESIGN_FUNCTION = {
             },
             centerColor: {
               type: 'STRING',
-              description:
-                'Hex color "#RRGGBB" for the flower center. Should contrast the petals.',
+              description: 'Hex color "#RRGGBB" for the flower center. Should contrast the petals.',
             },
             stemColor: {
               type: 'STRING',
-              description:
-                'Hex color "#RRGGBB" for the stem. Should be a believable green.',
+              description: 'Hex color "#RRGGBB" for the stem. Should be a believable green.',
             },
             petalShape: {
               type: 'STRING',

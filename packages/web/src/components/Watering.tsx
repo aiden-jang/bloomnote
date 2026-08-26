@@ -38,7 +38,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
 
   useEffect(() => {
     let cancelled = false
-    void fetchGardenResponse(gardenId).then(response => {
+    void fetchGardenResponse(gardenId).then((response) => {
       if (!cancelled) {
         setWaters(response.waters)
         setFeelings(response.feelings)
@@ -81,7 +81,11 @@ export default function Watering({ gardenId, onWatered }: Props) {
           <p className={styles.done}>
             <Can poured />
             you watered it
-            {others > 0 && <span className={styles.others}>, and {others === 1 ? 'someone else did too' : `${others} others did too`}</span>}
+            {others > 0 && (
+              <span className={styles.others}>
+                , and {others === 1 ? 'someone else did too' : `${others} others did too`}
+              </span>
+            )}
           </p>
           {feeling ? (
             <p className={styles.feelingDone}>sent back {FEELING_COPY[feeling].sent}</p>
@@ -93,7 +97,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
               </span>
               <div className={styles.feelingsChips}>
                 <ChipRow labelledBy="felt-like" selectable={false}>
-                  {(Object.keys(FEELING_COPY) as Feeling[]).map(kind => (
+                  {(Object.keys(FEELING_COPY) as Feeling[]).map((kind) => (
                     <button key={kind} type="button" onClick={() => void respond(kind)}>
                       <span aria-hidden>{FEELING_COPY[kind].emoji}</span> {FEELING_COPY[kind].label}
                     </button>

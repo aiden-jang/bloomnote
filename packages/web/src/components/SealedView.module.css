@@ -41,8 +41,13 @@
 }
 
 @keyframes breathe {
-  0%, 100% { transform: translateY(0) rotate(-0.4deg); }
-  50%      { transform: translateY(-4px) rotate(0.4deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.4deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0.4deg);
+  }
 }
 
 /* This one runs forever on a screen someone may sit on for a while, and it was the only animation
@@ -72,7 +77,10 @@
   font-family: 'Fraunces', serif;
   font-size: 36px;
   font-weight: 400;
-  font-variation-settings: 'opsz' 36, 'SOFT' 50, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 36,
+    'SOFT' 50,
+    'WONK' 0;
   color: var(--text-deep);
   letter-spacing: -0.01em;
   /* Numeric tabular figures so the countdown doesn't jitter
@@ -103,15 +111,30 @@
   font: inherit;
   font-size: 12px;
   padding: 7px 12px;
-  transition: border-color 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.1s;
   list-style: none;
 }
 
-.reminderMenu summary::-webkit-details-marker { display: none; }
-.reminderMenu summary::after { content: ' +'; color: var(--text-light); }
-.reminderMenu[open] summary::after { content: ' −'; }
-.reminderMenu summary:hover { border-color: var(--green-light); color: var(--green-deep); }
-.reminderMenu summary:active { transform: scale(0.97); }
+.reminderMenu summary::-webkit-details-marker {
+  display: none;
+}
+.reminderMenu summary::after {
+  content: ' +';
+  color: var(--text-light);
+}
+.reminderMenu[open] summary::after {
+  content: ' −';
+}
+.reminderMenu summary:hover {
+  border-color: var(--green-light);
+  color: var(--green-deep);
+}
+.reminderMenu summary:active {
+  transform: scale(0.97);
+}
 
 .reminderOptions {
   display: grid;
@@ -144,8 +167,14 @@
 }
 
 .reminderOptions a:hover,
-.reminderOptions button:hover { background: var(--green-pale); color: var(--green-deep); }
-.reminderOptions button:disabled { cursor: default; opacity: 0.68; }
+.reminderOptions button:hover {
+  background: var(--green-pale);
+  color: var(--green-deep);
+}
+.reminderOptions button:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
 
 .calendarHint {
   margin-top: 3px;
@@ -186,7 +215,13 @@
 /* Print: a sealed garden in a printed card is confusing — collapse
    to a single line "(scheduled to open on …)". */
 @media print {
-  .plot { display: none; }
-  .opensRelative { display: none; }
-  .hint { display: none; }
+  .plot {
+    display: none;
+  }
+  .opensRelative {
+    display: none;
+  }
+  .hint {
+    display: none;
+  }
 }

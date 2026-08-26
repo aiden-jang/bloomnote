@@ -1,5 +1,5 @@
-import { SELF } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { SELF } from 'cloudflare:test'
+import { describe, expect, it } from 'vitest'
 
 const GARDEN = {
   flowers: [
@@ -19,7 +19,7 @@ const GARDEN = {
   to: 'Bo',
   occasion: 'birthday',
   createdAt: '2026-07-01T00:00:00.000Z',
-};
+}
 
 /**
  * Two things at once, and the second is the reason this file exists.
@@ -40,17 +40,17 @@ describe('cache headers', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(GARDEN),
-    });
-    expect(made.status, await made.clone().text()).toBe(200);
+    })
+    expect(made.status, await made.clone().text()).toBe(200)
 
-    const { id } = (await made.json()) as { id: string };
-    const got = await SELF.fetch(`https://x/api/garden?id=${id}`);
-    expect(got.status).toBe(200);
-    expect(got.headers.get('cache-control')).toContain('immutable');
-  });
+    const { id } = (await made.json()) as { id: string }
+    const got = await SELF.fetch(`https://x/api/garden?id=${id}`)
+    expect(got.status).toBe(200)
+    expect(got.headers.get('cache-control')).toContain('immutable')
+  })
 
   it('defaults everything else to no-store', async () => {
-    const res = await SELF.fetch('https://x/api/garden'); // no id: per-request, must not be stored
-    expect(res.headers.get('cache-control')).toContain('no-store');
-  });
-});
+    const res = await SELF.fetch('https://x/api/garden') // no id: per-request, must not be stored
+    expect(res.headers.get('cache-control')).toContain('no-store')
+  })
+})

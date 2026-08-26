@@ -42,7 +42,12 @@ function writePinnedGardens(ids: string[]): void {
   }
 }
 
-function orderGardens<T extends CardData>(gardens: T[], pinned: string[], sort: GardenSort, waters: Record<string, number>): T[] {
+function orderGardens<T extends CardData>(
+  gardens: T[],
+  pinned: string[],
+  sort: GardenSort,
+  waters: Record<string, number>,
+): T[] {
   const ids = new Set(pinned)
   return [...gardens].sort((a, b) => {
     const pinOrder = Number(ids.has(b.id)) - Number(ids.has(a.id))
@@ -127,7 +132,7 @@ function AccountGardens() {
     let cancelled = false
     void (async () => {
       // First-login claim: adopt any gardens this device made anonymously, then forget them locally.
-      const localIds = loadSentGardens().map(r => r.id)
+      const localIds = loadSentGardens().map((r) => r.id)
       if (localIds.length > 0) {
         await claimGardens(localIds)
         localIds.forEach(removeSentGarden)
@@ -158,15 +163,21 @@ function AccountGardens() {
    */
   const [waters, setWaters] = useState<Record<string, number>>({})
   const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
-  const visibleIds = (tab === 'sent' ? sent : received).map(g => g.id)
+  const visibleIds = (tab === 'sent' ? sent : received).map((g) => g.id)
   const idKey = visibleIds.join(',')
   useEffect(() => {
     if (!idKey) return
     let cancelled = false
-    void fetchResponsesBatch(idKey.split(',')).then(responses => {
+    void fetchResponsesBatch(idKey.split(',')).then((responses) => {
       if (!cancelled) {
-        setWaters(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])) }))
-        setFeelings(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])) }))
+        setWaters((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])),
+        }))
+        setFeelings((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])),
+        }))
       }
     })
     return () => {
@@ -189,15 +200,15 @@ function AccountGardens() {
 
   const handleRemove = (id: string) => {
     flushPending() // commit any prior pending removal so it isn't dropped
-    const si = sent.findIndex(g => g.id === id)
-    const ri = si < 0 ? received.findIndex(g => g.id === id) : -1
+    const si = sent.findIndex((g) => g.id === id)
+    const ri = si < 0 ? received.findIndex((g) => g.id === id) : -1
     if (si >= 0) {
       const item = sent[si]!
-      setSent(s => s.filter(g => g.id !== id))
+      setSent((s) => s.filter((g) => g.id !== id))
       setPending({ item, list: 'sent', index: si })
     } else if (ri >= 0) {
       const item = received[ri]!
-      setReceived(s => s.filter(g => g.id !== id))
+      setReceived((s) => s.filter((g) => g.id !== id))
       setPending({ item, list: 'received', index: ri })
     } else {
       return
@@ -233,14 +244,14 @@ function AccountGardens() {
   useEffect(() => () => flushPending(), [])
 
   const list = tab === 'sent' ? sent : received
-  const visiblePinned = list.filter(garden => pinned.includes(garden.id)).length
+  const visiblePinned = list.filter((garden) => pinned.includes(garden.id)).length
   const filtered = useMemo(() => {
-    const scoped = pinnedOnly ? list.filter(garden => pinned.includes(garden.id)) : list
+    const scoped = pinnedOnly ? list.filter((garden) => pinned.includes(garden.id)) : list
     return orderGardens(filterGardens(scoped, query), pinned, sort, waters)
   }, [list, query, pinned, pinnedOnly, sort, waters])
   const togglePinned = (id: string) => {
-    setPinned(current => {
-      const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
+    setPinned((current) => {
+      const next = current.includes(id) ? current.filter((value) => value !== id) : [id, ...current]
       writePinnedGardens(next)
       return next
     })
@@ -284,51 +295,52 @@ function AccountGardens() {
 
       {list.length > 1 && (
         <div className={styles.libraryTools}>
-        <select className={styles.sort} value={sort} onChange={event => setSort(event.target.value as GardenSort)} aria-label="Sort gardens">
-          <option value="newest">newest first</option>
-          <option value="oldest">oldest first</option>
-          <option value="watered">most watered</option>
-        </select>
-        <label className={styles.search}>
-          <span className={styles.srOnly}>Find a garden</span>
-          <input
-            type="search"
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            placeholder={tab === 'received' ? 'find someone’s garden' : 'find a garden'}
-          />
-          {query && (
-            <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
-              clear
+          <select
+            className={styles.sort}
+            value={sort}
+            onChange={(event) => setSort(event.target.value as GardenSort)}
+            aria-label="Sort gardens"
+          >
+            <option value="newest">newest first</option>
+            <option value="oldest">oldest first</option>
+            <option value="watered">most watered</option>
+          </select>
+          <label className={styles.search}>
+            <span className={styles.srOnly}>Find a garden</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={tab === 'received' ? 'find someone’s garden' : 'find a garden'}
+            />
+            {query && (
+              <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
+                clear
+              </button>
+            )}
+          </label>
+          {visiblePinned > 0 && (
+            <button
+              type="button"
+              className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
+              aria-pressed={pinnedOnly}
+              onClick={() => setPinnedOnly((value) => !value)}
+            >
+              ★ pinned ({visiblePinned})
             </button>
           )}
-        </label>
-        {visiblePinned > 0 && (
-          <button
-            type="button"
-            className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
-            aria-pressed={pinnedOnly}
-            onClick={() => setPinnedOnly(value => !value)}
-          >
-            ★ pinned ({visiblePinned})
-          </button>
-        )}
         </div>
       )}
 
       {!busy && <MemoryLane gardens={list} kind={tab} />}
-      {!busy && tab === 'sent' && (
-        <GardenImpactCard gardens={sent} waters={waters} feelings={feelings} />
-      )}
+      {!busy && tab === 'sent' && <GardenImpactCard gardens={sent} waters={waters} feelings={feelings} />}
 
       {busy ? (
         <p className={styles.emptyText}>loading…</p>
       ) : list.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.emptyText}>
-            {tab === 'sent'
-              ? 'you haven’t grown any yet.'
-              : 'gardens people grow you will show up here.'}
+            {tab === 'sent' ? 'you haven’t grown any yet.' : 'gardens people grow you will show up here.'}
           </p>
           {tab === 'sent' && (
             <a href="/" className={styles.emptyLink}>
@@ -338,14 +350,23 @@ function AccountGardens() {
         </div>
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>
-          <p className={styles.emptyText}>{pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}</p>
-          <button type="button" className={styles.emptyLink} onClick={() => { setQuery(''); setPinnedOnly(false) }}>
+          <p className={styles.emptyText}>
+            {pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}
+          </p>
+          <button
+            type="button"
+            className={styles.emptyLink}
+            onClick={() => {
+              setQuery('')
+              setPinnedOnly(false)
+            }}
+          >
             show them all
           </button>
         </div>
       ) : (
         <ul className={styles.list}>
-          {filtered.map(r => (
+          {filtered.map((r) => (
             <GardenRow
               key={r.id}
               record={r}
@@ -377,14 +398,20 @@ function LocalGardens() {
   // they only ever learn a garden was watered by reopening that exact link.
   const [waters, setWaters] = useState<Record<string, number>>({})
   const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
-  const idKey = records.map(r => r.id).join(',')
+  const idKey = records.map((r) => r.id).join(',')
   useEffect(() => {
     if (!idKey) return
     let cancelled = false
-    void fetchResponsesBatch(idKey.split(',')).then(responses => {
+    void fetchResponsesBatch(idKey.split(',')).then((responses) => {
       if (!cancelled) {
-        setWaters(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])) }))
-        setFeelings(prev => ({ ...prev, ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])) }))
+        setWaters((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])),
+        }))
+        setFeelings((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])),
+        }))
       }
     })
     return () => {
@@ -394,16 +421,16 @@ function LocalGardens() {
 
   const handleRemove = (id: string) => {
     removeSentGarden(id)
-    setRecords(rs => rs.filter(r => r.id !== id))
+    setRecords((rs) => rs.filter((r) => r.id !== id))
   }
-  const visiblePinned = records.filter(record => pinned.includes(record.id)).length
+  const visiblePinned = records.filter((record) => pinned.includes(record.id)).length
   const filtered = useMemo(() => {
-    const scoped = pinnedOnly ? records.filter(record => pinned.includes(record.id)) : records
+    const scoped = pinnedOnly ? records.filter((record) => pinned.includes(record.id)) : records
     return orderGardens(filterGardens(scoped, query), pinned, sort, waters)
   }, [records, query, pinned, pinnedOnly, sort, waters])
   const togglePinned = (id: string) => {
-    setPinned(current => {
-      const next = current.includes(id) ? current.filter(value => value !== id) : [id, ...current]
+    setPinned((current) => {
+      const next = current.includes(id) ? current.filter((value) => value !== id) : [id, ...current]
       writePinnedGardens(next)
       return next
     })
@@ -435,61 +462,77 @@ function LocalGardens() {
         <>
           {records.length > 1 && (
             <div className={styles.libraryTools}>
-            <select className={styles.sort} value={sort} onChange={event => setSort(event.target.value as GardenSort)} aria-label="Sort gardens">
-              <option value="newest">newest first</option>
-              <option value="oldest">oldest first</option>
-              <option value="watered">most watered</option>
-            </select>
-            <label className={styles.search}>
-              <span className={styles.srOnly}>Find a garden</span>
-              <input
-                type="search"
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                placeholder="find a garden"
-              />
-              {query && (
-                <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
-                  clear
+              <select
+                className={styles.sort}
+                value={sort}
+                onChange={(event) => setSort(event.target.value as GardenSort)}
+                aria-label="Sort gardens"
+              >
+                <option value="newest">newest first</option>
+                <option value="oldest">oldest first</option>
+                <option value="watered">most watered</option>
+              </select>
+              <label className={styles.search}>
+                <span className={styles.srOnly}>Find a garden</span>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="find a garden"
+                />
+                {query && (
+                  <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
+                    clear
+                  </button>
+                )}
+              </label>
+              {visiblePinned > 0 && (
+                <button
+                  type="button"
+                  className={
+                    pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter
+                  }
+                  aria-pressed={pinnedOnly}
+                  onClick={() => setPinnedOnly((value) => !value)}
+                >
+                  ★ pinned ({visiblePinned})
                 </button>
               )}
-            </label>
-            {visiblePinned > 0 && (
-              <button
-                type="button"
-                className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
-                aria-pressed={pinnedOnly}
-                onClick={() => setPinnedOnly(value => !value)}
-              >
-                ★ pinned ({visiblePinned})
-              </button>
-            )}
             </div>
           )}
           <MemoryLane gardens={records} kind="sent" />
           <GardenImpactCard gardens={records} waters={waters} feelings={feelings} />
           {filtered.length === 0 ? (
             <div className={styles.empty}>
-              <p className={styles.emptyText}>{pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}</p>
-              <button type="button" className={styles.emptyLink} onClick={() => { setQuery(''); setPinnedOnly(false) }}>
+              <p className={styles.emptyText}>
+                {pinnedOnly ? 'no pinned gardens here yet.' : `no gardens match “${query.trim()}”.`}
+              </p>
+              <button
+                type="button"
+                className={styles.emptyLink}
+                onClick={() => {
+                  setQuery('')
+                  setPinnedOnly(false)
+                }}
+              >
                 show them all
               </button>
             </div>
           ) : (
-        <ul className={styles.list}>
-          {filtered.map(r => (
-            <GardenRow
-              key={r.id}
-              record={r}
-              kind="sent"
-              waters={waters[r.id] ?? 0}
-              feelings={feelings[r.id] ?? {}}
-              pinned={pinned.includes(r.id)}
-              onPin={() => togglePinned(r.id)}
-              onRemove={() => handleRemove(r.id)}
-            />
-          ))}
-        </ul>
+            <ul className={styles.list}>
+              {filtered.map((r) => (
+                <GardenRow
+                  key={r.id}
+                  record={r}
+                  kind="sent"
+                  waters={waters[r.id] ?? 0}
+                  feelings={feelings[r.id] ?? {}}
+                  pinned={pinned.includes(r.id)}
+                  onPin={() => togglePinned(r.id)}
+                  onRemove={() => handleRemove(r.id)}
+                />
+              ))}
+            </ul>
           )}
         </>
       )}
@@ -514,17 +557,26 @@ function GardenImpactCard({
   feelings: Record<string, Partial<Record<Feeling, number>>>
 }) {
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
-  const impact = useMemo(() => gardenImpact(
-    gardens.map(garden => garden.id),
-    Object.fromEntries(gardens.map(garden => [garden.id, {
-      waters: waters[garden.id] ?? 0,
-      feelings: feelings[garden.id] ?? {},
-    }])),
-  ), [gardens, waters, feelings])
+  const impact = useMemo(
+    () =>
+      gardenImpact(
+        gardens.map((garden) => garden.id),
+        Object.fromEntries(
+          gardens.map((garden) => [
+            garden.id,
+            {
+              waters: waters[garden.id] ?? 0,
+              feelings: feelings[garden.id] ?? {},
+            },
+          ]),
+        ),
+      ),
+    [gardens, waters, feelings],
+  )
 
   if (impact.respondedGardens === 0) return null
   const strongest = impact.strongestFeeling ? feelingCopy[impact.strongestFeeling.feeling] : null
-  const favorite = gardens.find(garden => garden.id === impact.mostWateredId)
+  const favorite = gardens.find((garden) => garden.id === impact.mostWateredId)
   const favoriteName = favorite?.to.trim()
 
   const shareImpact = async (): Promise<void> => {
@@ -542,7 +594,11 @@ ${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impa
     setShareStatus('sharing')
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: 'what came back from my bloomnotes', text, url: window.location.origin })
+        await navigator.share({
+          title: 'what came back from my bloomnotes',
+          text,
+          url: window.location.origin,
+        })
         finish('shared')
         return
       } catch (error) {
@@ -567,22 +623,48 @@ ${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impa
           <span className={styles.impactEyebrow}>what came back</span>
           <strong>your gardens reached people.</strong>
         </span>
-        <span className={styles.impactSprout} aria-hidden>❀</span>
+        <span className={styles.impactSprout} aria-hidden>
+          ❀
+        </span>
       </div>
       <div className={styles.impactStats}>
-        <span><strong>{impact.totalWaters}</strong><small>{impact.totalWaters === 1 ? 'water' : 'waters'}</small></span>
-        <span><strong>{impact.totalFeelings}</strong><small>{impact.totalFeelings === 1 ? 'feeling' : 'feelings'}</small></span>
-        <span><strong>{impact.respondedGardens}</strong><small>reached back</small></span>
+        <span>
+          <strong>{impact.totalWaters}</strong>
+          <small>{impact.totalWaters === 1 ? 'water' : 'waters'}</small>
+        </span>
+        <span>
+          <strong>{impact.totalFeelings}</strong>
+          <small>{impact.totalFeelings === 1 ? 'feeling' : 'feelings'}</small>
+        </span>
+        <span>
+          <strong>{impact.respondedGardens}</strong>
+          <small>reached back</small>
+        </span>
       </div>
       {(strongest || favoriteName) && (
         <p className={styles.impactNote}>
-          {strongest && <span>most felt: {strongest.emoji} {strongest.noun}</span>}
+          {strongest && (
+            <span>
+              most felt: {strongest.emoji} {strongest.noun}
+            </span>
+          )}
           {strongest && favoriteName && <span aria-hidden> · </span>}
           {favoriteName && <span>most watered: the one for {favoriteName}</span>}
         </p>
       )}
-      <button type="button" className={styles.impactShare} onClick={() => void shareImpact()} disabled={shareStatus !== null}>
-        {shareStatus === 'sharing' ? 'opening…' : shareStatus === 'shared' ? 'shared' : shareStatus === 'copied' ? 'copied' : 'share this little recap'}
+      <button
+        type="button"
+        className={styles.impactShare}
+        onClick={() => void shareImpact()}
+        disabled={shareStatus !== null}
+      >
+        {shareStatus === 'sharing'
+          ? 'opening…'
+          : shareStatus === 'shared'
+            ? 'shared'
+            : shareStatus === 'copied'
+              ? 'copied'
+              : 'share this little recap'}
       </button>
     </aside>
   )
@@ -621,16 +703,22 @@ function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
         </span>
         <span className={styles.memoryCopy}>
           <span className={styles.memoryEyebrow}>{age || 'from the garden path'}</span>
-          <strong>{kind === 'received' ? `a garden ${name ? `from ${name}` : 'you kept'}` : `the one ${name ? `for ${name}` : 'you grew'}`}</strong>
+          <strong>
+            {kind === 'received'
+              ? `a garden ${name ? `from ${name}` : 'you kept'}`
+              : `the one ${name ? `for ${name}` : 'you grew'}`}
+          </strong>
           {date && <small>{date}</small>}
         </span>
-        <span className={styles.memoryOpen} aria-hidden>open →</span>
+        <span className={styles.memoryOpen} aria-hidden>
+          open →
+        </span>
       </a>
       {memories.length > 1 && (
         <button
           type="button"
           className={styles.memoryNext}
-          onClick={() => setMemoryIndex(index => (index + 1) % memories.length)}
+          onClick={() => setMemoryIndex((index) => (index + 1) % memories.length)}
           aria-label="Show another garden memory"
         >
           another
@@ -644,10 +732,10 @@ function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
 function filterGardens<T extends CardData>(gardens: T[], query: string): T[] {
   const needle = query.trim().toLocaleLowerCase()
   if (!needle) return gardens
-  return gardens.filter(garden =>
+  return gardens.filter((garden) =>
     [garden.from, garden.to, garden.occasion]
       .filter((part): part is string => typeof part === 'string')
-      .some(part => part.toLocaleLowerCase().includes(needle)),
+      .some((part) => part.toLocaleLowerCase().includes(needle)),
   )
 }
 
@@ -742,7 +830,12 @@ function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, on
     const url = buildShareUrl(id)
     const shareData: ShareData = {
       title: 'bloomnote',
-      text: kind === 'received' && from ? `A garden from ${from}` : to.trim() ? `A garden for ${to.trim()}` : 'A garden for you',
+      text:
+        kind === 'received' && from
+          ? `A garden from ${from}`
+          : to.trim()
+            ? `A garden for ${to.trim()}`
+            : 'A garden for you',
       url,
     }
     try {
@@ -791,7 +884,7 @@ function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, on
             {sealedUntil ? (
               <span className={styles.sealed}>opens {sealedUntil}</span>
             ) : (
-              (kind === 'received' ? keptOn ?? grownOn : grownOn) && (
+              (kind === 'received' ? (keptOn ?? grownOn) : grownOn) && (
                 <span>{kind === 'received' && keptOn ? `kept ${keptOn}` : grownOn}</span>
               )
             )}

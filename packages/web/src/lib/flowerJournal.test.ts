@@ -1,9 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { decodeFlowerJournal, loadFlowerJournal, removeFlowerJournalEntry, saveFlowerJournalEntry } from './flowerJournal'
+import {
+  decodeFlowerJournal,
+  loadFlowerJournal,
+  removeFlowerJournalEntry,
+  saveFlowerJournalEntry,
+} from './flowerJournal'
 
 const flower = {
-  name: 'Cosmos', meaning: 'A little steadiness.', petalColors: ['#111111', '#222222', '#333333'] as [string, string, string],
-  centerColor: '#444444', stemColor: '#555555', petalShape: 'round' as const, petalCount: 8, stemHeight: 90,
+  name: 'Cosmos',
+  meaning: 'A little steadiness.',
+  petalColors: ['#111111', '#222222', '#333333'] as [string, string, string],
+  centerColor: '#444444',
+  stemColor: '#555555',
+  petalShape: 'round' as const,
+  petalCount: 8,
+  stemHeight: 90,
 }
 
 beforeEach(() => {

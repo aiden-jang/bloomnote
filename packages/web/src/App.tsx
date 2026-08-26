@@ -13,7 +13,7 @@ import notice from './components/Notice.module.css'
  */
 const Composer = lazy(() => import('./components/Composer'))
 const MyGardens = lazy(() => import('./components/MyGardens'))
-const LegalPage = lazy(() => import('./components/LegalPage').then(m => ({ default: m.LegalPage })))
+const LegalPage = lazy(() => import('./components/LegalPage').then((m) => ({ default: m.LegalPage })))
 
 /**
  * Route shapes:
@@ -33,18 +33,18 @@ const LegalPage = lazy(() => import('./components/LegalPage').then(m => ({ defau
  */
 
 type Route =
-  | { kind: 'composer'; seed?: GardenData }                       // fresh OR resolved remix seed
-  | { kind: 'recipient'; garden: GardenData; gardenId: string }   // resolved share
-  | { kind: 'mine' }                                              // on-device archive
-  | { kind: 'loading' }                                           // short ID, fetch pending
-  | { kind: 'notfound' }                                          // 404 (bad ID, deleted, malformed)
-  | { kind: 'loaderror' }                                         // transient fetch failure (offline/5xx) — retryable
-  | { kind: 'privacy' }                                           // static legal page
-  | { kind: 'terms' }                                             // static legal page
+  | { kind: 'composer'; seed?: GardenData } // fresh OR resolved remix seed
+  | { kind: 'recipient'; garden: GardenData; gardenId: string } // resolved share
+  | { kind: 'mine' } // on-device archive
+  | { kind: 'loading' } // short ID, fetch pending
+  | { kind: 'notfound' } // 404 (bad ID, deleted, malformed)
+  | { kind: 'loaderror' } // transient fetch failure (offline/5xx) — retryable
+  | { kind: 'privacy' } // static legal page
+  | { kind: 'terms' } // static legal page
 
 interface ParsedRoute {
   view: 'composer' | 'recipient' | 'mine' | 'privacy' | 'terms'
-  short?: string  // 6-char base62 ID, ready for KV lookup
+  short?: string // 6-char base62 ID, ready for KV lookup
   malformed?: boolean
 }
 
@@ -60,9 +60,7 @@ function parseRoute(): ParsedRoute {
   const sharedMatch = path.match(/^\/g\/(.+)$/)
   if (sharedMatch) {
     const seg = sharedMatch[1]!
-    return isShortId(seg)
-      ? { view: 'recipient', short: seg }
-      : { view: 'recipient', malformed: true }
+    return isShortId(seg) ? { view: 'recipient', short: seg } : { view: 'recipient', malformed: true }
   }
 
   const remixMatch = path.match(/^\/r\/(.+)$/)
@@ -111,11 +109,7 @@ export default function App() {
         if (!garden) {
           // A real 404 is a hard dead-end. Composer falls back to a
           // fresh form — same friendlier behavior as a malformed seed.
-          setRoute(
-            parsed.view === 'recipient'
-              ? { kind: 'notfound' }
-              : { kind: 'composer' },
-          )
+          setRoute(parsed.view === 'recipient' ? { kind: 'notfound' } : { kind: 'composer' })
           return
         }
         setRoute(
@@ -233,8 +227,8 @@ function NotFoundShell() {
       <div className={notice.card}>
         <h1 className={notice.title}>that link didn&rsquo;t lead anywhere.</h1>
         <p className={notice.body}>
-          gardens never expire, so if someone grew you one, it&rsquo;s still there. links get cut
-          short in messages more often than you&rsquo;d think. worth asking them to send it again.
+          gardens never expire, so if someone grew you one, it&rsquo;s still there. links get cut short in
+          messages more often than you&rsquo;d think. worth asking them to send it again.
         </p>
         <a className={notice.action} href="/">
           or grow one for someone

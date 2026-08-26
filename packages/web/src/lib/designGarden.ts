@@ -258,7 +258,7 @@ function parseFrame(frame: string): ParsedEvent | null {
 function normalize(server: ServerPayload): DesignResult {
   return {
     bouquetNote: server.bouquet_note,
-    flowers: server.flowers.map(f => ({
+    flowers: server.flowers.map((f) => ({
       name: f.name,
       meaning: f.meaning,
       petalColors: f.petalColors,

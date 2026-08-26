@@ -110,7 +110,9 @@
 
 .item .bloom,
 .item .text {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .itemOn .text {
@@ -123,7 +125,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .itemOn .text { transform: none; }
+  .itemOn .text {
+    transform: none;
+  }
 }
 
 /*
@@ -133,6 +137,12 @@
  * across modules is the cost of each file standing on its own, and it is four lines.
  */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

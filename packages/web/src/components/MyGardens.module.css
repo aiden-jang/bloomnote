@@ -22,7 +22,10 @@
   color: var(--green-deep);
   margin-bottom: 6px;
   letter-spacing: -0.5px;
-  font-variation-settings: 'opsz' 96, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 96,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 .subtitle {
@@ -215,11 +218,26 @@
   filter: drop-shadow(0 1px 2px rgba(74, 53, 32, 0.16));
 }
 
-.memoryBouquet span:nth-child(1) { left: 0; top: 10px; }
-.memoryBouquet span:nth-child(2) { left: 12px; top: 0; }
-.memoryBouquet span:nth-child(3) { left: 23px; top: 11px; }
-.memoryBouquet span:nth-child(4) { left: 8px; top: 21px; }
-.memoryBouquet span:nth-child(5) { left: 21px; top: 23px; }
+.memoryBouquet span:nth-child(1) {
+  left: 0;
+  top: 10px;
+}
+.memoryBouquet span:nth-child(2) {
+  left: 12px;
+  top: 0;
+}
+.memoryBouquet span:nth-child(3) {
+  left: 23px;
+  top: 11px;
+}
+.memoryBouquet span:nth-child(4) {
+  left: 8px;
+  top: 21px;
+}
+.memoryBouquet span:nth-child(5) {
+  left: 21px;
+  top: 23px;
+}
 
 .memoryCopy {
   display: flex;
@@ -399,7 +417,9 @@
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--green-pale);
   border-radius: 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .card:hover {
@@ -512,7 +532,10 @@
   font-size: 12px;
   padding: 4px 12px;
   border-radius: 999px;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .actionBtn:hover {

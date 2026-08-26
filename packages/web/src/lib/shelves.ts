@@ -24,7 +24,7 @@ export const SHELVES: Shelf[] = [
 export function shelvesOf(entry: FlowerJournalEntry): ShelfId[] {
   const raw = entry.shelves
   if (!Array.isArray(raw)) return []
-  return SHELVES.map(shelf => shelf.id).filter(id => raw.includes(id))
+  return SHELVES.map((shelf) => shelf.id).filter((id) => raw.includes(id))
 }
 
 export function isOn(entry: FlowerJournalEntry, id: ShelfId): boolean {
@@ -34,12 +34,12 @@ export function isOn(entry: FlowerJournalEntry, id: ShelfId): boolean {
 /** Add or remove one shelf, leaving the other alone. Canonical order, so stored data never varies. */
 export function toggled(entry: FlowerJournalEntry, id: ShelfId): ShelfId[] {
   const current = shelvesOf(entry)
-  const next = new Set(current.includes(id) ? current.filter(other => other !== id) : [...current, id])
-  return SHELVES.map(shelf => shelf.id).filter(shelfId => next.has(shelfId))
+  const next = new Set(current.includes(id) ? current.filter((other) => other !== id) : [...current, id])
+  return SHELVES.map((shelf) => shelf.id).filter((shelfId) => next.has(shelfId))
 }
 
 export function entriesOn(entries: readonly FlowerJournalEntry[], id: ShelfId): FlowerJournalEntry[] {
-  return entries.filter(entry => isOn(entry, id))
+  return entries.filter((entry) => isOn(entry, id))
 }
 
 /** The keeper's meaning wins, and never overwrites the sender's: that would edit somebody else's

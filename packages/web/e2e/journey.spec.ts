@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test'
 
 /**
  * The whole product in one pass: arrive, write a note, watch it bloom, get a link, open that link
@@ -46,10 +46,10 @@ const GARDEN = {
       stemHeight: 112,
     },
   ],
-};
+}
 
 const NOTE =
-  'you drove four hours in the rain to sit in a hospital car park with me and did not once make it a big deal.';
+  'you drove four hours in the rain to sit in a hospital car park with me and did not once make it a big deal.'
 
 /**
  * Intercept the one paid call. Returns the whole SSE body at once, which the client reads to EOF
@@ -61,17 +61,17 @@ async function stubDesign(page: Page): Promise<void> {
       `event: start\ndata: ${JSON.stringify({ ok: true })}\n\n`,
       `event: thinking\ndata: {}\n\n`,
       `event: complete\ndata: ${JSON.stringify({ garden: GARDEN })}\n\n`,
-    ].join('');
+    ].join('')
     await route.fulfill({
       status: 200,
       headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
       body: frames,
-    });
-  });
+    })
+  })
 }
 
 /** Petals are <path> inside the scene; a bloomed garden has many, an empty plot has none. */
-const petals = (page: Page) => page.locator('svg path');
+const petals = (page: Page) => page.locator('svg path')
 
 /*
  * Every page runs as a reduced-motion visitor.
@@ -90,8 +90,8 @@ const petals = (page: Page) => page.locator('svg path');
  * staged bloom, the typewriter note) are not exercised, only their end state.
  */
 test.beforeEach(async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-});
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+})
 
 test.describe('compose → bloom → share → recipient', () => {
   test('a note in progress survives a refresh in the same tab', async ({ page }) => {
@@ -128,43 +128,43 @@ test.describe('compose → bloom → share → recipient', () => {
         value: () => Promise.resolve(),
       })
     })
-    await stubDesign(page);
-    await page.goto('/');
+    await stubDesign(page)
+    await page.goto('/')
 
     // --- Arrive -----------------------------------------------------------------------------
     // The homepage hero grows a real demo garden rather than showing an empty plot. If that
     // regresses, a first-time visitor's first impression is a blank rectangle again.
-    await expect(page.getByRole('heading', { name: 'bloomnote' })).toBeVisible();
-    await expect(petals(page).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'bloomnote' })).toBeVisible()
+    await expect(petals(page).first()).toBeVisible()
 
     // --- Write ------------------------------------------------------------------------------
-    await page.getByPlaceholder('your name').fill('Aiden');
-    await page.getByPlaceholder('their name').fill('Nadia');
-    await page.getByLabel('your note').fill(NOTE);
+    await page.getByPlaceholder('your name').fill('Aiden')
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.getByLabel('your note').fill(NOTE)
 
     // Starting a draft clears the demo and shrinks the plot to a waiting bed, so the note field
     // is not pushed below the fold by 260px of empty sky.
-    const scene = page.locator('[class*="scene"]').first();
-    await expect(scene).toHaveJSProperty('offsetHeight', 132);
+    const scene = page.locator('[class*="scene"]').first()
+    await expect(scene).toHaveJSProperty('offsetHeight', 132)
 
     // --- Bloom ------------------------------------------------------------------------------
-    await page.getByRole('button', { name: /grow .* garden/i }).click();
+    await page.getByRole('button', { name: /grow .* garden/i }).click()
 
-    await expect(page.getByText(NOTE)).toBeVisible();
-    await expect(page.getByText('for the drive, and for not making it a thing.').first()).toBeVisible();
+    await expect(page.getByText(NOTE)).toBeVisible()
+    await expect(page.getByText('for the drive, and for not making it a thing.').first()).toBeVisible()
 
     // Every flower, with its meaning, and no flower repeating its own name into the meaning.
     for (const f of GARDEN.flowers) {
-      await expect(page.getByText(f.name, { exact: true }).first()).toBeVisible();
-      await expect(page.getByText(f.meaning).first()).toBeVisible();
+      await expect(page.getByText(f.name, { exact: true }).first()).toBeVisible()
+      await expect(page.getByText(f.meaning).first()).toBeVisible()
     }
 
     // --- Share ------------------------------------------------------------------------------
     // The share link is written to real KV by the real endpoint; only the AI call was faked.
-    const link = page.getByText(/\/g\/[A-Za-z0-9]{6}/).first();
-    await expect(link).toBeVisible();
-    const shareUrl = (await link.textContent())!.trim();
-    expect(shareUrl).toMatch(/\/g\/[A-Za-z0-9]{6}$/);
+    const link = page.getByText(/\/g\/[A-Za-z0-9]{6}/).first()
+    await expect(link).toBeVisible()
+    const shareUrl = (await link.textContent())!.trim()
+    expect(shareUrl).toMatch(/\/g\/[A-Za-z0-9]{6}$/)
 
     /*
      * Seed a private journal before arriving as the recipient.
@@ -180,7 +180,7 @@ test.describe('compose → bloom → share → recipient', () => {
         'Nadia called. she sounded tired. honestly? Tired too.',
         'Theo again. we sat at Roberta and said almost nothing.',
         'Suddenly everything felt lighter. Nadia would laugh at me writing that.',
-      ];
+      ]
       window.localStorage.setItem(
         'bloomnote.flower-journal.v1',
         JSON.stringify(
@@ -195,43 +195,43 @@ test.describe('compose → bloom → share → recipient', () => {
             savedAt: new Date(Date.UTC(2026, 7, 1 + i)).toISOString(),
           })),
         ),
-      );
-    });
+      )
+    })
 
     // --- Receive ----------------------------------------------------------------------------
     // A fresh context would be more faithful, but same-page navigation still exercises the part
     // that matters: the recipient route resolving a stored garden from its id alone.
-    await page.goto(new URL(shareUrl).pathname);
+    await page.goto(new URL(shareUrl).pathname)
 
     // Not getByText('Aiden'): the footer credit "made by aiden jang" also matches it.
-    await expect(page.getByText(/grew Nadia a garden/i)).toBeVisible();
-    await page.getByRole('button', { name: /open the garden/i }).click();
+    await expect(page.getByText(/grew Nadia a garden/i)).toBeVisible()
+    await page.getByRole('button', { name: /open the garden/i }).click()
 
-    await expect(page.getByText(NOTE)).toBeVisible();
-    await expect(petals(page).first()).toBeVisible();
+    await expect(page.getByText(NOTE)).toBeVisible()
+    await expect(petals(page).first()).toBeVisible()
     for (const f of GARDEN.flowers) {
-      await expect(page.getByText(f.meaning).first()).toBeVisible();
+      await expect(page.getByText(f.meaning).first()).toBeVisible()
     }
     // The reply loop is the thing that makes this a conversation rather than a one-way card.
-    await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible()
 
     // --- Constellations ---------------------------------------------------------------------
     // Both the journal and its constellations live inside the "keep this garden" disclosure, which is
     // collapsed until asked for. That is the right home for private-journal content, so open it.
-    await page.getByText('keep this garden').click();
-    const threads = page.getByRole('region', { name: /what keeps coming back/i });
-    await expect(threads).toBeVisible();
+    await page.getByText('keep this garden').click()
+    const threads = page.getByRole('region', { name: /what keeps coming back/i })
+    await expect(threads).toBeVisible()
     // Recurring across entries, and Roberta as a place because both mentions follow a preposition.
-    await expect(threads.getByRole('button', { name: /Nadia/ })).toBeVisible();
-    await expect(threads.getByRole('button', { name: /Theo/ })).toBeVisible();
-    await expect(threads.getByRole('button', { name: /Roberta/ })).toBeVisible();
+    await expect(threads.getByRole('button', { name: /Nadia/ })).toBeVisible()
+    await expect(threads.getByRole('button', { name: /Theo/ })).toBeVisible()
+    await expect(threads.getByRole('button', { name: /Roberta/ })).toBeVisible()
     // The false positives that would destroy any trust in this panel.
     for (const wrong of ['Tuesday', 'Suddenly', 'Honestly', 'Tired']) {
-      await expect(threads.getByRole('button', { name: new RegExp(`^\\W*${wrong}`, 'i') })).toHaveCount(0);
+      await expect(threads.getByRole('button', { name: new RegExp(`^\\W*${wrong}`, 'i') })).toHaveCount(0)
     }
     // Tapping one names it and links back to the entries it came from.
-    await threads.getByRole('button', { name: /Nadia/ }).click();
-    await expect(page.getByText(/Nadia is in 3 of your entries/i)).toBeVisible();
+    await threads.getByRole('button', { name: /Nadia/ }).click()
+    await expect(page.getByText(/Nadia is in 3 of your entries/i)).toBeVisible()
 
     /*
      * The recap, and quiet mode.
@@ -240,17 +240,17 @@ test.describe('compose → bloom → share → recipient', () => {
      * depends on when this runs. Assert the invariant that holds either way: whatever it says, it never
      * says it with a number or a cadence, because that is the line between a recap and a scoreboard.
      */
-    const shelf = page.getByRole('region', { name: /my flower journal/i });
-    await expect(shelf).toBeVisible();
-    const recap = shelf.locator('p').filter({ hasText: /^lately,/ });
+    const shelf = page.getByRole('region', { name: /my flower journal/i })
+    await expect(shelf).toBeVisible()
+    const recap = shelf.locator('p').filter({ hasText: /^lately,/ })
     if (await recap.count()) {
-      await expect(recap.first()).not.toHaveText(/\d|streak|week|day|missed|behind/i);
+      await expect(recap.first()).not.toHaveText(/\d|streak|week|day|missed|behind/i)
     }
     // Quiet by default, so the tally is absent and the control offers to show it.
-    const quietToggle = shelf.getByRole('button', { name: /show the tallies/i });
-    await expect(quietToggle).toBeVisible();
-    await quietToggle.click();
-    await expect(shelf.getByRole('button', { name: /hide the tallies/i })).toBeVisible();
+    const quietToggle = shelf.getByRole('button', { name: /show the tallies/i })
+    await expect(quietToggle).toBeVisible()
+    await quietToggle.click()
+    await expect(shelf.getByRole('button', { name: /hide the tallies/i })).toBeVisible()
     /*
      * Either outcome counts, because which one happens is the platform's choice, not the app's.
      * A phone has navigator.share and reports "garden shared"; a desktop browser (and this headless
@@ -258,20 +258,20 @@ test.describe('compose → bloom → share → recipient', () => {
      * the native wording meant this could never pass anywhere the fallback runs, which is where it
      * runs in CI.
      */
-    const shareButton = page.getByRole('button', { name: 'Share this garden' });
-    await shareButton.click();
-    await expect(page.getByRole('button', { name: /garden shared|link copied/i })).toBeVisible();
-  });
+    const shareButton = page.getByRole('button', { name: 'Share this garden' })
+    await shareButton.click()
+    await expect(page.getByRole('button', { name: /garden shared|link copied/i })).toBeVisible()
+  })
 
   test('a dead link says the garden is still there', async ({ page }) => {
     // Recipients arrive by pasted link, so a truncated one is a normal event, not an edge case.
     // Gardens have no TTL, so this page must never claim the gift expired.
-    await page.goto('/g/zzzz99');
+    await page.goto('/g/zzzz99')
     // `.` for the apostrophe: the copy uses a typographic one (&rsquo;), not U+0027.
-    await expect(page.getByText(/didn.t lead anywhere/i)).toBeVisible();
-    await expect(page.getByText(/gardens never expire/i)).toBeVisible();
+    await expect(page.getByText(/didn.t lead anywhere/i)).toBeVisible()
+    await expect(page.getByText(/gardens never expire/i)).toBeVisible()
     // The assertion that matters, stated as the rule rather than as a count: this page must
     // never tell someone the gift they were sent is gone, because it isn't.
-    await expect(page.locator('body')).not.toContainText(/(link|garden).{0,20}expired/i);
-  });
-});
+    await expect(page.locator('body')).not.toContainText(/(link|garden).{0,20}expired/i)
+  })
+})

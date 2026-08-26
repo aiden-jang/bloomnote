@@ -15,7 +15,15 @@ function names(garden: GardenData): string {
   return 'a little garden'
 }
 
-function TrailGarden({ garden, label, latest = false }: { garden: GardenData; label: string; latest?: boolean }) {
+function TrailGarden({
+  garden,
+  label,
+  latest = false,
+}: {
+  garden: GardenData
+  label: string
+  latest?: boolean
+}) {
   const date = formatGardenDate(garden.createdAt)
   return (
     <li className={styles.stop}>
@@ -52,12 +60,16 @@ export default function MemoryTrail({ previous, current }: Props) {
   return (
     <details className={styles.trail}>
       <summary className={styles.summary}>
-        <span className={styles.summaryMark} aria-hidden>❀</span>
+        <span className={styles.summaryMark} aria-hidden>
+          ❀
+        </span>
         <span>
           <strong>follow the garden trail</strong>
           <small>two gardens, one little story</small>
         </span>
-        <span className={styles.chevron} aria-hidden>⌄</span>
+        <span className={styles.chevron} aria-hidden>
+          ⌄
+        </span>
       </summary>
       <div className={styles.body}>
         <p className={styles.intro}>where this garden grew from</p>

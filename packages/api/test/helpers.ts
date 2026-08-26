@@ -1,5 +1,5 @@
-import { env } from 'cloudflare:test';
-import type { Env } from '../src/env.js';
+import { env } from 'cloudflare:test'
+import type { Env } from '../src/env.js'
 
 /**
  * The test worker's bindings (a real in-memory KV for GARDENS), typed as the app's Env.
@@ -16,4 +16,4 @@ import type { Env } from '../src/env.js';
  *
  * The one test that covers the unconfigured branch overrides this back to '' explicitly.
  */
-export const testEnv = { ...env, GEMINI_API_KEY: 'test-key-never-a-real-one' } as unknown as Env;
+export const testEnv = { ...env, GEMINI_API_KEY: 'test-key-never-a-real-one' } as unknown as Env

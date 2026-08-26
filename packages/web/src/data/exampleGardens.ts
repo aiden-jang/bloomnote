@@ -132,7 +132,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Theo',
     to: 'Dr. Park',
     message:
-      "dr. park you stayed an extra hour after class and gradient descent finally clicked. lowkey changed my whole semester. ty for real.",
+      'dr. park you stayed an extra hour after class and gradient descent finally clicked. lowkey changed my whole semester. ty for real.',
     occasion: 'thank-you',
     mood: 'steady',
     flowers: [

@@ -33,8 +33,7 @@ function read(): MineRecord[] {
     // Defensive filter: drop anything that doesn't at least have a
     // string id, so a corrupted entry can't crash the archive view.
     return parsed.filter(
-      (r): r is MineRecord =>
-        !!r && typeof r === 'object' && typeof (r as MineRecord).id === 'string',
+      (r): r is MineRecord => !!r && typeof r === 'object' && typeof (r as MineRecord).id === 'string',
     )
   } catch {
     return []
@@ -67,10 +66,9 @@ export function countSentGardens(): number {
  *  the same id replaces in place) and trims the oldest entries past
  *  the cap. */
 export function recordSentGarden(record: MineRecord): void {
-  const records = read().filter(r => r.id !== record.id)
+  const records = read().filter((r) => r.id !== record.id)
   records.push(record)
-  const trimmed =
-    records.length > MAX_ENTRIES ? records.slice(records.length - MAX_ENTRIES) : records
+  const trimmed = records.length > MAX_ENTRIES ? records.slice(records.length - MAX_ENTRIES) : records
   write(trimmed)
 }
 
@@ -91,7 +89,7 @@ export function updateSentGardenId(oldId: string | null, next: MineRecord): void
     return
   }
   const records = read()
-  const i = records.findIndex(r => r.id === oldId)
+  const i = records.findIndex((r) => r.id === oldId)
   if (i === -1) {
     recordSentGarden(next)
     return
@@ -104,5 +102,5 @@ export function updateSentGardenId(oldId: string | null, next: MineRecord): void
  *  affordance on /mine). Server-side record is untouched — the link
  *  still works for anyone who already has it. */
 export function removeSentGarden(id: string): void {
-  write(read().filter(r => r.id !== id))
+  write(read().filter((r) => r.id !== id))
 }
