@@ -45,6 +45,14 @@
   50%      { transform: translateY(-4px) rotate(0.4deg); }
 }
 
+/* This one runs forever on a screen someone may sit on for a while, and it was the only animation
+   in the file with nothing switching it off. */
+@media (prefers-reduced-motion: reduce) {
+  .envelope {
+    animation: none;
+  }
+}
+
 /* Countdown stack — anchors the visual story. */
 .countdown {
   text-align: center;
