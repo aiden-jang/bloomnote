@@ -67,23 +67,16 @@
   background: color-mix(in srgb, var(--green-pale), transparent 55%);
 }
 
+/* The pressed flower, drawn. This is somebody's private shelf of flowers they kept; every row
+   stood for one of them with two or three colour dots. */
 .swatches {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
   width: 32px;
-  height: 28px;
+  height: 30px;
 }
-
-.swatches i {
-  position: absolute;
-  width: 17px;
-  height: 17px;
-  border: 1.5px solid var(--cream);
-  border-radius: 50%;
-}
-
-.swatches i:nth-child(1) { left: 0; top: 7px; }
-.swatches i:nth-child(2) { left: 9px; top: 0; }
-.swatches i:nth-child(3) { left: 14px; top: 11px; }
 
 .copy {
   min-width: 0;

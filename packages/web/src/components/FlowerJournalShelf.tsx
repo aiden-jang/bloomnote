@@ -23,6 +23,8 @@ import {
   type Recording,
   type VoiceMemory,
 } from '../lib/voiceMemory'
+import { FlowerHead } from './FlowerSVG'
+import { cardBloom } from '../lib/cardBloom'
 
 export default function FlowerJournalShelf({ currentGardenId }: { currentGardenId: string }) {
   const [entries, setEntries] = useState<FlowerJournalEntry[]>(() => loadFlowerJournal())
@@ -154,8 +156,13 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       <ul className={styles.entries}>
         {shown.slice(0, 8).map(entry => (
           <li key={entry.id} className={entry.gardenId === currentGardenId ? styles.current : undefined}>
+            {/* Keyed on the garden and the flower's place in it, which is what the archive card for
+                that same garden uses — so a flower you pressed is drawn the same in both places. */}
             <span className={styles.swatches} aria-hidden>
-              {entry.colors.slice(0, 3).map((color, index) => <i key={`${color}-${index}`} style={{ background: color }} />)}
+              <FlowerHead
+                flower={cardBloom(entry.colors[0] ?? '#cbd6c2', entry.gardenId, entry.flowerIndex)}
+                size={30}
+              />
             </span>
             <span className={styles.copy}>
               <a href={`/g/${entry.gardenId}`}>{entry.flowerName}</a>
