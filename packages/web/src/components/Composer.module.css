@@ -105,6 +105,17 @@
   letter-spacing: 0.06em;
 }
 
+/*
+ * The placeholder is a suggestion someone can adopt ("use this thought" copies it), so it stays
+ * legible rather than being faded out of the way. What it should not be is the browser's default
+ * #757575: a neutral grey was the one colour on this page that came from Chrome rather than from
+ * the palette, and at that weight it read as text already typed. The palette's light green is
+ * both on-brand and a clear step down from the deep green real input uses.
+ */
+.textarea::placeholder {
+  color: var(--text-light);
+}
+
 .textarea {
   width: 100%;
   border: 1.5px solid var(--green-pale);

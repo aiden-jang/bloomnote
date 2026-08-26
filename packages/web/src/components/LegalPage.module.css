@@ -1,0 +1,51 @@
+/* Legal pages. Same card as the notice shells; these rules are only the type inside it.
+   Colours are named rather than dimmed with opacity — see the note in LegalPage.tsx. */
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  padding: 5px 2px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--green-mid);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--green-deep);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 2.1rem;
+  font-weight: 500;
+  color: var(--green-deep);
+  letter-spacing: -0.4px;
+}
+
+.updated {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+/* The card centres its heading; the prose underneath wants a left edge to read against. */
+.section {
+  margin-top: 1.75rem;
+  text-align: left;
+}
+
+.heading {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+
+.body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-mid);
+}
