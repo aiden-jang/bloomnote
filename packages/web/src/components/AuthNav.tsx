@@ -41,6 +41,14 @@ const link: CSSProperties = {
   font: 'inherit',
   padding: 0,
   whiteSpace: 'nowrap',
+  /*
+   * Fill the chip's height rather than sitting as an 18px line inside a 38px pill. The pill is a
+   * plain div, so it was never the pointer target — only this was, and it was well under the 24px
+   * minimum with a lot of apparently-clickable chrome around it that did nothing.
+   */
+  alignSelf: 'stretch',
+  display: 'flex',
+  alignItems: 'center',
 };
 // The display name is user-controlled and unbounded — truncate it so it can't grow the pill.
 const nameLink: CSSProperties = {
