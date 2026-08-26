@@ -56,6 +56,15 @@
      to load. */
   --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
   --sans:  'DM Sans', system-ui, sans-serif;
+  /*
+   * The two fixed corner chips: the sound toggle and the account pill. They sit side by side and
+   * are drawn by different components, one in a CSS module and one in inline styles, so each used
+   * to carry its own copy of the geometry and they drifted — different heights on desktop,
+   * different top edges on a phone. One source, so they move together.
+   */
+  --chip-edge: 14px;
+  --chip-size: 38px;
+  --chip-gap: 12px;
 }
 
 html, body, #root {
@@ -197,5 +206,13 @@ p { text-wrap: pretty; }
   ::view-transition-new(root) {
     animation-duration: 420ms;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* The corner chips tuck in and shrink on a phone. */
+@media (max-width: 480px) {
+  :root {
+    --chip-edge: 10px;
+    --chip-size: 34px;
   }
 }
