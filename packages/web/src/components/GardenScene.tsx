@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
-import FlowerSVG, { flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
+import FlowerSVG, { FlowerHead, flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
 import { ritualTime, type RitualTime } from '../lib/rituals'
@@ -712,9 +712,7 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
       {focused !== null && flowers[focused] && (
         <aside className={styles.flowerPeek} aria-live="polite">
           <span className={styles.flowerPeekSwatches} aria-hidden>
-            {flowers[focused].petalColors.slice(0, 4).map((color, index) => (
-              <span key={`${color}-${index}`} style={{ background: color }} />
-            ))}
+            <FlowerHead flower={flowers[focused]} size={30} />
           </span>
           <span className={styles.flowerPeekCopy}>
             <strong>{flowers[focused].name}</strong>
