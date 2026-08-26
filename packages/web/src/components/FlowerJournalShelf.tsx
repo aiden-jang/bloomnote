@@ -26,8 +26,12 @@ import {
 import { FlowerHead } from './FlowerSVG'
 import { cardBloom } from '../lib/cardBloom'
 
+/** How many pressed flowers the shelf shows before it asks whether you want the rest. */
+const JOURNAL_PREVIEW = 8
+
 export default function FlowerJournalShelf({ currentGardenId }: { currentGardenId: string }) {
   const [entries, setEntries] = useState<FlowerJournalEntry[]>(() => loadFlowerJournal())
+  const [showAll, setShowAll] = useState(false)
   const [quiet, setQuietState] = useState(isQuiet)
   /** Which entries have audio, so a row can offer playback without loading every blob. */
   const [withVoice, setWithVoice] = useState<Set<string>>(new Set())
@@ -120,6 +124,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   }
 
   const shown = shelf ? entriesOn(entries, shelf) : entries
+  const visible = showAll ? shown : shown.slice(0, JOURNAL_PREVIEW)
   const emptyShelf = shelf ? SHELVES.find(option => option.id === shelf)?.empty : null
 
   return (
@@ -154,7 +159,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       </div>
       {shown.length === 0 && emptyShelf && <p className={styles.recap}>{emptyShelf}</p>}
       <ul className={styles.entries}>
-        {shown.slice(0, 8).map(entry => (
+        {visible.map(entry => (
           <li key={entry.id} className={entry.gardenId === currentGardenId ? styles.current : undefined}>
             {/* Keyed on the garden and the flower's place in it, which is what the archive card for
                 that same garden uses — so a flower you pressed is drawn the same in both places. */}
@@ -251,9 +256,17 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
           </li>
         ))}
       </ul>
-      {shown.length > 8 && (
+      {shown.length > JOURNAL_PREVIEW && (
         <p className={styles.more}>
-          {quiet ? 'more flowers are tucked away.' : `${shown.length - 8} more flowers are tucked away.`}
+          {/* This used to say how many were tucked away and stop there, which on a shelf of your own
+              keepsakes is a dead end: the store holds eighty and only eight were ever reachable. */}
+          <button type="button" className={styles.moreBtn} onClick={() => setShowAll(open => !open)}>
+            {showAll
+              ? 'tuck them back'
+              : quiet
+                ? 'more flowers are tucked away. show them all'
+                : `${shown.length - JOURNAL_PREVIEW} more flowers are tucked away. show them all`}
+          </button>
         </p>
       )}
       <Constellations entries={entries} />
