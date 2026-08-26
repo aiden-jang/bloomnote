@@ -1,4 +1,6 @@
 import GardenScene from './GardenScene'
+import { FlowerHead } from './FlowerSVG'
+import { cardBloom } from '../lib/cardBloom'
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
@@ -611,8 +613,10 @@ function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
     <aside className={styles.memoryLane} aria-label="A garden to revisit">
       <a href={`/g/${memory.id}`} className={styles.memoryMain}>
         <span className={styles.memoryBouquet} aria-hidden>
-          {(memory.swatches.length ? memory.swatches : ['var(--green-pale)']).slice(0, 5).map((color, index) => (
-            <span key={`${color}-${index}`} style={{ background: color }} />
+          {(memory.swatches.length ? memory.swatches : ['#cbd6c2']).slice(0, 5).map((color, index) => (
+            <span key={`${color}-${index}`}>
+              <FlowerHead flower={cardBloom(color, memory.id, index)} size={22} />
+            </span>
           ))}
         </span>
         <span className={styles.memoryCopy}>
@@ -774,11 +778,11 @@ function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, on
     <li className={styles.card}>
       <a href={`/g/${id}`} className={styles.cardMain}>
         <span className={styles.swatches} aria-hidden>
-          {swatches.length > 0 ? (
-            swatches.map((c, i) => <span key={i} className={styles.swatch} style={{ background: c }} />)
-          ) : (
-            <span className={styles.swatch} style={{ background: 'var(--green-pale)' }} />
-          )}
+          {(swatches.length > 0 ? swatches : ['#cbd6c2']).map((c, i) => (
+            <span key={i} className={styles.swatch}>
+              <FlowerHead flower={cardBloom(c, id, i)} size={24} />
+            </span>
+          ))}
         </span>
         <span className={styles.cardText}>
           <span className={styles.recipient}>{cardLabel}</span>
