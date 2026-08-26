@@ -5,6 +5,7 @@ import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
+import { SecretEnvelope } from './RecipientView'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import SoundToggle from './SoundToggle'
@@ -955,9 +956,14 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           </a>
         </h1>
         <p className={styles.subtitle}>
-          {remixSeed
-            ? `write ${remixSeed.from || 'them'} back.`
-            : 'write a note. they get a whole garden.'}
+          {phase === 'designed'
+            ? // The page still said "write a note" to someone who had just finished writing one.
+              recipient.trim()
+              ? `it's ${recipient.trim()}'s now. send it when you're ready.`
+              : "it's theirs now. send it when you're ready."
+            : remixSeed
+              ? `write ${remixSeed.from || 'them'} back.`
+              : 'write a note. they get a whole garden.'}
         </p>
       </header>
       {showRecoveredDraft && (
@@ -1287,6 +1293,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </div>
       )}
 
+      {phase === 'designed' && garden && (
+        <PetalFall key={gardenId ?? 'fall'} flowers={garden.flowers} />
+      )}
+
       {phase === 'designed' && garden && shareUrl && (
         <>
           {/* Preview section — together with the GardenScene above,
@@ -1342,7 +1352,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                     onClick={() => setPreviewSecretRevealed(revealed => !revealed)}
                     aria-expanded={previewSecretRevealed}
                   >
-                    <span aria-hidden>{previewSecretRevealed ? '✉' : '💌'}</span>
+                    <SecretEnvelope open={previewSecretRevealed} />
                     {previewSecretRevealed
                       ? 'hide the little secret'
                       : 'there’s a little secret in here'}
@@ -1428,3 +1438,68 @@ function Spinner() {
     </span>
   )
 }
+
+/*
+ * One fall of petals when a garden is finished.
+ *
+ * The moment the sender's garden arrives had a chime and nothing to look at: the page kept its
+ * compose-mode header and the "ready" card sat below a full preview, so the emotional peak of
+ * making something for someone read as a form result. This marks it.
+ *
+ * Deliberately not the ambient drift the plot already runs. That one loops forever and belongs to
+ * the scene; this happens once, across the whole page, in the colours of the flowers they just
+ * grew, and then removes itself. Keyed on the garden id upstream so re-rolling replays it, which is
+ * right: a different garden is a different moment.
+ */
+const FALL_MS = 4200
+
+function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
+  const [done, setDone] = useState(prefersReducedMotion())
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return
+    const t = setTimeout(() => setDone(true), FALL_MS)
+    return () => clearTimeout(t)
+  }, [])
+
+  // Unmounted rather than left at opacity 0: there is no reason for eighteen absolutely-positioned
+  // nodes to outlive the four seconds they are visible for.
+  if (done || flowers.length === 0) return null
+
+  return (
+    <div className={styles.petalFall} aria-hidden>
+      {PETAL_FALL.map(([left, size, delay, duration, drift, rotate], i) => {
+        const flower = flowers[i % flowers.length]!
+        return (
+          <span
+            key={i}
+            className={styles.fallPetal}
+            style={{
+              ['--left' as string]: `${left}%`,
+              ['--size' as string]: `${size}px`,
+              ['--delay' as string]: `${delay}ms`,
+              ['--duration' as string]: `${duration}ms`,
+              ['--drift' as string]: `${drift}px`,
+              ['--rotate' as string]: `${rotate}deg`,
+              ['--color' as string]: flower.petalColors[i % flower.petalColors.length]!,
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+/*
+ * left %, size px, delay ms, duration ms, horizontal drift px, start rotation deg.
+ *
+ * Hand-placed rather than random: the spread is uneven on purpose, nothing starts in the middle of
+ * the copy the sender is about to read, and it looks the same every time so it can be judged.
+ */
+const PETAL_FALL: Array<[number, number, number, number, number, number]> = [
+  [6, 10, 0, 3000, 42, 12], [18, 7, 320, 3400, -28, 200], [29, 11, 120, 2700, 60, 74],
+  [41, 8, 560, 3200, -46, 310], [52, 9, 240, 3050, 34, 140], [63, 6, 700, 3500, -22, 20],
+  [74, 10, 90, 2850, 52, 250], [86, 8, 430, 3300, -38, 96], [94, 7, 620, 3100, 26, 175],
+  [12, 8, 880, 2900, -34, 58], [35, 6, 1010, 3250, 44, 290], [58, 10, 760, 2950, -50, 130],
+  [80, 7, 1120, 3150, 30, 218], [24, 9, 1240, 3050, -40, 66],
+]

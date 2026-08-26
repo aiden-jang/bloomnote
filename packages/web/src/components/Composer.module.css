@@ -1575,3 +1575,46 @@
      further; it just gets its own line so it reads as a second thought rather than a clause. */
   color: var(--text-mid);
 }
+
+/* --- The finished-garden petal fall --------------------------------------
+   Fixed, not absolute: it falls across the window the sender is looking at, rather than down a
+   page that is several screens tall. pointer-events:none so it never eats a tap on the copy
+   button underneath it. */
+.petalFall {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Same silhouette as the plot's drifting petals, so this reads as more of the same weather rather
+   than as confetti from another app.
+
+   Held at just over half opacity, and small. At 0.9 they were stickers: the first pass put one
+   squarely across "what Priya sees" and another over the note, and a petal you have to read
+   through is worse than no petal. These pass over the words instead of landing on them. */
+.fallPetal {
+  position: absolute;
+  top: -6%;
+  left: var(--left);
+  width: var(--size);
+  height: calc(var(--size) * 1.4);
+  background: var(--color);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  opacity: 0;
+  animation: petalFall var(--duration) cubic-bezier(0.35, 0.15, 0.55, 1) var(--delay) forwards;
+}
+
+@keyframes petalFall {
+  0% { opacity: 0; transform: translate(0, 0) rotate(var(--rotate)); }
+  10% { opacity: 0.55; }
+  80% { opacity: 0.55; }
+  100% { opacity: 0; transform: translate(var(--drift), 112vh) rotate(calc(var(--rotate) + 320deg)); }
+}
+
+/* The component already returns nothing under reduced motion; this is the belt to that braces,
+   in case it is ever rendered from somewhere that does not check. */
+@media (prefers-reduced-motion: reduce) {
+  .petalFall { display: none; }
+}

@@ -512,7 +512,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
  * wax seal on the countdown: an emoji is whatever the reader's OS decides to draw, on a page where
  * everything else is ours. Strokes are currentColor so it takes the link's colour and its hover.
  */
-function SecretEnvelope({ open }: { open: boolean }) {
+export function SecretEnvelope({ open }: { open: boolean }) {
   return (
     <svg width="18" height="14" viewBox="0 0 20 15" fill="none" aria-hidden focusable="false">
       <rect
