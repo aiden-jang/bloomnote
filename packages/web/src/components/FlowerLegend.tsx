@@ -1,3 +1,4 @@
+import { FlowerHead } from './FlowerSVG'
 import type { FlowerSpec } from '../garden'
 import { BLOOM_STAGGER_MS } from './GardenScene'
 import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
@@ -46,10 +47,8 @@ export default function FlowerLegend({ flowers, focused = null, onFocus }: Props
             // flower blooms above.
             style={{ animationDelay: `${i * BLOOM_STAGGER_MS}ms` }}
           >
-            <span className={styles.swatchStack} aria-hidden>
-              {f.petalColors.map((c, j) => (
-                <span key={j} className={styles.swatch} style={{ background: c }} />
-              ))}
+            <span className={styles.bloom} aria-hidden>
+              <FlowerHead flower={f} size={34} />
             </span>
             <div className={styles.text}>
               <p className={styles.name}>{f.name}</p>
