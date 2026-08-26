@@ -58,7 +58,12 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
 
   return (
     <div style={{ maxWidth: '38rem', margin: '0 auto', padding: '4rem 1.5rem 3rem', lineHeight: 1.65 }}>
-      <a href="/" style={{ fontWeight: 600, textDecoration: 'none', opacity: 0.75 }}>
+      {/* Colour included: without it this fell through to the user agent's default link blue, which
+          on a cream and green page was the one thing on it that came from the browser. */}
+      <a
+        href="/"
+        style={{ fontWeight: 600, textDecoration: 'none', opacity: 0.75, color: 'var(--green-mid)' }}
+      >
         &larr; bloomnote
       </a>
       <h1 style={{ fontFamily: 'var(--font-display, Fraunces, Georgia, serif)', fontSize: '2.5rem', margin: '1.5rem 0 0.25rem' }}>
