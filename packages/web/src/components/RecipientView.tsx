@@ -32,6 +32,10 @@ interface Props {
   gardenId: string
 }
 
+/* Long enough to cross the gap to the panel deliberately, short enough that leaving for good still
+   feels like letting go. */
+const FLOWER_PANEL_GRACE_MS = 260
+
 type Phase = 'sealed' | 'blooming'
 
 export default function RecipientView({ gardenData, gardenId }: Props) {
@@ -242,6 +246,44 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const [focused, setFocused] = useState<number | null>(null)
 
   /*
+   * Hover intent for the flower panel, owned here because both halves of the link feed it.
+   *
+   * The panel is not attached to the flower — it sits at the foot of the plot — so reaching its
+   * links means crossing sky that belongs to neither, and the legend rows that open it are in a
+   * different card entirely. Clearing focus the moment a flower or row was left made
+   * "share this flower", "save a pressed-flower card" and "keep in my flower journal" unreachable
+   * with a mouse: the panel vanished on the way there. One timer, not one per component, because
+   * two would race — the plot cancelling its own countdown would not stop the legend's.
+   */
+  const releaseTimer = useRef<number | null>(null)
+  const focusFlower = useCallback((index: number | null) => {
+    if (releaseTimer.current !== null) {
+      window.clearTimeout(releaseTimer.current)
+      releaseTimer.current = null
+    }
+    setFocused(index)
+  }, [])
+  const releaseFlower = useCallback(() => {
+    if (releaseTimer.current !== null) window.clearTimeout(releaseTimer.current)
+    releaseTimer.current = window.setTimeout(() => {
+      releaseTimer.current = null
+      /*
+       * Someone writing a memory has their hands on the keyboard, not the mouse. The pointer
+       * drifting off the panel is not a decision to throw away the sentence they are halfway
+       * through, so a panel holding focus stays until it is closed on purpose.
+       */
+      if (document.activeElement?.closest('[data-flower-peek]')) return
+      setFocused(null)
+    }, FLOWER_PANEL_GRACE_MS)
+  }, [])
+  useEffect(
+    () => () => {
+      if (releaseTimer.current !== null) window.clearTimeout(releaseTimer.current)
+    },
+    [],
+  )
+
+  /*
    * Whether the recipient has ever opened a flower.
    *
    * Tapping a flower is the best thing in here — it is where the meaning and the journal live — and
@@ -313,7 +355,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         autoBloom={phase === 'blooming'}
         onAllBloomed={handleAllBloomed}
         focused={focused}
-        onFocus={setFocused}
+        onFocus={focusFlower}
+        onFocusRelease={releaseFlower}
         wateredAt={wateredAt}
         journalGardenId={gardenId}
         journalFrom={from}
@@ -414,7 +457,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       </div>
 
       <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
-        <FlowerLegend flowers={flowers} focused={focused} onFocus={setFocused} />
+        <FlowerLegend flowers={flowers} focused={focused} onFocus={focusFlower} onFocusRelease={releaseFlower} />
       </div>
 
       {/* A reply carries both notes, so let the recipient unfold them as a chronological keepsake

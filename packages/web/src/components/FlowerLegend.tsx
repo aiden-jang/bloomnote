@@ -10,6 +10,8 @@ interface Props {
   focused?: number | null
   /** Pointing at a row, or letting go of it. */
   onFocus?: (index: number | null) => void
+  /** The pointer left a row. The owner decides how long the plot's panel survives that. */
+  onFocusRelease?: () => void
 }
 
 /**
@@ -23,7 +25,7 @@ interface Props {
  * the message with a typewriter reveal), so this component is purely
  * the per-flower breakdown.
  */
-export default function FlowerLegend({ flowers, focused = null, onFocus }: Props) {
+export default function FlowerLegend({ flowers, focused = null, onFocus, onFocusRelease }: Props) {
   return (
     <section className={styles.list} aria-label="What each flower means">
       <p className={styles.heading}>what they mean</p>
@@ -40,7 +42,7 @@ export default function FlowerLegend({ flowers, focused = null, onFocus }: Props
                   : styles.item
             }
             onMouseEnter={() => onFocus?.(i)}
-            onMouseLeave={() => onFocus?.(null)}
+            onMouseLeave={() => onFocusRelease?.()}
             onClick={() => onFocus?.(focused === i ? null : i)}
             // Per-row stagger matches the GardenScene's per-flower
             // bloom timing — rows fade in as their corresponding
