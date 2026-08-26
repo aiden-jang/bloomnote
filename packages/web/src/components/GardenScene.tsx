@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import FlowerSVG, { FlowerHead, flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
@@ -98,6 +98,17 @@ function gradientFor(occasion?: string): { top: string; bottom: string } {
 /** Time between consecutive flower blooms. Exported so the legend
  *  can stagger its row reveals in sync with the bloom they describe. */
 export const BLOOM_STAGGER_MS = 500
+
+/*
+ * How long the open flower panel survives the pointer leaving the flower.
+ *
+ * The panel is not attached to the flower — it sits at the foot of the plot — so reaching its links
+ * means crossing sky that belongs to neither. Closing the instant the flower is left made
+ * "share this flower", "save a pressed-flower card" and "keep in my flower journal" unreachable with
+ * a mouse: the panel vanished on the way there. Long enough to cross that gap deliberately, short
+ * enough that leaving for good still feels like letting go.
+ */
+const PEEK_GRACE_MS = 260
 
 /** How long to hold the fully-bloomed scene before the post-bloom
  *  fade-ins (message, legend, CTA) start. Lets the bloom breathe. */
@@ -435,6 +446,33 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
   const [journalMemory, setJournalMemory] = useState('')
   const [journalSaved, setJournalSaved] = useState(false)
   const placed = placeFlowers(flowers)
+  /*
+   * Hover intent for the flower panel. The pointer leaving a flower starts a countdown rather than
+   * closing; entering the panel cancels it. Anything that leaves both ends up letting the timer run.
+   */
+  const closeTimer = useRef<number | null>(null)
+  const peekRef = useRef<HTMLElement>(null)
+  const cancelPeekClose = useCallback(() => {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }, [])
+  const schedulePeekClose = useCallback(() => {
+    cancelPeekClose()
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null
+      /*
+       * Someone writing a memory has their hands on the keyboard, not the mouse. The pointer
+       * drifting off the panel is not a decision to throw away the sentence they are halfway
+       * through, so a panel holding focus stays until it is closed on purpose.
+       */
+      if (peekRef.current?.contains(document.activeElement)) return
+      onFocus?.(null)
+    }, PEEK_GRACE_MS)
+  }, [cancelPeekClose, onFocus])
+  useEffect(() => cancelPeekClose, [cancelPeekClose])
+
   const aura = auraFor(mood)
 
   useEffect(() => {
@@ -710,7 +748,13 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
         </div>
       )}
       {focused !== null && flowers[focused] && (
-        <aside className={styles.flowerPeek} aria-live="polite">
+        <aside
+          ref={peekRef}
+          className={styles.flowerPeek}
+          aria-live="polite"
+          onMouseEnter={cancelPeekClose}
+          onMouseLeave={schedulePeekClose}
+        >
           <span className={styles.flowerPeekSwatches} aria-hidden>
             <FlowerHead flower={flowers[focused]} size={30} />
           </span>
@@ -871,11 +915,17 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
               ['--depth' as string]: String(p.depth),
             }}
             title={p.spec.name}
-            onMouseEnter={() => onFocus?.(i)}
-            onMouseLeave={() => onFocus?.(null)}
+            onMouseEnter={() => {
+              cancelPeekClose()
+              onFocus?.(i)
+            }}
+            onMouseLeave={schedulePeekClose}
             // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
             // tapping it again lets go, so the link is reachable without a mouse.
-            onClick={() => onFocus?.(focused === i ? null : i)}
+            onClick={() => {
+              cancelPeekClose()
+              onFocus?.(focused === i ? null : i)
+            }}
           >
             <FlowerSVG
               flower={p.spec}
