@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import styles from './ChipRow.module.css'
 
 interface Props {
@@ -39,6 +39,26 @@ const DRAG_SLOP_PX = 4
  */
 export default function ChipRow({ labelledBy, children }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+
+  /* Only the chosen chip is tabbable, so the whole row is a single stop on the way down the page. */
+  useEffect(() => {
+    const row = ref.current
+    if (!row) return
+    const apply = (): void => {
+      const radios = Array.from(row.querySelectorAll<HTMLElement>('[role="radio"]'))
+      const checked = radios.findIndex(radio => radio.getAttribute('aria-checked') === 'true')
+      const stop = checked === -1 ? 0 : checked
+      radios.forEach((radio, index) => {
+        radio.tabIndex = index === stop ? 0 : -1
+      })
+    }
+    apply()
+    // React re-renders the chips when the selection changes; watching the attribute keeps the
+    // single tab stop on the chip that is actually chosen without ChipRow knowing what they are.
+    const observer = new MutationObserver(apply)
+    observer.observe(row, { subtree: true, attributes: true, attributeFilter: ['aria-checked'] })
+    return () => observer.disconnect()
+  }, [])
 
   const measure = useCallback(() => {
     const el = ref.current
@@ -129,6 +149,36 @@ export default function ChipRow({ labelledBy, children }: Props) {
     }
   }, [])
 
+  /*
+   * The keyboard half of `role="radiogroup"`.
+   *
+   * The roles and aria-checked were already right, but nothing implemented the behaviour they
+   * promise: arrows did nothing, and every chip was its own tab stop, so occasion and mood together
+   * cost sixteen presses to get past. A radio group is one stop, arrows move within it, and the stop
+   * lands on whichever chip is currently chosen.
+   */
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    const row = ref.current
+    if (!row) return
+    const radios = Array.from(row.querySelectorAll<HTMLElement>('[role="radio"]'))
+    if (radios.length === 0) return
+
+    const current = radios.indexOf(document.activeElement as HTMLElement)
+    let next: number
+    if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = radios.length - 1
+    else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = ((current < 0 ? -1 : current) + 1 + radios.length) % radios.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = ((current < 0 ? 1 : current) - 1 + radios.length) % radios.length
+    else return
+
+    event.preventDefault()
+    const target = radios[next]
+    if (!target) return
+    // Arrowing selects as it moves, which is what a radio group does.
+    target.focus()
+    target.click()
+  }
+
   return (
     <div
       ref={ref}
@@ -136,6 +186,7 @@ export default function ChipRow({ labelledBy, children }: Props) {
       role="radiogroup"
       aria-labelledby={labelledBy}
       onScroll={measure}
+      onKeyDown={onKeyDown}
     >
       {children}
     </div>
