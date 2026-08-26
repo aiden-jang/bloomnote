@@ -530,3 +530,25 @@
     animation: none;
   }
 }
+
+/* Sits under the open button on the sealed screen, where the page used to simply stop. */
+.waitingLine {
+  margin: 18px auto 0;
+  max-width: 26ch;
+  text-align: center;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  /* --text-light is only 2.8:1 on the cream page; this is body copy, so it takes the darker ink. */
+  color: var(--text-mid);
+  opacity: 0;
+  animation: waitingIn 700ms ease 420ms forwards;
+}
+
+@keyframes waitingIn {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waitingLine { animation: none; opacity: 1; }
+}
