@@ -94,7 +94,16 @@ function wrapMeaning(value: string, max = 38): string[] {
 function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: string }) {
   const lines = wrapMeaning(meaning);
   const svgH = flower.stemHeight + 80;
-  const scale = Math.min(3.5, 500 / svgH);
+  /*
+   * The flower stands between the specimen label and the rule, and no further up.
+   *
+   * The band used to be 500 tall against a baseline of 565, which put the top of every flower at
+   * y=65 — the scale is capped by the band, so the top lands in the same place whatever the stem
+   * height. The label's baseline is 118 and it runs to roughly x=548, the flower starts at x=434,
+   * so the head sat on the words: the card read "PRESSED FROM A BLOOMN…" with petals over the rest.
+   */
+  const FLOWER_BAND = 415;
+  const scale = Math.min(3.5, FLOWER_BAND / svgH);
   const flowerWidth = 80 * scale;
 
   return (
