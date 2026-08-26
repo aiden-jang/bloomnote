@@ -206,7 +206,16 @@
 .promptLink {
   border: none;
   background: none;
-  padding: 0;
+  /*
+   * Padding for the finger, negative margin for the layout. At 12px these two underlined buttons
+   * were 16px tall, under the 24px a pointer target needs, and they sit side by side where a miss
+   * hits the other one. Same trick the chip row uses: the box grows, the row does not move.
+   */
+  padding: 5px 2px;
+  margin: -5px -2px;
+  /* The 12px line box lands at 15.5px, so 4px each side left it at 23.5 and still short. */
+  min-height: 24px;
+  box-sizing: border-box;
   color: var(--text-mid);
   font: inherit;
   font-size: 12px;

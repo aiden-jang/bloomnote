@@ -1079,9 +1079,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <div className={styles.nameRow}>
+            {/* htmlFor/id, not just adjacency: these two labels sat beside their inputs rather than
+                wrapping them, so the only name either field carried was its placeholder — which
+                disappears the moment someone types, and is not a label. The pairing also makes the
+                visible word clickable to focus the field. */}
             <section className={styles.section}>
-              <label className={styles.label}>from</label>
+              <label className={styles.label} htmlFor="garden-from">
+                from
+              </label>
               <input
+                id="garden-from"
                 className={styles.input}
                 placeholder="your name"
                 value={from}
@@ -1090,8 +1097,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               />
             </section>
             <section className={styles.section}>
-              <label className={styles.label}>to</label>
+              <label className={styles.label} htmlFor="garden-to">
+                to
+              </label>
               <input
+                id="garden-to"
                 className={styles.input}
                 placeholder="their name"
                 value={recipient}

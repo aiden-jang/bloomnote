@@ -149,7 +149,10 @@ export default function App() {
 
   return (
     <>
-      {view}
+      {/* Every route's content, in one landmark. There was no <main> anywhere except the legal
+          pages, so assistive tech had nothing to jump to and had to walk the header chips on the
+          way into every screen. LegalPage's own <main> became a <div> so this stays the only one. */}
+      <main>{view}</main>
       <Footer />
     </>
   )

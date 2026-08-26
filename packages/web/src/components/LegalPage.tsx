@@ -57,7 +57,7 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
   const sections = kind === 'privacy' ? PRIVACY : TERMS
 
   return (
-    <main style={{ maxWidth: '38rem', margin: '0 auto', padding: '4rem 1.5rem 3rem', lineHeight: 1.65 }}>
+    <div style={{ maxWidth: '38rem', margin: '0 auto', padding: '4rem 1.5rem 3rem', lineHeight: 1.65 }}>
       <a href="/" style={{ fontWeight: 600, textDecoration: 'none', opacity: 0.75 }}>
         &larr; bloomnote
       </a>
@@ -71,6 +71,6 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
           <p style={{ margin: 0, opacity: 0.85 }}>{s.body}</p>
         </section>
       ))}
-    </main>
+    </div>
   )
 }
