@@ -510,3 +510,23 @@
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/*
+ * The unlock cross-fade.
+ *
+ * Short deliberately: a view transition paints a snapshot of the old and new DOM, so anything
+ * animating underneath it is a still frame until the fade ends. The first petal opens at 460ms, so
+ * 220ms lands well clear of it and the bloom itself is never what is being cross-faded.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
