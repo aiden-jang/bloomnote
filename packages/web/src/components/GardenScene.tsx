@@ -107,6 +107,8 @@ interface Placement {
   spec: FlowerSpec
   left: number
   zIndex: number
+  /** 1 is nearest the viewer, lower is further back. Drives scale, ground position and haze. */
+  depth: number
 }
 
 interface Props {
@@ -149,20 +151,48 @@ interface Props {
   now?: Date
 }
 
+/*
+ * Depth per flower, by how many there are.
+ *
+ * Every flower used to sit at one scale on one plane, evenly spaced far enough apart that nothing
+ * ever overlapped — a row of stickers rather than a garden. Real planting has a front and a back.
+ *
+ * Hand-written rather than computed so neighbours always differ: alternating near and far is what
+ * makes an overlap read as one flower in front of another, instead of two colliding. Each row also
+ * gives exactly one flower depth 1, so there is a subject.
+ */
+const DEPTHS: Record<number, number[]> = {
+  1: [1],
+  2: [1, 0.74],
+  3: [0.74, 1, 0.82],
+  4: [0.7, 1, 0.76, 0.9],
+  5: [0.68, 0.9, 1, 0.74, 0.84],
+}
+
+/** Nudges so the row is not a perfect arithmetic progression. Deterministic, like the petal drift. */
+const LEFT_JITTER = [0, 2.4, -1.8, 1.2, -2.6]
+
 function placeFlowers(flowers: FlowerSpec[]): Placement[] {
   const count = flowers.length
   if (count === 0) return []
 
-  const spread = 80
+  // Tighter than the old 80: at this spread the sprites genuinely overlap, which is the point.
+  const spread = 70
   const center = 50
   const step = count > 1 ? spread / (count - 1) : 0
   const start = center - spread / 2
+  const depths = DEPTHS[count] ?? flowers.map(() => 1)
 
-  return flowers.map((spec, i) => ({
-    spec,
-    left: count === 1 ? center : start + i * step,
-    zIndex: i % 2 === 0 ? 2 : 1,
-  }))
+  return flowers.map((spec, i) => {
+    const depth = depths[i] ?? 1
+    return {
+      spec,
+      left: count === 1 ? center : start + i * step + (LEFT_JITTER[i] ?? 0),
+      // Nearer flowers occlude further ones. Focus still lifts a flower above all of them.
+      zIndex: Math.round(depth * 10),
+      depth,
+    }
+  })
 }
 
 // Stable identity for a placed flower so React can keep DOM nodes when
@@ -743,8 +773,10 @@ export default function GardenScene({ flowers, autoBloom, onAllBloomed, occasion
             // The perk waits out its own drop's fall, so each flower answers the water that hit it.
             style={{
               left: `${p.left}%`,
-              zIndex: focused === i ? 4 : p.zIndex,
+              // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
+              zIndex: focused === i ? 20 : p.zIndex,
               animationDelay: `${i * 90 + 460}ms`,
+              ['--depth' as string]: String(p.depth),
             }}
             title={p.spec.name}
             onMouseEnter={() => onFocus?.(i)}
