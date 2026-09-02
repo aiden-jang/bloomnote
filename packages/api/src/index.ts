@@ -20,6 +20,7 @@ import {
 } from './gardens.js'
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js'
 import { checkRate, clientIp } from './rateLimit.js'
+import { safeMeta } from './eventMeta.js'
 
 /*
  * Per-IP ceilings on the endpoints that write.
@@ -265,7 +266,7 @@ app.post('/api/event', async (c) => {
     // malformed body — ignore
   }
   if (TRACKED_EVENTS.has(name)) {
-    console.log(`bloomnote_event ${name} ${JSON.stringify(meta).slice(0, 400)}`)
+    console.log(`bloomnote_event ${name} ${JSON.stringify(safeMeta(meta))}`)
   }
   return c.body(null, 204)
 })
