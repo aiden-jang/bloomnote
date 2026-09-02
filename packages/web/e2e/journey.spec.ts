@@ -341,15 +341,6 @@ async function createGarden(page: Page, extra: Record<string, unknown> = {}): Pr
  * exactly the shape where a change lands on one and silently misses the other.
  */
 test.describe('your gardens', () => {
-  const record = (id: string, to: string, createdAt: string, occasion: string) => ({
-    id,
-    to,
-    from: 'Aiden',
-    createdAt,
-    occasion,
-    swatches: ['#6f8fd0'],
-  })
-
   test('lists, searches, sorts and filters the on-device archive', async ({ page }) => {
     await page.goto('/')
     const ids = [await createGarden(page), await createGarden(page), await createGarden(page)]

@@ -234,9 +234,16 @@ export default function GardenScene({
   /* Focus returns to the flower that opened the panel, so tabbing carries on from there rather
      than restarting at the top of the page. */
   const slotRefs = useRef<Array<HTMLButtonElement | null>>([])
+  /* A click focuses the button too, so a plain onFocus would set `focused` before onClick's toggle
+     runs and the click would close what it just opened. `:focus-visible` excludes mouse clicks. */
+  const previewedByKeyboard = useRef(false)
+  const suppressNextPreview = useRef(false)
   const closeAndRestoreFocus = useCallback(() => {
     const previous = focused
     onFocus?.(null)
+    // Handing focus back counts as keyboard focus, so without this the preview reopens the panel
+    // Escape just closed.
+    suppressNextPreview.current = true
     if (previous !== null) slotRefs.current[previous]?.focus()
   }, [focused, onFocus])
 
@@ -475,6 +482,28 @@ export default function GardenScene({
               title={p.spec.name}
               onMouseEnter={revealed ? () => onFocus?.(i) : undefined}
               onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
+              onFocus={
+                revealed
+                  ? (event) => {
+                      if (suppressNextPreview.current) {
+                        suppressNextPreview.current = false
+                        return
+                      }
+                      if (!event.currentTarget.matches(':focus-visible')) return
+                      previewedByKeyboard.current = true
+                      onFocus?.(i)
+                    }
+                  : undefined
+              }
+              onBlur={
+                revealed
+                  ? () => {
+                      if (!previewedByKeyboard.current) return
+                      previewedByKeyboard.current = false
+                      onFocusRelease?.()
+                    }
+                  : undefined
+              }
               // Touch has no hover and this is mostly opened on a phone: tap to pick, tap again to let go,
               // so the link is reachable without a mouse.
               onClick={revealed ? () => onFocus?.(focused === i ? null : i) : undefined}
