@@ -92,11 +92,15 @@ packages/web/            React + Vite SPA
   src/components/        Composer, RecipientView, SealedView, GardenScene, FlowerSVG, MyGardens …
   src/garden.ts          schema + short-link client helpers
   src/auth/, AuthNav     optional shared-auth integration
-  src/lib/               pure helpers, each with its own tests: scene geometry, draft storage,
-                         archive ordering, journal, constellations, recap
-  src/lib/gardenImage    the garden as a PNG: share card, link preview, pressed-flower card
+  src/lib/               pure helpers and hooks, each with its own tests: routing, scene geometry,
+                         draft storage, archive ordering, journal, constellations, recap
+  src/lib/imageCards     the four card compositions, as SVG
+  src/lib/gardenImage    rasterising those cards: share card, link preview, pressed flower
+  src/lib/lazyWithReload a code-split import that survives a deploy
   public/                favicon + generated icons + manifest + og.svg (see gen:icons)
-scripts/check-css-vars.mjs     fails the build on a var() naming an undeclared custom property
+scripts/check-css-vars.mjs     fails on a var() naming an undeclared custom property
+scripts/check-css-classes.mjs  fails on a styles.x with no matching class in the module
+scripts/check-comments.mjs     a comment budget, and a check for the same comment in two files
 scripts/report-bundle-size.mjs prints gzip and raw size per file after a build
 ```
 
@@ -134,11 +138,15 @@ the note being untrusted model input does and doesn't protect against.
 ## Tests
 
 ```bash
-pnpm -r test                         # 213 tests: 87 API, 126 web
-                                     # KV store, validation, quota classifier, SSE route,
-                                     # rate limits, and every pure helper in web/src/lib
-pnpm --filter @bloomnote/web e2e     # Playwright: compose → bloom → share → recipient
+pnpm verify                          # everything CI runs, in one command
+pnpm -r test                         # 308 tests: 90 API, 218 web
+pnpm --filter @bloomnote/web e2e     # 8 Playwright journeys
 ```
+
+`pnpm verify` is the gate: typecheck, lint, format, `css-vars`, `css-classes`, `comments`, `knip`,
+build, unit tests, then the browser suite. It is the same list CI runs and `pnpm run deploy` refuses
+to ship without it. One command rather than a remembered list, because a remembered list is how a
+lint failure once survived three rounds of changes with everything else green.
 
 Fast, offline, and safe to run on every commit. Gemini is stubbed at `fetch` throughout: in the
 unit tests and again in the browser, where the one call that would cost money is intercepted and
@@ -163,6 +171,25 @@ written in (no semicolons, single quotes, 110 columns) rather than the default i
 against. A handful of hand-laid data tables carry `// prettier-ignore`: the star field, the petal
 fall, the sky gradients, the per-shape petal control points. Those are grids you read by column, and
 one entry per line destroys the thing they exist to show.
+
+Three other checks exist for the same reason: a mistake that renders as nothing and errors nowhere.
+
+`pnpm css-classes` fails on a `styles.typo` with no matching class in the module. TypeScript types a
+CSS module as a loose record, eslint does not read CSS, and the value is `undefined`, which React
+puts in the DOM as no class at all. The element arrives unstyled and nothing anywhere complains. It
+only checks the referenced-but-undefined direction, because reporting classes the CSS defines but
+nothing uses cannot see `styles[\`ghostSproutGrowing${growth}\`]` and produced fifty false positives
+when tried.
+
+`pnpm comments` holds a budget on comment lines in `src` and fails on the same comment appearing in
+two files. The duplicate rule is the useful half: four copies of one fact each read as reasonable on
+their own, and only a whole-repo view shows the problem.
+
+`eslint-plugin-react` is installed for one rule in particular. A bare `/* … */` in a JSX children
+position is a text node, not a comment, so it renders. Two of them sat on the homepage for several
+commits with every other check green, and `react/jsx-no-comment-textnodes` catches that on the
+keystroke. `react-hooks` and `jsx-a11y` came with it; the React Compiler rules that ship in
+`eslint-plugin-react-hooks` v7 are off, with the reason in `.eslintrc.cjs`.
 
 `pnpm css-vars` (run by `build` and in CI) fails on a `var(--x)` naming a custom property nothing
 declares. That mistake is silent by construction. With a fallback the rule quietly uses it; without

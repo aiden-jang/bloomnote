@@ -37,9 +37,14 @@ pnpm run deploy            # redeploy to attach bloomnote.aidenjang.com
 ## Routine redeploy
 
 CI deploys on merge to `main`, and nothing here is run by hand. The gate is
-`.github/workflows/ci.yml`: typecheck, lint, a Prettier check, `css-vars`, build, unit tests, then a
-production-only `pnpm audit`, the Playwright journey in Chromium, and a bundle-size report (which
-prints, and does not fail).
+`.github/workflows/ci.yml`: typecheck, lint, a Prettier check, `css-vars`, `css-classes`,
+`comments`, `knip`, build and unit tests, then a production-only `pnpm audit`, the Playwright suite
+in Chromium, and a bundle-size report (which prints, and does not fail).
+
+`pnpm verify` runs that same list locally, and `pnpm run deploy` depends on it, so the break-glass
+path below cannot ship past a failing check. CI's own deploy job calls `pnpm run deploy:only`
+instead: its gate is the `check` job it depends on, and repeating the suite there would need
+Chromium installed just to redo work that already passed.
 
 The manual commands are break-glass only, for when CI itself is broken:
 
