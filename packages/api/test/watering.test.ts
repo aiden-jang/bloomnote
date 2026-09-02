@@ -6,7 +6,6 @@ import {
   readGardenResponse,
   readResponsesBatch,
   readWaters,
-  readWatersBatch,
   waterGarden,
 } from '../src/gardens.js'
 
@@ -75,8 +74,8 @@ describe('watering', () => {
   })
 })
 
-describe('readWatersBatch', () => {
-  test('returns counts by id and omits the unwatered', async () => {
+describe('readResponsesBatch', () => {
+  test('returns a response per id and omits the gardens nobody answered', async () => {
     const a = await newGarden()
     const b = await newGarden()
     const c = await newGarden()
@@ -84,8 +83,10 @@ describe('readWatersBatch', () => {
     await waterGarden(env as never, a)
     await waterGarden(env as never, b)
 
-    const got = await readWatersBatch(env as never, [a, b, c])
-    expect(got).toEqual({ [a]: 2, [b]: 1 })
+    expect(await readResponsesBatch(env as never, [a, b, c])).toEqual({
+      [a]: { waters: 2, feelings: {} },
+      [b]: { waters: 1, feelings: {} },
+    })
   })
 
   /**
@@ -104,15 +105,27 @@ describe('readWatersBatch', () => {
       return (realGet as (...a: unknown[]) => unknown)(...args)
     }
     try {
-      await readWatersBatch(env as never, many)
+      await readResponsesBatch(env as never, many)
     } finally {
       ;(env.GARDENS as unknown as { get: unknown }).get = realGet
     }
     expect(reads).toBeLessThanOrEqual(40)
   })
 
-  test('ignores ids that could not be gardens', async () => {
-    expect(await readWatersBatch(env as never, ['../../etc', '', 'x'])).toEqual({})
+  /**
+   * Junk ids are dropped before the cap, not after. `readGardenResponse` already returns an empty
+   * response for one, so filtering later would look identical here while quietly letting 40 pieces
+   * of junk fill the budget and push the one real garden out of the batch.
+   */
+  test('does not let unusable ids crowd a real garden out of the cap', async () => {
+    const id = await newGarden()
+    await waterGarden(env as never, id)
+    // Distinct, or the Set collapses them to one and nothing is competing for the cap.
+    const junkThenReal = [...Array.from({ length: 60 }, (_, i) => `../../etc/${i}`), id]
+
+    expect(await readResponsesBatch(env as never, junkThenReal)).toEqual({
+      [id]: { waters: 1, feelings: {} },
+    })
   })
 })
 
