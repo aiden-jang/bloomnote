@@ -272,17 +272,6 @@ export async function readResponsesBatch(env: Env, ids: string[]): Promise<Recor
 /* Batched: the "your gardens" list would otherwise cost one read per garden. */
 const MAX_WATER_LOOKUP = 40
 
-export async function readWatersBatch(env: Env, ids: string[]): Promise<Record<string, number>> {
-  const wanted = [...new Set(ids.filter((id) => ID_RE.test(id)))].slice(0, MAX_WATER_LOOKUP)
-  const counts = await Promise.all(wanted.map((id) => readWaters(env, id)))
-  const out: Record<string, number> = {}
-  wanted.forEach((id, i) => {
-    const n = counts[i] ?? 0
-    if (n > 0) out[id] = n
-  })
-  return out
-}
-
 export type CreateResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 500; message: string }
 
 export async function createGarden(env: Env, garden: unknown, ownerId?: string): Promise<CreateResult> {

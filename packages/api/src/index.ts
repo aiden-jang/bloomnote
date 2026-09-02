@@ -13,7 +13,6 @@ import {
   readGardenResponse,
   readResponsesBatch,
   readWaters,
-  readWatersBatch,
   recordReceived,
   removeFromAccount,
   waterGarden,
@@ -123,15 +122,6 @@ app.post('/api/garden/:id/water', async (c) => {
   const result = await waterGarden(c.env, c.req.param('id'))
   if (!result.ok) return c.json({ error: result.message }, result.status)
   return c.json({ waters: result.waters }, 200, { 'cache-control': 'no-store' })
-})
-
-app.get('/api/waters', async (c) => {
-  const ids = (c.req.query('ids') ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-  if (ids.length === 0) return c.json({ waters: {} }, 200, { 'cache-control': 'no-store' })
-  return c.json({ waters: await readWatersBatch(c.env, ids) }, 200, { 'cache-control': 'no-store' })
 })
 
 app.get('/api/garden/:id/water', async (c) => {
