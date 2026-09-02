@@ -14,6 +14,14 @@ import { formatGardenDate } from '../lib/formatDate'
 import { gardenMemoryDeck, gardenMemoryLabel } from '../lib/gardenMemories'
 import { gardenImpact } from '../lib/gardenImpact'
 import styles from './MyGardens.module.css'
+import {
+  filterGardens,
+  orderGardens,
+  readPinnedGardens,
+  writePinnedGardens,
+  type CardData,
+  type GardenSort,
+} from '../lib/gardenList'
 
 /**
  * The "/mine" view. Signed in, it reads server-side (so Sent + Received show on any device),
@@ -21,46 +29,6 @@ import styles from './MyGardens.module.css'
  * back to the on-device archive (localStorage) — anonymous use still works, just per-device.
  */
 type Tab = 'sent' | 'received'
-type GardenSort = 'newest' | 'oldest' | 'watered'
-const PINNED_STORAGE_KEY = 'bloomnote:pinned-gardens'
-
-function readPinnedGardens(): string[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const value: unknown = JSON.parse(window.localStorage.getItem(PINNED_STORAGE_KEY) ?? '[]')
-    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []
-  } catch {
-    return []
-  }
-}
-
-function writePinnedGardens(ids: string[]): void {
-  try {
-    window.localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids))
-  } catch {
-    // Pinning is an on-device convenience; storage failures never block the archive.
-  }
-}
-
-function orderGardens<T extends CardData>(
-  gardens: T[],
-  pinned: string[],
-  sort: GardenSort,
-  waters: Record<string, number>,
-): T[] {
-  const ids = new Set(pinned)
-  return [...gardens].sort((a, b) => {
-    const pinOrder = Number(ids.has(b.id)) - Number(ids.has(a.id))
-    if (pinOrder) return pinOrder
-    if (sort === 'watered') {
-      const waterOrder = (waters[b.id] ?? 0) - (waters[a.id] ?? 0)
-      if (waterOrder) return waterOrder
-    }
-    const aDate = new Date(a.receivedAt ?? a.createdAt).getTime()
-    const bDate = new Date(b.receivedAt ?? b.createdAt).getTime()
-    return sort === 'oldest' ? aDate - bDate : bDate - aDate
-  })
-}
 
 // Undo toast (matches the recipient "saved" pill): a quiet cream chip pinned bottom-center.
 const undoToastStyle: CSSProperties = {
@@ -93,16 +61,6 @@ const undoButtonStyle: CSSProperties = {
 }
 
 /** Fields GardenRow renders — satisfied by both MineRecord and the server GardenSummary. */
-interface CardData {
-  id: string
-  from?: string | undefined
-  to: string
-  occasion?: string | undefined
-  createdAt: string
-  unlockAt?: string | undefined
-  receivedAt?: string | undefined
-  swatches: string[]
-}
 
 export default function MyGardens() {
   const { user, loading } = useAuth()
@@ -725,17 +683,6 @@ function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
         </button>
       )}
     </aside>
-  )
-}
-
-/** Search what people remember: who it was for, who it came from, or the occasion. */
-function filterGardens<T extends CardData>(gardens: T[], query: string): T[] {
-  const needle = query.trim().toLocaleLowerCase()
-  if (!needle) return gardens
-  return gardens.filter((garden) =>
-    [garden.from, garden.to, garden.occasion]
-      .filter((part): part is string => typeof part === 'string')
-      .some((part) => part.toLocaleLowerCase().includes(needle)),
   )
 }
 
