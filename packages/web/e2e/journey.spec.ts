@@ -296,9 +296,8 @@ test.describe('compose → bloom → share → recipient', () => {
      * Assert the computed opacity, not toBeVisible(). Playwright counts a fully transparent
      * element as visible, so the obvious assertion passes while nothing is on screen.
      *
-     * The whole suite already runs under reduced motion (see the beforeEach), so this only has to
-     * read the end state back. Don't call emulateMedia again here; it reads as the thing under
-     * test and is a no-op.
+     * Don't call emulateMedia here. The beforeEach already did, so it is a no-op that reads as the
+     * thing under test.
      */
     await page.reload()
     await page.getByRole('button', { name: /open the garden/i }).click()

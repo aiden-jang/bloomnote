@@ -53,21 +53,12 @@ export function validateBody(raw: unknown): { ok: true; body: DesignBody } | { o
   return { ok: true, body: out }
 }
 
-/**
- * Marks where the sender's own words start and stop.
- *
- * Fixed rather than a random nonce so the same inputs always build the same prompt, which the
- * prompt eval and the tests both rely on. Any copy of it inside the note is dropped below, so a
- * note still cannot close its own fence.
- */
+/** Fixed, not a random nonce: the eval and the tests need the same inputs to build the same
+    prompt. Any copy of it inside the note is stripped below, so a note cannot close its own fence. */
 export const NOTE_FENCE = '-----NOTE-----'
 
-/**
- * Flatten a name onto one line.
- *
- * A name never legitimately contains a newline, and one that does would otherwise write its own
- * `Occasion:` line into the labelled block above the note.
- */
+/** A name with a newline in it would otherwise write its own `Occasion:` line into the labelled
+    block above the note. */
 function oneLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim()
 }
