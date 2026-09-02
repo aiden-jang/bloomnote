@@ -28,3 +28,22 @@ describe('gardenImpact', () => {
     })
   })
 })
+
+it('keeps the first garden when two are watered the same amount', () => {
+  // Ties are the common case early on, when everything sits at one water. Whichever is picked,
+  // it must not drift as later gardens are read, or "most watered" changes on every refresh.
+  const impact = gardenImpact(['first', 'second'], {
+    first: { waters: 2, feelings: {} },
+    second: { waters: 2, feelings: {} },
+  })
+  expect(impact.mostWateredId).toBe('first')
+})
+
+it('treats a negative water count as zero rather than subtracting from the total', () => {
+  // The count comes back from the API, so it is not this module's to trust.
+  const impact = gardenImpact(['a', 'b'], {
+    a: { waters: 5, feelings: {} },
+    b: { waters: -100, feelings: {} },
+  })
+  expect(impact.totalWaters).toBe(5)
+})

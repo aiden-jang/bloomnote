@@ -26,6 +26,17 @@ describe('design-garden validation', () => {
     expect(unknown.ok && unknown.body.occasion).toBeUndefined()
   })
 
+  test('validateGarden rejects anything that is not an object', () => {
+    // This is the trust boundary on the model's output: the user's own note goes into the prompt,
+    // so what comes back is not trusted input. Every shape must be refused explicitly, not by
+    // happening to trip a later field check.
+    // Assert the message, not just that it throws: without this guard a string still fails, but
+    // from a later field check, so a bare toThrow() passes with the guard deleted.
+    for (const junk of [null, undefined, 'a string', 42, true]) {
+      expect(() => validateGarden(junk)).toThrow(/not an object/i)
+    }
+  })
+
   test('validateGarden rejects the wrong flower count', () => {
     expect(() => validateGarden({ bouquet_note: 'x', flowers: [] })).toThrow()
     expect(() => validateGarden({ flowers: [{ name: 'Rose' }] })).toThrow()

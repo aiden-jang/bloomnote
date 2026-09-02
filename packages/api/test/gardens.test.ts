@@ -46,6 +46,16 @@ describe('gardens (KV)', () => {
     expect(await readGarden(testEnv, 'zzzzzz')).toBeNull()
   })
 
+  test('refuses a garden too large to be a real one', async () => {
+    // Anyone can POST here and a garden is stored with no expiry, so an oversized write is
+    // permanent. Real gardens are about 2KB; the cap is 16KB.
+    const huge = { ...GARDEN, message: 'x'.repeat(32 * 1024) }
+    const r = await createGarden(testEnv, huge)
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.status).toBe(413)
+  })
+
   test('signed-in create indexes the Sent list', async () => {
     const r = await createGarden(testEnv, GARDEN, 'user1')
     if (!r.ok) throw new Error('create failed')
