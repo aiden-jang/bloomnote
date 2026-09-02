@@ -5,9 +5,11 @@ version use the **Routine redeploy** section; the first-deploy steps are kept fo
 Cloudflare Worker (`bloomnote-api`) serves both the API (`/api/*`, `/health`) and the web SPA on
 one origin. Gardens live in a KV namespace (`GARDENS`). Free tier; you pay only for DNS.
 
-Accounts are optional and use the shared auth service (`accounts.aidenjang.com`): the browser
-redirects there for sign-in/out, and bloomnote validates the `platform_session` cookie
-server-side via `/api/me`. The cookie is scoped to `.aidenjang.com`, so it's shared with owewell.
+Accounts are optional and use the shared auth service (`accounts.aidenjang.com`). The browser
+redirects there to sign in and out. bloomnote's own `/api/me` route then validates the
+`platform_session` cookie server-side, by calling the auth service's `/auth/me` from the Worker, so
+the browser never talks to accounts cross-origin. The cookie is scoped to `.aidenjang.com`, so it is
+shared with owewell.
 
 All commands run from `packages/api`.
 
@@ -34,8 +36,10 @@ pnpm run deploy            # redeploy to attach bloomnote.aidenjang.com
 
 ## Routine redeploy
 
-CI deploys on merge to `main`, after typecheck, lint, `css-vars`, build and tests pass
-(`.github/workflows/ci.yml`). Nothing to run by hand.
+CI deploys on merge to `main`, and nothing here is run by hand. The gate is
+`.github/workflows/ci.yml`: typecheck, lint, a Prettier check, `css-vars`, build, unit tests, then a
+production-only `pnpm audit`, the Playwright journey in Chromium, and a bundle-size report (which
+prints, and does not fail).
 
 The manual commands are break-glass only, for when CI itself is broken:
 
@@ -46,17 +50,16 @@ pnpm exec wrangler deploy  # API/config-only change (reuses the last-built SPA)
 
 ## Dependency: the auth service
 
-bloomnote relies on the shared auth service at `accounts.aidenjang.com` (sign-in/out redirects +
-server-side `/auth/me` validation). Auth lives in its own repo now and is already live; deploy it
-from there if its contract changes.
-
-Otherwise sign-out falls through to `/account` and doesn't clear the session.
+bloomnote relies on the shared auth service at `accounts.aidenjang.com` for sign-in and sign-out
+redirects and for server-side `/auth/me` validation. Auth lives in its own repo and is already live.
+If its contract changes, deploy it from there first: bloomnote reads `/auth/me` through
+`@aidenjang/auth-client`, so a change there breaks sign-in here.
 
 ## Smoke test (verify SSO + /mine cross-device)
 
 ```bash
-curl https://bloomnote.aidenjang.com/health          # {"status":"ok","service":"bloomnote"}
-curl https://bloomnote.aidenjang.com/api/me            # {"user":null} when signed out
+curl https://bloomnote.aidenjang.com/health   # {"status":"ok","service":"bloomnote"}
+curl https://bloomnote.aidenjang.com/api/me   # {"user":null} when signed out
 ```
 
 Then in a browser:

@@ -70,7 +70,7 @@ function buildAppUrl(): string {
   return window.location.origin
 }
 
-/** Curated base62: no 0/O, no 1/l/I. Mirrors the server's generator in gardens.ts, change both. */
+/** 57 characters: base62 minus 0/O and 1/l/I. Mirrors gardens.ts on the server, change both. */
 const SHORT_ID_PATTERN = /^[A-HJ-NP-Za-km-z2-9]{6}$/
 
 export function isShortId(value: string): boolean {
