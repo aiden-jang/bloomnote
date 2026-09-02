@@ -24,6 +24,19 @@ jobs:
       - run: pnpm css-vars
       - run: pnpm build
       - run: pnpm test
+      # --prod on purpose. The full audit reports ~19 high/critical advisories, every one of them
+      # in build tooling (vite, vitest, wrangler, sharp, postcss) that never reaches a browser or
+      # the Worker at request time, and most unfixable without an upstream release. Blocking on
+      # those is a permanently red light everyone learns to scroll past. This scopes the gate to
+      # what actually ships, where it can stay green and therefore still mean something.
+      - run: pnpm audit --prod --audit-level high
+      # The one layer the unit tests cannot see: whether a person can actually get from an empty
+      # form to a garden their friend can open. Playwright starts the Worker and the SPA itself.
+      - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @bloomnote/web e2e
+      # An animated, image-heavy app has no other signal that a dependency or an asset just made
+      # the bundle much worse.
+      - run: pnpm --filter @bloomnote/web exec node ../../scripts/report-bundle-size.mjs
 
   # Auto-deploy to Cloudflare on merge to main, only after the checks above pass.
   # Requires a CLOUDFLARE_API_TOKEN repo secret (Workers-scoped). Wrangler infers the
