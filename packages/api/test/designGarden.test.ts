@@ -192,3 +192,18 @@ describe('quota exhaustion vs a busy blip', () => {
     expect(calls()).toBeGreaterThan(1)
   }, 20_000)
 })
+
+test('an allowlisted field cannot be satisfied by a prototype key', () => {
+  // `'__proto__' in KNOWN_OCCASIONS` is true, so a plain `in` check lets the one string the
+  // allowlist most needs to reject straight through.
+  const parsed = validateBody({
+    message: 'hello there friend',
+    recipient: 'Grace',
+    occasion: '__proto__',
+    mood: '__proto__',
+  })
+  expect(parsed.ok).toBe(true)
+  if (!parsed.ok) return
+  expect(parsed.body.occasion).not.toBe('__proto__')
+  expect(parsed.body.mood).not.toBe('__proto__')
+})

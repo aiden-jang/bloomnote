@@ -47,8 +47,9 @@ export function validateBody(raw: unknown): { ok: true; body: DesignBody } | { o
   const moodRaw = typeof body.mood === 'string' ? body.mood : ''
   const out: DesignBody = { message, recipient }
   if (from) out.from = from
-  if (occasionRaw in KNOWN_OCCASIONS) out.occasion = occasionRaw
-  if (moodRaw in KNOWN_MOODS) out.mood = moodRaw
+  // Object.hasOwn, not `in`, or '__proto__' passes the allowlist it exists to enforce.
+  if (Object.hasOwn(KNOWN_OCCASIONS, occasionRaw)) out.occasion = occasionRaw
+  if (Object.hasOwn(KNOWN_MOODS, moodRaw)) out.mood = moodRaw
   return { ok: true, body: out }
 }
 

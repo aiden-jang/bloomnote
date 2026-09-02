@@ -8,6 +8,7 @@ import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
 import { saveFlowerImage } from '../lib/gardenImage'
 import { flowerJournalEntry, saveFlowerJournalEntry } from '../lib/flowerJournal'
 import styles from './GardenScene.module.css'
+import { gradientFor, mixHex, placeFlowers, placementKey, type Placement } from '../lib/scene'
 
 /**
  * Sky gradient palette by occasion. Each entry is two soft pastel
@@ -25,24 +26,6 @@ import styles from './GardenScene.module.css'
 /** An empty or sprouting plot still wants a plot-sized bed. */
 const GARDEN_MIN_HEIGHT = 200
 
-// prettier-ignore
-const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
-  // Default — clear morning sky into pale meadow grass.
-  'just-because': { top: '#d4eeff', bottom: '#e8f5d0' },
-  // Warm peach into cream — celebratory without screaming.
-  birthday:       { top: '#fde6cf', bottom: '#fff1d8' },
-  // Soft sage greens — grounded, grateful.
-  'thank-you':    { top: '#e2efd9', bottom: '#f0f5e3' },
-  // Pink dusk into champagne — romantic.
-  anniversary:    { top: '#f6e0e8', bottom: '#f9efe0' },
-  // Golden warm — achievement, energy.
-  congrats:       { top: '#fde2c0', bottom: '#ffeac8' },
-  // Pale healing greens — gentle, restorative.
-  'get-well':     { top: '#d4ecdd', bottom: '#e8f4d8' },
-  // Cool muted overcast — quiet space for grief.
-  sympathy:       { top: '#d8dde6', bottom: '#e5e9ef' },
-}
-
 /**
  * The mood is a second, quieter visual axis than the occasion. Occasion paints the sky; mood adds
  * a small living detail to it. Keeping the vocabulary allowlisted means an old or hand-crafted
@@ -57,7 +40,9 @@ const MOOD_AURAS = {
 } as const
 
 function auraFor(mood?: string) {
-  return mood && mood in MOOD_AURAS ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
+  // Object.hasOwn, not `in`: `in` matches '__proto__' and would turn a stored string into a
+  // lookup on Object.prototype. See gradientFor in lib/scene.ts.
+  return mood && Object.hasOwn(MOOD_AURAS, mood) ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
 }
 
 /* Occasion owns the hue; the hour only blends toward a base, so the emotional signal survives. */
@@ -77,22 +62,6 @@ const STARS: Array<[number, number, number]> = [
   [52, 44, 1.4], [41, 38, 2.8],
 ]
 
-function mixHex(a: string, b: string, t: number): string {
-  const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
-  const [ar, ag, ab] = parse(a)
-  const [br, bg, bb] = parse(b)
-  const ch = (x: number, y: number) =>
-    Math.round(x + (y - x) * t)
-      .toString(16)
-      .padStart(2, '0')
-  return `#${ch(ar!, br!)}${ch(ag!, bg!)}${ch(ab!, bb!)}`
-}
-
-function gradientFor(occasion?: string): { top: string; bottom: string } {
-  if (occasion && occasion in SKY_GRADIENTS) return SKY_GRADIENTS[occasion]!
-  return SKY_GRADIENTS['just-because']!
-}
-
 /** Time between consecutive flower blooms. Exported so the legend
  *  can stagger its row reveals in sync with the bloom they describe. */
 export const BLOOM_STAGGER_MS = 500
@@ -100,14 +69,6 @@ export const BLOOM_STAGGER_MS = 500
 /** How long to hold the fully-bloomed scene before the post-bloom
  *  fade-ins (message, legend, CTA) start. Lets the bloom breathe. */
 const BLOOM_HOLD_MS = 1000
-
-interface Placement {
-  spec: FlowerSpec
-  left: number
-  zIndex: number
-  /** 1 is nearest the viewer, lower is further back. Drives scale, ground position and haze. */
-  depth: number
-}
 
 interface Props {
   flowers: FlowerSpec[]
@@ -155,50 +116,6 @@ interface Props {
   journalFrom?: string | undefined
   /** Injectable clock, so the sky's hour can be pinned in a test or a static render. */
   now?: Date
-}
-
-/*
- * Depth per flower count. Hand-written, not computed: neighbours must alternate near/far or an
- * overlap reads as two flowers colliding. Every row gives exactly one flower depth 1, the subject.
- */
-const DEPTHS: Record<number, number[]> = {
-  1: [1],
-  2: [1, 0.74],
-  3: [0.74, 1, 0.82],
-  4: [0.7, 1, 0.76, 0.9],
-  5: [0.68, 0.9, 1, 0.74, 0.84],
-}
-
-/** Nudges so the row is not a perfect arithmetic progression. Deterministic, like the petal drift. */
-const LEFT_JITTER = [0, 2.4, -1.8, 1.2, -2.6]
-
-function placeFlowers(flowers: FlowerSpec[]): Placement[] {
-  const count = flowers.length
-  if (count === 0) return []
-
-  // Tight enough that the sprites genuinely overlap, which is the point.
-  const spread = 70
-  const center = 50
-  const step = count > 1 ? spread / (count - 1) : 0
-  const start = center - spread / 2
-  const depths = DEPTHS[count] ?? flowers.map(() => 1)
-
-  return flowers.map((spec, i) => {
-    const depth = depths[i] ?? 1
-    return {
-      spec,
-      left: count === 1 ? center : start + i * step + (LEFT_JITTER[i] ?? 0),
-      // Nearer flowers occlude further ones. Focus still lifts a flower above all of them.
-      zIndex: Math.round(depth * 10),
-      depth,
-    }
-  })
-}
-
-// Stable identity for a placed flower so React can keep DOM nodes when
-// the array reference changes but the underlying flowers are the same.
-function placementKey(spec: FlowerSpec, index: number): string {
-  return `${index}-${spec.name}-${spec.petalColors[0]}`
 }
 
 // Petal drift configs are hand-tuned — no Math.random, so re-renders
