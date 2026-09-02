@@ -1,37 +1,10 @@
-// The mood picker. Separate axis from occasion: occasion says *when*
-// ("birthday", "sympathy"), mood says *how* ("tender", "playful",
-// "wistful"). The two compose — a birthday garden can be playful OR
-// wistful, and they'd look meaningfully different.
-//
-// Why a second picker instead of expanding occasions: a single
-// flattened list ("birthday-playful", "birthday-wistful", ...) would
-// explode combinatorially and force the user to pick from 35+ options.
-// Two orthogonal axes keep each picker focused.
-//
-// Default is 'none' — first-time users shouldn't be asked to introspect
-// about emotional tone before they've written anything. The backend
-// silently falls back to "no mood guidance" when mood is 'none'.
-
 export interface Mood {
-  /** Wire-format key. Stable across UI label refreshes. */
   value: string
-  /** What the user sees in the dropdown. */
   label: string
-  /**
-   * The line we inject into the system prompt when this mood is
-   * selected. Phrased as a directive to the model, not a description
-   * to the user. Keeps the per-mood styling logic in one place rather
-   * than scattered across api/prompt.ts and the UI.
-   */
+  /** The line injected into the system prompt when this mood is selected. */
   promptHint: string
 }
 
-// Five starter moods grounded in real emotional vocabulary, not
-// greeting-card cliché. Ordered loosely from intimate to expressive.
-//
-// The 'none' entry is the absence-of-signal default. It's included
-// here (not just as a sentinel) so the picker has a clear "skip this"
-// option rendered like any other choice.
 export const MOODS: readonly Mood[] = [
   {
     value: 'none',

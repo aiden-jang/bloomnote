@@ -1,13 +1,5 @@
-/* One line of chips that scrolls sideways when they don't fit. See ChipRow.tsx for why. */
-
-/*
- * Registered so the fade can animate.
- *
- * An unregistered custom property has no type, so the browser can only flip it from one value to
- * the next — a `transition` naming it does nothing. Declaring a syntax makes it interpolable, which
- * is what turns the fade appearing into a fade rather than a step. The old code transitioned
- * `mask-image` instead, which never animated either.
- */
+/* Registered so the fade can animate. An unregistered custom property has no type, so the browser
+   cannot interpolate it and the fade snaps. */
 @property --fade-start {
   syntax: '<length>';
   inherits: false;
@@ -25,20 +17,15 @@
   flex-wrap: nowrap;
   gap: 8px;
   overflow-x: auto;
-  /* Vertical padding + a matching negative margin. `overflow-x: auto` forces the computed
-     `overflow-y` to `auto` too, so without room to breathe the focus ring and the :active
-     scale on a chip get clipped by the scroll box. The negative margin keeps the row
-     occupying the same vertical space it did before it became a scroller. */
+  /* Vertical padding with a matching negative margin. `overflow-x: auto` forces the computed
+     `overflow-y` to auto too, which would otherwise clip the chips' focus rings. */
   padding: 4px 0;
   margin: -4px 0;
 
-  /* A visible scrollbar under a row of pills reads as a browser artifact, not a design
-     element — the fade is the affordance instead. Touch devices don't show one anyway. */
   scrollbar-width: none;
   -ms-overflow-style: none;
 
-  /* Chips settle on a boundary rather than mid-pill. `proximity`, not `mandatory`: a flick
-     that lands nicely shouldn't be dragged somewhere else. */
+  /* `proximity`, not `mandatory`: a flick that lands between two chips should stay where it landed. */
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
 
@@ -60,21 +47,16 @@
 
 .row > * {
   scroll-snap-align: start;
-  /* Chips are sized by their text; in a nowrap flex row they'd otherwise be squeezed to fit. */
+  /* Chips are sized by their text; in a nowrap flex row they would otherwise be squeezed to fit. */
   flex: 0 0 auto;
 }
 
-/*
- * While a mouse is dragging the row.
- *
- * Snapping is suspended for the duration: with snap active every pixel of the drag fights a pull
- * toward the nearest chip boundary, so the row stutters instead of following the cursor. It comes
- * back on pointerup, which is when settling on a boundary is what you actually want.
- */
+/* While a mouse is dragging the row, snapping is suspended: with snap active the row fights the
+   drag and jumps back to a boundary. */
 .row[data-dragging] {
   scroll-snap-type: none;
   cursor: grabbing;
-  /* A drag across pills otherwise selects their text, which then highlights blue mid-scroll. */
+  /* A drag across pills otherwise selects their text, which highlights blue mid-scroll. */
   user-select: none;
 }
 

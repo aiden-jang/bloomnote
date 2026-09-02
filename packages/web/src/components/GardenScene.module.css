@@ -1,7 +1,5 @@
-/*
- * Height comes from `--garden-h` (GardenScene.tsx, from the tallest flower) plus the soil band and
- * headroom for sway. A fixed height clipped any garden whose flowers were taller than it.
- */
+/* Height comes from --garden-h, set in GardenScene.tsx from the tallest flower, plus the soil
+   band and headroom for sway. */
 .scene {
   --soil-h: 52px;
   --sway-headroom: 24px;
@@ -14,15 +12,6 @@
   transition: height 0.35s ease;
 }
 
-/*
- * Waiting bed. While the visitor is writing and no garden exists yet, the plot is 260px of empty
- * sky sitting between them and the field they're typing in — the state they spend by far the most
- * time in, and the emptiest thing on the page.
- *
- * Only the height changes: everything in the scene is anchored to the bottom, so shrinking crops
- * sky off the top and leaves the soil and the sprout exactly where they were. It grows back to
- * full height when their garden arrives, which makes the bloom feel like it needed the room.
- */
 .sceneCompact {
   height: 132px;
 }
@@ -31,26 +20,8 @@
   position: absolute;
   /* Oversized so a shifted layer never exposes the edge of the box. */
   inset: -14px;
-  /* Gradient is driven by --sky-top / --sky-bottom set on the scene
-     root (see GardenScene.tsx → SKY_GRADIENTS). Fallback values are
-     the default "just-because" stops so the gradient works even if
-     the variables are unset (e.g. unit tests, missing occasion).
-     The transition makes the gradient *animate* when the user
-     switches occasions in the composer — pure visual delight, almost
-     free since the cross-fade is GPU-composited. */
-  /*
-   * Two layers, because one was flat.
-   *
-   * The linear ramp alone is the largest surface in the app and the only one with no light in it,
-   * which is what made an illustrated garden sit inside what looked like a placeholder. The radial
-   * on top is a sun: warm, off-centre, and falling away by 62%, so the sky has a direction and the
-   * flowers stop being lit from nowhere.
-   *
-   * Top-right on purpose. Every shadow in the scene already falls down and left, so a light source
-   * anywhere else would read as two suns.
-   *
-   * Both states keep the same layer structure, so the occasion cross-fade below still interpolates.
-   */
+  /* --sky-top and --sky-bottom are set on the scene root by GardenScene.tsx. The fallbacks here
+     are what an old garden with no occasion draws. */
   background:
     radial-gradient(
       118% 78% at 76% 6%,
@@ -60,19 +31,9 @@
     ),
     linear-gradient(180deg, var(--sky-top, #d4eeff) 0%, var(--sky-bottom, #e8f5d0) 100%);
   transition: background 0.6s ease;
-  /* Furthest away, so it moves least. */
   translate: calc(var(--px, 0) * -4px) calc(var(--py, 0) * -3px);
 }
 
-/*
- * Garden aura
- *
- * Occasion changes the large surface (the sky); mood changes the tiny life inside it. Every aura
- * uses the same six DOM nodes and animation budget, then swaps colour, glyph treatment and motion.
- * That keeps the feature decorative and cheap while making "soft" and "hype" gardens feel
- * unmistakably different. The layer starts only when the garden is opened, preserving the sealed
- * reveal, and sits behind flowers / field notes so it cannot catch a tap.
- */
 .aura {
   position: absolute;
   inset: 0 0 52px;
@@ -161,7 +122,6 @@
   --aura-duration: 10s;
 }
 
-/* Playful and celebratory moods have a little lateral spring; quiet moods mostly rise and breathe. */
 .auraPlayful span:nth-child(even),
 .auraCelebratory span:nth-child(even) {
   animation-name: auraPop;
@@ -208,10 +168,8 @@
   }
 }
 
-/* Tapping a bloom answers beside the bloom. The full legend still tells the whole bouquet story
-   below, while this glassy field note removes the mobile scavenger hunt between flower and meaning. */
-/* Anchored to the bottom of the plot. Any higher and the panel opens over the flower heads, so
-   tapping a flower to read about it hides the flower. Down here it covers stems and soil. */
+/* Anchored to the foot of the plot. Any higher and the panel opens over the flower heads, so
+   tapping a flower to read about it hides the flower. */
 .flowerPeek {
   position: absolute;
   bottom: 12px;
@@ -233,7 +191,6 @@
   animation: flowerPeekIn 180ms ease-out both;
 }
 
-/* The flower itself, the same drawing the legend and the archive cards use. */
 .flowerPeekSwatches {
   display: flex;
   align-items: center;
@@ -370,7 +327,6 @@
 }
 
 @keyframes flowerPeekIn {
-  /* Rises now, since it sits at the foot of the plot rather than the top of it. */
   from {
     opacity: 0;
     transform: translateY(5px) scale(0.99);
@@ -393,25 +349,17 @@
   left: 0;
   right: 0;
   height: var(--garden-h, 200px);
-  /* Nearest, so it leads. */
   translate: calc(var(--px, 0) * 11px) calc(var(--py, 0) * 4px);
 }
 
-/*
- * Depth, as three cues at once. Scale alone reads as "a smaller flower", not "further away";
- * lifting it up the ground plane and washing it out are what sell the distance.
- *
- * `scale` and `translate` are separate properties from `transform`, so the -50% centring below and
- * each flower's own sway both survive.
- */
 .flowerSlot {
   position: absolute;
   bottom: 0;
   transform: translateX(-50%);
   display: flex;
   align-items: flex-end;
-  /* It is a <button> now, so the user-agent chrome has to come off before it can look like a
-     flower again. The focus ring is deliberately left alone: index.css draws one for everything. */
+  /* It is a <button>, so the user-agent chrome has to come off before it can look like a flower
+     again. */
   padding: 0;
   border: none;
   background: none;
@@ -425,8 +373,6 @@
   filter: saturate(calc(0.55 + var(--depth, 1) * 0.45)) brightness(calc(1.14 - var(--depth, 1) * 0.14));
 }
 
-/* The row that comes up while the garden is being designed. The slot owns the placement so
-   GhostSprout stays a single centred thing and fills its parent instead. */
 .sproutRow {
   position: absolute;
   inset: 0;
@@ -451,9 +397,6 @@
   height: 100%;
 }
 
-/* Ghost sprout — empty-state teaser. Centered in the plot, color
-   drawn from the green-mid token so it harmonizes with the eventual
-   garden palette without committing to any specific flower. */
 .ghostSprout {
   position: absolute;
   bottom: 0;
@@ -468,8 +411,6 @@
     color 0.35s ease;
 }
 
-/* The empty plot listens while someone writes. These are deliberately a few extra leaves, not a
-   fake generated bouquet: the real bloom still belongs to the note's submit moment. */
 .ghostSproutGrowing1 {
   opacity: 0.66;
 }
@@ -487,9 +428,6 @@
   overflow: visible;
 }
 
-/* Stem grows from 0 → full → 0 on a slow loop. The stroke-dasharray
-   trick lets us animate the line drawing itself, not just opacity —
-   the stem visibly extends upward, which reads as growth. */
 .ghostStem {
   stroke-dasharray: 40;
   stroke-dashoffset: 40;
@@ -511,9 +449,6 @@
   }
 }
 
-/* Leaf unfurls after the stem starts growing, then folds back in
-   before the stem retracts. The offset keyframes give it that
-   sequenced "stem first, then leaf" feel. */
 .ghostLeaf {
   transform-origin: 10px 28px;
   transform: scale(0);
@@ -569,9 +504,8 @@
   }
 }
 
-/* Respect users who've asked their OS for less motion. Skip the loop
-   entirely; just show a static partially-grown sprout so the empty
-   state still reads correctly. */
+/* Skip the loop and show a static, partly grown sprout. Turning the animation off on its own
+   would leave nothing here, since the keyframes start from zero. */
 @media (prefers-reduced-motion: reduce) {
   .ghostStem,
   .ghostLeaf {
@@ -585,7 +519,6 @@
   }
 }
 
-/* Print: the empty teaser doesn't need to appear on paper. */
 @media print {
   .ghostSprout {
     display: none;
@@ -604,31 +537,12 @@
   translate: calc(var(--px, 0) * 5px) 0;
 }
 
-/*
- * Soil, lit from above and deepening downward.
- *
- * These were two solid fills with a ruler-straight seam between them, which is the one place the
- * scene still looked like divs rather than a drawing. Dirt is not one colour: the surface catches
- * the light, the cut below it falls away. Two short ramps say that in about the same number of bytes
- * a flat fill costs.
- */
 .groundTop {
   height: 10px;
   background: linear-gradient(180deg, #b0805c 0%, #a0714f 70%);
   border-radius: 5px 5px 0 0;
 }
 
-/*
- * Grain, on three tiles that never line up.
- *
- * Not a noise texture: noise reads as a photograph and everything else here is drawn. Sparse specks
- * at low contrast read as soil the way a few dots on a page do.
- *
- * The tile sizes are co-prime on purpose, and that is the whole trick. The first attempt put all
- * three layers on one 22px tile and they stacked into a visible polka-dot lattice, which looks more
- * like a swatch than the flat fill it replaced. With 23x17, 31x19 and 19x29 the combined pattern
- * only repeats every few thousand pixels, so the eye reads it as scattered.
- */
 .groundBase {
   height: 42px;
   background:
@@ -643,9 +557,6 @@
     auto;
 }
 
-/* Sits on the soil surface, which is the top of .groundTop. Tufts poke up into the plot and pebbles
-   settle just under the line, so the join between sky and dirt stops being a single hard edge.
-   pointer-events:none because the flowers under here are tappable. */
 .soilLine {
   position: absolute;
   top: 0;
@@ -655,8 +566,6 @@
   pointer-events: none;
 }
 
-/* Sits directly on the soil line and rises from it. preserveAspectRatio="none" stretches the mounds
-   wide, which is what soil heaped along a bed looks like anyway. */
 .crest {
   position: absolute;
   bottom: 0;
@@ -693,35 +602,15 @@
   opacity: 0.55;
 }
 
-/* Drift layer. Sits over the whole scene; petals enter from above
-   the visible area and fall diagonally past the flowers. The scene
-   already has overflow:hidden, so petals exiting at the bottom or
-   horizontally are clipped cleanly.
-
-   Scroll parallax: the layer translates upward at 25% of page scroll,
-   making the petals appear to lag behind content as the user scrolls
-   down. --scroll-y is set on the scene root by GardenScene.tsx via a
-   requestAnimationFrame'd scroll listener; the 0px fallback covers
-   first-render / SSR / reduced-motion users gracefully.
-
-   will-change: transform hints the browser to composite the layer on
-   the GPU so the parallax doesn't trigger paint on every scroll
-   tick. */
 .petalLayer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  /* How far a petal falls: to the soil, never a fixed number. The scene's height follows the
-     tallest flower, so a constant sinks petals through the ground in a short garden. The soil
-     surface sits at `--garden-h + --sway-headroom` down, and a petal starts 24px above it. */
+  /* Falls to the soil, never a fixed number. The scene's height follows the tallest flower. */
   --fall-distance: calc(var(--garden-h, 200px) + var(--sway-headroom) + 24px);
-  /* Parallax lag: positive multiplier means the layer translates DOWN
-     as the user scrolls down — counteracting the natural upward motion
-     of the scene scrolling out of viewport. Net effect: petals appear
-     to "hold position" while content scrolls past, the way background
-     mountains do in a side-scroller. Multiplier of 0.18 is in the
-     "you feel it but can't name it" range — subtle is the goal. */
+  /* A positive multiplier translates the layer DOWN as the page scrolls down, which is what
+     makes it lag behind the content. */
   transform: translate3d(0, calc(var(--scroll-y, 0px) * 0.18), 0);
   will-change: transform;
 }
@@ -732,10 +621,6 @@
   }
 }
 
-/* Individual petal — an asymmetric border-radius shape gives it a
-   teardrop / almond silhouette without needing an inline SVG. All
-   the variable values (color, position, delay, duration, etc.) come
-   from inline-style CSS custom properties set in the JSX. */
 .driftPetal {
   position: absolute;
   top: -24px;
@@ -743,17 +628,12 @@
   width: var(--size);
   height: calc(var(--size) * 1.4);
   background: var(--color);
-  /* Wider top, narrower bottom — petal-ish. */
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
   opacity: 0;
   transform: rotate(var(--rotate));
   animation: petalDrift var(--duration) cubic-bezier(0.3, 0.4, 0.5, 0.95) var(--delay) forwards;
 }
 
-/* Diagonal fall with a soft rotation. 280px is enough vertical
-   travel to leave even the tallest scene at the bottom. The final
-   rotation adds 270° on top of the starting --rotate so the petal
-   spins three-quarters of a turn during its fall. */
 @keyframes petalDrift {
   0% {
     opacity: 0;
@@ -771,24 +651,13 @@
   }
 }
 
-/* Accessibility — no drift if the user has reduced motion enabled.
-   The bloom animation in FlowerSVG isn't gated; just the additional
-   ambient motion gets removed. */
+/* Only the ambient drift is gated here. The bloom in FlowerSVG is the content, so it still plays. */
 @media (prefers-reduced-motion: reduce) {
   .driftPetal {
     display: none;
   }
 }
 
-/*
- * Desktop: grow the plot rather than leave a phone-sized one in the middle of a monitor.
- *
- * Scale it, don't widen the bed. Flowers are placed by percentage, so a wider bed spreads the same
- * four flowers further apart in the same letterbox and reads emptier than before.
- *
- * The margin hands the layout back the height a transform does not occupy, and repeats the height
- * expression above: both must be the same number and a variable cannot be multiplied into both.
- */
 @media (min-width: 900px) {
   .scene {
     --garden-zoom: 1.35;
@@ -800,9 +669,6 @@
   }
 }
 
-/* Mobile: scale the scene down so 5 flowers don't visually crowd
-   each other at narrow widths. Scaled, not re-laid out — keeps the
-   bloom + sway geometry stable. */
 @media (max-width: 480px) {
   .scene {
     height: 220px;
@@ -814,8 +680,8 @@
     height: calc(var(--garden-h, 200px) * 0.85 + var(--soil-h) + var(--sway-headroom));
   }
 
-  /* Restate the cropped height inside the query: `.sceneCompact` sits above this block, so the
-     `.scene` height here beats it on source order. Scaled to match the garden layer's 0.85. */
+  /* Restate the cropped height inside the query. `.sceneCompact` sits above this block, so on
+     source order the `.scene` height here would otherwise beat it. */
   .sceneCompact {
     height: calc(132px * 0.85);
   }
@@ -827,26 +693,17 @@
     transform-origin: bottom center;
   }
 
-  /* The scene is shorter here, so the ground the petals are falling to is higher up. */
   .petalLayer {
     --fall-distance: calc(var(--garden-h, 200px) * 0.85 + var(--sway-headroom) + 24px);
   }
 }
 
-/*
- * The bee. Positioned by percentage across the plot, moved by transitioning `left` when React
- * changes which flower it is visiting.
- *
- * `left` and not a transform because the flowers are placed the same way, so the bee and its
- * destination are always measured in the same units. Long, eased transition: a bee crosses a garden
- * unhurriedly and then hangs about.
- */
 .bee {
   position: absolute;
   width: 26px;
   margin-left: -13px;
-  /* `bottom` is set inline, per flower, so it transitions alongside `left` and the bee arcs between
-     heads of different heights instead of sliding along one invisible line. */
+  /* `bottom` is set inline, per flower, so it transitions alongside `left` and the bee arcs
+     between heads of different heights. */
   transition:
     left 2.6s cubic-bezier(0.45, 0, 0.35, 1),
     bottom 2.6s cubic-bezier(0.3, 0.1, 0.4, 1);
@@ -854,8 +711,8 @@
   pointer-events: none;
 }
 
-/* The hover, on the inner element so it composes with the parent's horizontal travel instead of
-   fighting it for the transform property. */
+/* On the inner element so it composes with the parent's horizontal travel instead of fighting
+   it for the transform property. */
 .beeBody {
   display: block;
   width: 100%;
@@ -881,13 +738,6 @@
   }
 }
 
-/*
- * The focused flower, and the ones that aren't.
- *
- * Lifts and brightens slightly rather than scaling: the flowers share a soil line, and scaling one
- * would lift its stem off the ground, which is exactly the "floating" mistake the door light and
- * the box front both made. Moving straight up keeps it planted.
- */
 .flowerSlot {
   transition:
     transform 0.24s ease,
@@ -896,7 +746,6 @@
   cursor: pointer;
 }
 
-/* Nothing drawn yet, so nothing to point at. */
 .flowerSlot:disabled {
   cursor: default;
 }
@@ -916,18 +765,6 @@
   }
 }
 
-/*
- * Being watered.
- *
- * Drops fall down each flower's own column and land in the soil, then that flower dips and springs
- * back — the small bob a stem makes when something lands on it, not a bounce. It happens once and
- * then the layer unmounts.
- *
- * Every keyframe repeats `translateX(-50%)`. The slot is centred on its column by that transform, so
- * a keyframe that only wrote translateY would snap each flower half its own width to the right for
- * the length of the animation. Same reason the animation is on the slot at all rather than on the
- * flower: scaling or moving the flower alone would lift the stem off the soil line.
- */
 .dropLayer {
   position: absolute;
   inset: 0;
@@ -935,18 +772,9 @@
   z-index: 5;
 }
 
-/*
- * Deliberately more saturated than real water, and outlined.
- *
- * The first pass used the pale blue you would actually pick for a droplet, #cfeaf7 into #9ecfe8, and
- * they fell down a sky that starts at #d4eeff — pale blue on pale blue, six pixels wide. They were
- * in the DOM, at the right coordinates, at opacity 0.9, and could not be seen at all. The sky is the
- * background here, so the water has to be darker than it rather than lighter.
- */
 .drop {
-  /* Falls to the soil, never a fixed number: this layer is inset in .garden, whose height follows
-     the tallest flower, so a constant leaves drops fading in mid-air. No mobile term needed here,
-     unlike the drifting petals: this layer is inside .garden and scales with it. */
+  /* Falls to the soil, never a fixed number. This layer is inset in .garden, whose height
+     follows the tallest flower. */
   --drop-fall: var(--garden-h, 200px);
   position: absolute;
   top: -10px;
@@ -974,7 +802,6 @@
     opacity: 0.9;
     transform: translateY(calc(var(--drop-fall, 202px) - 12px)) scaleY(1.25);
   }
-  /* Flattens into the soil instead of vanishing mid-air. */
   100% {
     opacity: 0;
     transform: translateY(var(--drop-fall, 202px)) scaleY(0.4) scaleX(1.6);
@@ -1007,9 +834,8 @@
   }
 }
 
-/* Stars, only after dark. Hand-placed rather than random, like the petal drift: a garden has to
-   look identical every time its owner opens it. Clear of the top-right, where the moon's glow
-   sits, and out of the bottom third, which the flowers fill. */
+/* Hand-placed rather than random, like the petal drift: a garden has to look identical every
+   time it opens. */
 .stars {
   position: absolute;
   inset: 0;
@@ -1044,7 +870,6 @@
   }
 }
 
-/* The parallax is decoration; hold every layer still when motion is unwelcome. */
 @media (prefers-reduced-motion: reduce) {
   .sky,
   .stars,
@@ -1054,16 +879,12 @@
   }
 }
 
-/* --- Sealed plot ------------------------------------------------------- */
-
 .seedBed {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* Pulled below the garden's baseline so the soil covers the bottom of the seed and it reads as
-   half-buried rather than resting on the dirt. */
 .seed {
   position: absolute;
   bottom: -4px;
@@ -1075,7 +896,6 @@
   animation: seedBreathe 3.4s ease-in-out infinite;
 }
 
-/* The glow is what makes a seed read as alive rather than as a pebble. */
 .seed::before {
   content: '';
   position: absolute;

@@ -1,9 +1,5 @@
 import notice from './Notice.module.css'
 import styles from './LegalPage.module.css'
-// Privacy + terms, rendered by the two static routes. Kept plain and readable on purpose — a legal
-// page nobody can read protects nobody. Content is accurate to how bloomnote actually works: notes
-// go to Gemini to design the garden, gardens live in Cloudflare KV behind an unguessable short id,
-// and signing in is optional (it only syncs your archive).
 
 interface Section {
   heading: string
@@ -60,9 +56,8 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
 
   return (
     <div className={notice.page}>
-      {/* Colour rather than opacity throughout this page. Dimming a full-strength colour reads
-          as "lighter" but means "less contrast", and it took this link to 2.9:1 against the
-          4.5:1 body text needs. Naming the colour makes the contrast something you can look up. */}
+      {/* Colour rather than opacity throughout this page. Dimming a full-strength colour drops legal
+          copy under the contrast threshold. */}
       <a href="/" className={styles.back}>
         &larr; bloomnote
       </a>

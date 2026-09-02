@@ -8,8 +8,8 @@ interface Props {
   index: number
   bloomed: boolean
   swayDelay?: number
-  /** Render the fully-open flower with no CSS animations, so it rasterizes correctly into a
-   *  static share image (entrance animations don't run in an <img>-loaded SVG). */
+  /** Render the fully-open flower with no CSS animations, so it rasterizes into a static share
+      image instead of freezing mid-bloom. */
   staticRender?: boolean
 }
 
@@ -19,7 +19,7 @@ interface PetalGeometry {
 }
 
 /* Head scales with its stem. Stems run 40 to 160, and a fixed head on a long one reads as a
-   lollipop on a wire. */
+   lollipop. */
 const HEAD_SCALE = { min: 0.85, max: 1.2, atStem: { min: 40, max: 160 } }
 
 export function headScale(stemHeight: number): number {
@@ -27,13 +27,11 @@ export function headScale(stemHeight: number): number {
   return HEAD_SCALE.min + Math.min(1, Math.max(0, t)) * (HEAD_SCALE.max - HEAD_SCALE.min)
 }
 
-/** The drawing box for a flower. Exported so the plot sizes to the same number the flower uses. */
 export function flowerBoxHeight(flower: unknown): number {
   const { stemHeight } = drawableFlower(flower as never)
   return stemHeight + Math.round(80 * headScale(stemHeight))
 }
 
-/** Distance from the bottom of that box up to the head's centre — where the bee lands. */
 export function flowerHeadOffset(flower: unknown): number {
   const { stemHeight, petalShape } = drawableFlower(flower as never)
   const scale = headScale(stemHeight)
@@ -53,8 +51,6 @@ function petalGeometry(shape: PetalShape): PetalGeometry {
   }
 }
 
-// Per-shape control points for a single petal in local petal space. The
-// petal points up (negative Y is up); we rotate later.
 // prettier-ignore
 function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
   switch (shape) {
@@ -75,12 +71,11 @@ function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
         [0, -s*1.4], [-s*0.4, -s*1.2], [-s*0.4, -s*0.5], [0, 0],
       ]
     case 'star':
-      // Sharp diamond-like petal — long and pointed.
       return [
         [0, 0], [s*0.35, -s*0.4], [s*0.15, -s*1.6],
         [0, -s*1.9], [-s*0.15, -s*1.6], [-s*0.35, -s*0.4], [0, 0],
       ]
-    default: // round
+    default:
       return [
         [0, 0], [s*0.5, -s*0.5], [s*0.6, -s*1.4],
         [0, -s*1.6], [-s*0.6, -s*1.4], [-s*0.5, -s*0.5], [0, 0],
@@ -88,13 +83,12 @@ function petalPointsFor(shape: PetalShape, s: number): Array<[number, number]> {
   }
 }
 
-/* Measured off the control points, not written down per shape, so editing a silhouette above
-   can't leave a stale number here. A Bezier stays inside its hull, so this is an upper bound. */
+/* Measured off the control points rather than written down per shape, so editing a silhouette
+   above can't leave a stale number here. */
 function petalReach(shape: PetalShape, s: number): number {
   return Math.max(...petalPointsFor(shape, s).map(([x, y]) => Math.hypot(x, y)))
 }
 
-/** How long the stem takes to reach full height. The head waits this out before opening. */
 const STEM_MS = 500
 
 function buildPetalPath(
@@ -110,15 +104,8 @@ function buildPetalPath(
     cx + (x * cos - y * sin),
     cy + (x * sin + y * cos),
   ])
-  // The petal point sequences above are designed so that the path is a
-  // pair of cubic Beziers from pts[0] → pts[3] → pts[6] (or last). The
-  // 'bell' case has more control points and reads as two cubic + two
-  // cubic. We render the first 7 points as two cubics in all cases; the
-  // extra bell points contribute to the silhouette via the rounded
-  // ends rather than additional curves, which gives a clean profile
-  // without complicating the path data.
-  // We render the first seven control points as two cubics; the sequences above always
-  // supply at least that many, so treat the head as a fixed tuple.
+  // The first seven control points render as two cubics. Every sequence above supplies at least
+  // that many, so the head is treated as a fixed tuple.
   type Pt = [number, number]
   const [p0, p1, p2, p3, p4, p5, p6] = pts as [Pt, Pt, Pt, Pt, Pt, Pt, Pt, ...Pt[]]
   return (
@@ -128,17 +115,11 @@ function buildPetalPath(
   )
 }
 
-/**
- * Just the head: petals and centre, no stem, no animation, on a fixed square.
- *
- * Takes the unscaled geometry on purpose. The plot sizes a head to its stem; a list wants every
- * flower the same size however tall it grew.
- */
 export function FlowerHead({ flower, size = 34 }: { flower: FlowerSpec; size?: number }) {
   const { petalCount, petalColors, centerColor, petalShape } = drawableFlower(flower)
   const base = petalGeometry(petalShape)
   /* Normalise the footprint: a `small` petal reaches 22 units and a `star` 42, so without this one
-     row's flower is half the size of the row below. Zoom both petal and centre to keep the shape. */
+     row's flowers come out different sizes. */
   const c = 44
   const zoom = 38 / petalReach(petalShape, base.size)
   const petalSize = base.size * zoom
@@ -173,12 +154,11 @@ export function FlowerHead({ flower, size = 34 }: { flower: FlowerSpec; size?: n
 
 export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender = false }: Props) {
   const groupRef = useRef<SVGGElement>(null)
-  // Normalized at the fetch boundary already; repeated here because this component is also
-  // rendered directly from the example cards and the share-image path, and a NaN here is silent.
+  // Normalized at the fetch boundary already, and repeated here because this also renders from the
+  // example cards and the share-image path, where a NaN is silent.
   const { stemHeight, petalCount, petalColors, centerColor, stemColor, petalShape } = drawableFlower(flower)
-  // Render still (fully-formed, no sway/pop-in) for static rasterization AND for reduced-motion
-  // users. These animations are set via inline style, which a CSS media query can't override, so
-  // the check has to happen here — otherwise reduced-motion users still get the infinite sway.
+  // These animations are set via inline style, which a CSS media query cannot override, so the
+  // reduced-motion check has to happen here or those users still get the infinite sway.
   const still = staticRender || prefersReducedMotion()
 
   const scale = headScale(stemHeight)
@@ -189,7 +169,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
   const geom = { size: base.size * scale, centerRadius: base.centerRadius * scale }
   const head = stemTop + geom.centerRadius
   /* Tapered and slightly leaning, or a long stem reads as wire. The lean comes from stemHeight,
-     not random, so a flower is identical across re-renders and in the share image. */
+     not random, so it is the same every time. */
   const stemBase = 3 + stemHeight / 90
   const stemTip = 1.6 + stemHeight / 260
   const lean = ((stemHeight % 7) - 3) * 0.9
@@ -198,10 +178,8 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
     `Q ${cx - stemTip / 2 + lean} ${head + (svgH - head) * 0.45} ${cx - stemTip / 2 + lean} ${head} ` +
     `L ${cx + stemTip / 2 + lean} ${head} ` +
     `Q ${cx + stemTip / 2 + lean} ${head + (svgH - head) * 0.45} ${cx + stemBase / 2} ${svgH} Z`
-  /* One leaf on a short stem, three on a tall one, so a long stem is never bare. */
   const leafFractions = stemHeight < 70 ? [0.5] : stemHeight < 120 ? [0.45, 0.62] : [0.36, 0.55, 0.74]
 
-  // Subtle center inner color — slightly darker version of centerColor.
   const centerInner = darken(centerColor, 0.2)
 
   return (
@@ -232,8 +210,8 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
               animationFillMode: 'forwards',
             }}
           />
-          {/* Leaves ride the stem up. Without this they hang in mid-air, fully drawn, next to a
-              stem that hasn't reached them yet. */}
+          {/* Leaves ride the stem up. Without this they hang in mid-air, fully drawn, beside a stem that
+              hasn't reached them. */}
           <g
             style={{
               transformOrigin: `${cx}px ${svgH}px`,
@@ -244,8 +222,6 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
             }}
           >
             {leafFractions.map((f, li) => {
-              // Alternating sides, and smaller the higher they sit: a stem that thins toward the
-              // head should not carry its largest leaf at the top.
               const side = li % 2 === 0 ? -1 : 1
               const y = svgH - stemHeight * f
               const rx = 9 - f * 2.5
@@ -263,10 +239,7 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
               )
             })}
           </g>
-          {/* The head opens only once the stem has arrived to carry it. Previously the petals
-              popped at t=0 while the stem was still growing, so for the first half-second the
-              flower was a head floating in the sky above a rising line. One flower blooming once
-              hid it; the homepage loops three gardens, which did not. */}
+          {/* The head opens only once the stem has arrived to carry it. */}
           {Array.from({ length: petalCount }).map((_, i) => {
             const angle = ((360 / petalCount) * i * Math.PI) / 180
             const color = petalColors[i % petalColors.length]
@@ -282,9 +255,8 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
                   animationName: still ? 'none' : 'popIn',
                   animationDuration: '0.4s',
                   animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
-                  // `both`, not `forwards`: with only `forwards` the element renders at its
-                  // natural size for the whole delay, so a delayed pop-in shows the thing first
-                  // and animates it second. `both` applies the 0% keyframe up front.
+                  // `both`, not `forwards`: with only `forwards` the element renders at its natural size for the
+                  // whole delay, so a delayed pop-in shows the thing first and animates it second.
                   animationFillMode: 'both',
                   animationDelay: `${STEM_MS + i * 30}ms`,
                 }}
@@ -298,8 +270,6 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
               animationDuration: '0.4s',
               animationTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
               animationFillMode: 'both',
-              // Just behind the first petals, so the center lands into an opening flower rather
-              // than sitting there waiting to be surrounded.
               animationDelay: `${STEM_MS + 60}ms`,
             }}
           >
@@ -322,7 +292,6 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
   )
 }
 
-// Darken a hex color by a factor in [0, 1].
 function darken(hex: string, factor: number): string {
   const m = /^#([0-9a-f]{6})$/i.exec(hex)
   if (!m) return hex

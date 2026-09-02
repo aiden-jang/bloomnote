@@ -45,15 +45,8 @@
   transform: translateY(0);
 }
 
-/*
- * Everything on this screen is text somebody else typed, so every block that carries it has to
- * survive a word that never breaks. Pasting a link into a note is the ordinary case, and one URL
- * was widening the whole document to 761px inside a 375px phone — the header, the plot and the
- * footer all dragged sideways with it, on the one screen this app exists for.
- *
- * `anywhere` rather than `break-word`: break-word still refuses to break a long word if it is the
- * only thing on the line, which is exactly the case here.
- */
+/* Everything on this screen is text somebody else typed, so every block carrying it needs
+   overflow-wrap: a single long unbroken token otherwise pushes the card past the viewport. */
 .messageText,
 .sig,
 .fromText,
@@ -61,8 +54,6 @@
   overflow-wrap: anywhere;
 }
 
-/* A sender-written aside stays sealed until the recipient asks for it. The small envelope gives the
-   garden a second reveal without competing with the actual note or pretending the text is secure. */
 .secretNote {
   margin-top: 16px;
   padding-top: 14px;
@@ -126,15 +117,6 @@
   font-style: italic;
 }
 
-/* A listening option belongs with the handwritten note, not with the sending controls below. It
-   stays understated so reading remains the default, while the active state gives a clear way back
-   out if the browser voice is not the one someone hoped for. */
-
-/* Keepsake utilities live with the note itself. They are small enough to avoid competing with the
-   reply CTA, but make it possible to carry a specific sentence or a paper copy beyond this link. */
-/* "Grown March 17, 2026" — small, italic, postscript-style. Sits at
-   the foot of the message card the way a date would on a physical
-   greeting card. */
 .grownOn {
   margin-top: 18px;
   padding-top: 14px;
@@ -192,8 +174,6 @@
   display: inline-block;
   padding: 10px 24px;
   border-radius: 22px;
-  /* Match the composer CTA: green gradient + soft shadow, hover lift,
-     active press. */
   background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
   color: white;
   font-size: 14px;
@@ -216,11 +196,6 @@
   box-shadow: 0 2px 8px rgba(45, 90, 27, 0.18);
 }
 
-/* "Open the garden" — the gesture that unlocks audio + triggers
-   bloom. Sized to be unmissable but not louder than the bouquet
-   note that follows. Sits centered, just below the empty garden
-   plot. Subtle pulse animation hints "tap me" without being
-   aggressive. */
 .openBtn {
   align-self: center;
   padding: 14px 32px;
@@ -238,8 +213,6 @@
   animation: openBtnPulse 2.4s ease-in-out infinite;
 }
 
-/* On hover the attention pulse stops (they've found it); it settles
-   into a lifted resting state matching the other CTAs. */
 .openBtn:hover {
   animation: none;
   transform: translateY(-1px);
@@ -289,8 +262,6 @@
   opacity: 0.7;
 }
 
-/* Sharing is the clear second action after replying. Keepsake utilities stay available beneath it
-   without turning the ending into a row of tiny links. */
 .ctaShareBtn {
   min-width: 190px;
   padding: 9px 20px;
@@ -377,17 +348,6 @@
   opacity: 0.7;
 }
 
-/* Save-as-image — sits below the primary CTA and the "start fresh"
-   link as a tertiary affordance. Quieter on purpose: recipients who
-   want to keep the garden are a minority of viewers, and a louder
-   button here would compete visually with "grow one back," which is
-   the action we most want them to take. Quiet doesn't mean hidden —
-   underline + spacing keep it discoverable. */
-/* Two download links rendered side-by-side as a single line with a
-   centered dot separator. Same visual weight as before, just an extra
-   option. */
-
-/* Print: a save-link doesn't belong on a physical card. */
 @media print {
 }
 
@@ -404,9 +364,6 @@
   transform: translateY(0);
 }
 
-/* Mobile responsive — tighten padding, shrink the bouquet-note
-   and message text a touch so a long note doesn't take three
-   scroll-screens. */
 @media (max-width: 480px) {
   .wrap {
     padding: 1.5rem 1rem 3rem;
@@ -434,17 +391,13 @@
   }
 }
 
-/* On narrow screens the full-width header would run under the fixed sign-in / sound chips
-   (top-right). Drop the content below them. Placed after the block above so it wins the
-   padding-top; desktop is unaffected (the centered column never reaches those chips). */
+/* On narrow screens the full-width header runs under the fixed sign-in and sound chips. */
 @media (max-width: 560px) {
   .wrap {
     padding-top: 4rem;
   }
 }
 
-/* Print: drop the call-to-action ("grow one back?" link) — a screen-only
-   affordance. The topLabel and thread context stay; they're part of the card. */
 @media print {
   :global(body) {
     background: white;
@@ -469,8 +422,6 @@
     box-shadow: none;
   }
 
-  /* The garden and note are the keepsake. Interactive controls, audio, and the postscript CTA
-     are screen furniture and would otherwise leave distracting button outlines in a paper copy. */
   .wrap button,
   .wrap :global([class*='sound']) {
     display: none !important;
@@ -480,19 +431,13 @@
     display: none !important;
   }
 
-  /* An instruction to tap something, on paper. It is the only line on the printed keepsake that
-     asks the reader to do something they cannot do. */
   .tapHint {
     display: none !important;
   }
 }
 
-/*
- * Local, not global. CSS Modules scopes animation names, so a module referencing a keyframe defined
- * in index.css compiles to a name with no keyframes behind it and the animation silently never
- * runs. (`itemReveal` below has always been local, which is why that one worked.) The duplication
- * across modules is the cost of each file standing on its own, and it is four lines.
- */
+/* Local, not global. CSS Modules scopes animation names, so a module referencing a keyframe
+   defined in index.css compiles to a name that does not exist. */
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -504,9 +449,8 @@
   }
 }
 
-/* The unlock cross-fade, kept short on purpose. A view transition paints a snapshot, so anything
-   animating underneath is a still frame until the fade ends. The first petal opens at 460ms, so
-   220ms lands clear of it and the bloom is never what gets cross-faded. */
+/* Kept short on purpose. A view transition paints a snapshot, so anything animating underneath
+   is frozen for the duration. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 220ms;
@@ -520,14 +464,13 @@
   }
 }
 
-/* Sits under the open button on the sealed screen. */
 .waitingLine {
   margin: 18px auto 0;
   max-width: 26ch;
   text-align: center;
   font-size: 0.94rem;
   line-height: 1.55;
-  /* --text-light is only 2.8:1 on the cream page; this is body copy, so it takes the darker ink. */
+  /* --text-light is only 2.8:1 on the cream page, and this is body copy, so it takes the darker ink. */
   color: var(--text-mid);
   opacity: 0;
   animation: waitingIn 700ms ease 420ms forwards;
@@ -551,8 +494,6 @@
   }
 }
 
-/* The invitation to open a flower. Sits directly under the plot, above the watering can, and is
-   removed for good the first time a flower is opened. */
 .tapHint {
   margin: 14px auto 0;
   text-align: center;

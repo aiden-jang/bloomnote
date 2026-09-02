@@ -4,7 +4,7 @@ import { safeMeta } from '../src/eventMeta.js'
 
 /**
  * /api/event is public and unauthenticated, and what it logs goes to Workers Logs. bloomnote
- * carries people's private messages, so the server decides what is loggable — the client being
+ * carries people's private messages, so the server decides what is loggable. The client being
  * careful is not the same as the endpoint being safe.
  */
 describe('event meta is filtered server-side', () => {

@@ -26,22 +26,17 @@ import {
 import { FlowerHead } from './FlowerSVG'
 import { cardBloom } from '../lib/cardBloom'
 
-/** How many pressed flowers the shelf shows before it asks whether you want the rest. */
 const JOURNAL_PREVIEW = 8
 
 export default function FlowerJournalShelf({ currentGardenId }: { currentGardenId: string }) {
   const [entries, setEntries] = useState<FlowerJournalEntry[]>(() => loadFlowerJournal())
   const [showAll, setShowAll] = useState(false)
   const [quiet, setQuietState] = useState(isQuiet)
-  /** Which entries have audio, so a row can offer playback without loading every blob. */
   const [withVoice, setWithVoice] = useState<Set<string>>(new Set())
   const [loaded, setLoaded] = useState<Record<string, VoiceMemory>>({})
   const [recordingFor, setRecordingFor] = useState<string | null>(null)
   const recording = useRef<Recording | null>(null)
-  /* Carries the entry it belongs to: this message answers a tap on one row, and the shelf is
-     taller than the screen, so it has to appear at that row rather than at the top of the list. */
   const [voiceError, setVoiceError] = useState<{ id: string; text: string } | null>(null)
-  /** Null shows everything. A shelf id narrows the list to one shelf. */
   const [shelf, setShelf] = useState<ShelfId | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
@@ -139,7 +134,6 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         {!quiet && <span className={styles.count}>{entries.length}</span>}
       </div>
       {recapLine && <p className={styles.recap}>{recapLine}</p>}
-      {/* Filters, not folders: the flower stays on the one shelf and this only narrows what is shown. */}
       <div className={styles.shelfRow} role="group" aria-label="Shelves">
         <button type="button" aria-pressed={shelf === null} onClick={() => setShelf(null)}>
           everything
@@ -162,8 +156,8 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       <ul className={styles.entries}>
         {visible.map((entry) => (
           <li key={entry.id} className={entry.gardenId === currentGardenId ? styles.current : undefined}>
-            {/* Keyed on the garden and the flower's place in it, which is what the archive card for
-                that same garden uses — so a flower you pressed is drawn the same in both places. */}
+            {/* Keyed on the garden and the flower's place in it, so a re-rolled garden never inherits the
+                kept flower from the one it replaced. */}
             <span className={styles.swatches} aria-hidden>
               <FlowerHead
                 flower={cardBloom(entry.colors[0] ?? '#cbd6c2', entry.gardenId, entry.flowerIndex)}
@@ -174,7 +168,6 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
               <a href={`/g/${entry.gardenId}`}>{entry.flowerName}</a>
               <small>{entry.from ? `from ${entry.from}` : 'from a bloomnote'}</small>
               {entry.memory && <em>“{entry.memory}”</em>}
-              {/* The sender said what it means; this is what it came to mean to whoever kept it. */}
               {editing === entry.id ? (
                 <span className={styles.meaningEdit}>
                   <input
@@ -220,7 +213,6 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                   </button>
                 ))}
               </span>
-              {/* A spoken memory sits under the written one: it is another way to keep the same thing. */}
               {recordingFor === entry.id ? (
                 <span className={styles.voiceRow}>
                   <VoiceRing seconds={0} liveStream={recording.current?.stream} />
@@ -272,8 +264,6 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
       </ul>
       {shown.length > JOURNAL_PREVIEW && (
         <p className={styles.more}>
-          {/* Saying only how many are tucked away is a dead end on a shelf of your own
-              keepsakes: the store holds eighty and eight are reachable. */}
           <button type="button" className={styles.moreBtn} onClick={() => setShowAll((open) => !open)}>
             {showAll
               ? 'tuck them back'
@@ -284,8 +274,6 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         </p>
       )}
       <Constellations entries={entries} />
-      {/* Quiet mode's only control, and deliberately the plainest thing here: a prominent toggle would
-          make the numbers read as the default you opt out of, and the default is the other way round. */}
       <button
         type="button"
         className={styles.quietToggle}

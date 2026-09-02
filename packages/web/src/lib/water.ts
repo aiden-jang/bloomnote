@@ -1,12 +1,3 @@
-/*
- * Watering a garden: the recipient's one-tap answer.
- *
- * The count is anonymous and lives on its own route because the garden itself is immutable and
- * cached for a year (see the API's water handlers). Whether *you* already watered is kept on this
- * device only — there is no identity to hang it on, and asking someone to sign in before they can
- * say "this was nice" would cost more than the gesture is worth.
- */
-
 const KEY = 'bloomnote.watered.v1'
 /** Plenty for one person's gardens, and small enough that the key can never grow unbounded. */
 const REMEMBER_LIMIT = 200
@@ -36,9 +27,7 @@ export function rememberWatered(id: string): void {
     const ids = read().filter((x) => x !== id)
     ids.push(id)
     localStorage.setItem(KEY, JSON.stringify(ids.slice(-REMEMBER_LIMIT)))
-  } catch {
-    // no-op
-  }
+  } catch {}
 }
 
 export function rememberedFeeling(id: string): Feeling | null {
@@ -58,9 +47,7 @@ function rememberFeeling(id: string, feeling: Feeling): void {
       .filter(([gardenId]) => gardenId !== id)
       .slice(-(REMEMBER_LIMIT - 1))
     localStorage.setItem(FEELING_KEY, JSON.stringify(Object.fromEntries([...entries, [id, feeling]])))
-  } catch {
-    // Optional device memory only.
-  }
+  } catch {}
 }
 
 export async function fetchGardenResponse(id: string): Promise<GardenResponse> {
@@ -99,14 +86,6 @@ export async function fetchResponsesBatch(ids: string[]): Promise<Record<string,
   }
 }
 
-/**
- * Water counts for a list of gardens, as `{ id: count }`. Missing means zero.
- *
- * One request for a whole page of cards. Fetching per card would mean a dozen round trips to show a
- * number that is decoration on most of them, and the failure mode of a slow list is worse than the
- * failure mode of no number at all — so this resolves to `{}` on any error and the cards just don't
- * mention watering.
- */
 export async function fetchWatersBatch(ids: string[]): Promise<Record<string, number>> {
   if (ids.length === 0) return {}
   try {
@@ -124,7 +103,6 @@ export async function fetchWatersBatch(ids: string[]): Promise<Record<string, nu
   }
 }
 
-/** Water it. Resolves to the new count, or null if the write failed. */
 export async function sendWater(id: string): Promise<number | null> {
   try {
     const r = await fetch(`/api/garden/${id}/water`, { method: 'POST' })
@@ -136,7 +114,6 @@ export async function sendWater(id: string): Promise<number | null> {
   }
 }
 
-/** "watered once" / "watered twice" / "watered 5 times" — the count as a sentence. */
 export function watersLabel(n: number): string {
   if (n <= 0) return ''
   if (n === 1) return 'watered once'

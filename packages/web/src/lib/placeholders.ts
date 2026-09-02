@@ -1,12 +1,8 @@
 import { DEFAULT_OCCASION } from './occasions'
 
-// Example notes shown as the composer's placeholder, curated per occasion and
-// flavored by mood. The goal is that picking "hbd" + "unserious" previews a
-// funny birthday note, while "ty" + "soft" previews a heartfelt thank-you, so
-// the empty field already suggests what to write.
 //
-// Every occasion has a `default` (used for "no vibe" and any mood without its
-// own variant). Voice: lowercase, specific, warm, occasionally dry. No em dashes.
+// Every occasion needs a `default`, used for "no vibe" and any mood without its own variant.
+// Voice: lowercase, specific, warm, occasionally dry. No em dashes.
 
 type MoodVariants = { default: string } & Partial<Record<string, string>>
 
@@ -69,17 +65,11 @@ const PLACEHOLDERS: Record<string, MoodVariants> = {
   },
 }
 
-/**
- * A curated example note for the chosen occasion + mood. Falls back to the
- * occasion's default variant, then to the default occasion, so any combination
- * returns something fitting.
- */
 export function placeholderFor(occasion: string, mood: string): string {
   const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
   return set[mood] ?? set.default
 }
 
-/** A few distinct human-written angles for the quiet "stuck" state in the composer. */
 export function placeholderOptions(occasion: string, mood: string): string[] {
   const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
   return [

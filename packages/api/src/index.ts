@@ -22,16 +22,8 @@ import { buildPrompt, checkBudget, generateGarden, validateBody } from './design
 import { checkRate, clientIp } from './rateLimit.js'
 import { safeMeta } from './eventMeta.js'
 
-/*
- * Per-IP ceilings on the endpoints that write.
- *
- * bloomnote is anonymous-first, so most of these cannot ask who is calling. Gardens are stored
- * with no expiry on purpose (a keepsake link must keep working), which means anything a script
- * writes here is permanent. Every number is far above real use: sending one garden is one create,
- * and a recipient waters once.
- *
- * Separate buckets so a burst of one action never spends another's allowance.
- */
+/* Per-IP ceilings on the endpoints that write. bloomnote is anonymous-first, so most of these
+   cannot ask who is calling. */
 const LIMITS = {
   create: 12,
   water: 30,
@@ -40,7 +32,6 @@ const LIMITS = {
   account: 30,
 } as const
 
-/** 429 with a Retry-After, or null to continue. */
 const limited = async (c: Context<{ Bindings: Env }>, bucket: string, perMinute: number) => {
   const result = await checkRate(c.env, bucket, clientIp(c.req.raw.headers), perMinute)
   return result.ok
@@ -52,43 +43,23 @@ const limited = async (c: Context<{ Bindings: Env }>, bucket: string, perMinute:
 
 const app = new Hono<{ Bindings: Env }>()
 
-/**
- * Absolute URL for a garden's link-preview card, forced to https off localhost.
- *
- * The scheme cannot just be inherited from the request. In `wrangler dev` a Worker with a custom
- * domain route sees the request as `http://bloomnote.aidenjang.com/...`, so the tag went out
- * pointing at http, and Twitter drops a card whose image is not https while other unfurlers show a
- * broken placeholder. Localhost stays http so the card is still fetchable in development.
- */
 function ogImageUrl(reqUrl: string, id: string): string {
   const u = new URL(`/og/${id}.png`, reqUrl)
   if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') u.protocol = 'https:'
   return u.toString()
 }
 
-// Safety net: any error a route does not handle itself is logged server-side (Workers Logs /
-// `wrangler tail`) and returned as a generic 500, so an internal failure never leaks a stack
-// trace or implementation detail to the client.
+// Any error a route does not handle itself is logged server-side and returned as a generic 500,
+// so an internal failure never leaks a stack trace to the client.
 app.onError((err, c) => {
   console.error('Unhandled error:', err)
   return c.json({ error: 'InternalError' }, 500)
 })
 
-// Security headers on every response + a same-origin CSRF guard on state-changing requests.
 app.use('*', harden())
 
-/**
- * Per-user responses must never be stored.
- *
- * A GET with no Cache-Control is heuristically cacheable, so the browser invents its own freshness
- * lifetime and keeps it. That shipped in accounts and produced a real bug: sign out, press back, the
- * page re-checks the session, the browser answers from its own cache, and you appear signed in until a
- * refresh. It cuts both ways too, since a cached signed-out response keeps telling a freshly signed-in
- * person they are signed out.
- *
- * Deliberately conditional. A route that has already chosen its own caching knows something this
- * middleware does not, and overwriting that would silently undo an intentional decision.
- */
+/* A GET with no Cache-Control is heuristically cacheable, so a per-user response would be
+   stored and handed to the next person on the same browser. */
 app.use('*', async (c, next) => {
   await next()
   if (!c.res.headers.get('cache-control')) {
@@ -99,15 +70,12 @@ app.use('*', async (c, next) => {
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }))
 
-// Who is the caller? Same-origin endpoint the web polls so the browser never talks to the
-// auth service cross-origin. Returns { user: null } when signed out — bloomnote is anonymous-
-// first, so accounts are optional and this is never a hard 401.
 app.get('/api/me', async (c) => {
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
   return c.json({ user: user ? { id: user.id, email: user.email, displayName: user.displayName } : null })
 })
 
-// Read a garden by short id. Immutable once created, so it's aggressively cacheable.
+// Immutable once created, so it is aggressively cacheable.
 app.get('/api/garden', async (c) => {
   const id = c.req.query('id')
   if (!id) return c.json({ error: 'Missing or malformed id.' }, 400)
@@ -117,8 +85,6 @@ app.get('/api/garden', async (c) => {
   return c.json({ garden })
 })
 
-// Create a garden, returning its short id. Body is the garden JSON. When the creator is signed
-// in, the garden is stamped with their ownerId and added to their Sent list; anonymous still works.
 app.post('/api/garden', async (c) => {
   const stop = await limited(c, 'create', LIMITS.create)
   if (stop) return stop
@@ -129,13 +95,6 @@ app.post('/api/garden', async (c) => {
   return c.json({ id: result.id })
 })
 
-/**
- * The share-card PNG for a garden, rendered by the sender's browser right after creating it.
- *
- * Unauthenticated on purpose. The sender is usually signed out (bloomnote is anonymous-first), so
- * requiring a session would mean most gardens never get a card. What protects it instead is that
- * the write is once-only and the id is unguessable: see putOgImage.
- */
 app.post('/api/garden/:id/og', async (c) => {
   const bytes = await c.req.arrayBuffer()
   const result = await putOgImage(c.env, c.req.param('id'), bytes)
@@ -143,8 +102,8 @@ app.post('/api/garden/:id/og', async (c) => {
   return c.json({ ok: true })
 })
 
-// The card itself. Crawlers fetch this, so it must be a plain immutable image with no session
-// dependence and no redirect: several unfurlers give up on either.
+// Crawlers fetch this, so it must be a plain immutable image with no session dependence and no
+// redirect: several unfurlers give up on either.
 app.get('/og/:id', async (c) => {
   const id = c.req.param('id').replace(/\.png$/, '')
   const png = await readOgImage(c.env, id)
@@ -152,19 +111,12 @@ app.get('/og/:id', async (c) => {
   return new Response(png, {
     headers: {
       'content-type': 'image/png',
-      // Same reasoning as the garden JSON: it can never change once written.
       'cache-control': 'public, max-age=31536000, immutable',
     },
   })
 })
 
-/*
- * Watering: the recipient's one-tap answer, and the count anyone opening the link can see.
- *
- * Both are `no-store`. The garden itself is immutable and cached for a year, which is exactly why
- * the count has to live on its own route: baked into the page it would freeze at whatever it was
- * when the first visitor arrived, and the sender would never see it move.
- */
+/* Both are no-store: the count moves, and a cached one shows the recipient's tap doing nothing. */
 app.post('/api/garden/:id/water', async (c) => {
   const stop = await limited(c, 'water', LIMITS.water)
   if (stop) return stop
@@ -173,8 +125,6 @@ app.post('/api/garden/:id/water', async (c) => {
   return c.json({ waters: result.waters }, 200, { 'cache-control': 'no-store' })
 })
 
-// Water counts for a whole list at once, for the "your gardens" page. Same no-store reasoning as
-// the single-garden route: the count moves, the garden never does.
 app.get('/api/waters', async (c) => {
   const ids = (c.req.query('ids') ?? '')
     .split(',')
@@ -214,7 +164,6 @@ app.get('/api/garden/:id/response', async (c) => {
   return c.json(await readGardenResponse(c.env, c.req.param('id')), 200, { 'cache-control': 'no-store' })
 })
 
-// Record that the signed-in caller opened someone else's garden (adds it to their Received list).
 app.post('/api/garden/:id/receive', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
@@ -224,8 +173,6 @@ app.post('/api/garden/:id/receive', async (c) => {
   return c.json({ saved })
 })
 
-// Remove a garden from the signed-in user's Sent/Received lists. Keeps the garden itself, so a
-// link already shared still opens; this just detaches it from this account.
 app.delete('/api/garden/:id', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
@@ -235,9 +182,8 @@ app.delete('/api/garden/:id', async (c) => {
   return c.json({ ok: true })
 })
 
-// Funnel analytics. The web app POSTs structural, PII-free events here (usually via sendBeacon);
-// we record them to Workers Logs (query with `wrangler tail` or the dashboard). Only whitelisted
-// names are logged so a spoofed body can't spam arbitrary lines. Fire-and-forget → always 204.
+// Only whitelisted names are logged, so a spoofed body can't spam arbitrary lines into Workers
+// Logs. Fire-and-forget, so always 204.
 const TRACKED_EVENTS = new Set([
   'composer_opened',
   'garden_generated',
@@ -263,7 +209,7 @@ app.post('/api/event', async (c) => {
     if (typeof parsed.name === 'string') name = parsed.name
     if (parsed.meta && typeof parsed.meta === 'object') meta = parsed.meta
   } catch {
-    // malformed body — ignore
+    // A malformed body is not worth an error; the beacon has nobody to tell.
   }
   if (TRACKED_EVENTS.has(name)) {
     console.log(`bloomnote_event ${name} ${JSON.stringify(safeMeta(meta))}`)
@@ -271,14 +217,12 @@ app.post('/api/event', async (c) => {
   return c.body(null, 204)
 })
 
-// The signed-in user's gardens (Sent + Received), read server-side so it's the same on any device.
 app.get('/api/mine', async (c) => {
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
   if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
   return c.json(await listMine(c.env, user.id))
 })
 
-// First-login claim: adopt anonymous on-device gardens (their ids) into the account.
 app.post('/api/mine/claim', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
@@ -289,8 +233,6 @@ app.post('/api/mine/claim', async (c) => {
   return c.json({ claimed: await claimGardens(c.env, user.id, ids) })
 })
 
-// Generate a garden from a note (Gemini via REST). Streams SSE (start/thinking/complete/error)
-// to match the existing client. Rate-limited + globally capped to protect the Gemini budget.
 app.post('/api/design-garden', async (c) => {
   if (!c.env.GEMINI_API_KEY) return c.json({ error: 'Garden generation is not configured yet.' }, 503)
   const parsed = validateBody(await c.req.json().catch(() => null))
@@ -326,13 +268,10 @@ app.post('/api/design-garden', async (c) => {
   })
 })
 
-// Per-garden link previews. A shared /g/<id> link should unfurl as "X sent Y a garden", not the
-// generic homepage card. We serve the same SPA shell but rewrite its OG/Twitter title+description
-// from the garden. Crawlers read the injected tags; real users still boot the SPA normally.
 app.get('/g/:id', async (c) => {
-  const shell = await c.env.ASSETS.fetch(c.req.raw) // SPA fallback → index.html
+  const shell = await c.env.ASSETS.fetch(c.req.raw)
   const garden = await readGarden(c.env, c.req.param('id'))
-  if (garden === null || typeof garden !== 'object') return shell // unknown id → plain shell (SPA 404s)
+  if (garden === null || typeof garden !== 'object') return shell
 
   const g = garden as Record<string, unknown>
   const from = typeof g.from === 'string' ? g.from.trim() : ''
@@ -346,8 +285,7 @@ app.get('/g/:id', async (c) => {
   const description = 'a little garden, grown just for you. open it to watch it bloom.'
   const url = new URL(c.req.url).toString()
   // Only point at a card that exists. A broken og:image is worse than none: most unfurlers show a
-  // grey placeholder rather than falling back to the site default, so the link looks broken rather
-  // than plain. Gardens made before this shipped have no card and keep the generic one.
+  // grey placeholder rather than the site default, so the link looks broken rather than plain.
   const ogUrl =
     (await readOgImage(c.env, c.req.param('id'))) === null ? null : ogImageUrl(c.req.url, c.req.param('id'))
 
@@ -400,16 +338,14 @@ app.get('/g/:id', async (c) => {
           e.setAttribute('content', `the garden ${from || 'someone'} grew`)
         },
       })
-    // twitter:card is already summary_large_image in the shell, and og:image:width/height already
-    // say 1200x630, so the card the client renders has to be exactly that. Those tags are left
-    // alone rather than restated here: two places setting the same value is how they drift apart.
+    // Left alone rather than restated here. The shell already declares twitter:card and
+    // og:image:width/height, and two places setting the same value is how they drift apart.
   }
 
   return rewriter.transform(shell)
 })
 
-// Everything that isn't the API is the web SPA: real files, or index.html for client routes
-// (/g/:id, /r/:id, /mine). run_worker_first routes it all through here.
+// Everything that isn't the API is the web SPA. run_worker_first routes it all through here.
 app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw))
 
 export default app

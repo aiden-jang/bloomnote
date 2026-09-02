@@ -1,10 +1,3 @@
-/*
- * The pages that are not a garden: loading, a broken link, a failed fetch, privacy, terms.
- *
- * They borrow the note card's material, same white and green-pale hairline and 16px radius, so a
- * dead end still looks like bloomnote. Deliberately no flowers: most of these say a garden is not
- * here, and drawing one would say the opposite.
- */
 .page {
   max-width: 34rem;
   margin: 0 auto;
@@ -53,8 +46,6 @@
   color: var(--green-deep);
 }
 
-/* Loading is the one that is not an ending, so it stays a quiet line rather than a card: a
-   full card that flashes up for 200ms and vanishes reads as an error, not as progress. */
 .loading {
   display: flex;
   align-items: center;

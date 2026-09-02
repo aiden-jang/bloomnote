@@ -1,14 +1,6 @@
-// System prompt + Gemini function-calling schema.
-//
-// Gemini's function-calling schema is a subset of OpenAPI 3.0. It does
-// NOT accept several JSON Schema features we'd want here:
-//   - `pattern` (no regex on hex colors)
-//   - `minItems` / `maxItems` on arrays
-// We push those constraints into the description text instead and
-// validate them server-side after the model returns its call.
-//
-// We DO get to keep: type, properties, required, items, enum,
-// minimum, maximum, description. That's enough.
+// Gemini's function-calling schema is a subset of OpenAPI 3.0. It does not accept `pattern` or
+// `minItems`/`maxItems`, so those constraints live in the description text and are enforced by
+// the server-side validation below.
 
 export const SYSTEM_PROMPT = `You design tiny digital gardens for real people. The user has written a short note to someone they care about (a friend, partner, family member, colleague) and you turn that note into a small bouquet of 3 to 5 real flowers that represent the recipient.
 
@@ -49,11 +41,6 @@ Always call the design_garden function. Never reply in plain prose.`
 
 export const FLOWER_DESIGN_FUNCTION = {
   name: 'design_garden',
-  // Left over from the original design, when flowers had poetic invented names. It survived the
-  // switch to real species and spent that whole time contradicting both the system prompt ("never
-  // invent names like 'Brotherhood Bloom'") and the `name` field's own description ("Do not invent
-  // names"), in the same request. Two instructions against one, so the model mostly complied, but
-  // it was being pulled in opposite directions on the single most visible field in the output.
   description:
     'Design a garden of 3 to 5 real flower species that represent the recipient described by the user. Use real species names; do not invent flower names.',
   parameters: {
@@ -129,13 +116,6 @@ export const FLOWER_DESIGN_FUNCTION = {
     required: ['bouquet_note', 'flowers'],
   },
 }
-
-// --- Server-side validation ---------------------------------------------
-//
-// Since Gemini's schema can't enforce regex/minItems/maxItems/numeric
-// ranges as strictly as we'd like, we do it after the call returns. If
-// the model returns something off-shape we report a clear error rather
-// than letting bad data flow to the frontend.
 
 const HEX = /^#[0-9A-Fa-f]{6}$/
 const ALLOWED_SHAPES = new Set(['round', 'elongated', 'bell', 'small', 'star'])

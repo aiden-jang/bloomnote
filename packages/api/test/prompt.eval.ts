@@ -13,7 +13,7 @@
  * What it checks is the difference between the product's premise and a flower generator: does the
  * garden talk about the note the sender actually wrote? Given "you drove four hours in the rain to
  * sit in a hospital car park", the output should say four hours, or rain, or the car park, and not
- * "thank you for your unwavering support" — a line that would work for a stranger.
+ * "thank you for your unwavering support", a line that would work for a stranger.
  *
  * Each fixture runs several times and needs a majority to pass, because a single sample of a
  * sampled model tells you very little and a hard fail on one unlucky roll would train everyone to
@@ -166,7 +166,7 @@ function namesADetail(g: ValidatedGarden, details: string[][]): number {
   return details.filter((spellings) => spellings.some((s) => text.includes(s))).length
 }
 
-/** Read GEMINI_API_KEY out of .dev.vars. Never logged — only its presence is ever reported. */
+/** Read GEMINI_API_KEY out of .dev.vars. Never logged; only its presence is reported. */
 function apiKey(): string {
   try {
     const raw = readFileSync(new URL('../.dev.vars', import.meta.url), 'utf8')

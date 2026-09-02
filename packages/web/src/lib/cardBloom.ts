@@ -9,7 +9,6 @@ function hash(value: string): number {
   return Math.abs(h)
 }
 
-/** Toward white, for the inner two stops of the petal gradient. */
 function lighten(hex: string, amount: number): string {
   const m = /^#([0-9a-f]{6})$/i.exec(hex)
   if (!m) return hex
@@ -21,13 +20,8 @@ function lighten(hex: string, amount: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
 }
 
-/**
- * A drawable flower for an archive card.
- *
- * The colour is real; the silhouette is not. The archive stores one colour per flower and nothing
- * else, so the shape comes from the garden's id — a token, not a preview. Same id, same shape,
- * which is how a pressed flower matches its card in the journal.
- */
+/** A drawable flower for an archive card. The colour is real; the silhouette is not, because
+    the list summary stores swatches rather than full specs. */
 export function cardBloom(color: string, gardenId: string, index: number): FlowerSpec {
   const h = hash(`${gardenId}:${index}`)
   return {

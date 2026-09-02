@@ -1,13 +1,5 @@
 import type { FlowerSpec } from '../garden'
 
-/*
- * The scene's geometry and colour maths.
- *
- * Everything here is pure and was previously only reachable by rendering the garden, which is
- * why none of it had a test. The SVG parts of the scene stay in the component: they are shapes,
- * not decisions.
- */
-
 /* Occasion owns the hue. The hour only blends toward a base, so the emotional signal survives. */
 // prettier-ignore
 export const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
@@ -20,19 +12,13 @@ export const SKY_GRADIENTS: Record<string, { top: string; bottom: string }> = {
   sympathy:       { top: '#d8dde6', bottom: '#e5e9ef' },
 }
 
-/**
- * An unknown or missing occasion gets the default sky rather than no sky.
- *
- * Object.hasOwn, not `in`: `in` walks the prototype chain, so `'__proto__' in SKY_GRADIENTS` is
- * true and the lookup hands back Object.prototype — a garden whose sky is `undefined`. An
- * occasion is stored verbatim and a garden link is permanent, so any string can arrive here.
- */
+/** Object.hasOwn, not `in`: `in` matches '__proto__' and turns a stored string into a lookup on
+    Object.prototype. An unknown occasion gets the default sky rather than no sky. */
 export function gradientFor(occasion?: string): { top: string; bottom: string } {
   if (occasion && Object.hasOwn(SKY_GRADIENTS, occasion)) return SKY_GRADIENTS[occasion]!
   return SKY_GRADIENTS['just-because']!
 }
 
-/** Blend two `#rrggbb` colours. `t` is 0 for all of `a`, 1 for all of `b`. */
 export function mixHex(a: string, b: string, t: number): string {
   const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
   const [ar, ag, ab] = parse(a)
@@ -48,14 +34,10 @@ export interface Placement {
   spec: FlowerSpec
   left: number
   zIndex: number
-  /** 1 is nearest the viewer, lower is further back. Drives scale, ground position and haze. */
   depth: number
 }
 
-/*
- * Depth per flower count. Hand-written, not computed: neighbours must alternate near/far or an
- * overlap reads as two flowers colliding. Every row gives exactly one flower depth 1, the subject.
- */
+/* Hand-written, not computed: neighbours must alternate near and far or the row reads as a ramp. */
 const DEPTHS: Record<number, number[]> = {
   1: [1],
   2: [1, 0.74],
@@ -71,7 +53,6 @@ export function placeFlowers(flowers: FlowerSpec[]): Placement[] {
   const count = flowers.length
   if (count === 0) return []
 
-  // Tight enough that the sprites genuinely overlap, which is the point.
   const spread = 70
   const center = 50
   const step = count > 1 ? spread / (count - 1) : 0
@@ -90,10 +71,8 @@ export function placeFlowers(flowers: FlowerSpec[]): Placement[] {
   })
 }
 
-/**
- * Stable identity for a placed flower, so React keeps the DOM node when the array reference
- * changes but the flowers are the same. A positional key would restart the bloom animation.
- */
+/** Stable identity for a placed flower, so React keeps the DOM node when the array reference
+    changes but the flowers have not. */
 export function placementKey(spec: FlowerSpec, index: number): string {
   return `${index}-${spec.name}-${spec.petalColors[0]}`
 }

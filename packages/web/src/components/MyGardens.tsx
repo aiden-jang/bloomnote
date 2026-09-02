@@ -23,14 +23,8 @@ import {
   type GardenSort,
 } from '../lib/gardenList'
 
-/**
- * The "/mine" view. Signed in, it reads server-side (so Sent + Received show on any device),
- * and on first visit it claims any gardens this device made anonymously. Signed out, it falls
- * back to the on-device archive (localStorage) — anonymous use still works, just per-device.
- */
 type Tab = 'sent' | 'received'
 
-// Undo toast (matches the recipient "saved" pill): a quiet cream chip pinned bottom-center.
 const undoToastStyle: CSSProperties = {
   position: 'fixed',
   bottom: 20,
@@ -60,8 +54,6 @@ const undoButtonStyle: CSSProperties = {
   color: 'var(--color-accent, #4a7c3f)',
 }
 
-/** Fields GardenRow renders — satisfied by both MineRecord and the server GardenSummary. */
-
 export default function MyGardens() {
   const { user, loading } = useAuth()
 
@@ -69,12 +61,9 @@ export default function MyGardens() {
   return user ? <AccountGardens /> : <LocalGardens />
 }
 
-// --- Signed in: server-backed Sent + Received -----------------------------
-
 function AccountGardens() {
   const [sent, setSent] = useState<GardenSummary[]>([])
   const [received, setReceived] = useState<GardenSummary[]>([])
-  // Open the tab named in ?tab= (the "saved to your gardens" link lands on Received); default Sent.
   const [tab, setTab] = useState<Tab>(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'received'
       ? 'received'
@@ -89,7 +78,6 @@ function AccountGardens() {
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      // First-login claim: adopt any gardens this device made anonymously, then forget them locally.
       const localIds = loadSentGardens().map((r) => r.id)
       if (localIds.length > 0) {
         await claimGardens(localIds)
@@ -106,19 +94,12 @@ function AccountGardens() {
     }
   }, [])
 
-  // Remove with a delayed commit so it can be undone: drop the row immediately, but only fire the
-  // server DELETE after a grace window. Undo cancels the pending delete and restores the row in
-  // place, so nothing was ever deleted. A second remove — or leaving the view — flushes the prior
-  // pending one so its delete isn't lost.
+  // Delayed commit so a removal can be undone: drop the row now, fire the server DELETE after a
+  // grace window. Undo cancels the pending delete, so nothing was ever deleted.
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingCommit = useRef<(() => void) | null>(null)
-  /*
-   * Water counts for the visible list, in one request.
-   *
-   * Keyed off the ids rather than the tab so switching back and forth doesn't refetch, and so a
-   * garden removed from the list stops being asked about. Failures resolve to {} inside
-   * fetchWatersBatch, so a slow or broken lookup costs the counts and nothing else.
-   */
+  /* Water counts for the visible list, in one request. Keyed off the ids rather than the tab, so
+     switching tabs and back doesn't refetch what it already has. */
   const [waters, setWaters] = useState<Record<string, number>>({})
   const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
   const visibleIds = (tab === 'sent' ? sent : received).map((g) => g.id)
@@ -157,7 +138,7 @@ function AccountGardens() {
   }
 
   const handleRemove = (id: string) => {
-    flushPending() // commit any prior pending removal so it isn't dropped
+    flushPending()
     const si = sent.findIndex((g) => g.id === id)
     const ri = si < 0 ? received.findIndex((g) => g.id === id) : -1
     if (si >= 0) {
@@ -198,7 +179,7 @@ function AccountGardens() {
     setPending(null)
   }
 
-  // Commit a still-pending removal if the view unmounts, honoring the user's intent.
+  // Commit a still-pending removal if the view unmounts, honouring the user's intent.
   useEffect(() => () => flushPending(), [])
 
   const list = tab === 'sent' ? sent : received
@@ -216,7 +197,7 @@ function AccountGardens() {
   }
   const switchTab = (nextTab: Tab) => {
     setTab(nextTab)
-    // A search for a recipient should not make the other collection appear empty on arrival.
+    // A search for a recipient must not make the other collection look empty on arrival.
     setQuery('')
   }
 
@@ -342,8 +323,6 @@ function AccountGardens() {
   )
 }
 
-// --- Signed out: on-device archive (unchanged behavior) -------------------
-
 function LocalGardens() {
   const { login } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
@@ -351,9 +330,8 @@ function LocalGardens() {
   const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
   const [sort, setSort] = useState<GardenSort>('newest')
   const [pinnedOnly, setPinnedOnly] = useState(false)
-  // Same one-request lookup as the signed-in list. This is the case that matters most: bloomnote is
-  // anonymous-first, so the sender who never makes an account is the usual sender, and without this
-  // they only ever learn a garden was watered by reopening that exact link.
+  // bloomnote is anonymous-first, so the sender who never makes an account is the usual sender.
+  // Without this they only learn a garden was watered by reopening that exact link.
   const [waters, setWaters] = useState<Record<string, number>>({})
   const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
   const idKey = records.map((r) => r.id).join(',')
@@ -406,8 +384,6 @@ function LocalGardens() {
       )}
       {records.length === 0 ? (
         <div className={styles.empty}>
-          {/* The same waiting bed the composer shows before anything is written, so the empty
-              page is drawn flowers like the rest of it. */}
           <div className={styles.emptyPlot}>
             <GardenScene flowers={[]} autoBloom={false} silent draftGrowth={2} />
           </div>
@@ -628,15 +604,10 @@ ${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impa
   )
 }
 
-/**
- * A small, rotating way back into the archive. Search helps when someone remembers what they want;
- * this helps when they do not. Future-sealed gardens stay out, and oldest memories come first so a
- * brand-new send never presents itself as nostalgia.
- */
 function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
   const [memoryIndex, setMemoryIndex] = useState(0)
-  // Freeze "today" for this visit. A midnight rollover can wait for the next page open; changing
-  // the card while somebody is looking at it would be a much stranger kind of accuracy.
+  // Freeze "today" for this visit. Changing the card while somebody is looking at it would be a
+  // stranger kind of accuracy than a midnight rollover waiting for the next page open.
   const [today] = useState(() => new Date())
   const memories = useMemo(() => gardenMemoryDeck(gardens, today), [gardens, today])
 
@@ -693,7 +664,6 @@ function Shell({
 }: {
   subtitle: string
   children: React.ReactNode
-  /** The empty state carries its own "grow one", and two links to the same page read as a mistake. */
   hideBackLink?: boolean
 }) {
   return (
@@ -716,9 +686,7 @@ function Shell({
 
 interface RowProps {
   record: CardData
-  /** A received garden is someone else's gift, so its label should lead with them—not its original recipient. */
   kind: Tab
-  /** How many times this garden has been watered. Omitted or 0 means the row says nothing. */
   waters?: number
   feelings?: Partial<Record<Feeling, number>>
   pinned?: boolean
@@ -731,17 +699,14 @@ function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, on
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
 
-  // The list summary only has color swatches, not full flower specs, so the garden must be fetched
-  // before building its share image. Prefetch on interaction-intent (hover / focus / touch-down) and
-  // cache the promise, so by tap time the data is usually ready — keeping the click-to-share gap
-  // inside the mobile user-activation window that navigator.share requires.
+  // The list summary only has colour swatches, not full flower specs, so the garden must be fetched
+  // before its share image can be built. Prefetch on interaction-intent and cache the promise, so
+  // the click-to-share gap stays inside the user-activation window navigator.share requires.
   const gardenRef = useRef<Promise<GardenData | null> | null>(null)
   const prefetch = (): void => {
     if (gardenRef.current) return
     const p = fetchGarden(id)
     gardenRef.current = p
-    // A failed prefetch shouldn't become an unhandled rejection or poison the cache — clear it so
-    // an actual save re-fetches instead of re-awaiting a rejected promise.
     p.catch(() => {
       if (gardenRef.current === p) gardenRef.current = null
     })
@@ -764,8 +729,7 @@ function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, on
         setImageStatus(null)
       }
     } catch {
-      // Transient fetch failure or a rare canvas/decode error — drop the cached fetch so the next
-      // tap retries rather than re-awaiting the rejected promise.
+      // Drop the cached fetch so the next tap retries rather than re-awaiting a rejected promise.
       gardenRef.current = null
       setImageStatus(null)
     }
@@ -835,9 +799,6 @@ function GardenRow({ record, kind, waters = 0, feelings = {}, pinned = false, on
                 <span>{kind === 'received' && keptOn ? `kept ${keptOn}` : grownOn}</span>
               )
             )}
-            {/* The only thing on this page that came back from the other person. Shown only when
-                somebody actually watered it — a "watered 0 times" on every card would bury the ones
-                that mean something. */}
             {waters > 0 && <span className={styles.watered}>{watersLabel(waters)}</span>}
             {strongestFeeling && (
               <span className={styles.watered} title={`${strongestFeeling[1]} felt ${strongestFeeling[0]}`}>

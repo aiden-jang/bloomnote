@@ -15,9 +15,8 @@ export interface FlowerJournalEntry {
   memory: string
   from?: string | undefined
   savedAt: string
-  /** Shelf ids this flower sits on. Optional: entries saved before shelves existed have none. */
   shelves?: string[]
-  /** What the keeper says it means, which is not the sender's `meaning` and never replaces it. */
+  /** What the keeper says it means. Not the sender's `meaning`, and never replaces it. */
   mine?: string
 }
 
@@ -84,12 +83,11 @@ export function saveFlowerJournalEntry(input: {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...current, entry].slice(-MAX_ENTRIES)))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
   } catch {
-    // A flower journal is an optional on-device keepsake; storage failures never block the garden.
+    // An optional on-device keepsake: a storage failure must never block the garden.
   }
   return entry
 }
 
-/** Rewrite one entry in place, keeping its position. Returns false when the id is not on the shelf. */
 function updateEntry(id: string, change: (entry: FlowerJournalEntry) => FlowerJournalEntry): boolean {
   if (typeof window === 'undefined') return false
   try {
@@ -109,7 +107,7 @@ export function setEntryShelves(id: string, shelves: string[]): boolean {
   return updateEntry(id, (entry) => ({ ...entry, shelves }))
 }
 
-/** An empty string clears it, so the sender's meaning comes back rather than being replaced by nothing. */
+/** An empty string clears it, so the sender's meaning comes back rather than staying replaced. */
 export function setEntryMeaning(id: string, mine: string): boolean {
   const trimmed = mine.trim().slice(0, MAX_MEANING)
   return updateEntry(id, (entry) => {
@@ -126,7 +124,5 @@ export function removeFlowerJournalEntry(id: string): void {
     )
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
-  } catch {
-    // no-op
-  }
+  } catch {}
 }

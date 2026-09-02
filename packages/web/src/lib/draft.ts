@@ -1,13 +1,5 @@
-/*
- * The composer's in-progress note, cached so an accidental refresh does not lose it.
- *
- * sessionStorage, not localStorage: a note survives a refresh but never follows someone to
- * another browser and never outlives the tab. That matters here — the thing being cached is
- * a private message someone is part-way through writing.
- *
- * Every read and write is wrapped. Private browsing and a full quota both throw, and losing a
- * draft is a disappointment, not a reason for the composer to look broken.
- */
+/* sessionStorage, not localStorage: a refresh should restore the note in progress, but a private
+   message must not become a permanent cross-device archive. */
 
 export interface Draft {
   from: string
@@ -22,15 +14,12 @@ export interface Draft {
 
 const STORAGE_VERSION = 1
 
-/**
- * Keyed on the path, so a half-written reply to one garden never surfaces when someone starts
- * a fresh note somewhere else.
- */
+/** Keyed on the path, so a half-written reply to one garden never surfaces when someone starts
+    a different one. */
 export function draftStorageKey(): string {
   return `bloomnote:draft:${window.location.pathname}`
 }
 
-/** The stored draft, or null if there isn't one, it's from an older shape, or storage threw. */
 export function readStoredDraft(): Draft | null {
   try {
     const raw = window.sessionStorage.getItem(draftStorageKey())

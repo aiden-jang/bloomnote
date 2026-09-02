@@ -3,18 +3,6 @@ import { constellationLine, constellations, type Constellation } from '../lib/co
 import type { FlowerJournalEntry } from '../lib/flowerJournal'
 import styles from './Constellations.module.css'
 
-/*
- * The threads through somebody's journal.
- *
- * Everything here is computed from entries already in memory, on this device, with no request and no
- * model. That is the whole reason this feature is allowed to exist: the journal is the private half of
- * bloomnote, and shipping it somewhere to be analysed would trade the thing that makes it private for a
- * slightly better guess at who "Nadia" is.
- *
- * Shown only once there is something real to show. A "no patterns yet" panel on a two-entry journal
- * would be a to-do list, and this is meant to be a thing you notice rather than a thing you complete.
- */
-
 const KIND_MARK: Record<Constellation['kind'], string> = {
   person: '✽',
   place: '⌖',

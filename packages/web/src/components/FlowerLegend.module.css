@@ -32,9 +32,8 @@
   gap: 12px;
   opacity: 0;
   animation: itemReveal 0.5s ease forwards;
-  /* animation-delay is applied inline per-row (see FlowerLegend.tsx)
-     so each row can match the bloom timing of its corresponding
-     flower above. */
+  /* animation-delay is applied inline per row from FlowerLegend.tsx, so each row matches the bloom
+     it describes. */
 }
 
 @keyframes itemReveal {
@@ -48,11 +47,6 @@
   }
 }
 
-/* The flower itself, drawn small, rather than three dots sampled off it. The whole page is
-   hand-drawn flowers; this row is where someone reads what one of them means, so showing a
-   swatch here was the one place the app described a flower instead of drawing it.
-   Pinned to the top of the row so it sits beside the name: centring it on the row would drag the
-   flower halfway down any entry whose meaning wraps to two lines. */
 .bloom {
   display: flex;
   align-items: center;
@@ -68,8 +62,7 @@
   gap: 3px;
 }
 
-/* Same reason as RecipientView's message: the model writes these, and a long unbroken token here
-   pushes the legend card past the viewport. */
+/* The model writes these, and a long unbroken token pushes the card past the viewport. */
 .name,
 .meaning {
   overflow-wrap: anywhere;
@@ -89,21 +82,8 @@
   color: var(--text-mid);
 }
 
-/*
- * Looking at one flower.
- *
- * Focus comes from either side: hovering a row here, or hovering a flower in the plot above. The
- * un-focused rows dim rather than the focused one shouting, because the point is to make one line
- * findable, not to make the rest of the note feel like it stopped mattering.
- */
-/*
- * Applied to the row's children, not the row.
- *
- * `.item` carries `itemReveal` with `animation-fill-mode: forwards`, and that animates both
- * `opacity` and `transform`. An animation beats a plain declaration even after it has finished, so
- * focus styles set on the row itself are silently discarded: the rows would have looked completely
- * inert and nothing would have explained why. The children have no animations of their own.
- */
+/* Applied to the row's children, not the row. `.item` carries `itemReveal` with a fill mode, so
+   a transform here would be overwritten by the animation's final frame. */
 .item {
   cursor: default;
 }
@@ -130,12 +110,8 @@
   }
 }
 
-/*
- * Local, not global. CSS Modules scopes animation names, so a module referencing a keyframe defined
- * in index.css compiles to a name with no keyframes behind it and the animation silently never
- * runs. (`itemReveal` below has always been local, which is why that one worked.) The duplication
- * across modules is the cost of each file standing on its own, and it is four lines.
- */
+/* Local, not global. CSS Modules scopes animation names, so a module referencing a keyframe
+   defined in index.css compiles to a name that does not exist. */
 @keyframes fadeUp {
   from {
     opacity: 0;

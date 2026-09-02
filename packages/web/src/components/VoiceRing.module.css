@@ -1,9 +1,3 @@
-/*
- * A voice memory as a ring of petals.
- *
- * Sized to sit inside a journal row without becoming the row. It is a second way to keep a memory, not a
- * headline feature, so it reads as an object on the shelf rather than a media player.
- */
 .wrap {
   display: flex;
   align-items: center;
@@ -40,8 +34,8 @@
 
 .petal {
   fill: var(--green-light);
-  /* No CSS transition: the position is recomputed per frame from real amplitude, and a transition would
-     smear the response into a lag. Damping lives in the component instead. */
+  /* No CSS transition: the position is recomputed per frame from real amplitude, and a transition
+     would lag behind the sound. */
 }
 
 .centre {
@@ -51,7 +45,7 @@
 .glyph {
   font-size: 8px;
   fill: white;
-  /* Neither the play glyph nor the petals should ever catch a text selection drag. */
+  /* Neither the play glyph nor the petals should ever catch a text-selection drag. */
   user-select: none;
 }
 

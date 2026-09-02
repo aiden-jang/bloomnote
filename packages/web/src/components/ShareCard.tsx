@@ -1,12 +1,3 @@
-// The share card shown after a garden is designed. Lives at the
-// bottom of the composer's designed phase: URL pill + share/copy/
-// re-roll/save/reset action grid + the inline error + schedule
-// confirmation rows.
-//
-// Pulled out of Composer so the orchestration logic over there
-// (state machine, handlers) reads independently of the share UI.
-// Composer still owns the state; this component is presentational.
-
 import styles from './Composer.module.css'
 
 interface Props {
@@ -20,9 +11,7 @@ interface Props {
   isRerolling: boolean
   errorText: string | null
   statusText: string
-  /** True when the sender opted into time-capsule mode. */
   scheduleOpen: boolean
-  /** The datetime-local value the sender picked (when scheduled). */
   unlockLocal: string
   onShare: () => void
   onCopy: () => void
@@ -60,8 +49,7 @@ export default function ShareCard({
             ? `${recipient}'s garden is ready`
             : 'ready to send'}
       </p>
-      {/* Re-roll failures land here; idle-phase errors render in a
-          different slot during composition. */}
+      {/* Re-roll failures land here; idle-phase errors render in a different slot during composition. */}
       {errorText && <p className={styles.shareError}>{errorText}</p>}
       {scheduleOpen && unlockLocal && (
         <p className={styles.scheduleConfirm}>
@@ -76,18 +64,12 @@ export default function ShareCard({
         </p>
       )}
       <div className={styles.urlBox}>
-        {/* During reroll, swap the URL with a quiet status pill so the
-            card doesn't reflow. */}
         {isRerolling ? (
           <span className={styles.urlStatus}>{statusText || 'regrowing…'}</span>
         ) : (
           <span className={styles.urlText}>{shareUrl}</span>
         )}
       </div>
-      {/* Progressively quieter actions:
-            primary   — share / copy (the thing the user came here to do)
-            secondary — different flowers (iterate before committing)
-            quiet     — make another (destructive; bottom, alone) */}
       <div className={styles.shareActions}>
         <div className={styles.shareActionsPrimary}>
           {canShare && (

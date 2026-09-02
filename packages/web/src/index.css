@@ -7,18 +7,9 @@
 }
 
 :root {
-  /*
-   * Spring easing, sampled from a damped harmonic oscillator rather than approximated as a bezier.
-   * A cubic-bezier is bounded by its endpoints, so it cannot overshoot and settle back; linear()
-   * can, because it is a lookup table. 1.1% overshoot, normalized so duration stays separate.
-   *
-   * popIn deliberately does not use this: its overshoot is hand-authored in the keyframes (70% at
-   * scale 1.1), which is the better tool when the bounce should be that large and that specific.
-   *
-   * Declared twice on purpose. Where `linear()` is not understood the second declaration is dropped
-   * and the bezier above stands. That matters more than the easing: an unresolvable var() would
-   * invalidate the whole `animation` shorthand and stop the animation rather than restyle it.
-   */
+  /* Declared twice on purpose. Where linear() is not understood the second declaration is dropped
+     and the bezier stands. That matters more than the easing: an unresolvable var() invalidates
+     the whole `animation` shorthand and stops the animation rather than restyling it. */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: linear(
     0,
@@ -61,60 +52,33 @@
   --soil-dark: #6b4423;
   --text-dark: #1e3a10;
   --text-mid: #4a6741;
-  /* Secondary copy: helper lines, counters, captions, the composer's prompts. This carries real
-     text, not decoration, so it has to clear 4.5:1 — it sits at 4.54 on cream and 4.89 on the
-     white cards, still clearly lighter than --text-mid (5.89). */
+  /* Secondary copy: helper lines, counters, captions. This carries real text, not decoration, so
+     it has to clear 4.5:1. It sits at 4.54 on cream and 4.89 on the white cards. */
   --text-light: #5a7953;
-  /*
-   * Standalone text links (the 404 and error shells, /mine, the error boundary).
-   *
-   * This token was being referenced by four places before it existed, so every one of them fell
-   * through to their hardcoded `#c2549c` fallback and rendered magenta. That's not just
-   * off-palette: violet→pink is reserved for the AI sparkle on "why this garden", where it's the
-   * app's only synthetic color and the only thing marking generated content. Spending it on a
-   * navigation link quietly spends the signal too.
-   */
+  /* Standalone text links. Don't spend violet or pink here: that is reserved for the AI sparkle on
+     "why this garden", the only thing marking generated content. Four rules referenced this token
+     before it existed and fell through to a hardcoded magenta. */
   --color-accent: #4a7c3f;
-  /* Muted chrome text: the footer, the account chip, the loading and error shells. Seven inline
-     styles across six files read this, so change it here rather than in any of them. */
+  /* Muted chrome text. Seven inline styles across six files read this, so change it here. */
   --color-ink-muted: var(--text-mid);
-  /*
-   * Alias for --text-dark. Four rules across SealedView and Composer ask for --text-deep, which
-   * never existed, and none of them pass a fallback. `color` is inherited, so an invalid var()
-   * silently resolves to the parent's colour instead of failing: the countdown and the hovered
-   * chips have been quietly wearing whatever colour they happened to sit inside.
-   */
+  /* Alias for --text-dark. Four rules ask for --text-deep and none pass a fallback. `color` is
+     inherited, so an invalid var() silently resolves to the parent's colour instead of failing. */
   --text-deep: #1e3a10;
-  /*
-   * Wax seal on the time capsule envelope. Same story with a louder ending: SealedView asks for
-   * these two, they were never defined, and `fill` is NOT inherited, so an invalid var() falls
-   * back to the CSS initial value, which for fill is black. The centrepiece of the sealed screen
-   * rendered as a black dot, with a black ✿ glyph inside it that nobody has ever seen.
-   *
-   * Dusty rose rather than a true red: it has to read as sealing wax next to forest green on
-   * cream without turning into a warning colour.
-   */
+  /* Wax seal on the time capsule envelope. `fill` is NOT inherited, so an invalid var() falls back
+     to the CSS initial value, which for fill is black. */
   /* Don't lighten this back toward #c44e4e. Error text runs at 11-13px in the composer, and that
      red only reaches 4.28:1 on cream, under the 4.5:1 needed for small text. */
   --error: #bc4a4a;
-  /*
-   * Hairline borders. Three rules in the journal shelf ask for --line and fall back to black at a
-   * tenth opacity, on a cream page where the other 57 borders are var(--green-pale). They were the
-   * only neutral lines in the app, and only by accident.
-   */
+  /* Hairline borders. Three rules in the journal shelf ask for --line and fall back to black at a
+     tenth opacity, which was the only neutral line in the app and only by accident. */
   --line: var(--green-pale);
 
   --pink-mid: #e0919f;
   --pink-deep: #a3546a;
-  /* Fraunces is a variable serif with personality — slight wobble in
-     the heavier weights that reads as "deliberately set." Playfair
-     stays in the stack as a graceful fallback if Fraunces ever fails
-     to load. */
   --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
   --sans: 'DM Sans', system-ui, sans-serif;
-  /* The two fixed corner chips: the sound toggle and the account pill. They sit side by side but
-     are drawn by different components, one in a CSS module and one in inline styles, so keep the
-     geometry here or they drift apart. */
+  /* The sound toggle and the account pill sit side by side but are drawn by different components,
+     one in a CSS module and one in inline styles. Keep the geometry here or they drift apart. */
   --chip-edge: 14px;
   --chip-size: 38px;
   --chip-gap: 12px;
@@ -129,26 +93,12 @@ body,
 
 body {
   font-family: var(--sans);
-  /* Warm surface depth — a soft light-cream glow up top easing down to
-     the base cream, so the page reads as a lit surface rather than a
-     flat fill. Fixed so it stays put as the composer scrolls. Layers
-     under the paper-grain overlay for a printed-paper feel. */
   background: radial-gradient(115% 75% at 50% -8%, #fffdf7 0%, var(--cream) 58%), var(--cream);
   background-attachment: fixed;
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle paper-grain overlay.
- *
- * Sits above all content with `mix-blend-mode: multiply` so the grain
- * tints the page like a printed object rather than sitting on top of
- * it as a separate layer. ~4% opacity is the sweet spot — felt, not
- * seen. pointer-events: none so it never intercepts a click.
- *
- * The SVG is inline as a data URI: a small grayscale fractal-noise
- * turbulence tile. `stitchTiles='stitch'` makes the edges match so
- * the repeat is invisible. */
 body::after {
   content: '';
   position: fixed;
@@ -168,13 +118,9 @@ button {
   border: none;
 }
 
-/*
- * One focus ring for everything that can hold focus. Don't add `outline: none` to the button rule
- * above without putting a ring back; that left five composer buttons with no keyboard indication.
- *
- * :focus-visible, not :focus, so it never appears on a mouse click. A component wanting something
- * different wins on specificity, since a class beats a bare pseudo-class.
- */
+/* One focus ring for everything that can hold focus. Don't add `outline: none` to the button
+   rule above without putting a ring back; that left five composer buttons with no keyboard
+   indication. :focus-visible, not :focus, so it never appears on a mouse click. */
 :focus-visible {
   outline: 2px solid var(--green-mid);
   outline-offset: 2px;
@@ -252,34 +198,18 @@ p {
   }
 }
 
-/* Print stylesheet.
- *
- * Cmd+P from the recipient view renders the garden as a real card —
- * no grain texture, no UI chrome, no CTAs. The per-component module
- * CSS files own their own component-level print rules (they can't be
- * referenced from here because CSS-modules hash class names).
- *
- * The catch with animated-in elements: bloom / fadeUp / itemReveal
- * keyframes don't play during print snapshots, so any element that
- * starts at opacity:0 would print invisibly. Forcing every element
- * to opacity 1, no transform, no animation is the simple fix.
- */
+/* Print stylesheet. The bloom and fade-in keyframes don't play during a print snapshot, so any
+   element that starts at opacity 0 would print invisibly. Forcing everything to its end state
+   below is the fix. */
 @media print {
-  /* Keep all backgrounds + colors instead of being stripped (the
-     browser default for ink-saving) — the cream paper, sky gradient,
-     and ground bar are the card. */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Force every animated/transitioned element to its visible end
-     state.
-
-     `scale`, `translate` and `rotate` are listed alongside `transform` because they are separate
-     properties, not shorthand for it: clearing `transform` leaves them applied. The plot's desktop
-     zoom is a `scale`, and on a wide print canvas it survived this reset and printed the garden a
-     third larger than the column it sits in. */
+  /* `scale`, `translate` and `rotate` are listed alongside `transform` because they are separate
+     properties, not shorthand for it. Clearing `transform` leaves them applied, and the plot's
+     desktop zoom is a `scale`. */
   *,
   *::before,
   *::after {
@@ -293,7 +223,6 @@ p {
   }
 
   body::after {
-    /* Grain overlay off — paper-on-paper, not paper-on-effect-on-paper. */
     display: none !important;
   }
 
@@ -302,8 +231,8 @@ p {
   }
 
   /* Fixed corner chrome never belongs on a keepsake. The sound toggle hides itself from its own
-     module; the account pill is inline styles with no stylesheet for a media query, so it carries
-     a flag instead. */
+     module; the account pill is inline styles with no stylesheet for a media query, so it
+     carries a flag instead. */
   [data-screen-chrome] {
     display: none !important;
   }
@@ -313,11 +242,6 @@ p {
   }
 }
 
-/* View Transitions API styling.
-   Browser default is ~250ms snap fade. We slow it slightly with a
-   softer easing so phase changes feel deliberate. Gated on
-   prefers-reduced-motion so accessibility users get the default
-   (instant) behavior. */
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
@@ -326,7 +250,6 @@ p {
   }
 }
 
-/* The corner chips tuck in and shrink on a phone. */
 @media (max-width: 480px) {
   :root {
     --chip-edge: 10px;
