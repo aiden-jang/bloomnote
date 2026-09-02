@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
-import FlowerSVG, { FlowerHead, flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
+import FlowerSVG, { flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
 import { ritualTime, type RitualTime } from '../lib/rituals'
 import { playBloom, pulse } from '../sound'
-import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
-import { saveFlowerImage } from '../lib/gardenImage'
-import { flowerJournalEntry, saveFlowerJournalEntry } from '../lib/flowerJournal'
+import FlowerPeek from './FlowerPeek'
 import styles from './GardenScene.module.css'
 import { gradientFor, mixHex, placeFlowers, placementKey, type Placement } from '../lib/scene'
 
@@ -336,11 +334,6 @@ export default function GardenScene({
     ['--garden-h' as string]: `${gardenHeight}px`,
   }
   const [bloomedCount, setBloomedCount] = useState(0)
-  const [flowerShareStatus, setFlowerShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
-  const [flowerImageStatus, setFlowerImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
-  const [journalOpen, setJournalOpen] = useState(false)
-  const [journalMemory, setJournalMemory] = useState('')
-  const [journalSaved, setJournalSaved] = useState(false)
   const placed = placeFlowers(flowers)
   /* Escape closes the panel, and focus returns to the flower that opened it so tabbing carries on
      from there rather than restarting at the top of the page. */
@@ -351,94 +344,7 @@ export default function GardenScene({
     if (previous !== null) slotRefs.current[previous]?.focus()
   }, [focused, onFocus])
 
-  useEffect(() => {
-    if (focused === null) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      // One layer at a time: closing the whole panel here would discard a half-written memory.
-      if (journalOpen) {
-        setJournalOpen(false)
-        return
-      }
-      closeAndRestoreFocus()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [focused, journalOpen, closeAndRestoreFocus])
-
   const aura = auraFor(mood)
-
-  useEffect(() => {
-    setFlowerShareStatus(null)
-    setFlowerImageStatus(null)
-    setJournalOpen(false)
-    const existing = focused !== null && journalGardenId ? flowerJournalEntry(journalGardenId, focused) : null
-    setJournalMemory(existing?.memory ?? '')
-    setJournalSaved(existing !== null)
-  }, [focused, journalGardenId])
-
-  const shareFocusedFlower = async (): Promise<void> => {
-    const flower = focused === null ? null : flowers[focused]
-    if (!flower || flowerShareStatus) return
-    const meaning = withoutLeadingFlowerName(flower.name, flower.meaning)
-    const text = `${flower.name}: ${meaning}`
-    const finish = (status: 'shared' | 'copied'): void => {
-      setFlowerShareStatus(status)
-      window.setTimeout(() => setFlowerShareStatus(null), 2200)
-    }
-    setFlowerShareStatus('sharing')
-    if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ title: flower.name, text, url: window.location.href })
-        finish('shared')
-        return
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          setFlowerShareStatus(null)
-          return
-        }
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(text)
-      finish('copied')
-    } catch {
-      setFlowerShareStatus(null)
-    }
-  }
-
-  const saveFocusedFlower = async (): Promise<void> => {
-    const flower = focused === null ? null : flowers[focused]
-    if (!flower || flowerImageStatus) return
-    setFlowerImageStatus('saving')
-    try {
-      const meaning = withoutLeadingFlowerName(flower.name, flower.meaning)
-      const result = await saveFlowerImage(flower, meaning)
-      if (result === 'dismissed') {
-        setFlowerImageStatus(null)
-        return
-      }
-      setFlowerImageStatus(result)
-      window.setTimeout(() => setFlowerImageStatus(null), 2200)
-    } catch {
-      setFlowerImageStatus(null)
-    }
-  }
-
-  const keepFocusedFlower = (): void => {
-    if (focused === null || !journalGardenId) return
-    const flower = flowers[focused]
-    if (!flower) return
-    saveFlowerJournalEntry({
-      gardenId: journalGardenId,
-      flowerIndex: focused,
-      flower,
-      memory: journalMemory,
-      from: journalFrom,
-    })
-    setJournalSaved(true)
-    setJournalOpen(false)
-  }
 
   /*
    * Which flower the bee is heading for.
@@ -745,90 +651,16 @@ export default function GardenScene({
         })}
       </div>
       {focused !== null && flowers[focused] && (
-        <aside
-          id="flower-peek"
-          className={styles.flowerPeek}
-          aria-live="polite"
-          data-flower-peek=""
-          onMouseEnter={() => onFocus?.(focused)}
-          onMouseLeave={() => onFocusRelease?.()}
-        >
-          <span className={styles.flowerPeekSwatches} aria-hidden>
-            <FlowerHead flower={flowers[focused]} size={30} />
-          </span>
-          <span className={styles.flowerPeekCopy}>
-            <strong>{flowers[focused].name}</strong>
-            <span>{withoutLeadingFlowerName(flowers[focused].name, flowers[focused].meaning)}</span>
-            <button
-              type="button"
-              className={styles.flowerPeekShare}
-              onClick={() => void shareFocusedFlower()}
-              disabled={flowerShareStatus !== null}
-            >
-              {flowerShareStatus === 'sharing'
-                ? 'opening…'
-                : flowerShareStatus === 'shared'
-                  ? 'shared'
-                  : flowerShareStatus === 'copied'
-                    ? 'meaning copied'
-                    : 'share this flower'}
-            </button>
-            <button
-              type="button"
-              className={styles.flowerPeekShare}
-              onClick={() => void saveFocusedFlower()}
-              disabled={flowerImageStatus !== null}
-            >
-              {flowerImageStatus === 'saving'
-                ? 'pressing flower…'
-                : flowerImageStatus === 'shared'
-                  ? 'keepsake shared'
-                  : flowerImageStatus === 'downloaded'
-                    ? 'keepsake saved'
-                    : 'save a pressed-flower card'}
-            </button>
-            {journalGardenId && (
-              <>
-                <button
-                  type="button"
-                  className={styles.flowerPeekShare}
-                  onClick={() => setJournalOpen((open) => !open)}
-                  aria-expanded={journalOpen}
-                >
-                  {journalSaved ? 'edit journal memory' : 'keep in my flower journal'}
-                </button>
-                {journalOpen && (
-                  <div className={styles.journalEditor}>
-                    <label htmlFor={`flower-memory-${focused}`}>what do you want to remember?</label>
-                    <textarea
-                      id={`flower-memory-${focused}`}
-                      value={journalMemory}
-                      onChange={(event) => setJournalMemory(event.target.value)}
-                      maxLength={240}
-                      rows={2}
-                      placeholder="the moment, the person, the reason…"
-                      autoFocus
-                    />
-                    <div>
-                      <span>{journalMemory.length}/240</span>
-                      <button type="button" onClick={keepFocusedFlower}>
-                        {journalSaved ? 'update memory' : 'press into journal'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </span>
-          <button
-            type="button"
-            className={styles.flowerPeekClose}
-            onClick={closeAndRestoreFocus}
-            aria-label="Close flower meaning"
-          >
-            ×
-          </button>
-        </aside>
+        <FlowerPeek
+          key={focused}
+          flower={flowers[focused]}
+          index={focused}
+          journalGardenId={journalGardenId}
+          journalFrom={journalFrom}
+          onClose={closeAndRestoreFocus}
+          onHover={() => onFocus?.(focused)}
+          onHoverEnd={() => onFocusRelease?.()}
+        />
       )}
       {sealed && (
         <div className={styles.moteLayer} aria-hidden>

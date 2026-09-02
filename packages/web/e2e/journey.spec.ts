@@ -215,6 +215,27 @@ test.describe('compose → bloom → share → recipient', () => {
     // The reply loop is the thing that makes this a conversation rather than a one-way card.
     await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible()
 
+    // --- The flower panel -------------------------------------------------------------------
+    // Escape closes one layer at a time and hands focus back to the flower that opened the panel.
+    // Nothing else asserts that, and both live in the panel rather than the scene around it.
+    const first = GARDEN.flowers[0]!
+    const slot = page.getByRole('button', { name: new RegExp(`^${first.name}:`) })
+    await slot.click()
+    const peek = page.locator('#flower-peek')
+    await expect(peek).toBeVisible()
+
+    await peek.getByRole('button', { name: /keep in my flower journal/i }).click()
+    await peek.getByRole('textbox').fill('the afternoon it arrived')
+    await peek.getByRole('button', { name: /press into journal/i }).click()
+    await expect(peek.getByRole('button', { name: /edit journal memory/i })).toBeVisible()
+
+    await peek.getByRole('button', { name: /edit journal memory/i }).click()
+    await page.keyboard.press('Escape')
+    await expect(peek).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(peek).toBeHidden()
+    await expect(slot).toBeFocused()
+
     // --- Constellations ---------------------------------------------------------------------
     // Both the journal and its constellations live inside the "keep this garden" disclosure, which is
     // collapsed until asked for. That is the right home for private-journal content, so open it.
