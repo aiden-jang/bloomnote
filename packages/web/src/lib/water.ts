@@ -99,18 +99,6 @@ export async function fetchResponsesBatch(ids: string[]): Promise<Record<string,
   }
 }
 
-/** How many times this garden has been watered. 0 on any failure — never blocks the view. */
-export async function fetchWaters(id: string): Promise<number> {
-  try {
-    const r = await fetch(`/api/garden/${id}/water`)
-    if (!r.ok) return 0
-    const n = ((await r.json()) as { waters?: unknown }).waters
-    return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0
-  } catch {
-    return 0
-  }
-}
-
 /**
  * Water counts for a list of gardens, as `{ id: count }`. Missing means zero.
  *
