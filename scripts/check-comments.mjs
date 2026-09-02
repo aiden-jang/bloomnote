@@ -15,8 +15,11 @@ import { globSync } from 'node:fs'
  * are a deploy-time trap, a magic number's justification and two silent-failure notes, so the
  * growth is substance. If this number has to move to accommodate an explanation you are rewriting
  * rather than a module you are adding, trim the explanation instead.
+ *
+ * 730 -> 760: phase 7 added imageCards.tsx (528 lines) and phase 8 added two hooks and a shared
+ * component. The trim came first and reclaimed 12 lines; the rest is new modules, not new prose.
  */
-const SRC_BUDGET = 730
+const SRC_BUDGET = 760
 const DUP_MIN_CHARS = 45
 
 /**
