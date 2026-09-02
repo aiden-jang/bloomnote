@@ -56,110 +56,27 @@ for a feeling that only needs acknowledging.
 
 ## Decisions worth explaining
 
+The full decision log, with the alternatives that were rejected and the limitations that are still
+open, is in [ARCHITECTURE.md](ARCHITECTURE.md). The four that shape everything else:
+
 **The model designs the flowers; it doesn't pick from a list.** This started as a "choose from 8
 presets" toy. Letting the model invent the palette, petal shape, and count for each flower is the
-whole product. `FlowerSVG.tsx` takes a flower spec directly and draws whatever comes back, so a
-new petal shape is one switch arm.
+whole product. `FlowerSVG.tsx` takes a flower spec directly and draws whatever comes back, so a new
+petal shape is one switch arm.
 
-**Function calling instead of "please return JSON."** Gemini is forced to call `design_garden`
-with a typed schema (`functionCallingConfig.mode = ANY`), which removes the "what if it answered
-in prose" failure mode. Its schema is a subset of OpenAPI and can't express regex or array
-bounds, so those rules live in the field descriptions (which the model reads) and a
-`validateGarden()` pass that rejects bad output with a real error: a bad `petalCount` becomes a
-clean error event, not a half-drawn flower.
+**Function calling instead of "please return JSON."** Gemini is forced to call `design_garden` with
+a typed schema, which removes the "what if it answered in prose" failure mode rather than handling
+it. Its schema can't express regex or array bounds, so those rules live in the field descriptions
+and in a `validateGarden()` pass that rejects bad output with a real error.
 
-**Short links on our own domain, in KV.** `POST /api/garden` writes the garden under a 6-char
-id from a 57-character alphabet (base62 minus `0/O/1/l/I`, which are the pairs people misread)
-and returns it; `GET` reads it back with a
-one-year immutable cache header, since a garden never changes once written. KV is the natural fit:
-the id is the only thing you ever query on, reads are edge-cached, and there's no relational shape
-to model. An earlier version used a third-party shortener, which put the recipient on someone
-else's domain with an occasional interstitial. Both break the moment.
+**Short links on our own domain, in KV, with no expiry.** A garden is a keepsake, so a link that was
+already sent has to keep working. Gardens are written under a 6-character id and read back with a
+one-year immutable cache header, since a garden never changes once written.
 
-**No degraded fallback if the write fails.** The share card waits for the short link before it
-appears. If the KV write fails the user sees an error, not a 450-character link. Silently shipping
-a broken-looking share link trains people to distrust the app.
-
-**A budget cap so a public demo can't run up a bill.** Gemini calls are metered in KV (per-IP
-per-minute and a global daily ceiling), and the check fails _open_ on KV hiccups so a metering
-blip never blocks a legitimate garden. The key is a wrangler secret; with no key the SSE
-error-path is still exercised.
-
-The daily ceiling is 15, which looks arbitrarily small until you check the actual limit it guards:
-the Gemini free tier allows 20 `generateContent` requests per day per project for this model. It
-was originally 800, a number chosen without looking, so the guard could never fire and the app's
-own honest "at capacity for today" message was unreachable. Past the real quota every visitor
-instead got "the garden service is busy, please try again" about something that could not succeed
-until midnight Pacific. A cap that never fires is not a conservative cap, it is a decorative one.
-
-Below 20 rather than at it because one generation can spend more than one request: a transient
-failure is retried up to three times and every attempt counts against the quota. And because a
-429 means two different things, the client now reads the error body and tells the per-day quota
-apart from a per-minute burst, retrying the second and never the first.
-
-**Time capsules are entirely client-side.** Scheduling adds one `unlockAt` string to the record.
-No cron, no server timer. `SealedView.tsx` counts down in the browser with an interval that slows
-as the unlock recedes, so it isn't running a 60Hz timer for a two-week wait. Editing your device
-clock opens it early; this is choreography, not a vault.
-
-**The recipient's view is the only thing in the main bundle.** Every other route (composer,
-archive, legal) is a `React.lazy` chunk. The whole app used to ship as one file, so opening a
-garden link on a phone downloaded the composer, the schedule picker and the archive before the
-garden could draw. The recipient view stays eagerly loaded because that is the moment this product
-exists for and it should never wait on a second request; everything else sits behind a click and
-can afford one.
-
-**Saving a garden puts it in Photos, not Files.** The share card rasterises the garden to a PNG and
-hands it to `navigator.share({ files })`, which on a phone opens the OS sheet with "Save Image" in
-it. The catch is that `share` only works while a user gesture is still live, and a 2160px garden
-takes about a second to rasterize. Rendering it inside the tap handler spent the activation before
-the sheet opened, `share` threw, and the code fell through to a plain download, which lands in
-Files. The PNG is now rendered when the share card first appears, so the tap has a blob waiting.
-
-**Every write is rate-limited per IP, and the limiter fails open.** Generation was metered from the
-start, but the endpoints around it were not: watering, feelings, event beacons and garden creation
-all took unlimited writes from anyone with the URL. KV writes are the scarce quota on this plan and
-they are shared with garden creation, so a loop against any one of them could stop people making
-gardens. Each write endpoint now has its own per-minute ceiling in `rateLimit.ts`, sized to what a
-person could plausibly do. It counts in KV, which is not atomic, so counts drift at the margin and a
-determined caller can exceed a ceiling slightly. That is the right trade: this is a courtesy limit
-protecting a quota, not a security boundary, and a metering blip must never block a real garden.
-
-**The recipient screen is built for a keyboard and a screen reader too.** Flowers are real buttons
-with `aria-expanded` and `aria-controls`, Escape closes the meaning panel one layer at a time so a
-half-written journal note survives it, and focus returns to the flower that opened the panel rather
-than the top of the page. "Open the garden" removes itself on click, so it hands focus to the page
-heading instead of dropping it on `<body>`. Every animation is off under `prefers-reduced-motion`,
-and where a keyframe fades in from `opacity: 0` the stylesheet also spells out the end state, or
-turning the animation off would leave the content invisible rather than still.
-
-**Accounts are optional and additive.** Anonymous create + public links always work. Signing in
-adds a synced archive: gardens are indexed under `sent:<uid>:<id>` and `recv:<uid>:<id>` prefixes
-in the same KV, and a first-login claim step attaches anonymously-created gardens to the new
-account. The identity itself comes from the shared auth service via a same-origin `/api/me`, so
-the browser never talks to accounts cross-origin.
-
-## Trade-offs
-
-- **Model quality.** Flash gets most of the way there and costs nothing on the free tier, which
-  matters for a public demo. Where it shows is the prose: a frontier model reaches for the note's
-  specifics more reliably and needs less prompting not to drift into greeting-card filler. Swapping
-  the provider is `designGarden.ts` + `prompt.ts`, roughly thirty lines.
-- **Link-preview cards are written once, by the sender's browser.** The Worker has no canvas, and
-  the sender is already holding the garden it needs to draw. So the card is rasterised client-side
-  after the bloom and POSTed to `/api/garden/:id/og`. That endpoint takes it only if the garden
-  exists, the bytes start with a PNG signature, and nothing is stored there yet. Anyone can POST to
-  a known id, so overwrites would let a stranger replace the picture on somebody's gift. First write
-  wins; the rest get a 409. Gardens made before this shipped have no card and unfurl with the
-  homepage image, which is the honest outcome of not backfilling.
-- **Watering is an anonymous counter, not a vote.** The recipient taps a watering can; the sender
-  sees the count next time they open their own link. There is no identity to hang it on, so the
-  client remembers its own tap and the server caps the total at 99. Someone determined can walk a
-  garden they were given up to that cap. The worst outcome is a number that reads "a lot", which is
-  not a lie about anything that matters. Making it exact would mean making people sign in to say
-  "this was nice", which costs more than the gesture is worth.
-- **Orphaned records.** Re-rolling writes a new record and abandons the old one. Fine at this
-  scale; past heavy traffic I'd overwrite in place or expire them.
+**Anonymous first; accounts are additive.** Writing, sending and opening a garden all work with no
+account. Signing in adds a synced archive and nothing else. That bet costs attribution, durability
+for anyone who never signs in, and any moderation lever beyond a rate limit, all of which
+[ARCHITECTURE.md](ARCHITECTURE.md) goes into.
 
 ## Project layout
 
@@ -204,9 +121,15 @@ See [DEPLOY.md](DEPLOY.md) for the production runbook.
 
 ## Privacy
 
-The note goes to Google's Gemini for processing and is stored in KV under the short id. Anyone
-with the link can read it. Ids are 6 random characters from a 57-character alphabet, so there are
-about 34 billion of them and they aren't guessable, but the link _is_ the access token, so don't write anything you wouldn't forward.
+The note goes to Google's Gemini for processing and is stored in KV under the short id. Anyone with
+the link can read it. Ids are 6 random characters from a 57-character alphabet, so there are about
+34 billion of them and they aren't guessable, but the link _is_ the access token. Don't write
+anything you wouldn't forward.
+
+Gardens never expire, which is deliberate: a link somebody was already sent has to keep working.
+Removing a garden from your own archive detaches it from your account and leaves the link alive for
+whoever you sent it to. [ARCHITECTURE.md](ARCHITECTURE.md) covers the retention decision and what
+the note being untrusted model input does and doesn't protect against.
 
 ## Tests
 
