@@ -633,8 +633,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       {phase === 'idle' && (
         <>
           <section className={styles.section}>
-            /* Actually associated with the field. Without htmlFor and id the one input this page exists for
-            has no accessible name. */
+            {/* htmlFor and id, not adjacency. Every label on this form sits beside its input rather
+                than wrapping it, so without the pairing each field's only name is its placeholder. */}
             <label className={styles.label} htmlFor="note">
               your note
             </label>
@@ -695,8 +695,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <div className={styles.nameRow}>
-            /* htmlFor and id, not adjacency: these labels sit beside their inputs rather than wrapping them,
-            so without the pairing each field's only name is its placeholder. */
             <section className={styles.section}>
               <label className={styles.label} htmlFor="garden-from">
                 from
