@@ -174,6 +174,9 @@ export default function FlowerPeek({
                   maxLength={240}
                   rows={2}
                   placeholder="the moment, the person, the reason…"
+                  // The editor is revealed by its own button, so the cursor should already be in
+                  // it rather than a tab away.
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
                   autoFocus
                 />
                 <div>

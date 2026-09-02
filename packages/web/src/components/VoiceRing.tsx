@@ -166,6 +166,8 @@ export function VoiceRing({
       </span>
 
       {blob && (
+        // A voice memory the user recorded seconds ago. There is no caption track for it to have.
+        // eslint-disable-next-line jsx-a11y/media-has-caption
         <audio
           ref={audioRef}
           src={url.current ?? undefined}

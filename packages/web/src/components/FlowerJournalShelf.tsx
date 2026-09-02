@@ -171,6 +171,9 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
               {editing === entry.id ? (
                 <span className={styles.meaningEdit}>
                   <input
+                    // Editing replaces the row's memory with this field, so focus belongs where
+                    // the words just were.
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus
                     value={draft}
                     maxLength={MAX_MEANING}

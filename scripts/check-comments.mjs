@@ -51,6 +51,8 @@ for (const file of files) {
     if (isSrc(file)) srcLines += c.lines
     const flat = c.text.replace(/\s+/g, ' ').trim()
     if (flat.length < DUP_MIN_CHARS) continue
+    // Directives are meant to repeat: two files suppressing the same rule is not duplication.
+    if (/^(\/\/|\/\*)\s*(eslint-|prettier-|@ts-|c8 |v8 )/.test(flat)) continue
     const where = seen.get(flat) ?? []
     if (!where.includes(file)) where.push(file)
     seen.set(flat, where)
