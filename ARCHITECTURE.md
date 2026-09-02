@@ -204,6 +204,38 @@ such rather than implied to be a guarantee. If it ever needed to be a real one, 
 have to check the time server-side, and I would rather have built that seam in from the start than
 retrofit it.
 
+### A deploy must not strand somebody mid-session
+
+Vite hashes chunk filenames, so a deploy replaces them, and the service worker deletes every
+non-current cache entry when it activates. Anyone holding the page from before the deploy is then
+referencing chunk names that exist neither on the origin nor in their cache. Clicking through to a
+lazy route failed the dynamic import and reached the error boundary, which said "something wilted"
+about what was really "please refresh".
+
+`lazyWithReload` wraps the three code-split routes: a failed import reloads once, which fetches the
+current `index.html` and the chunk names that match it. A ten-second cooldown in `sessionStorage`
+stops that becoming a loop, and it fails closed when storage is unavailable, because reloading with
+no way to record the attempt is the loop.
+
+**Rejected:** keeping old chunks on the origin so the stale reference still resolves. It works, and
+it means every deploy leaves litter nobody ever cleans up, to serve a page that is one refresh from
+being correct anyway.
+
+### The composer's draft is one thing, not eight
+
+The eight form fields and their persistence live in one hook rather than eight `useState` calls and
+a separate autosave. They are genuinely one responsibility: every field feeds the same saved draft,
+and clear and undo have to move all of them together or the form ends up half reset.
+
+The component still reads `from`, `recipient`, `message` and the rest as plain locals, destructured
+from the hook. That was deliberate: there are around two hundred references to those names in the
+JSX, and rewriting every one of them to `draft.fields.from` would have been a wide mechanical change
+to the product's central form for no gain the reader can see.
+
+**The trap it introduced:** the first version built the setters fresh on every render, which defeats
+any `useCallback` depending on one and makes any effect listing them re-run constantly. They are
+built once in a `useMemo` now. `react-hooks/exhaustive-deps` is what surfaced it.
+
 ### No degraded fallback when the write fails
 
 The share card waits for the short link before it appears. If the KV write fails, the sender sees an
@@ -251,6 +283,13 @@ on the free tier, which is what makes a public demo possible at all. A frontier 
 the note's specifics more reliably and needs less prompting not to drift into greeting-card filler.
 Swapping the provider is `designGarden.ts` plus `prompt.ts`, roughly thirty lines. The reason it has
 not been swapped is the free tier, not the code.
+
+**The gate is one command, and it was not always.** `pnpm verify` runs typecheck, lint, format,
+`css-vars`, `css-classes`, `comments`, `knip`, build, unit tests and the browser suite, and
+`pnpm run deploy` will not ship without it. Before that the list lived in CI and in whoever's head
+was running it, which is how a lint failure survived three rounds of changes with every other check
+green. Four of those checks exist for one shared reason: the mistakes they catch render as nothing
+and error nowhere.
 
 **The end-to-end suite runs entirely under reduced motion.** "Open the garden" carries an infinite
 attention pulse, so Playwright's stability check never passes and the click times out. Forcing the
