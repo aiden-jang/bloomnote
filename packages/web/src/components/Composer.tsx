@@ -12,19 +12,16 @@ import SoundToggle from './SoundToggle'
 import { EXAMPLE_GARDENS, type ExampleGarden } from '../data/exampleGardens'
 import { buildShareUrl, createShortGarden, type FlowerSpec, type GardenData } from '../garden'
 import {
-  trackCardDownloaded,
   trackComposerOpened,
   trackGardenCanceled,
   trackGardenError,
   trackGardenGenerated,
   trackGardenRerolled,
   trackMakeAnother,
-  trackShareLinkCopied,
-  trackShareLinkShared,
 } from '../lib/analytics'
 import { designGarden, type DesignResult } from '../lib/designGarden'
 import { prefersReducedMotion } from '../lib/motion'
-import { prewarmGardenImage, saveGardenImage, uploadOgImage } from '../lib/gardenImage'
+import { prewarmGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
 import { countSentGardens, recordSentGarden, updateSentGardenId, type MineRecord } from '../lib/mine'
@@ -42,6 +39,7 @@ import {
   writeStoredDraft,
   type Draft,
 } from '../lib/draft'
+import { useShareActions } from '../lib/useShareActions'
 
 // Two phases instead of four. The message is the input; the garden +
 // share link are the output. No second-phase "now add a message" step,
@@ -233,7 +231,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // transition swaps the DOM, so without this a fast second tap runs designGarden twice.
   const designingRef = useRef(false)
   // Same idea for save-as-image: don't open two share sheets / two downloads on a double-tap.
-  const savingImageRef = useRef(false)
 
   // While the model is thinking, cycle the status line so the wait feels alive. Cleanup stops it
   // when thinking ends (or the component unmounts).
@@ -277,18 +274,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // piece of state than a regex over shareUrl.
   const [gardenId, setGardenId] = useState<string | null>(null)
   const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | null>(null)
-  const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   // Web Share API is mobile + modern desktop Safari only. We detect on
-  // mount and conditionally render — never show a button that won't
-  // work. Detection runs in an effect because typeof navigator can
-  // throw under some SSR pre-renders; this keeps the initial render
-  // safe.
-  const [canShare, setCanShare] = useState(false)
-  useEffect(() => {
-    setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
-  }, [])
 
   // Every generated garden gets a fresh sealed aside in the sender preview, including re-rolls.
   useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
@@ -851,62 +837,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setUndoDraft(null)
   }, [])
 
-  const handleCopy = useCallback(() => {
-    if (!shareUrl) return
-    void navigator.clipboard.writeText(shareUrl).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
-    })
-    trackShareLinkCopied()
-  }, [shareUrl])
-
-  // Native share — opens the OS share sheet on mobile (iMessage, WhatsApp,
-  // Slack, etc.) or desktop Safari. AbortError is a user cancellation,
-  // not a failure; swallow it. Any other error falls through silently
-  // and the user still has the Copy button.
-  const handleShare = useCallback(async () => {
-    if (!shareUrl) return
-    setShareStatus('sharing')
-    const data: ShareData = {
-      title: 'bloomnote',
-      text: recipient.trim() ? `A garden for ${recipient.trim()}` : 'A garden for you',
-      url: shareUrl,
-    }
-    try {
-      await navigator.share(data)
-      setShareStatus('shared')
-      window.setTimeout(() => setShareStatus(null), 2500)
-      trackShareLinkShared()
-    } catch (err) {
-      setShareStatus(null)
-      if (err instanceof Error && err.name === 'AbortError') return
-      // Otherwise no-op — the Copy button is still there as fallback.
-    }
-  }, [shareUrl, recipient])
-
-  // Save the garden as a PNG "share card" (garden + who it's from + wordmark). Rasterized
-  // client-side from a self-contained SVG, so it works offline and never leaves the device.
-  const handleSaveImage = useCallback(async () => {
-    if (!flowers.length || savingImageRef.current) return
-    savingImageRef.current = true
-    setImageStatus('saving')
-    try {
-      const result = await saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
-      if (result === 'dismissed') {
-        setImageStatus(null)
-        return
-      }
-      setImageStatus(result)
-      if (result === 'downloaded') trackCardDownloaded('composer', 'square')
-      window.setTimeout(() => setImageStatus(null), 2500)
-    } catch {
-      // Rare (canvas/decode failure, or a non-abort share error). Swallow so it isn't an unhandled
-      // rejection; the Copy-link button remains as the fallback.
-      setImageStatus(null)
-    } finally {
-      savingImageRef.current = false
-    }
-  }, [flowers, from, recipient])
+  const { copied, shareStatus, imageStatus, canShare, handleCopy, handleShare, handleSaveImage } =
+    useShareActions(shareUrl, recipient, from, flowers)
 
   return (
     <div className={styles.wrap}>
