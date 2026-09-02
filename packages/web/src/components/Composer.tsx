@@ -9,7 +9,7 @@ import { SecretEnvelope } from './RecipientView'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import SoundToggle from './SoundToggle'
-import { EXAMPLE_GARDENS, type ExampleGarden } from '../data/exampleGardens'
+import { type ExampleGarden } from '../data/exampleGardens'
 import { buildShareUrl, createShortGarden, type FlowerSpec, type GardenData } from '../garden'
 import {
   trackComposerOpened,
@@ -25,29 +25,25 @@ import { prewarmGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
 import { countSentGardens, recordSentGarden, updateSentGardenId } from '../lib/mine'
-import { DEFAULT_MOOD, MOODS } from '../lib/moods'
-import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
+import { MOODS } from '../lib/moods'
+import { OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
 import { ritual } from '../lib/rituals'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
 import {
-  draftStorageKey,
-  readStoredDraft,
-  removeStoredDraft,
-  writeStoredDraft,
-  type Draft,
-} from '../lib/draft'
-import { buildMineRecord, charCountTierClass, classifyError } from '../lib/composerHelpers'
+  buildMineRecord,
+  charCountTierClass,
+  classifyError,
+  disabledReasonFor,
+  scheduleErrorFor,
+} from '../lib/composerHelpers'
+import { useComposerDraft } from '../lib/useComposerDraft'
+import { useHeroDemo } from '../lib/useHeroDemo'
 import { useShareActions } from '../lib/useShareActions'
 
-// Keep this in step with the copy under the disabled button and the rule that disables it.
-const MIN_MESSAGE_CHARS = 4
-
 type Phase = 'idle' | 'designing' | 'designed'
-
-const DEMO_CYCLE_MS = 7000
 
 const THINKING_MESSAGES = [
   'reading between the lines…',
@@ -63,57 +59,25 @@ interface ComposerProps {
 
 export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [phase, setPhase] = useState<Phase>('idle')
-  const [recoveredDraft] = useState<Draft | null>(() => readStoredDraft())
-  const [showRecoveredDraft, setShowRecoveredDraft] = useState(() => recoveredDraft !== null)
-  const storageKeyRef = useRef(draftStorageKey())
+  const draft = useComposerDraft({ remixSeed, idle: phase === 'idle' })
+  const { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
+  const {
+    from: setFrom,
+    recipient: setRecipient,
+    message: setMessage,
+    secret: setSecret,
+    occasion: setOccasion,
+    mood: setMood,
+    scheduleOpen: setScheduleOpen,
+    unlockLocal: setUnlockLocal,
+  } = draft.set
+  const { hasDraft, undoDraft } = draft
+  const clearStoredDraft = draft.forget
 
-  const clearStoredDraft = useCallback(() => {
-    try {
-      removeStoredDraft(storageKeyRef.current)
-    } catch {
-      // Best-effort. A storage failure must never block the flow.
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!showRecoveredDraft) return
-    const t = window.setTimeout(() => setShowRecoveredDraft(false), 5000)
-    return () => window.clearTimeout(t)
-  }, [showRecoveredDraft])
-
-  const initialInputs = useMemo(() => {
-    const base = { occasion: DEFAULT_OCCASION, mood: DEFAULT_MOOD, secret: '' }
-    if (recoveredDraft) {
-      return {
-        from: recoveredDraft.from,
-        recipient: recoveredDraft.recipient,
-        message: recoveredDraft.message,
-        secret: recoveredDraft.secret,
-        occasion: recoveredDraft.occasion || base.occasion,
-        mood: recoveredDraft.mood || base.mood,
-      }
-    }
-    if (remixSeed) {
-      return {
-        ...base,
-        from: remixSeed.to ?? '',
-        recipient: remixSeed.from ?? '',
-        message: '',
-      }
-    }
-    return { ...base, from: '', recipient: '', message: '' }
-  }, [recoveredDraft, remixSeed])
-
-  const [from, setFrom] = useState(initialInputs.from)
-  const [recipient, setRecipient] = useState(initialInputs.recipient)
-  const [message, setMessage] = useState(initialInputs.message)
-  const [secret, setSecret] = useState(initialInputs.secret)
-  const [occasion, setOccasion] = useState(initialInputs.occasion)
   // Keyed on occasion only. Re-reading the clock every render would change the copy under
   // somebody who happens to be writing at 11:59.
   const [ritualAt] = useState(() => new Date())
   const todaysRitual = useMemo(() => ritual(occasion, ritualAt), [occasion, ritualAt])
-  const [mood, setMood] = useState(initialInputs.mood)
   const placeholder = placeholderFor(occasion, mood)
   const promptOptions = useMemo(() => placeholderOptions(occasion, mood), [occasion, mood])
   const [promptIndex, setPromptIndex] = useState(0)
@@ -121,9 +85,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   useEffect(() => setPromptIndex(0), [occasion, mood])
 
   const [mineCount, setMineCount] = useState(() => countSentGardens())
-
-  const [scheduleOpen, setScheduleOpen] = useState(() => recoveredDraft?.scheduleOpen ?? false)
-  const [unlockLocal, setUnlockLocal] = useState(() => recoveredDraft?.unlockLocal ?? '')
 
   const [statusText, setStatusText] = useState<string>('')
   const [thinking, setThinking] = useState(false)
@@ -150,9 +111,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const [rerollAttempt, setRerollAttempt] = useState(0)
   const [isRerolling, setIsRerolling] = useState(false)
-
-  const [undoDraft, setUndoDraft] = useState<Draft | null>(null)
-  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [garden, setGarden] = useState<DesignResult | null>(null)
   const [flowers, setFlowers] = useState<FlowerSpec[]>([])
@@ -188,33 +146,14 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     trackComposerOpened(remixSeed ? 'remix' : 'fresh')
   }, [remixSeed])
 
-  // The 30-second grace has to match handleDesign and the server. Without it, picking a time
-  // and then sitting on the page for a few seconds drops the schedule silently.
-  const scheduleError: string | null = (() => {
-    if (!scheduleOpen) return null
-    // Empty is "not yet decided", not an error. Without this the picker complains the moment it opens.
-    if (!unlockLocal) return null
-    const t = new Date(unlockLocal).getTime()
-    if (!Number.isFinite(t)) return 'that time looks malformed.'
-    if (t <= Date.now() + 30_000) return 'that time has already passed. pick something in the future.'
-    return null
-  })()
-
-  const disabledReason: string | null = (() => {
-    const noRecipient = recipient.trim().length < 1
-    const written = message.trim().length
-    const noMessage = written < MIN_MESSAGE_CHARS
-    const startedWriting = written > 0
-    if (noRecipient && noMessage && !startedWriting) return 'add who it’s for and a message to get started'
-    if (noRecipient && noMessage) return 'add who it’s for, and a few more words'
-    if (noRecipient) return 'add who it’s for in the “to” field'
-    if (noMessage) return startedWriting ? 'a few more words and it’s ready' : 'write them a note first'
-    if (scheduleError) return 'fix the scheduled time above'
-    if (scheduleOpen && unlockLocal === '') {
-      return 'pick a date & time above to schedule, or hit cancel to send now'
-    }
-    return null
-  })()
+  const scheduleError = scheduleErrorFor(scheduleOpen, unlockLocal)
+  const disabledReason = disabledReasonFor({
+    recipient,
+    message,
+    scheduleOpen,
+    unlockLocal,
+    scheduleError,
+  })
 
   /* Start the PNG now: the tap that shares it must not wait on a render. */
   useEffect(() => {
@@ -452,131 +391,44 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       setShareUrl(null)
       setGardenId(null)
       setErrorText(null)
-      setFrom('')
-      setRecipient('')
-      setMessage('')
-      setSecret('')
-      setOccasion(DEFAULT_OCCASION)
-      setMood(DEFAULT_MOOD)
+      draft.reset()
       setRerollAttempt(0)
     })
     trackMakeAnother()
-  }, [clearStoredDraft])
-
-  const hasDraft =
-    from.trim().length > 0 ||
-    recipient.trim().length > 0 ||
-    message.trim().length > 0 ||
-    secret.trim().length > 0
-
-  useEffect(() => {
-    if (phase !== 'idle') return
-    if (!hasDraft) {
-      removeStoredDraft(storageKeyRef.current)
-      return
-    }
-    writeStoredDraft(storageKeyRef.current, {
-      from,
-      recipient,
-      message,
-      secret,
-      occasion,
-      mood,
-      scheduleOpen,
-      unlockLocal,
-    })
-  }, [phase, hasDraft, from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal])
+  }, [clearStoredDraft, draft])
 
   const showDemo = phase === 'idle' && !remixSeed && !hasDraft && flowers.length === 0
-  const [demoIndex, setDemoIndex] = useState(0)
-  const [previewId, setPreviewId] = useState<string | null>(null)
+  const hero = useHeroDemo({
+    showDemo,
+    flowers,
+    occasion,
+    mood,
+    message,
+    gardenSignature: garden ? garden.flowers.map((f) => f.name).join('-') : null,
+  })
 
-  useEffect(() => {
-    if (!showDemo || previewId || prefersReducedMotion()) return
-    const t = setInterval(() => setDemoIndex((i) => (i + 1) % EXAMPLE_GARDENS.length), DEMO_CYCLE_MS)
-    return () => clearInterval(t)
-  }, [showDemo, previewId])
+  const handleExampleSelect = useCallback(
+    (g: ExampleGarden) => {
+      draft.applyExample({
+        from: g.from,
+        recipient: g.to,
+        message: g.message,
+        occasion: g.occasion,
+        mood: g.mood,
+      })
+      // Next tick: some browsers refuse focus on an element that is mid-controlled-update.
+      setTimeout(() => {
+        messageRef.current?.focus()
+        const t = messageRef.current
+        if (t) t.setSelectionRange(t.value.length, t.value.length)
+      }, 0)
+    },
+    [draft],
+  )
 
-  const handlePreview = useCallback((id: string | null) => {
-    setPreviewId(id)
-    if (id === null) return
-    const i = EXAMPLE_GARDENS.findIndex((g) => g.id === id)
-    if (i >= 0) setDemoIndex(i)
-  }, [])
-
-  const demo = EXAMPLE_GARDENS[demoIndex % EXAMPLE_GARDENS.length]!
-  const heroFlowers = showDemo ? demo.flowers : flowers
-  const heroOccasion = showDemo ? demo.occasion : occasion
-  const heroMood = showDemo ? demo.mood : mood
-  const draftGrowth: 0 | 1 | 2 | 3 = !message.trim()
-    ? 0
-    : message.trim().length < 40
-      ? 1
-      : message.trim().length < 130
-        ? 2
-        : 3
-
-  const handleExampleSelect = useCallback((g: ExampleGarden) => {
-    setFrom(g.from)
-    setRecipient(g.to)
-    setMessage(g.message)
-    setSecret('')
-    setOccasion(g.occasion)
-    setMood(g.mood)
-    // Next tick: some browsers refuse focus on an element that is mid-controlled-update.
-    setTimeout(() => {
-      messageRef.current?.focus()
-      const t = messageRef.current
-      if (t) t.setSelectionRange(t.value.length, t.value.length)
-    }, 0)
-  }, [])
-
-  const handleClear = useCallback(() => {
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
-
-    const snapshot: Draft = { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal }
-    clearStoredDraft()
-
-    setFrom('')
-    setRecipient('')
-    setMessage('')
-    setSecret('')
-    setOccasion(DEFAULT_OCCASION)
-    setMood(DEFAULT_MOOD)
-    setScheduleOpen(false)
-    setUnlockLocal('')
-    setUndoDraft(snapshot)
-
-    undoTimerRef.current = setTimeout(() => {
-      setUndoDraft(null)
-      undoTimerRef.current = null
-    }, 8000)
-  }, [from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal, clearStoredDraft])
-
-  const handleUndoClear = useCallback(() => {
-    if (!undoDraft) return
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current)
-      undoTimerRef.current = null
-    }
-    setFrom(undoDraft.from)
-    setRecipient(undoDraft.recipient)
-    setMessage(undoDraft.message)
-    setSecret(undoDraft.secret)
-    setOccasion(undoDraft.occasion || DEFAULT_OCCASION)
-    setMood(undoDraft.mood || DEFAULT_MOOD)
-    setScheduleOpen(undoDraft.scheduleOpen)
-    setUnlockLocal(undoDraft.unlockLocal)
-    setUndoDraft(null)
-  }, [undoDraft])
-
-  const handleDismissUndo = useCallback(() => {
-    if (undoTimerRef.current) {
-      clearTimeout(undoTimerRef.current)
-      undoTimerRef.current = null
-    }
-    setUndoDraft(null)
-  }, [])
+  const handleClear = draft.clear
+  const handleUndoClear = draft.undoClear
+  const handleDismissUndo = draft.dismissUndo
 
   const { copied, shareStatus, imageStatus, canShare, handleCopy, handleShare, handleSaveImage } =
     useShareActions(shareUrl, recipient, from, flowers)
@@ -601,24 +453,22 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               : 'write a note. they get a whole garden.'}
         </p>
       </header>
-      {showRecoveredDraft && (
+      {draft.showRecovered && (
         <p className={styles.recoveredDraft} role="status">
           Your draft is still here.
         </p>
       )}
 
       <GardenScene
-        flowers={heroFlowers}
+        flowers={hero.flowers}
         autoBloom
-        occasion={heroOccasion}
-        mood={heroMood}
+        occasion={hero.occasion}
+        mood={hero.mood}
         silent={showDemo}
         sprouting={phase === 'designing'}
         compact={hasDraft}
-        draftGrowth={draftGrowth}
-        // The demo id has to be in the key. Two examples can share a flower-name signature, and
-        // the second would then appear fully grown instead of growing in.
-        key={showDemo ? `demo-${demo.id}` : garden ? garden.flowers.map((f) => f.name).join('-') : 'empty'}
+        draftGrowth={hero.draftGrowth}
+        key={hero.sceneKey}
       />
 
       {phase === 'idle' && remixSeed && (
@@ -687,8 +537,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <ExampleCarousel
               onSelect={handleExampleSelect}
               collapsed={hasDraft}
-              activeId={showDemo ? demo.id : undefined}
-              onPreview={handlePreview}
+              activeId={hero.activeId}
+              onPreview={hero.preview}
             />
           )}
 
