@@ -8,27 +8,8 @@ import FlowerPeek from './FlowerPeek'
 import styles from './GardenScene.module.css'
 import { gradientFor, mixHex, placeFlowers, placementKey, type Placement } from '../lib/scene'
 
-/**
- * Sky gradient palette by occasion. Each entry is two soft pastel
- * stops (top → bottom) that subtly shift the scene's atmosphere
- * without overpowering the flowers themselves. The default ("just-
- * because") and the fallback for unknown values is the original
- * blue → yellow-green gradient.
- *
- * Constraint: stops must stay light enough that black-on-light text
- * (the recipient view's message, the legend) remains readable
- * against any flower colors that bleed into the same space.
- * Saturation was deliberately dialed down — premium products use
- * mood-shift, not paint chips.
- */
-/** An empty or sprouting plot still wants a plot-sized bed. */
 const GARDEN_MIN_HEIGHT = 200
 
-/**
- * The mood is a second, quieter visual axis than the occasion. Occasion paints the sky; mood adds
- * a small living detail to it. Keeping the vocabulary allowlisted means an old or hand-crafted
- * garden can never turn an arbitrary stored string into a CSS class.
- */
 const MOOD_AURAS = {
   tender: { className: styles.auraTender, marks: ['♡', '·', '♡', '·', '♡', '·'] },
   playful: { className: styles.auraPlayful, marks: ['✦', '●', '✦', '●', '✦', '●'] },
@@ -38,12 +19,11 @@ const MOOD_AURAS = {
 } as const
 
 function auraFor(mood?: string) {
-  // Object.hasOwn, not `in`: `in` matches '__proto__' and would turn a stored string into a
-  // lookup on Object.prototype. See gradientFor in lib/scene.ts.
+  // Object.hasOwn, not `in`: `in` matches '__proto__' and turns a stored string into a lookup
+  // on Object.prototype.
   return mood && Object.hasOwn(MOOD_AURAS, mood) ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
 }
 
-/* Occasion owns the hue; the hour only blends toward a base, so the emotional signal survives. */
 // prettier-ignore
 const TIME_SKY: Record<RitualTime, { top: string; bottom: string; weight: number; sun: string; sunStrength: number }> = {
   morning:   { top: '#ffffff', bottom: '#ffffff', weight: 0,    sun: '255, 250, 235', sunStrength: 0.72 },
@@ -52,7 +32,7 @@ const TIME_SKY: Record<RitualTime, { top: string; bottom: string; weight: number
   night:     { top: '#1d2742', bottom: '#33395a', weight: 0.74, sun: '206, 219, 255', sunStrength: 0.20 },
 }
 
-/** left %, top %, twinkle delay. Placed by hand so a garden looks the same every time it opens. */
+/* Hand-placed, no Math.random, so a garden looks the same every time it opens. left %, top %, twinkle delay. */
 // prettier-ignore
 const STARS: Array<[number, number, number]> = [
   [8, 14, 0], [21, 31, 1.6], [34, 9, 0.8], [46, 24, 2.4],
@@ -60,69 +40,32 @@ const STARS: Array<[number, number, number]> = [
   [52, 44, 1.4], [41, 38, 2.8],
 ]
 
-/** Time between consecutive flower blooms. Exported so the legend
- *  can stagger its row reveals in sync with the bloom they describe. */
 export const BLOOM_STAGGER_MS = 500
 
-/** How long to hold the fully-bloomed scene before the post-bloom
- *  fade-ins (message, legend, CTA) start. Lets the bloom breathe. */
 const BLOOM_HOLD_MS = 1000
 
 interface Props {
   flowers: FlowerSpec[]
   autoBloom: boolean
   onAllBloomed?: () => void
-  /**
-   * Drives the sky gradient. Defaults to "just-because" when omitted
-   * or unknown — pre-existing gardens without an `occasion` field
-   * fall through to that default.
-   */
   occasion?: string | undefined
-  /** Pointer left a flower or the panel. Not a close — the owner decides how long it survives. */
   onFocusRelease?: () => void
-  /** Adds a restrained, animated atmosphere. Old gardens without a mood stay unchanged. */
   mood?: string | undefined
-  /**
-   * The model is designing the garden right now. The bed answers by putting up a row of sprouts.
-   */
   sprouting?: boolean
-  /** Written but not opened yet: the plot shows seeds instead of flowers. */
   sealed?: boolean
-  /**
-   * Bloom without the chime. Sound is on by default, and the homepage demo re-blooms on a loop —
-   * without this it would ding at the visitor every few seconds for as long as they sat on the
-   * page. The bloom sound should mark *their* garden arriving, which is the whole reason it's
-   * worth having; spending it on a background loop makes it mean nothing.
-   */
   silent?: boolean
-  /** Shrink to a waiting bed. Only meaningful with no flowers — see `.sceneCompact`. */
   compact?: boolean
-  /** How much of a draft exists, letting the empty plot quietly grow with the note. */
   draftGrowth?: 0 | 1 | 2 | 3
-  /** Index of the flower being looked at, from the legend or from the plot itself. */
   focused?: number | null
-  /** Pointing at a flower, or letting go of it. */
   onFocus?: (index: number | null) => void
-  /**
-   * Bumped once each time the garden is watered. A counter rather than a boolean so a second
-   * watering restarts the animation: toggling a flag back and forth needs the caller to time the
-   * reset, and a changed `key` on the drop layer is what actually replays the CSS.
-   */
   wateredAt?: number
-  /** Recipient-only identity for keeping individual flowers on this device. */
   journalGardenId?: string | undefined
   journalFrom?: string | undefined
-  /** Injectable clock, so the sky's hour can be pinned in a test or a static render. */
   now?: Date
 }
 
-// Petal drift configs are hand-tuned — no Math.random, so re-renders
-// don't jitter the positions. Each entry describes one petal's path
-// across the scene: start position (% across the top), horizontal
-// drift distance (positive = right, negative = left), bloom-relative
-// start delay, total animation duration, visual size, and initial
-// rotation. Colors get filled in at render time from the actual
-// flowers, so the drift visually belongs to this specific garden.
+// Hand-tuned, no Math.random, so re-renders don't jitter the positions. Colours are filled in
+// at render time from the actual flowers.
 // prettier-ignore
 const PETAL_DRIFTERS = [
   { startX: 15, driftX:  40, delay:  300, duration: 3800, size:  9, rotate:  25 },
@@ -133,20 +76,9 @@ const PETAL_DRIFTERS = [
   { startX: 55, driftX: -30, delay: 2200, duration: 4000, size:  9, rotate: -65 },
 ] as const
 
-/**
- * A bee, doing its rounds.
- *
- * The recipient view is the whole point of the app and, once the bloom animation finishes, it stops
- * moving: a still picture of some flowers. One small thing with somewhere to be turns it into a
- * place. It visits the flowers rather than wandering, because a bee that ignored the flowers would
- * read as a bug crawling on the screen.
- *
- * Deliberately not a swarm. One bee is a garden; three is an infestation.
- */
 function Bee() {
   return (
     <svg viewBox="0 0 16 11" className={styles.beeBody} aria-hidden>
-      {/* Wings first, so the body sits over them. */}
       <ellipse cx="7" cy="3.4" rx="3.1" ry="2.1" fill="#eaf4ff" opacity="0.75" />
       <ellipse cx="10" cy="3.6" rx="2.6" ry="1.8" fill="#eaf4ff" opacity="0.6" />
       <ellipse cx="8.6" cy="6.4" rx="4.4" ry="3" fill="#f0b429" />
@@ -163,18 +95,6 @@ function Bee() {
   )
 }
 
-/*
- * Grass and pebbles along the soil line.
- *
- * The flowers are illustrated and the ground was two flat divs with a ruler-straight edge between
- * them, so the two halves of the scene read as different pieces of software. This breaks the line
- * up without moving it: the stems land exactly on the soil surface, so an undulating crest would
- * leave a stem ending a few pixels above the dirt.
- *
- * Positions are hand-picked, like PETAL_DRIFTERS, and deliberately avoid where stems land. Flowers
- * sit at 10/30/36.7/50/63.3/70/90% depending on how many there are; every value here clears all of
- * those by at least six points, so a tuft never sprouts out of a stem.
- */
 const SOIL_DETAIL = [
   { x: 4, tuft: true },
   { x: 21, tuft: false },
@@ -184,14 +104,8 @@ const SOIL_DETAIL = [
   { x: 96, tuft: false },
 ] as const
 
-/**
- * The soil crest.
- *
- * Mounds *upward only*, never below the flat line. The stems are anchored to the soil surface, so a
- * crest that dipped would leave one ending in mid-air; rising instead buries the bottom pixel or two
- * of whichever stems it passes, which is what soil heaped around a stem actually looks like. The
- * ground paints after the flowers, so that overlap happens for free.
- */
+/* Mounds upward only, never below the flat line. The stems are anchored to the soil surface,
+   so a crest that dips leaves them hanging in the air. */
 function SoilCrest() {
   return (
     <svg className={styles.crest} viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden>
@@ -222,21 +136,17 @@ function SoilLine() {
   )
 }
 
-/* The waiting bed while the model works: left %, scale, delay s. Staggered so they rise in
-   sequence rather than as a row of copies. */
 // prettier-ignore
 const WAIT_SPROUTS: Array<[number, number, number]> = [
   [16, 0.78, 0], [31, 1, 0.55], [50, 0.88, 1.1], [68, 1.05, 0.3], [84, 0.74, 0.85],
 ]
 
-/** Hand-placed so the sky is unevenly filled, the way real drifting things are. left %, top %, delay s. */
 // prettier-ignore
 const MOTES: Array<[number, number, number]> = [
   [14, 22, 0], [31, 46, 2.7], [48, 16, 5.1], [63, 38, 1.4],
   [77, 27, 3.9], [88, 52, 6.3], [22, 63, 4.6],
 ]
 
-/** One seed per flower, in that flower's own column and colour, so the reveal grows out of it. */
 function SeedBed({ placements }: { placements: Placement[] }) {
   return (
     <div className={styles.seedBed} aria-hidden>
@@ -247,7 +157,6 @@ function SeedBed({ placements }: { placements: Placement[] }) {
           style={{
             left: `${p.left}%`,
             ['--depth' as string]: String(p.depth),
-            // Staggered so the bed breathes in sequence rather than pulsing as one block.
             animationDelay: `${i * 620}ms`,
           }}
         >
@@ -266,14 +175,6 @@ function SeedBed({ placements }: { placements: Placement[] }) {
   )
 }
 
-/**
- * Empty-plot teaser. A single ground-anchored sprout that grows up,
- * unfurls a leaf, then retracts on a slow loop. Hints at the bloom
- * to come without committing to any specific flower aesthetic.
- *
- * Pure CSS — no React state, no setInterval, no rerenders. The
- * animation runs entirely off the GPU once the layer is composited.
- */
 function GhostSprout({ growth }: { growth: 0 | 1 | 2 | 3 }) {
   return (
     <div className={`${styles.ghostSprout} ${styles[`ghostSproutGrowing${growth}`] ?? ''}`} aria-hidden>
@@ -316,12 +217,8 @@ export default function GardenScene({
   journalFrom,
   now = new Date(),
 }: Props) {
-  // Resolve the gradient once per render; the cost is a Record lookup,
-  // not enough to justify memoization. Inline `--sky-top` / `--sky-bottom`
-  // get consumed by the CSS module on the .sky element.
   const sky = gradientFor(occasion)
-  /* Size to the tallest flower, never a constant: stems run to 160 and a fixed plot clips the
-     heads. `flowerBoxHeight` is the one number the plot and the flower both use. */
+  /* Size to the tallest flower, never a constant: stems run to 160 and a fixed plot clips the heads. */
   const gardenHeight = Math.max(GARDEN_MIN_HEIGHT, ...flowers.map(flowerBoxHeight))
   const hour = ritualTime(now)
   const time = TIME_SKY[hour]
@@ -335,8 +232,8 @@ export default function GardenScene({
   }
   const [bloomedCount, setBloomedCount] = useState(0)
   const placed = placeFlowers(flowers)
-  /* Escape closes the panel, and focus returns to the flower that opened it so tabbing carries on
-     from there rather than restarting at the top of the page. */
+  /* Focus returns to the flower that opened the panel, so tabbing carries on from there rather
+     than restarting at the top of the page. */
   const slotRefs = useRef<Array<HTMLButtonElement | null>>([])
   const closeAndRestoreFocus = useCallback(() => {
     const previous = focused
@@ -346,33 +243,17 @@ export default function GardenScene({
 
   const aura = auraFor(mood)
 
-  /*
-   * Which flower the bee is heading for.
-   *
-   * A destination index plus a CSS transition, rather than a keyframe path: the number of flowers
-   * varies from three to five, so any hand-authored @keyframes would be wrong for most gardens.
-   * This way the route is always exactly the flowers that are actually there.
-   *
-   * Only after everything has bloomed. A bee arriving mid-bloom would be competing with the one
-   * thing the recipient is meant to be watching.
-   */
+  /* A destination index plus a CSS transition, not a keyframe path: the flower count varies from
+     three to five, so hand-authored @keyframes would be wrong for most gardens. */
   const [beeAt, setBeeAt] = useState(0)
   const beeFlying = autoBloom && placed.length > 0 && bloomedCount >= placed.length && !prefersReducedMotion()
   useEffect(() => {
     if (!beeFlying) return
-    // Uneven dwell: a fixed interval reads as a machine on a track. Prime-ish numbers so the bee
-    // never falls into step with the flowers' sway.
+    // Uneven dwell, on prime-ish numbers, so the bee never falls into step with the flowers' sway.
     const t = setInterval(() => setBeeAt((i) => (i + 1) % placed.length), 3700)
     return () => clearInterval(t)
   }, [beeFlying, placed.length])
 
-  /*
-   * The watering: drops fall, then every flower perks up.
-   *
-   * Held as on/off state rather than derived straight from `wateredAt` because a CSS animation only
-   * replays when the class goes away and comes back. Turning it off after a second does that, and
-   * also means the drop layer isn't sitting in the tree for the rest of the visit.
-   */
   const [perking, setPerking] = useState(false)
   useEffect(() => {
     if (!wateredAt || prefersReducedMotion()) return
@@ -381,10 +262,8 @@ export default function GardenScene({
     return () => clearTimeout(t)
   }, [wateredAt])
 
-  // Re-keying GardenScene from the parent (key prop) is the right way
-  // to reset the bloom — the cleanup function makes this effect
-  // idempotent (timers from a prior run are torn down before a new
-  // run schedules its own).
+  // The cleanup makes this idempotent: timers from a prior run are torn down before a new run
+  // schedules its own.
   const flowerSig = flowers.map((f) => f.name).join('|')
 
   useEffect(() => {
@@ -401,9 +280,6 @@ export default function GardenScene({
         }
         setBloomedCount((prev) => {
           const next = prev + 1
-          // Hold the moment after the last flower blooms before the
-          // legend + message start fading in. The bloom is the
-          // emotional peak — letting it breathe makes it land.
           if (next === placed.length && onAllBloomed) {
             setTimeout(onAllBloomed, BLOOM_HOLD_MS)
           }
@@ -416,9 +292,6 @@ export default function GardenScene({
     return () => timers.forEach(clearTimeout)
   }, [autoBloom, flowerSig, placed.length, onAllBloomed, silent])
 
-  // Drift petals. Only rendered when there are flowers and the scene
-  // is allowed to bloom — re-keyed by flowerSig so the animations
-  // restart from 0 on every new garden.
   const drifters =
     autoBloom && flowers.length > 0
       ? PETAL_DRIFTERS.map((cfg, i) => {
@@ -431,39 +304,12 @@ export default function GardenScene({
         })
       : []
 
-  // Empty-state teaser: a single sprout that grows and retracts on a
-  // gentle loop. Sits in the same plot the eventual flowers will fill,
-  // so the visual story is "this place is waiting for something"
-  // instead of "loading" → "boom flowers." Hidden as soon as real
-  // flowers arrive.
   const showGhostSprout = flowers.length === 0
 
-  // Scroll parallax. Petals lag behind content scroll — as the user
-  // moves down the recipient view to read the note, the petal layer
-  // drifts upward at ~25% of scroll speed. Implementation:
-  //
-  //   1. Passive scroll listener (no event-handler perf hit).
-  //   2. requestAnimationFrame coalesces repeated scroll events into
-  //      one DOM mutation per frame (max 60Hz).
-  //   3. Updates a single CSS custom property; the .petalLayer
-  //      consumes it via transform. One write per frame, no React
-  //      re-renders, no Layout/Paint cost beyond the GPU composite.
-  //
-  // Honors prefers-reduced-motion by skipping the listener entirely;
-  // the CSS variable stays at its 0 fallback so the petals don't move.
+  // Skipped entirely under reduced motion. The CSS variable stays at its 0 fallback, so the
+  // petals hold still rather than snapping.
   const sceneRef = useRef<HTMLDivElement>(null)
 
-  /*
-   * Depth, from wherever the visitor is pointing.
-   *
-   * Layers move at different rates against the pointer, which is what puts air between them.
-   *
-   * Two gotchas. Write straight to the element as CSS variables, never state: a pointermove that
-   * re-renders four flowers every frame drops frames. And read the ref lazily inside the handler,
-   * because `sceneRef.current` is null at effect time and an empty dep list never looks again.
-   *
-   * Coarse pointers and reduced motion get nothing; the layers stay where they were drawn.
-   */
   useEffect(() => {
     if (prefersReducedMotion()) return
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
@@ -499,12 +345,12 @@ export default function GardenScene({
       sceneRef.current?.style.setProperty('--scroll-y', `${window.scrollY}px`)
     }
     const onScroll = () => {
-      // Coalesce: ignore further events until the next frame runs.
       if (raf) return
       raf = requestAnimationFrame(apply)
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    apply() // sync initial position (handles refresh-mid-page case)
+    // Sync the initial position, so a refresh partway down the page does not start the layer at 0.
+    apply()
 
     return () => {
       window.removeEventListener('scroll', onScroll)
@@ -514,8 +360,7 @@ export default function GardenScene({
 
   return (
     <div
-      // Compact only ever applies to an empty plot; a scene with flowers in it always gets full
-      // height, so a garden can never be cropped by a stale flag.
+      // Compact only ever applies to an empty plot, so a stale flag can never crop a real garden.
       className={compact && flowers.length === 0 ? `${styles.scene} ${styles.sceneCompact}` : styles.scene}
       ref={sceneRef}
       style={sceneStyle}
@@ -566,15 +411,8 @@ export default function GardenScene({
         {beeFlying &&
           (() => {
             const target = placed[beeAt % placed.length]!
-            /*
-             * Height comes from the flower, not a constant.
-             *
-             * `bottom: 62%` looked right on whichever garden I happened to be testing and was wrong
-             * everywhere else: stems run from 70 to 115, so a fixed height leaves the bee hovering
-             * below the tall flowers and above the short ones. FlowerSVG draws a head 30px down from
-             * the top of a (stemHeight + 80) box anchored at the soil, so the head sits
-             * `stemHeight + 50` above the bottom. Minus half the bee to centre it on the head.
-             */
+            /* Height comes from the flower, not a constant. A fixed `bottom: 62%` fits whichever garden you
+               happen to be testing and clips the rest. */
             const headUp = flowerHeadOffset(target.spec) - 8
             return (
               <div
@@ -586,8 +424,6 @@ export default function GardenScene({
               </div>
             )
           })()}
-        {/* One drop per flower, aimed at that flower's own column, so it reads as watering these
-            flowers rather than as weather. Keyed on the count so a second watering replays it. */}
         {perking && (
           <div className={styles.dropLayer} key={wateredAt} aria-hidden>
             {placed.map((p, i) => (
@@ -600,15 +436,8 @@ export default function GardenScene({
           </div>
         )}
         {placed.map((p, i) => {
-          /*
-           * A flower is only a control once it has actually bloomed.
-           *
-           * The slots are in the DOM from the start so the bloom has something to animate, but until
-           * `bloomed` they draw nothing. Leaving them interactive puts invisible buttons over a
-           * sealed garden, and hovering one reads out a flower's name before the recipient has
-           * opened anything. Disabled rather than unmounted: swapping the element out would remount
-           * it and restart the bloom it is waiting for.
-           */
+          /* A flower is only a control once it has bloomed. The slots are in the DOM from the start so
+             the bloom has something to animate, so they stay disabled and aria-hidden until then. */
           const revealed = i < bloomedCount
           return (
             <button
@@ -629,8 +458,8 @@ export default function GardenScene({
                     ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
                     : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
               }
-              // Focused flowers come forward, so a lifted flower is never behind its neighbour.
-              // The perk waits out its own drop's fall, so each flower answers the water that hit it.
+              // Focused flowers come forward, so a lifted flower is never behind its neighbour. The perk
+              // waits out its own drop's fall, so each flower answers the water that hit it.
               style={{
                 left: `${p.left}%`,
                 // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
@@ -641,8 +470,8 @@ export default function GardenScene({
               title={p.spec.name}
               onMouseEnter={revealed ? () => onFocus?.(i) : undefined}
               onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
-              // Touch has no hover, and this is mostly opened on a phone: a tap picks a flower and
-              // tapping it again lets go, so the link is reachable without a mouse.
+              // Touch has no hover and this is mostly opened on a phone: tap to pick, tap again to let go,
+              // so the link is reachable without a mouse.
               onClick={revealed ? () => onFocus?.(focused === i ? null : i) : undefined}
             >
               <FlowerSVG flower={p.spec} index={i} bloomed={revealed} swayDelay={i} />
@@ -678,9 +507,6 @@ export default function GardenScene({
         <SoilLine />
         <div className={styles.groundBase} />
       </div>
-      {/* Drift layer sits on top of the ground but its petals are
-          small enough not to obscure the flowers. Pointer-events:none
-          via the class so it doesn't catch clicks. */}
       {drifters.length > 0 && (
         <div className={styles.petalLayer} aria-hidden>
           {drifters.map((p) => (

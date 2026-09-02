@@ -9,9 +9,7 @@
 
 .header {
   text-align: center;
-  /* Clear the fixed account nav pill (AuthNav, top:14 + ~30px tall). On mobile its "your gardens /
-     name / sign out" pill is wide enough to sit over this centered title, so keep the heading below
-     it. */
+  /* Clear the fixed account nav pill. On mobile its row spans most of the top. */
   padding-top: 2.75rem;
 }
 
@@ -34,7 +32,6 @@
   line-height: 1.5;
 }
 
-/* --- Empty state --- */
 .empty {
   display: flex;
   flex-direction: column;
@@ -50,15 +47,8 @@
   color: var(--text-mid);
 }
 
-/*
- * A <button> sitting inline inside a sentence, so it needs the full reset. Without it the user
- * agent's defaults come through and "sign in" renders as a little grey box with a border, in the
- * browser's default sans at 14px, in the middle of a serif line. It looked like a broken widget
- * rather than a link.
- *
- * `font: inherit` is the part that's easy to forget and does the most work: it picks up the
- * surrounding serif and its size, so the link sits in the sentence instead of interrupting it.
- */
+/* A <button> sitting inline inside a sentence, so it needs the full reset. Without it the user
+   agent's button styling breaks the line it sits in. */
 .emptyLink {
   border: none;
   background: none;
@@ -70,9 +60,6 @@
   text-underline-offset: 3px;
 }
 
-/* A quiet utility field: it helps once a collection grows, but stays visually lighter than the
-   gardens themselves. The clear action lives inside the field so mobile users don't need to hunt
-   for a tiny reset icon. */
 .search {
   display: flex;
   align-items: center;
@@ -170,8 +157,6 @@
   border: 0;
 }
 
-/* A quiet resurfacing card, built from the archive's own colors. It gives a mature collection an
-   emotional entry point without making the list into a dashboard or inventing engagement stats. */
 .memoryLane {
   position: relative;
   overflow: hidden;
@@ -206,8 +191,6 @@
   flex: 0 0 44px;
 }
 
-/* The hand-placed cluster keeps its arrangement; only what sits at each spot changed, from a
-   coloured blob to the drawn flower the cards below it now use. */
 .memoryBouquet span {
   position: absolute;
   width: 22px;
@@ -400,7 +383,6 @@
   opacity: 0.65;
 }
 
-/* --- List --- */
 .list {
   list-style: none;
   display: flex;
@@ -427,8 +409,6 @@
   box-shadow: 0 4px 16px rgba(45, 90, 27, 0.08);
 }
 
-/* Tappable main region — swatches + text. The whole left side is the
-   link to the recipient view; actions on the right are separate. */
 .cardMain {
   display: flex;
   align-items: center;
@@ -444,9 +424,6 @@
   flex-shrink: 0;
 }
 
-/* Overlapping heads — a tiny bouquet thumbnail. The negative margin tucks each behind the previous
-   so a 5-flower row stays compact. These were plain colour circles; every other surface in the app
-   draws the flower, so the archive was the one place a garden was described rather than shown. */
 .swatch {
   width: 24px;
   height: 24px;
@@ -484,8 +461,7 @@
   color: var(--text-light);
 }
 
-/* Separator dots between meta chips, drawn with ::before so we don't
-   need separator spans in the markup. */
+/* Separator dots drawn with ::before, so the markup needs no separator spans. */
 .meta > span:not(:first-child)::before {
   content: '·';
   margin-right: 0.4rem;
@@ -495,7 +471,6 @@
   color: var(--soil);
 }
 
-/* --- Actions --- */
 .cardActions {
   display: flex;
   flex-direction: column;
@@ -561,7 +536,6 @@
   color: var(--soil-dark);
 }
 
-/* --- Footer --- */
 .footer {
   margin-top: 18px;
   padding-top: 18px;
@@ -585,8 +559,6 @@
     padding: 1.5rem 1rem 3rem;
   }
 
-  /* Stack actions horizontally under the text on narrow screens so the
-     card doesn't get too tall. */
   .card {
     flex-wrap: wrap;
   }
@@ -612,7 +584,6 @@
   }
 }
 
-/* Sent / Received tabs (account view). */
 .tabs {
   display: flex;
   gap: 8px;
@@ -645,16 +616,11 @@
   color: var(--cream);
 }
 
-/* The one thing on a sent-garden card that came back from the other person, so it gets the accent
-   rather than the muted meta grey the date and occasion use. */
 .watered {
   color: var(--green-mid);
   font-weight: 500;
 }
 
-/* Holds the waiting bed on the empty archive. Narrower than the page so it reads as one small
-   drawing rather than a header image, and capped so the desktop plot zoom cannot make it the
-   loudest thing on a page whose subject is a sentence. */
 .emptyPlot {
   width: min(100%, 320px);
   margin-bottom: 0.5rem;

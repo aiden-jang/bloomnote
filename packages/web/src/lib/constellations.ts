@@ -1,30 +1,18 @@
 import type { FlowerJournalEntry } from './flowerJournal'
 
-/**
- * People, places and feelings that recur across journal entries.
- *
- * Pure and local, never an AI call: sending somebody's private journal to a server to learn that it
- * mentions their mother is a bad trade at any accuracy. Two entries minimum, which also filters noise.
- */
-
 export type ConstellationKind = 'person' | 'place' | 'feeling'
 
 export interface Constellation {
-  /** Lowercased key used for grouping. */
   key: string
-  /** What to show: the spelling as it appeared, capitalised for people and places. */
   label: string
   kind: ConstellationKind
-  /** Journal entry ids this appears in, newest first. Always length >= 2. */
   entryIds: string[]
-  /** Distinct entries, which is the number worth showing. Not a streak: it counts subjects, not days. */
+  /** Distinct entries. Not a streak: it counts subjects, not days. */
   entryCount: number
-  /** When it last came up, for ordering by what is live rather than by what is biggest. */
   lastSeenAt: string
 }
 
-/** A closed list, not sentiment scoring: the job is "does this feeling recur", not "is this positive".
- *  Includes the unglamorous ones, or it is no use on the days somebody most needs to look back. */
+/** A closed list, not sentiment scoring: the job is "does this feeling recur". */
 const FEELINGS = [
   'happy',
   'sad',
@@ -62,8 +50,7 @@ const FEELINGS = [
   'better',
 ] as const
 
-/** "tiredness" and "exhausted" are one thread; split, they never reach the two-entry floor. A map
- *  rather than a stemmer, which on 34 words is more machinery and more surprises than the list. */
+/** "tiredness" and "exhausted" are one thread; split, they never reach the two-entry floor. */
 const FEELING_FORMS: Record<string, string> = {
   happiness: 'happy',
   sadness: 'sad',
@@ -96,10 +83,8 @@ const FEELING_FORMS: Record<string, string> = {
   worry: 'anxious',
 }
 
-/**
- * Don't use sentence position instead: rejecting sentence-openers threw away "Nadia called." and "Theo
- * again.", which is how people write. A missed thread is invisible; a wrong one is filtered by recurrence.
- */
+/** Don't use sentence position instead. Rejecting sentence-openers threw away "Nadia called.",
+    which is exactly the mention worth catching. */
 const NOT_A_NAME = new Set([
   'i',
   'the',
@@ -164,7 +149,6 @@ const NOT_A_NAME = new Set([
   'okay',
   'yes',
   'no',
-  // Sentence openers, which is where a capital is least informative.
   'suddenly',
   'honestly',
   'finally',
@@ -247,12 +231,11 @@ export function mentionsIn(entry: FlowerJournalEntry): Mention[] {
     if (!found.has(`${mention.kind}:${mention.key}`)) found.set(`${mention.kind}:${mention.key}`, mention)
   }
 
-  // The sender is a name we actually know, rather than one guessed from capitalisation.
   const from = entry.from?.trim()
   if (from) add({ key: from.toLowerCase(), label: from, kind: 'person' })
 
-  // Split into sentences anyway: the preposition that marks a place has to be the word before, within
-  // the same sentence, or "...at the shop. Nadia called." would read Nadia as a place.
+  // Split into sentences anyway: the preposition marking a place has to be the word before within
+  // the same sentence, or "...at the shop. Nadia called." reads Nadia as a place.
   const sentences = entry.memory.split(/(?<=[.!?])\s+|\n+/)
   for (const sentence of sentences) {
     const tokens = sentence.split(/\s+/).map(cleanToken).filter(Boolean)
@@ -282,7 +265,7 @@ export function mentionsIn(entry: FlowerJournalEntry): Mention[] {
 /** How many entries a thing has to appear in before it counts as a thread rather than a word. */
 export const MIN_ENTRIES = 2
 
-/** Recency before size: "what has been on my mind", not an all-time chart, which reads as an archive. */
+/** Recency before size: "what has been on my mind", not an all-time chart. */
 export function constellations(entries: FlowerJournalEntry[], minEntries = MIN_ENTRIES): Constellation[] {
   const groups = new Map<string, { label: string; kind: ConstellationKind; ids: Map<string, string> }>()
 

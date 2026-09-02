@@ -1,12 +1,3 @@
-/*
- * Ordering, filtering and pinning for the "your gardens" archive.
- *
- * All pure except the two storage calls, which are the same best-effort shape as everywhere
- * else in this app: pinning is an on-device convenience and must never stop the archive
- * rendering.
- */
-
-/** The subset of a garden the archive list needs. */
 export interface CardData {
   id: string
   from?: string | undefined
@@ -35,19 +26,11 @@ export function readPinnedGardens(): string[] {
 export function writePinnedGardens(ids: string[]): void {
   try {
     window.localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids))
-  } catch {
-    // See readPinnedGardens.
-  }
+  } catch {}
 }
 
-/**
- * Pinned first, then the chosen sort.
- *
- * Pinning always outranks the sort: someone who pinned a garden wants it at the top, and having
- * it slide away when they change the sort would read as the pin not working. Sorting by watered
- * still falls back to date, so gardens nobody has watered keep a stable order instead of
- * shuffling on every render.
- */
+/** Pinned first, then the chosen sort. Pinning always outranks the sort, so a pinned garden
+    never slides away when the sort changes. */
 export function orderGardens<T extends CardData>(
   gardens: T[],
   pinned: string[],

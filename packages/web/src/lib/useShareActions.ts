@@ -3,14 +3,6 @@ import type { FlowerSpec } from '../garden'
 import { saveGardenImage } from './gardenImage'
 import { trackCardDownloaded, trackShareLinkCopied, trackShareLinkShared } from './analytics'
 
-/**
- * Getting a finished garden out of the app: copy the link, hand it to the OS share sheet, or
- * save the card as a PNG.
- *
- * Every path here is best-effort and ends somewhere useful. A person who has just written a note
- * to someone must never be told that sharing it failed, so a cancelled share sheet, a rejected
- * clipboard and a canvas that will not rasterize all leave the Copy button working.
- */
 export interface ShareActions {
   copied: boolean
   shareStatus: 'sharing' | 'shared' | null
@@ -33,8 +25,8 @@ export function useShareActions(
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | null>(null)
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
 
-  // Detected in an effect, not at render: `typeof navigator` can throw under some SSR
-  // pre-renders, and a share button that does nothing is worse than no button.
+  // Detected in an effect, not at render: `typeof navigator` can throw under some SSR pre-renders,
+  // and a share button that does nothing is worse than no button.
   const [canShare, setCanShare] = useState(false)
   useEffect(() => {
     setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')

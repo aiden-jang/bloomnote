@@ -42,27 +42,13 @@ import {
 import { buildMineRecord, charCountTierClass, classifyError } from '../lib/composerHelpers'
 import { useShareActions } from '../lib/useShareActions'
 
-// Two phases instead of four. The message is the input; the garden +
-// share link are the output. No second-phase "now add a message" step,
-// because the message is already there.
-/* Enough of a note that the model has something to work from. Named so the copy under the
-   disabled button and the rule that disables it cannot drift apart. */
+// Keep this in step with the copy under the disabled button and the rule that disables it.
 const MIN_MESSAGE_CHARS = 4
 
 type Phase = 'idle' | 'designing' | 'designed'
 
-/**
- * How long each demo garden holds in the homepage hero before the next one grows.
- *
- * Long enough to be looked at rather than watched: the bloom itself takes ~1.5s (three flowers
- * at BLOOM_STAGGER_MS apart, plus the petal pop), so this leaves several seconds of stillness.
- * Shorter and the hero reads as an animation demanding attention, which is the opposite of the
- * calm this app is going for.
- */
 const DEMO_CYCLE_MS = 7000
 
-// Rotated through while the model is thinking (the longest part of the wait), so a multi-second
-// generation feels like the garden is being made rather than a spinner hanging. Lowercase to match.
 const THINKING_MESSAGES = [
   'reading between the lines…',
   'choosing flowers…',
@@ -72,17 +58,13 @@ const THINKING_MESSAGES = [
 ]
 
 interface ComposerProps {
-  /** Optional remix seed; when present, the composer renders in
-   *  reply mode (From/To pre-filled inverse, original shown as
-   *  thread context, generated garden carries `previous`). */
   remixSeed?: GardenData | undefined
 }
 
 export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [phase, setPhase] = useState<Phase>('idle')
-  // Read once on mount. sessionStorage is intentionally scoped to this tab,
-  // so an accidental refresh restores the thought in progress without making
-  // it a permanent, cross-device archive of a private message.
+  // sessionStorage, not localStorage: a refresh should restore the note in progress, but a
+  // private message must not become a permanent cross-device archive.
   const [recoveredDraft] = useState<Draft | null>(() => readStoredDraft())
   const [showRecoveredDraft, setShowRecoveredDraft] = useState(() => recoveredDraft !== null)
   const storageKeyRef = useRef(draftStorageKey())
@@ -91,25 +73,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     try {
       removeStoredDraft(storageKeyRef.current)
     } catch {
-      // Storage is best-effort; never make a local cleanup block the flow.
+      // Best-effort. A storage failure must never block the flow.
     }
   }, [])
 
-  // Restoration should be legible, but it does not need to become another
-  // piece of UI to dismiss. A short confirmation answers "why is this filled
-  // in?" and then leaves the note to be the focus again.
   useEffect(() => {
     if (!showRecoveredDraft) return
     const t = window.setTimeout(() => setShowRecoveredDraft(false), 5000)
     return () => window.clearTimeout(t)
   }, [showRecoveredDraft])
 
-  // Initial input values are computed once at mount.
-  //   - In remix mode, pre-fill From/To from the inverse of the seed
-  //     (we're replying, so the original sender becomes our recipient).
-  //   - Otherwise, blank slate.
-  // A matching tab-local recovery draft takes precedence over either
-  // default. It expires with the tab, so a new visit still starts fresh.
   const initialInputs = useMemo(() => {
     const base = { occasion: DEFAULT_OCCASION, mood: DEFAULT_MOOD, secret: '' }
     if (recoveredDraft) {
@@ -138,53 +111,30 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [message, setMessage] = useState(initialInputs.message)
   const [secret, setSecret] = useState(initialInputs.secret)
   const [occasion, setOccasion] = useState(initialInputs.occasion)
-  // Keyed on occasion only: re-reading the clock on every render would let the copy change under
+  // Keyed on occasion only. Re-reading the clock every render would change the copy under
   // somebody who happens to be writing at 11:59.
   const [ritualAt] = useState(() => new Date())
   const todaysRitual = useMemo(() => ritual(occasion, ritualAt), [occasion, ritualAt])
   const [mood, setMood] = useState(initialInputs.mood)
-  // Curated example that follows the selected occasion + mood, so the empty
-  // field previews the kind of note those choices suggest.
   const placeholder = placeholderFor(occasion, mood)
   const promptOptions = useMemo(() => placeholderOptions(occasion, mood), [occasion, mood])
   const [promptIndex, setPromptIndex] = useState(0)
   const writingPrompt = promptOptions[promptIndex % promptOptions.length] ?? placeholder
-  // A fresh occasion or mood deserves its own first idea. Without this, rotating through a birthday
-  // prompt and then choosing "thank you" could land on an arbitrary later thank-you variant, which
-  // makes the helper feel random instead of responsive to the choice they just made.
   useEffect(() => setPromptIndex(0), [occasion, mood])
 
-  // How many gardens this device has sent — gates the "your gardens"
-  // footer link so it never shows for a first-time visitor with an
-  // empty archive. Seeded from storage at mount and bumped after each
-  // successful design (re-rolls update in place, so they don't change
-  // the count).
   const [mineCount, setMineCount] = useState(() => countSentGardens())
 
-  // Time capsule: opt-in scheduled delivery. The UI is collapsed by
-  // default ("send now") so first-time users aren't asked to think
-  // about scheduling. When expanded, the datetime-local input lets
-  // them pick a future moment — we validate it's at least a minute
-  // ahead so a misclick doesn't ship an already-unlocked capsule.
-  //
-  // Value stored as local-datetime string (the format <input
-  // type="datetime-local"> emits, e.g. "2026-09-15T14:30"). We
-  // convert to ISO 8601 UTC at submit time.
   const [scheduleOpen, setScheduleOpen] = useState(() => recoveredDraft?.scheduleOpen ?? false)
   const [unlockLocal, setUnlockLocal] = useState(() => recoveredDraft?.unlockLocal ?? '')
 
-  // Streaming progress.
   const [statusText, setStatusText] = useState<string>('')
   const [thinking, setThinking] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
-  // Guards against a double-tap firing two generations: the button doesn't unmount until the view
-  // transition swaps the DOM, so without this a fast second tap runs designGarden twice.
+  // The button doesn't unmount until the view transition swaps the DOM, so without this a
+  // fast second tap runs designGarden twice.
   const designingRef = useRef(false)
-  // Same idea for save-as-image: don't open two share sheets / two downloads on a double-tap.
 
-  // While the model is thinking, cycle the status line so the wait feels alive. Cleanup stops it
-  // when thinking ends (or the component unmounts).
   useEffect(() => {
     if (!thinking) return
     let i = 0
@@ -196,42 +146,24 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     return () => clearInterval(id)
   }, [thinking])
 
-  // Safety net: any exit from the designing phase (success, error, cancel) stops the rotation.
   useEffect(() => {
     if (phase !== 'designing') setThinking(false)
   }, [phase])
 
-  // Re-roll state. Counts how many times the user regenerated the
-  // current garden — feeds the analytics event and (when truthy)
-  // gates the inline "regenerating…" status so the share card doesn't
-  // disappear during the round-trip. Resets to 0 on every fresh
-  // design (handleDesign) and on handleStartOver.
   const [rerollAttempt, setRerollAttempt] = useState(0)
   const [isRerolling, setIsRerolling] = useState(false)
 
-  // Clear-draft undo. When the user clears, we keep a snapshot for a
-  // few seconds so they can undo without confirmation dialogs.
   const [undoDraft, setUndoDraft] = useState<Draft | null>(null)
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Design result + share state. The scene starts empty — we don't
-  // preview placeholder flowers anymore, because they set the wrong
-  // expectation for what the AI will produce.
   const [garden, setGarden] = useState<DesignResult | null>(null)
   const [flowers, setFlowers] = useState<FlowerSpec[]>([])
   const [shareUrl, setShareUrl] = useState<string | null>(null)
-  // The short ID is captured separately from the (potentially shortened) display share URL —
-  // it's used to record the garden in the on-device archive / account. Clearer as its own
-  // piece of state than a regex over shareUrl.
   const [gardenId, setGardenId] = useState<string | null>(null)
   const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
-  // Web Share API is mobile + modern desktop Safari only. We detect on
 
-  // Every generated garden gets a fresh sealed aside in the sender preview, including re-rolls.
   useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
 
-  // Auto-focus the message textarea on remix mount — From/To are
-  // pre-filled, so the natural cursor target is the empty note field.
   const messageRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     if (remixSeed && messageRef.current) {
@@ -239,16 +171,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     }
   }, [remixSeed])
 
-  // Mobile keyboard handling. On iOS Safari, focusing the textarea
-  // slides the virtual keyboard up — and frequently covers the
-  // bottom half of the field the user just tapped. The browser's
-  // own scroll-on-focus heuristic isn't reliable across versions.
-  //
-  // Fix: on focus, schedule a scrollIntoView(center) 300ms later —
-  // enough for the keyboard's slide animation to complete so the
-  // browser knows the new viewport height. The behavior is benign
-  // on desktop (block: 'center' is a no-op when the element is
-  // already in view).
+  // iOS Safari slides the keyboard over the field the user just tapped, and its own
+  // scroll-on-focus is unreliable. Wait out the slide animation before scrolling, or the
+  // browser measures the old viewport height.
   useEffect(() => {
     const ta = messageRef.current
     if (!ta) return
@@ -261,56 +186,31 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     return () => ta.removeEventListener('focus', onFocus)
   }, [])
 
-  // Analytics: composer opened. Fired once per mount so we get an
-  // accurate "fresh vs remix landing" split. StrictMode double-mounts
-  // in dev would inflate this by 2x — that's tolerable noise because
-  // production doesn't double-mount.
   useEffect(() => {
     trackComposerOpened(remixSeed ? 'remix' : 'fresh')
   }, [remixSeed])
 
-  // Live validation for the schedule input. Returns null when fine,
-  // a user-facing string when not. Three states matter:
-  //   - schedule closed → always valid (no input to check)
-  //   - schedule open but no value picked → "pick a time" feedback
-  //     (returned only after the user has touched the field, to avoid
-  //     yelling at them the instant they expand the picker)
-  //   - schedule open with a past value → hard error
-  //
-  // The 30-second grace window matches the server-side check in
-  // handleDesign so "I picked 2:00 and submitted at 1:59:58" doesn't
-  // disagree between the UI guard and the server. Without that grace
-  // window, a user could pick a time, sit on the page for the few
-  // seconds it takes for it to pass, and silently drop the schedule.
+  // The 30-second grace has to match handleDesign and the server. Without it, picking a time
+  // and then sitting on the page for a few seconds drops the schedule silently.
   const scheduleError: string | null = (() => {
     if (!scheduleOpen) return null
-    if (!unlockLocal) return null // empty is "not yet decided", not an error
+    // Empty is "not yet decided", not an error. Without this the picker complains the moment it opens.
+    if (!unlockLocal) return null
     const t = new Date(unlockLocal).getTime()
     if (!Number.isFinite(t)) return 'that time looks malformed.'
     if (t <= Date.now() + 30_000) return 'that time has already passed. pick something in the future.'
     return null
   })()
 
-  // One source of truth for "can we submit — and if not, why not?" The
-  // reason renders under the button so a disabled control always explains
-  // itself, and `canSubmit` is just "nothing is blocking it." Ordered by
-  // what to fix first: the core inputs (To + message), then the schedule.
-  // ("From" is optional, so it's never a blocker.)
   const disabledReason: string | null = (() => {
     const noRecipient = recipient.trim().length < 1
     const written = message.trim().length
     const noMessage = written < MIN_MESSAGE_CHARS
-    // Somebody who has already typed can see that they typed, so "write them a note first" reads
-    // as a bug rather than a rule. Once the field has anything in it, say what is missing.
     const startedWriting = written > 0
     if (noRecipient && noMessage && !startedWriting) return 'add who it’s for and a message to get started'
     if (noRecipient && noMessage) return 'add who it’s for, and a few more words'
     if (noRecipient) return 'add who it’s for in the “to” field'
     if (noMessage) return startedWriting ? 'a few more words and it’s ready' : 'write them a note first'
-    // Past/malformed schedule time: the picker shows the specifics inline,
-    // so point back to it rather than repeating its sentence here. (An
-    // empty unlockLocal keeps scheduleError null — that's the next case,
-    // where the picker is open but nothing's been chosen yet.)
     if (scheduleError) return 'fix the scheduled time above'
     if (scheduleOpen && unlockLocal === '') {
       return 'pick a date & time above to schedule, or hit cancel to send now'
@@ -318,7 +218,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     return null
   })()
 
-  /* Start the PNG now: the tap that shares it must not wait on a render (see prewarmGardenImage). */
+  /* Start the PNG now: the tap that shares it must not wait on a render. */
   useEffect(() => {
     if (phase !== 'designed' || flowers.length === 0) return
     prewarmGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
@@ -327,15 +227,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const canSubmit = disabledReason === null
   const forecast = useMemo(() => gardenForecast(message, mood, occasion), [message, mood, occasion])
 
-  // Assemble the persisted garden record from a fresh design result plus
-  // the current form state. Shared by the initial design and re-roll so
-  // the two can't drift on schedule handling or reply-thread depth.
   const buildGardenData = useCallback(
     (result: DesignResult): GardenData => {
-      // Convert the optional schedule input to a UTC ISO string, clamping
-      // out past values (user picked a time, then sat on the page until it
-      // passed — an already-unlocked capsule would be a confusing no-op).
-      // The 30-second grace matches the server-side check.
+      // Clamp a time that has already passed, or the capsule ships already unlocked. The
+      // 30-second grace matches the server.
       let unlockAt: string | undefined
       if (scheduleOpen && unlockLocal) {
         const t = new Date(unlockLocal).getTime()
@@ -343,9 +238,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           unlockAt = new Date(t).toISOString()
         }
       }
-      // Depth-cap replies at 1: strip `previous` from the seed before
-      // attaching it, so a long thread doesn't nest N gardens deep. The
-      // recipient view only renders one level back anyway.
+      // Cap reply depth at 1. The recipient view only renders one level back, and without the
+      // strip a long thread nests a garden per reply.
       const seedForPrevious = remixSeed ? { ...remixSeed, previous: undefined } : undefined
       return {
         flowers: result.flowers,
@@ -354,12 +248,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         ...(secret.trim() ? { secret: secret.trim() } : {}),
         from: from.trim(),
         to: recipient.trim(),
-        // Stamp when the sender hit "Grow their garden" — shows up on the
-        // recipient's view as a card-like "Grown {date}" line.
         createdAt: new Date().toISOString(),
         unlockAt,
-        // Persist occasion + mood so the recipient view can shift its sky
-        // gradient (and future mood-driven UI) to match the sender's choice.
         occasion,
         mood,
         previous: seedForPrevious,
@@ -371,11 +261,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const handleDesign = useCallback(async () => {
     if (!canSubmit || designingRef.current) return
     designingRef.current = true
-    // Fresh design — clear any prior re-roll counter so analytics
-    // reflect "this user re-rolled N times after THIS specific
-    // generation," not lifetime counts.
     setRerollAttempt(0)
-    // Cross-fade form → designing panel via View Transitions API.
     withViewTransition(() => {
       setPhase('designing')
       setErrorText(null)
@@ -385,8 +271,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     const ctrl = new AbortController()
     abortRef.current = ctrl
 
-    // Captured at the start of the request so we can report total
-    // perceived design latency (model + validation + shortener).
     const startedAt = performance.now()
 
     try {
@@ -397,9 +281,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           recipient: recipient.trim(),
           from: from.trim() || undefined,
           occasion,
-          // 'none' (default) tells the server not to inject any mood
-          // guidance — we send it through verbatim and let the server's
-          // validation decide what to do. Keeps the wire format honest.
           mood,
         },
         {
@@ -412,12 +293,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       const data = buildGardenData(result)
 
-      // POST the garden to our own /api/garden endpoint to get a short
-      // ID back, staying in 'designing' until the round trip completes.
-      //
-      // A failed write surfaces as a clear error rather than degrading to a self-contained URL.
-      // That costs the user the garden they just waited five seconds for, which is bad — but a
-      // share link that silently half-works is worse.
+      // Don't fall back to a self-contained URL here. It costs the user the garden they waited
+      // five seconds for, but a share link that silently half-works is worse.
       setThinking(false)
       setStatusText('wrapping it up…')
 
@@ -431,30 +308,15 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       }
       const finalUrl = buildShareUrl(shortId)
 
-      // The garden is safely stored and shareable now, so the tab-local
-      // writing recovery is no longer useful (and must not resurrect this
-      // note if they later return to the composer).
       clearStoredDraft()
 
-      /*
-       * Render the link-preview card and hand it to the Worker.
-       *
-       * Not awaited. It costs a canvas rasterize and a round trip, and the person is standing in
-       * front of a garden they just made: making them watch a spinner for the benefit of whoever
-       * they send it to would be the wrong trade. If it never finishes, the link unfurls with the
-       * generic card, which is exactly what happened before this existed.
-       */
+      /* Not awaited. It costs a canvas rasterize and a round trip, and nobody should wait on the
+         link preview to get their link. */
       void uploadOgImage(shortId, { flowers: result.flowers, from: from.trim(), to: recipient.trim() })
 
-      // Add to the on-device "your gardens" archive. Best-effort and
-      // fire-and-forget — a storage failure (private mode, quota) never
-      // blocks the share flow.
       recordSentGarden(buildMineRecord(shortId, data))
       setMineCount(countSentGardens())
 
-      // Cross-fade designing panel → designed preview. playSuccess
-      // stays outside the transition so the chime plays at the start
-      // of the visual change, not after it.
       playSuccess()
       withViewTransition(() => {
         setShareUrl(finalUrl)
@@ -463,9 +325,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         setPhase('designed')
       })
 
-      // Funnel event: garden_generated. Includes structural metadata
-      // (occasion, flower count, whether the user provided a name)
-      // but NEVER the note text or names themselves.
+      // Structural metadata only. Never the note text or the names.
       trackGardenGenerated({
         occasion,
         mood,
@@ -485,9 +345,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         setErrorText(msg)
         setPhase('idle')
       })
-      // Coarse error bucket. We classify by error shape rather than
-      // logging the raw message — raw model error text can include
-      // bits of the user's note or internal prompt details.
+      // Bucket by error shape. Raw model error text can carry pieces of the user's note.
       trackGardenError(classifyError(err))
     } finally {
       abortRef.current = null
@@ -499,13 +357,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     abortRef.current?.abort()
   }, [])
 
-  /** Re-roll: regenerate the garden with the same inputs. Stays in
-   *  the designed phase (only the URL pill flips to "regenerating…")
-   *  to avoid losing the user's place. On failure restores the previous
-   *  garden so a bad reroll doesn't discard their first-shot result. */
   const handleReroll = useCallback(async () => {
     if (isRerolling) return
-    // Snapshot the current garden so we can restore on failure.
     const prevGarden = garden
     const prevFlowers = flowers
     const prevShareUrl = shareUrl
@@ -539,17 +392,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         throw new Error("couldn't save the new garden. try again?")
       }
 
-      // Re-point the archive entry at the regenerated garden — same
-      // session, new short ID. Falls back to an insert if the original
-      // entry isn't around (storage cleared mid-session).
-      // A re-roll is a different garden under a new id, so it needs its own card.
       void uploadOgImage(shortId, { flowers: result.flowers, from: from.trim(), to: recipient.trim() })
 
       updateSentGardenId(prevGardenId, buildMineRecord(shortId, data))
 
-      // GardenScene re-keys on flower signature change, so the new
-      // flowers re-bloom from sprout on render. That's the entire
-      // animation — no extra orchestration needed.
+      // No extra orchestration: GardenScene re-keys on the flower signature, so the new flowers
+      // re-bloom from sprout on their own.
       setGarden(result)
       setFlowers(result.flowers)
       setShareUrl(buildShareUrl(shortId))
@@ -563,8 +411,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       })
     } catch (err) {
       if (ctrl.signal.aborted) {
-        // User canceled mid-reroll — restore the snapshot and exit
-        // quietly. No analytics event; this isn't a meaningful action.
         setGarden(prevGarden)
         setFlowers(prevFlowers)
         setShareUrl(prevShareUrl)
@@ -572,8 +418,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         setStatusText('')
         return
       }
-      // Failure: keep the previous garden visible, surface the error
-      // text. The user's first-shot result isn't lost.
       setGarden(prevGarden)
       setFlowers(prevFlowers)
       setShareUrl(prevShareUrl)
@@ -602,10 +446,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   ])
 
   const handleStartOver = useCallback(() => {
-    // Cross-fade designed view → fresh, empty idle form. "Make another"
-    // means "I'm done with this garden, start me clean" — re-typing
-    // is the right default. If you want to tweak the same note and
-    // regenerate, the clear-draft / undo flow is the explicit path.
     clearStoredDraft()
     withViewTransition(() => {
       setPhase('idle')
@@ -625,17 +465,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     trackMakeAnother()
   }, [clearStoredDraft])
 
-  // Only show the clear link when there's something to clear. Trimmed
-  // so "  " in a field doesn't count as draft content.
   const hasDraft =
     from.trim().length > 0 ||
     recipient.trim().length > 0 ||
     message.trim().length > 0 ||
     secret.trim().length > 0
 
-  // Save while the person is writing, not on a debounce that can miss the
-  // last keystroke before a refresh. This is session-only and removed after
-  // a successful garden, a deliberate clear, or "make another."
   useEffect(() => {
     if (phase !== 'idle') return
     if (!hasDraft) {
@@ -654,39 +489,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     })
   }, [phase, hasDraft, from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal])
 
-  /**
-   * The homepage hero used to be an empty plot with a single grey sprout stub in it — 320px of
-   * the largest element above the fold, saying nothing, while the genuinely nice flowers sat in
-   * 90px thumbnails underneath. A visitor's first impression of a product that makes gardens was
-   * a product that makes an empty rectangle.
-   *
-   * So on arrival the plot grows a real garden, cycling through the curated examples. It's the
-   * same scene component the recipient sees, so the homepage now demonstrates the promise in the
-   * subtitle instead of asserting it.
-   *
-   * It clears the moment the visitor starts typing. That reads as the bed being cleared for
-   * them, and it matches what the example carousel below already does on `hasDraft` — the page
-   * folds the demo away as they take over. Their own garden then grows in the same plot.
-   */
   const showDemo = phase === 'idle' && !remixSeed && !hasDraft && flowers.length === 0
   const [demoIndex, setDemoIndex] = useState(0)
-  // Set while the visitor is pointing at (or has focused) an example card, which shows that
-  // garden in the hero. Pausing the cycle matters more than it sounds: without it the plot would
-  // swap out from under someone who deliberately asked to look at one.
   const [previewId, setPreviewId] = useState<string | null>(null)
 
   useEffect(() => {
-    // One garden, held, for anyone who asked for less motion — cycling is the motion here.
     if (!showDemo || previewId || prefersReducedMotion()) return
     const t = setInterval(() => setDemoIndex((i) => (i + 1) % EXAMPLE_GARDENS.length), DEMO_CYCLE_MS)
     return () => clearInterval(t)
   }, [showDemo, previewId])
 
-  /**
-   * Pointing at a card moves the cycle to it rather than overriding it, so letting go doesn't
-   * snap the hero back to whatever was showing before — the visitor keeps looking at the one they
-   * chose, and the cycle simply resumes from there.
-   */
   const handlePreview = useCallback((id: string | null) => {
     setPreviewId(id)
     if (id === null) return
@@ -698,8 +510,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const heroFlowers = showDemo ? demo.flowers : flowers
   const heroOccasion = showDemo ? demo.occasion : occasion
   const heroMood = showDemo ? demo.mood : mood
-  // The waiting sprout gives the otherwise empty preview a gentle sense of response while the
-  // note takes shape. Keep the thresholds coarse: this should reward writing, not become a meter.
   const draftGrowth: 0 | 1 | 2 | 3 = !message.trim()
     ? 0
     : message.trim().length < 40
@@ -708,11 +518,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         ? 2
         : 3
 
-  // Example-carousel pick. Pre-fills every input so the user can hit
-  // "grow their garden" immediately and experience the bloom moment
-  // without typing. Scrolls the message textarea into focus afterward
-  // — they can edit if they want, but the path of least resistance is
-  // already prepared for them.
   const handleExampleSelect = useCallback((g: ExampleGarden) => {
     setFrom(g.from)
     setRecipient(g.to)
@@ -720,36 +525,26 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setSecret('')
     setOccasion(g.occasion)
     setMood(g.mood)
-    // Defer focus to next tick so the value-change DOM updates flush
-    // first. Some browsers refuse to set focus on an element that's
-    // mid-controlled-update.
+    // Next tick: some browsers refuse focus on an element that is mid-controlled-update.
     setTimeout(() => {
       messageRef.current?.focus()
-      // Move cursor to end so they can append/edit naturally.
       const t = messageRef.current
       if (t) t.setSelectionRange(t.value.length, t.value.length)
     }, 0)
   }, [])
 
   const handleClear = useCallback(() => {
-    // Snapshot before wiping so undo works. If a previous undo was
-    // pending, cancel its timer — the new clear takes precedence.
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
 
     const snapshot: Draft = { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal }
     clearStoredDraft()
 
-    // Clearing is a quick local action; no view transition needed.
-    // React batches these updates automatically in an event handler.
     setFrom('')
     setRecipient('')
     setMessage('')
     setSecret('')
     setOccasion(DEFAULT_OCCASION)
     setMood(DEFAULT_MOOD)
-    // Collapse the schedule picker back to "send now" — a cleared form
-    // should look like a fresh one, not leave the time-capsule UI open
-    // with a stale (or empty) pick.
     setScheduleOpen(false)
     setUnlockLocal('')
     setUndoDraft(snapshot)
@@ -777,9 +572,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     setUndoDraft(null)
   }, [undoDraft])
 
-  // Dismiss the toast early without undoing. The clear stands; we just
-  // close the toast and cancel its auto-hide timer so it doesn't fire
-  // against an already-dismissed toast.
   const handleDismissUndo = useCallback(() => {
     if (undoTimerRef.current) {
       clearTimeout(undoTimerRef.current)
@@ -820,25 +612,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       <GardenScene
         flowers={heroFlowers}
         autoBloom
-        // Live-shift the sky as the user changes the occasion picker.
-        // The CSS transition on .sky's background cross-fades the
-        // gradient, so the user sees the atmosphere respond to their
-        // choice within the same composer view — small product win.
         occasion={heroOccasion}
         mood={heroMood}
         silent={showDemo}
         sprouting={phase === 'designing'}
         compact={hasDraft}
         draftGrowth={draftGrowth}
-        // Re-keying restarts the bloom from sprout, which is what makes each demo garden grow in
-        // rather than cut. The demo id has to be part of the key: two examples could otherwise
-        // share a flower-name signature and the second would appear fully grown.
+        // The demo id has to be in the key. Two examples can share a flower-name signature, and
+        // the second would then appear fully grown instead of growing in.
         key={showDemo ? `demo-${demo.id}` : garden ? garden.flowers.map((f) => f.name).join('-') : 'empty'}
       />
 
-      {/* Remix context — shown above the form when the user is replying
-          to a garden they received. Gives them the original thread to
-          glance back at while writing. */}
       {phase === 'idle' && remixSeed && (
         <RemixContext
           previous={remixSeed}
@@ -848,20 +632,12 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'idle' && (
         <>
-          {/* The note comes first because it is the only thing the app actually needs: it is both
-              the message and the design brief, and the tagline above asks for it by name. It used
-              to sit under two names, an occasion and a mood, which put it at y=932 on a 900px
-              screen — the one input this page exists for, below the fold, behind four optional
-              ones. Everything under it refines a garden that this field alone can already grow. */}
           <section className={styles.section}>
-            {/* Actually associated with the field. It read as a label and was not one: no htmlFor, no
-                id, so the one input this page exists for had no accessible name at all, and the only
-                thing standing in for one was a placeholder that rotates between writing prompts. */}
+            /* Actually associated with the field. Without htmlFor and id the one input this page exists for
+            has no accessible name. */
             <label className={styles.label} htmlFor="note">
               your note
             </label>
-            {/* A way in, keyed to the hour and gentler when the occasion is a hard one. Distinct from
-                the placeholder below, which is an example note rather than an invitation. */}
             <p className={styles.ritual}>
               {todaysRitual.invitation}
               {todaysRitual.permission && <span>{todaysRitual.permission}</span>}
@@ -909,20 +685,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             )}
           </section>
 
-          {/*
-            Below the note, not above it.
-            *
-            * This is the second time the note has had to be dug out from under something optional.
-            * The carousel is 200px tall, so sitting above the field put the textarea at y=729 on a
-            * 640px viewport: the one input this page exists for, below the fold, behind a row of
-            * suggestions for not using it.
-            *
-            * It also reads better here. "or steal one of these" is an alternative, and an
-            * alternative only makes sense after the thing it is an alternative to.
-            *
-            * Still folds away via `collapsed` once a draft exists rather than unmounting, so the
-            * form glides rather than snapping, and clearing the draft brings it back.
-          */}
           {!remixSeed && (
             <ExampleCarousel
               onSelect={handleExampleSelect}
@@ -933,9 +695,8 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <div className={styles.nameRow}>
-            {/* htmlFor/id, not adjacency: these labels sit beside their inputs rather than
-                wrapping them, so without the pairing the only name each field has is its
-                placeholder. */}
+            /* htmlFor and id, not adjacency: these labels sit beside their inputs rather than wrapping them,
+            so without the pairing each field's only name is its placeholder. */
             <section className={styles.section}>
               <label className={styles.label} htmlFor="garden-from">
                 from
@@ -980,12 +741,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </div>
           </details>
 
-          {/* Occasion + mood as chip selectors. Occasion is *when*
-              (calendar), mood is *how* (emotional register). Both are
-              optional from the user's perspective (mood defaults to "no
-              mood") but always sent so the AI gets the full signal.
-              Rendered as chips rather than dropdowns so every option is
-              visible at a glance and selecting is a single tap. */}
           <section className={styles.section}>
             <span className={styles.label} id="occasion-label">
               occasion
@@ -1077,8 +832,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </button>
           </div>
 
-          {/* Tell the user why the button is dead, rather than leaving a
-              greyed control they have to puzzle over. See disabledReason. */}
           {disabledReason && (
             <p className={styles.actionHint} aria-live="polite">
               {disabledReason}
@@ -1087,16 +840,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
           {remixSeed && (
             <p className={styles.escape}>
-              {/* href is "/" so the link navigates to the composer
-                  root regardless of which route the user is currently
-                  on (e.g. /r/<encoded>). */}
               <a href="/">or start fresh</a>
             </p>
           )}
 
-          {/* Clear-draft link. Only shows when there's actually
-              something to clear so it doesn't sit there as a dead
-              control on a fresh form. */}
           {!remixSeed && hasDraft && (
             <p className={styles.escape}>
               <button type="button" className={styles.clearBtn} onClick={handleClear}>
@@ -1140,11 +887,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'designed' && garden && shareUrl && (
         <>
-          {/* Preview section — together with the GardenScene above,
-              this renders exactly what the recipient will see when
-              they open the share link, minus their own CTAs. The
-              labeled header sets expectation explicitly so the user
-              doesn't have to wonder "is this what they'll see?" */}
           <p className={styles.previewLabel}>
             {recipient.trim() ? `what ${recipient.trim()} sees` : 'what they see'}
           </p>
@@ -1172,9 +914,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <div className={styles.previewMessage}>
               <p className={styles.previewMessageText}>{message.trim()}</p>
               {from.trim() && <p className={styles.previewSig}>— {from.trim()}</p>}
-              {/* The AI's bouquet rationale, typed out as a postscript on
-                  the note. In the preview it types immediately (start
-                  defaults true) — the composer has no bloom gate. */}
               {garden.bouquetNote && <BouquetNote note={garden.bouquetNote} />}
               {secret.trim() && (
                 <div className={styles.previewSecret}>
@@ -1196,7 +935,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
           <FlowerLegend flowers={garden.flowers} />
 
-          {/* Divider separating "what they'll see" from "how you share it." */}
           <hr className={styles.shareDivider} aria-hidden />
 
           <ShareCard
@@ -1221,10 +959,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </>
       )}
 
-      {/* Attribution + legal live in the shared site Footer (App.tsx). Here we keep only the
-          "your gardens" nav link, shown once this device has sent something. When this device
-          hasn't sent anything the whole footer is omitted so it doesn't leave an empty padded
-          band above the shared site footer. */}
       {mineCount > 0 && (
         <footer className={styles.footer}>
           <p className={styles.footerNav}>
@@ -1236,10 +970,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   )
 }
 
-// On-brand loading indicator. Stem grows up, a small leaf unfurls at
-// the top, both retract, loops. Way more "bloomnote" than a generic
-// rotating arc. Two simple keyframe animations with offset timing
-// give it a breathing rhythm.
 function Spinner() {
   return (
     <span className={styles.spinner} aria-hidden>
@@ -1260,13 +990,8 @@ function Spinner() {
   )
 }
 
-/*
- * One fall of petals when a garden is finished.
- *
- * Don't merge this with the plot's ambient drift. That one loops forever and belongs to the scene;
- * this happens once, across the whole page, then removes itself. Keyed on the garden id upstream so
- * re-rolling replays it.
- */
+/* Don't merge this with the plot's ambient drift. That one loops forever and belongs to the
+   scene; this one falls once, when a garden is finished. */
 const FALL_MS = 4200
 
 function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
@@ -1278,8 +1003,8 @@ function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
     return () => clearTimeout(t)
   }, [])
 
-  // Unmounted rather than left at opacity 0: eighteen absolutely-positioned nodes should not
-  // outlive the four seconds they are visible for.
+  // Unmounted, not left at opacity 0: eighteen absolutely-positioned nodes should not outlive
+  // the four seconds they are visible for.
   if (done || flowers.length === 0) return null
 
   return (
@@ -1306,12 +1031,8 @@ function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
   )
 }
 
-/*
- * left %, size px, delay ms, duration ms, horizontal drift px, start rotation deg.
- *
- * Hand-placed rather than random: the spread is uneven on purpose, nothing starts in the middle of
- * the copy the sender is about to read, and it looks the same every time so it can be judged.
- */
+/* left %, size px, delay ms, duration ms, drift px, start rotation deg.
+   Hand-placed rather than random so the spread stays uneven without clumping. */
 // prettier-ignore
 const PETAL_FALL: Array<[number, number, number, number, number, number]> = [
   [6, 10, 0, 3000, 42, 12], [18, 7, 320, 3400, -28, 200], [29, 11, 120, 2700, 60, 74],

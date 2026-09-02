@@ -1,36 +1,15 @@
-// Curated example gardens shown on the homepage to onboard first-time
-// visitors. Three examples covering meaningfully different moods +
-// occasions so the visitor sees the range of what bloomnote can produce
-// before being asked to write anything themselves.
-//
-// Why hardcoded instead of pulled from the public wall: we control the
-// quality bar exactly. Visitors land and immediately see *good*
-// gardens — no profanity, no mid-tier outputs, no empty bouquets.
-// First-impression risk dominates discovery risk for an unfamiliar
-// product.
-//
-// To rotate these: replace the entries below. Each flower payload was
-// hand-tuned to match the mood's palette directives in src/lib/moods.ts;
-// if you tweak the mood prompt hints, consider re-curating these
-// examples so the demo stays consistent with what the AI now produces.
+// Each flower payload is hand-tuned to the mood's palette directives in src/lib/moods.ts. If you
+// change those hints, re-curate these or the demo stops matching what the model now produces.
 
 import type { FlowerSpec } from '../garden'
 
 export interface ExampleGarden {
-  /** Stable identifier used for analytics + React keys. */
   id: string
   from: string
   to: string
-  /** The user-visible note. Kept under ~180 chars so the snippet
-   *  reads cleanly in the card without truncation. */
   message: string
-  /** Mirror of OCCASIONS values in src/lib/occasions.ts. */
   occasion: string
-  /** Mirror of MOODS values in src/lib/moods.ts. */
   mood: string
-  /** Pre-rendered flowers. These would normally come from Gemini;
-   *  hand-curated here for deterministic display + zero cold-start
-   *  latency on the homepage. */
   flowers: FlowerSpec[]
 }
 

@@ -1,14 +1,6 @@
-// Frontend client for the /api/design-garden SSE endpoint.
 //
-// The streaming protocol mainly buys us HTTP-timeout safety while the
-// model thinks — the SSE events `start` / `thinking` / `complete` let
-// us surface "something is happening" without pretending to track
-// real per-token progress.
-//
-// All thrown errors are translated through `friendlyError()` before
-// leaving this module so the Composer never has to show "[Google-
-// GenerativeAI Error]: ..." or a 200-character stack trace to the
-// user. The original message is logged to console for debugging.
+// Every thrown error goes through friendlyError() before leaving this module, so the Composer
+// never shows a raw model error or a stack trace. The original is logged to the console.
 
 import type { FlowerSpec } from '../garden'
 
@@ -45,23 +37,10 @@ interface DesignRequest {
   message: string
   recipient: string
   from?: string | undefined
-  /** One of the keys from src/lib/occasions.ts → OCCASIONS. */
   occasion?: string | undefined
-  /**
-   * One of the keys from src/lib/moods.ts → MOODS. 'none' / undefined
-   * = no mood guidance to the model. Mood is orthogonal to occasion:
-   * a birthday garden can be tender OR playful and will render
-   * differently for each.
-   */
   mood?: string
 }
 
-/**
- * POST the request to /api/design-garden and parse the SSE stream.
- * Returns the final result; the callbacks fire as events arrive.
- * Thrown errors carry user-friendly messages (see friendlyError) —
- * the original failure is still console.error'd for debugging.
- */
 export async function designGarden(
   req: DesignRequest,
   callbacks: DesignCallbacks = {},
@@ -75,14 +54,13 @@ export async function designGarden(
     })
 
     if (!res.ok) {
-      // Non-200s come back as JSON error envelopes — try to surface the
-      // server's message rather than just the status code.
+      // Non-200s come back as JSON error envelopes. Surface the server's message, not the status.
       let message = `Request failed (${res.status})`
       try {
         const body = await res.json()
         if (body && typeof body.error === 'string') message = body.error
       } catch {
-        // Body wasn't JSON — keep the default.
+        // Body wasn't JSON. Keep the default.
       }
       throw new Error(message)
     }
@@ -135,38 +113,18 @@ export async function designGarden(
     if (!result) throw new Error('Stream ended without a garden.')
     return result
   } catch (err) {
-    // User cancellations propagate as-is — Composer's catch checks
-    // signal.aborted and handles them silently.
+    // User cancellations propagate as-is; the Composer checks signal.aborted and stays quiet.
     if (err instanceof Error && err.name === 'AbortError') throw err
 
-    // Everything else gets translated. Keep the original on the
-    // console so a curious developer can dig in via DevTools.
     const raw = err instanceof Error ? err.message : String(err)
     console.error('[designGarden] underlying error:', err)
     throw new Error(friendlyError(raw))
   }
 }
 
-/**
- * Map a raw error message (from our backend, from Gemini, or from the
- * platform like "Failed to fetch") to a short conversational line in
- * the same nonchalant lowercase voice as the rest of the UI.
- *
- * Messages that already came from our backend's own validation
- * (e.g. "write something first.", "who is this for?") pass through
- * unchanged — they're already in the right register.
- *
- * Order matters: more-specific patterns first. The default case at
- * the bottom is the conservative fallback for short messages we
- * couldn't classify.
- */
 export function friendlyError(raw: string): string {
-  // Gemini-specific overload / high-demand 503s. Distinct from a
-  // generic 5xx because the cause is clearly upstream — Google's
-  // model is busy, not our backend. Naming Gemini explicitly so the
-  // user understands the issue isn't with our app. Matched BEFORE
-  // the generic 5xx pattern (which also catches \b503\b) so this
-  // more-specific copy wins.
+  // Must be matched BEFORE the generic 5xx pattern below, which also catches \b503\b, or the
+  // generic copy wins and the user is told our backend is down when Gemini is the one busy.
   if (
     /high.?demand|model.+is.+currently|model.+overloaded|spikes.+in.+demand|googlegenerativeai.+error|generativelanguage\.googleapis/i.test(
       raw,
@@ -175,63 +133,47 @@ export function friendlyError(raw: string): string {
     return "gemini's a little overwhelmed right now. give it a sec and try again."
   }
 
-  // Rate limiting — our IP cap and Gemini's quota both surface as
-  // some flavor of "rate limit" / 429.
   if (/rate.?limit|\b429\b|too.?many.?requests/i.test(raw)) {
     return "bloomnote's rate limit kicked in. give it about a minute and try again."
   }
 
-  // Gemini quota exhausted (free tier, daily cap, etc.)
   if (/quota.?exceeded|generate.?content.?free.?tier|resource.?exhausted/i.test(raw)) {
     return 'bloomnote has used up its daily gemini quota. try again tomorrow, or clone the repo and run it locally with your own free key.'
   }
 
-  // Model not found (e.g. a deprecated model id) / API endpoint issues
   if (/\b404\b|not.?found.?for.?api.?version|model.+not.+found/i.test(raw)) {
     return "the AI model isn't responding right now. try again shortly."
   }
 
-  // Network drop / offline / DNS / CORS
   if (/failed.?to.?fetch|networkerror|network.?request.?failed|err_network/i.test(raw)) {
     return "couldn't reach the server. check your connection and try again."
   }
 
-  // Timed out — the model or our backend took too long (server sends "took too long").
   if (/timeout|timed.?out|took.?too.?long|took.?longer/i.test(raw)) {
     return 'that took longer than expected. give it another try.'
   }
 
-  // Server config missing — we shipped without an API key set
   if (/gemini_api_key|missing.+api.?key/i.test(raw)) {
     return "bloomnote isn't configured with an api key right now. (try cloning the repo + adding your own to run locally.)"
   }
 
-  // Post-AI validation failed — the model returned a garden that
-  // didn't pass validateGarden() (out-of-range petal count, bad hex,
-  // wrong array length, etc.)
   if (/invalid garden|invalid.+payload|content_sha256/i.test(raw)) {
     return 'the AI got confused on that one. mind trying again, maybe with a slightly different note?'
   }
 
-  // Stream ended without a complete event, or the model didn't call
-  // the design_garden function as required
   if (/did.?not.?return.?a.?garden|stream.?ended.?without.?a.?garden/i.test(raw)) {
     return "the AI didn't return a garden. try again, ideally with a slightly longer or more specific note."
   }
 
-  // Generic 5xx from our own backend or Gemini's
   if (/^request failed \(5\d{2}\)|\b5\d{2}\b|internal.?server.?error|bad.?gateway/i.test(raw)) {
     return 'something broke on our end. try again in a moment.'
   }
 
-  // Long or stack-trace-shaped — definitely not user-readable, fall
-  // back to a generic message rather than dumping it on screen
+  // Long or stack-trace-shaped, so definitely not user-readable.
   if (raw.length > 160 || /\bstack:\s|exception|\bat\s+\w+\s*\(/i.test(raw)) {
     return 'something went wrong. give it another try in a moment.'
   }
 
-  // Default: short, looks human-readable already (e.g. our backend's
-  // own validation messages). Pass through.
   return raw
 }
 

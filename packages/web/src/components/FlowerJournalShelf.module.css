@@ -67,8 +67,6 @@
   background: color-mix(in srgb, var(--green-pale), transparent 55%);
 }
 
-/* The pressed flower, drawn. This is somebody's private shelf of flowers they kept; every row
-   stood for one of them with two or three colour dots. */
 .swatches {
   display: flex;
   align-items: center;
@@ -113,7 +111,7 @@
 }
 
 /* Scoped to the remove button. As `.entries button` this captured every control added to a row
-   afterwards and drew it as a 24px circle. */
+   afterwards. */
 .entries .remove {
   width: 24px;
   height: 24px;
@@ -136,7 +134,6 @@
   text-align: center;
 }
 
-/* The sentence about the flowers, so it reads before them. */
 .recap {
   margin: 10px 0 0;
   font-size: 13px;
@@ -144,12 +141,6 @@
   color: var(--text-mid);
 }
 
-/*
- * Quiet mode's only control.
- *
- * Deliberately the plainest thing on the shelf. A prominent toggle would make the numbers feel like the
- * default state you are opting out of, and the default is the other way round.
- */
 .quietToggle {
   font: inherit;
   font-size: 11.5px;
@@ -167,7 +158,6 @@
   color: var(--text-mid);
 }
 
-/* A spoken memory under the written one. */
 .voiceRow {
   display: flex;
   align-items: center;
@@ -186,12 +176,6 @@
   cursor: pointer;
 }
 
-/*
- * The invitation to record, and the marker that a recording exists.
- *
- * A link rather than a button with a microphone icon: this is one of several ways to keep a memory, and
- * giving it a prominent control would make the written note look like the lesser option.
- */
 .voiceLink {
   font: inherit;
   font-size: 11.5px;
@@ -211,7 +195,6 @@
   color: var(--green-deep);
 }
 
-/* Shelves. Chips rather than a select: two options is not a menu, and tapping one is the whole gesture. */
 .shelfRow {
   display: flex;
   flex-wrap: wrap;
@@ -240,7 +223,6 @@
   opacity: 0.65;
 }
 
-/* Per-entry toggles, quieter than the filters above: these are an action on one flower, not navigation. */
 .shelfChips {
   display: flex;
   flex-wrap: wrap;
@@ -250,7 +232,7 @@
 
 .shelfChips button {
   /* No opacity dimming: the colour token is already the muted one, and layering transparency on
-     top of it took this under the 4.5:1 that text needs. */
+     top of it drops the text under contrast. */
   font: inherit;
   font-size: 10.5px;
   padding: 2px 8px;
@@ -282,8 +264,6 @@
 }
 
 .meaning i {
-  /* No opacity dimming: the colour token is already the muted one, and layering transparency on
-     top of it took this under the 4.5:1 that text needs. */
   font-style: normal;
 }
 
@@ -320,8 +300,6 @@
   cursor: pointer;
 }
 
-/* The control that opens the rest of the shelf. Styled as the sentence it replaces rather than as a
-   button, so the shelf keeps reading like a note to yourself. */
 .moreBtn {
   border: none;
   background: none;
@@ -340,8 +318,6 @@
   color: var(--green-mid);
 }
 
-/* Sits under the row's own "say it out loud instead", because that is where the person is looking
-   when a permission prompt is declined. */
 .voiceNote {
   display: block;
   margin-top: 3px;

@@ -2,16 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { prefersReducedMotion } from '../lib/motion'
 import styles from './VoiceRing.module.css'
 
-/*
- * Driven by real amplitude, not a timer: a fake pulse is wallpaper. Reduced motion gets a still ring
- * rather than none, since the petals carry information (roughly how long) and not just movement.
- */
-
 const PETALS = 24
 const RADIUS = 30
 const CENTRE = 40
 
-/** How far a petal can lean out at full volume. Small: this is a flower, not a VU meter. */
 const REACH = 7
 
 function petalPoints(level: number, seconds: number, phase: number, still: boolean): string[] {
@@ -34,10 +28,8 @@ export function VoiceRing({
   liveStream,
   onDelete,
 }: {
-  /** Present when there is a saved memory to play. */
   blob?: Blob | undefined
   seconds: number
-  /** Present while recording, so the ring reacts before anything is saved. */
   liveStream?: MediaStream | undefined
   onDelete?: (() => void) | undefined
 }) {

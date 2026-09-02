@@ -1,14 +1,7 @@
-/*
- * A way in, not an example note (that is the placeholder's job). Hard occasions give permission rather
- * than direction: what stops somebody writing a sympathy note is believing a short one is not enough.
- */
-
 export type RitualTime = 'morning' | 'afternoon' | 'evening' | 'night'
 
 export interface Ritual {
-  /** The invitation itself, lowercase like the rest of the app. */
   invitation: string
-  /** A second, quieter line. Only present where somebody probably needs the permission. */
   permission: string | null
 }
 
@@ -20,8 +13,8 @@ export function ritualTime(now = new Date()): RitualTime {
   return 'evening'
 }
 
-/** A list, not inferred from mood: somebody picks a playful mood for a get-well note precisely because
- *  the situation is grim, and reading that as "they are fine" is backwards. */
+/** A list, not inferred from mood: somebody picks a playful mood for a get-well note precisely
+    because the day is not playful. */
 const HARD_OCCASIONS = new Set(['sympathy', 'get-well'])
 
 const BY_TIME: Record<RitualTime, string> = {
@@ -32,7 +25,6 @@ const BY_TIME: Record<RitualTime, string> = {
   night: 'late is a good time to be honest. what is on your mind?',
 }
 
-/** Never asks the writer to be eloquent or say the right thing: each is a reason to close the tab. */
 const HARD: Record<RitualTime, Ritual> = {
   morning: {
     invitation: 'you do not have to know what to say yet.',
@@ -52,12 +44,6 @@ const HARD: Record<RitualTime, Ritual> = {
   },
 }
 
-/**
- * The ritual for this moment.
- *
- * @param occasion the wire-format occasion key, or null before one is chosen.
- * @param now injected so the copy is testable rather than dependent on when the suite runs.
- */
 export function ritual(occasion: string | null | undefined, now = new Date()): Ritual {
   const time = ritualTime(now)
   if (occasion && HARD_OCCASIONS.has(occasion)) return HARD[time]

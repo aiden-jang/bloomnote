@@ -1,6 +1,3 @@
-/* Legal pages. Same card as the notice shells; these rules are only the type inside it.
-   Colours are named rather than dimmed with opacity — see the note in LegalPage.tsx. */
-
 .back {
   display: inline-block;
   margin-bottom: 1.25rem;
@@ -30,7 +27,6 @@
   color: var(--text-light);
 }
 
-/* The card centres its heading; the prose underneath wants a left edge to read against. */
 .section {
   margin-top: 1.75rem;
   text-align: left;

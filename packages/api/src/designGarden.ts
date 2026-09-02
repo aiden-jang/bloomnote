@@ -1,7 +1,7 @@
 import type { Env } from './env.js'
 import { FLOWER_DESIGN_FUNCTION, SYSTEM_PROMPT, validateGarden, type ValidatedGarden } from './prompt.js'
 
-// Mirrors src/lib/occasions.ts + moods.ts on the web. Duplicated so the API doesn't reach into
+// Mirrors src/lib/occasions.ts and moods.ts on the web. Duplicated so the API doesn't reach into
 // the frontend tree; if either list changes, update both.
 const KNOWN_OCCASIONS: Record<string, string> = {
   'just-because': 'Just because',
@@ -61,34 +61,14 @@ export function buildPrompt(body: DesignBody): string {
 }
 
 const PER_IP_PER_MINUTE = 8
-/**
- * Global daily ceiling on garden generations.
- *
- * This was 800, with a comment saying it guarded the Gemini free tier. The free tier for
- * gemini-2.5-flash is 20 requests per day per project (`GenerateRequestsPerDayPerProjectPerModel-
- * FreeTier`), so the guard was set about forty times higher than the thing it was guarding and
- * could never fire. The visible cost of that: past the real quota every visitor got
- * "The garden service is busy (429). Please try again." — a message that invites retrying
- * something that cannot succeed until midnight Pacific — while the honest "at capacity for today"
- * message sitting right below was unreachable.
- *
- * Set below 20 rather than at it because a single generation can spend more than one request:
- * generateGarden retries a transient failure up to MAX_ATTEMPTS times and every attempt counts.
- * This is a soft guard on a best-effort KV counter, not an accountant, so it errs low and leaves
- * room for those retries.
- *
- * Raise this the moment the key moves to a paid tier; it is a quota guard, not a product decision.
- */
+/** Global daily ceiling on garden generations, sized to the Gemini free tier. */
 const DAILY_CAP = 15
 
 export type BudgetResult =
   { ok: true } | { ok: false; status: 429 | 503; retryAfter: number; message: string }
 
-/**
- * Two soft guards, both KV-backed and fail-open: a per-IP per-minute rate limit, and a global
- * daily cap so a script can't burn the whole Gemini budget. KV isn't atomic, so counts can drift
- * slightly under a burst — fine for a cost guard, and never a hard security boundary.
- */
+/** Two soft guards, both KV-backed and fail-open: a per-IP per-minute limit and a global daily
+    cap. Neither is a security boundary. */
 export async function checkBudget(env: Env, ip: string): Promise<BudgetResult> {
   try {
     const minute = Math.floor(Date.now() / 60_000)
@@ -113,7 +93,7 @@ export async function checkBudget(env: Env, ip: string): Promise<BudgetResult> {
     }
     return { ok: true }
   } catch {
-    return { ok: true } // fail open — the guard is a convenience, not a boundary
+    return { ok: true }
   }
 }
 
@@ -121,26 +101,14 @@ interface GeminiResponse {
   candidates?: { content?: { parts?: { functionCall?: { name?: string; args?: unknown } }[] } }[]
 }
 
-/** Call Gemini via the REST API (no SDK) with forced function-calling, and validate the result. */
-// Gemini intermittently returns 503 "model overloaded" (and occasional 429/5xx) under load, so a
-// single attempt surfaces a spurious error to the user. Retry these a couple times with a short
-// backoff; anything else (or a persistent failure) still throws.
+// Gemini intermittently returns 503 "model overloaded" under load, so a single attempt surfaces
+// a spurious error. Retry those a couple of times; anything else still throws.
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504])
 const MAX_ATTEMPTS = 3
-// Cap a single Gemini call so a hung request can't leave the user staring at "growing…" forever
-// (fetch has no default timeout). On timeout we retry like any other transient failure.
+// fetch has no default timeout, so cap the call or a hung request leaves the user staring at
+// "growing…" forever.
 const REQUEST_TIMEOUT_MS = 20_000
 
-/**
- * Is this 429 the per-day project quota rather than a per-minute burst?
- *
- * Gemini reports it as a QuotaFailure detail whose `quotaId` names the window, e.g.
- * `GenerateRequestsPerDayPerProjectPerModel-FreeTier`. Matching on "PerDay" rather than the full
- * id keeps this working across tiers and model names.
- *
- * Fails closed: any trouble reading the body and we treat it as the retryable kind, since a
- * needless retry is much cheaper than wrongly telling someone to come back tomorrow.
- */
 async function isDailyQuotaExhausted(res: Response): Promise<boolean> {
   try {
     const body = (await res.clone().json()) as {
@@ -173,7 +141,6 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
     } catch {
-      // Timed out or network-dropped. Retry a couple times, then surface a clear message.
       if (attempt >= MAX_ATTEMPTS - 1) {
         throw new Error('the garden took too long to grow. give it another go.')
       }

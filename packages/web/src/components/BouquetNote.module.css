@@ -1,16 +1,9 @@
-/* The AI's bouquet rationale, attached to the bottom of the note and
-   revealed with a typewriter effect. The dashed top rule sets it apart
-   from the handwritten message above without a hard break — it reads as
-   a postscript the AI added, not a separate UI panel. */
 .wrap {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px dashed var(--green-pale);
 }
 
-/* "✦ why this garden" — small, uppercase, letterspaced. The label cues
-   the source (the AI) so the typed sentence below reads as machine-
-   written reasoning rather than more of the sender's note. */
 .label {
   display: flex;
   align-items: center;
@@ -23,9 +16,6 @@
   color: var(--green-mid);
 }
 
-/* The sparkle gets a violet→pink gradient via background-clip so it
-   reads as the "AI" accent — the rest of the UI is green/cream, so the
-   one bit of synthetic color signals "this part was generated." */
 .sparkle {
   background: linear-gradient(120deg, #a78bfa, #f0abfc);
   -webkit-background-clip: text;
@@ -56,10 +46,6 @@
   font-style: italic;
 }
 
-/* The blinking caret that trails the typed text. A thin solid bar that
-   blinks on a step-end timeline so it snaps on/off like a real text
-   cursor rather than fading. Sits on the baseline via inline-block +
-   vertical-align. Removed (component-side) the moment typing finishes. */
 .cursor {
   display: inline-block;
   width: 2px;
@@ -80,9 +66,8 @@
   }
 }
 
-/* Visually-hidden full sentence for screen readers. The visible stream
-   is aria-hidden and clipped per-character; this mirror lets assistive
-   tech announce the whole note at once instead of a stuttering stream. */
+/* The full sentence for screen readers. The visible stream is aria-hidden and arrives a character
+   at a time, which reads as gibberish to a reader. */
 .srOnly {
   position: absolute;
   width: 1px;
@@ -95,8 +80,7 @@
   border: 0;
 }
 
-/* Reduced motion: no pulsing sparkle, no blinking caret. The component
-   also skips the per-character reveal and shows the full text at once. */
+/* No pulsing sparkle, no blinking caret. The component also skips the per-character typing. */
 @media (prefers-reduced-motion: reduce) {
   .sparkle {
     animation: none;

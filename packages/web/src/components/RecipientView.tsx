@@ -24,11 +24,6 @@ import styles from './RecipientView.module.css'
 
 interface Props {
   gardenData: GardenData
-  /**
-   * The 6-char short ID that identified this garden. Used to build the
-   * matching `/r/<id>` reply URL — same KV record, two views. No
-   * duplicate writes when someone taps "grow one back."
-   */
   gardenId: string
 }
 
@@ -42,8 +37,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion, mood } = gardenData
   const grownOn = formatGardenDate(createdAt)
 
-  // Save-as-image: guard against a double-tap (two share sheets / downloads) and swallow the rare
-  // canvas/decode failure so it isn't an unhandled rejection.
+  // Guard against a double-tap opening two share sheets, and swallow the rare canvas or decode
+  // failure so it isn't an unhandled rejection.
   const savingImageRef = useRef(false)
   const savingDuetRef = useRef(false)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
@@ -65,7 +60,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       if (result === 'downloaded') trackCardDownloaded('recipient', 'square')
       window.setTimeout(() => setImageStatus(null), 2500)
     } catch {
-      // no-op — the garden stays on screen; the recipient can retry.
+      // The garden stays on screen, so the recipient can just try again.
       setImageStatus(null)
     } finally {
       savingImageRef.current = false
@@ -90,8 +85,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       savingDuetRef.current = false
     }
   }, [gardenData, previous])
-  // Passing a garden along should feel as easy as receiving it. Native share preserves the
-  // platform's familiar destinations; clipboard is the reliable fallback for browsers without it.
   const handleShareGarden = useCallback(async () => {
     if (shareStatus) return
     setShareStatus('sharing')
@@ -112,8 +105,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       }
       window.setTimeout(() => setShareStatus(null), 2500)
     } catch (err) {
-      // Closing a native sheet is a normal outcome. Leave the garden exactly as it was so a
-      // recipient can choose another route (or try again) without seeing an alarming error.
+      // Closing a native sheet is a normal outcome, not an error. Leave the garden as it was.
       setShareStatus(null)
       if (err instanceof Error && err.name === 'AbortError') return
     }
@@ -122,19 +114,16 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const handleCopyNote = useCallback(async () => {
     if (!message || noteCopied) return
     try {
-      // Matches what is on screen. The copied text is the thing she pastes into a message to
-      // someone else, so a stray em-dash would travel further than the page it came from.
+      // This is the text she pastes into a message to someone else, so a stray em dash would travel
+      // further than the page it came from.
       await navigator.clipboard.writeText(`${message}${from ? `\n\n${from}` : ''}`)
       setNoteCopied(true)
       window.setTimeout(() => setNoteCopied(false), 2200)
     } catch {
-      // The garden remains legible and selectable, so a clipboard permission failure needs no alert.
+      // The garden is still legible and selectable, so a clipboard failure needs no alert.
     }
   }, [from, message, noteCopied])
 
-  // If a signed-in visitor opens a garden, keep it in their Received list (cross-device).
-  // Best-effort and idempotent; anonymous visitors are unaffected. When it's newly saved (not
-  // your own garden), surface a quiet confirmation so the Received list is discoverable.
   const { user } = useAuth()
   const [savedToGardens, setSavedToGardens] = useState(false)
   useEffect(() => {
@@ -147,26 +136,17 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       cancelled = true
     }
   }, [user, gardenId])
-  // Auto-dismiss the confirmation after a few seconds so it doesn't linger over the garden.
   useEffect(() => {
     if (!savedToGardens) return
     const t = setTimeout(() => setSavedToGardens(false), 5000)
     return () => clearTimeout(t)
   }, [savedToGardens])
-  // The page lands in 'sealed' state — the garden plot is empty, a
-  // "open the garden" button sits below it. Tapping the button
-  // transitions to 'blooming' AND fires playChime() from inside the
-  // gesture handler, so browser autoplay restrictions don't suppress
-  // the chime + per-flower bloom sounds.
   const [phase, setPhase] = useState<Phase>('sealed')
   const [msgVisible, setMsgVisible] = useState(false)
-  // Re-keying the scene is deliberate: its bloom timeline is local animation state, and replaying
-  // should grow the same garden again rather than trying to reverse a finished set of petals.
+  // Re-key rather than reverse: the bloom timeline is local animation state, and replaying
+  // should grow the same garden again.
   const [bloomVersion, setBloomVersion] = useState(0)
 
-  // Funnel event: garden_opened. Fired once per mount — this is the
-  // "delivery confirmed" signal that pairs with `share_link_copied`
-  // on the sender side. Structural metadata only; no names, no note.
   useEffect(() => {
     trackGardenOpened({
       flowerCount: flowers.length,
@@ -192,34 +172,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     setFocused(null)
     setMsgVisible(false)
     setBloomVersion((version) => version + 1)
-    // This is still a user gesture, so replaying the gentle chime works on browsers that block
-    // background audio. It is a replay, not a second delivery, so it does not inflate the funnel.
     playChime()
   }
 
   const handleReplyClick = (): void => {
     trackReplyStarted()
-    // We don't preventDefault — let the anchor navigate as usual.
-    // Analytics is fire-and-forget via sendBeacon under the hood, so
-    // it survives the navigation.
   }
 
-  /*
-   * Which flower the recipient is looking at, shared by the scene and the legend.
-   *
-   * Links the picture to the list. Every meaning is written about one specific flower, so which
-   * line belongs to which is content, not decoration.
-   *
-   * Held here rather than in either component because it has to point both ways.
-   */
   const [focused, setFocused] = useState<number | null>(null)
 
-  /*
-   * Hover intent for the flower panel. The panel sits at the foot of the plot, so reaching its
-   * links means crossing space belonging to neither it nor the flower, and closing on leave makes
-   * them unreachable by mouse. Keep the timer here, not one per component: two would race, and the
-   * plot cancelling its own countdown would not stop the legend's.
-   */
   const releaseTimer = useRef<number | null>(null)
   const focusFlower = useCallback((index: number | null) => {
     if (releaseTimer.current !== null) {
@@ -232,10 +193,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     if (releaseTimer.current !== null) window.clearTimeout(releaseTimer.current)
     releaseTimer.current = window.setTimeout(() => {
       releaseTimer.current = null
-      /*
-       * A panel holding focus stays open: someone typing a memory has their hands off the mouse,
-       * and a drifting pointer must not discard a half-written sentence.
-       */
+      /* A panel holding focus stays open. Someone typing a memory has their hands off the mouse, and
+         a drifting pointer must not close what they are writing in. */
       if (document.activeElement?.closest('[data-flower-peek]')) return
       setFocused(null)
     }, FLOWER_PANEL_GRACE_MS)
@@ -247,10 +206,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     [],
   )
 
-  /*
-   * Whether a flower has ever been opened. Nothing else on screen says they are tappable, and the
-   * hint retires the moment it has been obeyed rather than being read twice.
-   */
   const [flowerTapped, setFlowerTapped] = useState(false)
   useEffect(() => {
     if (focused !== null) setFlowerTapped(true)
@@ -262,22 +217,19 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     prewarmGardenImage({ flowers, from, to })
   }, [msgVisible, flowers, from, to])
 
-  // Bumped on each watering; GardenScene reads it to replay the drops. A counter, not a flag, so
-  // the scene doesn't need this component to time a reset.
+  // A counter, not a flag, so the scene can replay the drops without this component timing a reset.
   const [wateredAt, setWateredAt] = useState(0)
 
-  // Stable across re-renders so GardenScene's bloom effect (which lists onAllBloomed as a dep)
-  // doesn't re-fire and replay the whole animation when unrelated state changes — e.g. the
-  // "saved to your gardens" pill flipping on after recordReceived resolves.
+  // Stable across re-renders. GardenScene's bloom effect lists onAllBloomed as a dep, so a new
+  // identity replays the whole animation when unrelated state changes.
   const handleAllBloomed = useCallback((): void => {
     setTimeout(() => setMsgVisible(true), 300)
   }, [])
 
-  // The reply URL points at the SAME short ID — `/g/abc123` and
-  // `/r/abc123` are two views of one KV record. No duplicate writes.
+  // The reply URL points at the SAME short id: `/g/abc123` and `/r/abc123` are two views of one
+  // KV record, not two writes.
   const remixHref = buildRemixUrl(gardenId)
 
-  // Save URLs, built once so the prefetch effect and the anchors agree.
   return (
     <div className={styles.wrap}>
       <SoundToggle />
@@ -329,26 +281,17 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         wateredAt={wateredAt}
         journalGardenId={gardenId}
         journalFrom={from}
-        // The sender chose this occasion when they wrote the note;
-        // the recipient sees the matching sky tint so the
-        // atmosphere reads as deliberate, not random.
         occasion={occasion}
         mood={mood}
         sealed={phase === 'sealed'}
         key={`recipient-${bloomVersion}`}
       />
 
-      {/* "Open the garden" tap target. The bloom is gated on this
-          click so the chime + per-flower sounds fire from inside a
-          user gesture — otherwise the browser blocks AudioContext
-          playback. Also makes the moment feel deliberate, like
-          opening an envelope. The button hides once tapped. */}
       {phase === 'sealed' && (
         <>
           <button type="button" className={styles.openBtn} onClick={handleOpen}>
             open the garden
           </button>
-          {/* The garden is already grown and written — say so, rather than implying a lottery. */}
           <p className={styles.waitingLine}>
             {flowers.length} {flowers.length === 1 ? 'flower' : 'flowers'}, already grown.
             <br />
@@ -357,19 +300,14 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         </>
       )}
 
-      {/* Everything below the plot renders only AFTER the garden is opened. While sealed these
-          sections would sit at opacity:0 but still reserve their full height, leaving a large empty
-          gap between "open the garden" and the footer on mobile. Mounting them on open (they still
-          fade in via msgVisible) collapses that gap and matches the reveal. */}
+      {/* Everything below the plot renders only after the garden is opened. While sealed these would
+          sit at opacity 0, present and focusable but invisible. */}
       {phase === 'blooming' && (
         <>
           {msgVisible && flowers.length > 0 && !flowerTapped && (
             <p className={styles.tapHint}>tap a flower to see what it means</p>
           )}
 
-          {/* Gated on msgVisible, not just on the phase: during the bloom itself the flowers are the
-          only thing on this screen that matters, and a button under them would take attention the
-          moment does not have to spare. */}
           {msgVisible && gardenId && (
             <Watering gardenId={gardenId} onWatered={() => setWateredAt((n) => n + 1)} />
           )}
@@ -378,13 +316,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             {message ? (
               <>
                 <p className={styles.messageText}>{message}</p>
-                {/*
-              No dash before the name.
-              *
-              * A signed note does not have one. The italic, smaller, indented treatment already reads as
-              * a signature, so the dash was doing no work that the styling was not already doing, and
-              * an em-dash is the one punctuation mark that makes handwritten copy look machine-set.
-            */}
                 {from && <p className={styles.sig}>{from}</p>}
               </>
             ) : (
@@ -392,9 +323,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 a garden, for you.
               </p>
             )}
-            {/* The AI's bouquet rationale, typed out as a postscript on the
-            note. `start` is gated on msgVisible so it doesn't type itself
-            out before the garden has bloomed and the message faded in. */}
             {bouquetNote && <BouquetNote note={bouquetNote} start={msgVisible} />}
             {secret && (
               <div className={styles.secretNote}>
@@ -422,8 +350,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             />
           </div>
 
-          {/* A reply carries both notes, so let the recipient unfold them as a chronological keepsake
-          without making the already-long recipient page permanently taller. */}
           {previous && (
             <div className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}>
               <MemoryTrail previous={previous} current={gardenData} />
@@ -513,13 +439,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   )
 }
 
-/*
- * The little envelope on the secret row.
- *
- * Drawn rather than an emoji, for the same reason as the wax seal on the countdown: an emoji is
- * whatever the reader's OS decides to draw, on a page where everything else is ours. Strokes are
- * currentColor so it takes the link's colour and its hover.
- */
 export function SecretEnvelope({ open }: { open: boolean }) {
   return (
     <svg width="18" height="14" viewBox="0 0 20 15" fill="none" aria-hidden focusable="false">
@@ -541,11 +460,8 @@ export function SecretEnvelope({ open }: { open: boolean }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/*
-       * Only the wax changes between states, because sealed-or-unsealed is exactly what this
-       * button reports. Don't try a drawn "open" envelope: at 18px a raised flap reads as a bump
-       * and a cream note on a cream card is a stray line.
-       */}
+      {/* Only the wax changes between states, because sealed-or-unsealed is exactly what this button
+          reports. */}
       {!open && (
         <circle cx="10" cy="9.2" r="2.1" fill="var(--pink-mid)" stroke="var(--pink-deep)" strokeWidth="0.8" />
       )}

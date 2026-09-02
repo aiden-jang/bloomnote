@@ -1,11 +1,9 @@
-// Renders a garden into a downloadable PNG "share card" (garden scene + who-it's-from + wordmark).
-// Composed as a self-contained SVG (no external assets, so the canvas isn't tainted) and reuses
-// FlowerSVG in staticRender mode so the flowers rasterize fully open, not mid-animation.
+// A garden as a downloadable PNG. Composed as a self-contained SVG with no external assets, or
+// the canvas is tainted and cannot be exported.
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { FlowerSpec, GardenData } from '../garden'
 import FlowerSVG from '../components/FlowerSVG'
 
-/* Soil, shared by every picture this file exports, so the exports match the app's own ground. */
 function SoilDefs() {
   return (
     <>
@@ -32,7 +30,7 @@ function SoilDefs() {
   )
 }
 
-/** Fixed control points, not random: the same garden has to export the same picture every time. */
+/* Fixed control points, not random: the same garden has to export the same picture every time. */
 function soilPaths(x: number, w: number, surfaceY: number, bottomY: number) {
   const seg = w / 4
   const edge =
@@ -42,7 +40,6 @@ function soilPaths(x: number, w: number, surfaceY: number, bottomY: number) {
   return { edge, body: `${edge} L ${x + w} ${bottomY} L ${x} ${bottomY} Z` }
 }
 
-/** The soil itself: body, three grains, then the lit surface stroked along the same curve. */
 function Soil({ x, w, surfaceY, bottomY }: { x: number; w: number; surfaceY: number; bottomY: number }) {
   const { edge, body } = soilPaths(x, w, surfaceY, bottomY)
   return (
@@ -86,10 +83,7 @@ function wrapMeaning(value: string, max = 38): string[] {
 function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: string }) {
   const lines = wrapMeaning(meaning)
   const svgH = flower.stemHeight + 80
-  /*
-   * The band caps the scale, so every flower's top lands at the same y whatever its stem height.
-   * Keep it clear of the label's 118 baseline or the head sits on the words.
-   */
+  /* The band caps the scale, so every flower's top lands at the same y whatever its stem height. */
   const FLOWER_BAND = 415
   const scale = Math.min(3.5, FLOWER_BAND / svgH)
   const flowerWidth = 80 * scale
@@ -185,7 +179,7 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
 
   const scale = 1.7
   const n = Math.max(1, flowers.length)
-  // Names allow 60 chars, but the headline is one non-wrapping line — truncate so it can't run off
+  // Names allow 60 chars but the headline is one non-wrapping line, so truncate or it runs off
   // both edges of the exported PNG.
   const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s)
   const toName = to ? clipName(to) : 'you'
@@ -223,7 +217,7 @@ function ShareImage({ flowers, from, to }: GardenImageOpts) {
           const dispW = 80 * scale
           const cx = panelX + (panelW * (i + 0.5)) / n
           const x = cx - dispW / 2
-          const y = groundSurface + 6 - svgH * scale // base tucked just into the soil
+          const y = groundSurface + 6 - svgH * scale
           return (
             <g key={i} transform={`translate(${x}, ${y}) scale(${scale})`}>
               <FlowerSVG flower={f} index={i} bloomed staticRender />
@@ -332,7 +326,6 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
   )
 }
 
-/** A two-garden keepsake for a reply exchange. It deliberately omits private note copy. */
 function GardenDuetImage({ previous, current }: GardenDuetImageOpts) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -433,12 +426,8 @@ function GardenDuetImage({ previous, current }: GardenDuetImageOpts) {
   )
 }
 
-/**
- * SVG markup to a PNG blob, via an offscreen canvas.
- *
- * `dpr` is fixed at 2 rather than read from the device: the output is a file other people look at,
- * so its resolution should not depend on the screen that happened to make it.
- */
+/* `dpr` is fixed at 2 rather than read from the device, so the exported file is the same size
+   for everyone. */
 async function rasterize(svg: string, w: number, h: number, dpr = 2): Promise<Blob> {
   const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
   try {
@@ -462,7 +451,6 @@ async function rasterize(svg: string, w: number, h: number, dpr = 2): Promise<Bl
   }
 }
 
-/** Rasterize the square download card. */
 async function renderGardenPng(opts: GardenImageOpts): Promise<Blob> {
   return rasterize(renderToStaticMarkup(<ShareImage {...opts} />), W, H)
 }
@@ -478,20 +466,8 @@ function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(href)
 }
 
-/**
- * Save the garden as an image. On phones this opens the native share sheet with the PNG, so the
- * user can tap "Save Image" and it lands in Photos (a plain download would go to Files instead).
- * On desktop, or if sharing a file isn't supported, it downloads the PNG.
- *
- * Call from a user gesture: the rasterization is fast, but navigator.share needs user activation.
- */
-/*
- * Render the PNG before it is asked for.
- *
- * `navigator.share` needs a live user gesture, and a 2160px garden takes ~1s to rasterize on a
- * laptop and longer on a phone. Rendering inside the tap handler spends the activation, share
- * throws, and it falls back to a download — which on iOS lands in Files, not Photos.
- */
+/* Render before it is asked for. `navigator.share` needs a live user gesture, and a 2160px
+   garden takes long enough to rasterize that the gesture expires. */
 let warmed: { key: string; png: Promise<Blob> } | null = null
 
 function warmKey(opts: GardenImageOpts): string {
@@ -505,7 +481,7 @@ function warmKey(opts: GardenImageOpts): string {
 export function prewarmGardenImage(opts: GardenImageOpts): void {
   const key = warmKey(opts)
   if (warmed?.key === key) return
-  // Failures are swallowed here and re-thrown at save time, where there is a person to tell.
+  // Swallowed here and re-thrown at save time, where there is a person to tell.
   warmed = { key, png: renderGardenPng(opts) }
   void warmed.png.catch(() => undefined)
 }
@@ -538,16 +514,15 @@ export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImag
       })
       return 'shared'
     } catch (err) {
-      // User dismissed the sheet — done, don't also download.
+      // The user dismissed the sheet. Done, don't also download.
       if (err instanceof Error && err.name === 'AbortError') return 'dismissed'
-      // Anything else (e.g. lost user activation): fall through to a plain download.
+      // Anything else, lost user activation included, falls through to a plain download.
     }
   }
   downloadBlob(blob, filename)
   return 'downloaded'
 }
 
-/** Save both sides of a reply as one private-copy-free image keepsake. */
 export async function saveGardenDuetImage(opts: GardenDuetImageOpts): Promise<GardenImageSaveResult> {
   const blob = await rasterize(renderToStaticMarkup(<GardenDuetImage {...opts} />), W, H)
   const participant = opts.current.to || opts.current.from || 'garden-duet'
@@ -572,7 +547,6 @@ export async function saveGardenDuetImage(opts: GardenDuetImageOpts): Promise<Ga
   return 'downloaded'
 }
 
-/** Make one chosen bloom into a square pressed-flower keepsake. */
 export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Promise<GardenImageSaveResult> {
   const blob = await rasterize(
     renderToStaticMarkup(<PressedFlowerImage flower={flower} meaning={meaning} />),
@@ -599,16 +573,12 @@ export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Prom
   return 'downloaded'
 }
 
-// --- Link preview card ---------------------------------------------------
+// A second composition at 1200x630, the size the shell's og:image tags already declare. The
+// download card is square, which centre-crops in every large-image card slot and loses the
+// headline first.
 //
-// A second composition at 1200x630, the size the shell's og:image:width/height already declare.
-// The download card above is square, which is right for saving and wrong for unfurling: every
-// large-image card slot is roughly 1.91:1, so a square gets centre-cropped and the headline (the
-// part that says who this is from) is the first thing to go.
-//
-// Deliberately a separate component rather than the square one parameterised. They share only
-// FlowerSVG and a palette; folding them together means every future tweak to the download card
-// silently changes what strangers see in a chat preview.
+// Deliberately separate rather than the square one parameterised: fold them together and every
+// future tweak to the download card silently changes what strangers see in a chat preview.
 
 const OG_W = 1200
 const OG_H = 630
@@ -621,15 +591,7 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
   const groundH = 104
   const groundSurface = panelY + panelH - groundH
   const n = Math.max(1, flowers.length)
-  /*
-   * Fit the tallest flower, rather than trusting a constant.
-   *
-   * Stem heights vary from 70 to 115, so `svgH` runs from 150 to 195 and any fixed scale is either
-   * too small for a short bouquet or clips a tall one against the panel rim. Both of those shipped
-   * while I was picking numbers by eye: 1.45 left the flowers marooned in empty sky, and 1.7
-   * sliced the tops off the two tallest. Deriving it from the actual garden means every card fills
-   * the panel and none of them lose a flower head.
-   */
+  /* Fit the tallest flower rather than trusting a constant. Stem heights vary from 70 to 115. */
   const tallest = Math.max(150, ...flowers.map((f) => f.stemHeight + 80))
   const headroom = 18
   const scale = Math.min(1.9, (groundSurface + 5 - (panelY + headroom)) / tallest)
@@ -703,19 +665,11 @@ function OgCard({ flowers, from, to }: GardenImageOpts) {
   )
 }
 
-/**
- * Render the link-preview card and hand it to the Worker to store against this garden.
- *
- * Runs in the sender's browser because that is where a canvas is. Best-effort by design: a failure
- * here costs the link its picture, nothing else, so it must never surface an error or block the
- * share card from appearing. The sender has just finished making a gift; a toast about an Open
- * Graph upload would be absurd.
- */
 export async function uploadOgImage(id: string, opts: GardenImageOpts): Promise<void> {
   try {
     const svg = renderToStaticMarkup(<OgCard {...opts} />)
-    // 1x for the card: 1200x630 is already the declared size, and a 2x PNG of this is around
-    // a megabyte, which is both over the Worker's cap and slower to unfurl than it is prettier.
+    // 1x for the card. 1200x630 is already the declared size, and a 2x PNG is around a megabyte,
+    // over the Worker's cap and slower to unfurl than it is prettier.
     const png = await rasterize(svg, OG_W, OG_H, 1)
     await fetch(`/api/garden/${id}/og`, {
       method: 'POST',

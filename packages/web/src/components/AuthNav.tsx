@@ -1,14 +1,11 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext'
 
-// A quiet corner entry point. Accounts are optional (anonymous create + links always work),
-// so this stays out of the way: "sign in" when signed out; name + "your gardens" + sign-out when
-// signed in. Copy is lowercase to match bloomnote's aesthetic.
 const wrap: CSSProperties = {
   position: 'fixed',
   top: 'var(--chip-edge)',
-  // Sit one gap to the left of the sound toggle, measured off the toggle's own size rather than a
-  // guess at it, so the two chips stay a matched pair at every width.
+  // Measured off the sound toggle's own size rather than guessed, so the two chips stay a matched
+  // pair at every width.
   right: 'calc(var(--chip-edge) + var(--chip-size) + var(--chip-gap))',
   zIndex: 50,
   display: 'flex',
@@ -16,15 +13,11 @@ const wrap: CSSProperties = {
   alignItems: 'center',
   fontSize: '0.85rem',
   letterSpacing: '0.01em',
-  // Translucent cream chip (matching the sound toggle) so the links stay legible over whatever
-  // content scrolls behind this fixed bar. Height comes from the shared chip token instead of from
-  // padding, so this pill and the toggle share a centre line and not just a top edge.
   height: 'var(--chip-size)',
   boxSizing: 'border-box',
   padding: '0 14px',
-  // Never let the pill run past the viewport's left edge on a phone (it grows leftward from
-  // right:64). The display name inside also truncates, so a long name can't push it across the
-  // centered header title.
+  // Never let the pill run past the viewport's left edge on a phone: it grows leftward from
+  // right:64, and a long name would push it across the centred header title.
   maxWidth: 'calc(100vw - var(--chip-edge) * 2 - var(--chip-size) - var(--chip-gap) * 2)',
   background: 'rgba(250, 246, 238, 0.82)',
   border: '1px solid var(--green-pale, #e2e8dc)',
@@ -41,13 +34,12 @@ const link: CSSProperties = {
   font: 'inherit',
   padding: 0,
   whiteSpace: 'nowrap',
-  /* Fill the chip's height. The pill around this is a plain div and never the pointer target, so
-     an 18px line inside a 38px pill left the real target under the 24px minimum. */
+  /* Fill the chip's height. The pill around this is a plain div and never the pointer target. */
   alignSelf: 'stretch',
   display: 'flex',
   alignItems: 'center',
 }
-// The display name is user-controlled and unbounded — truncate it so it can't grow the pill.
+// The display name is user-controlled and unbounded, so truncate or it grows the pill.
 const nameLink: CSSProperties = {
   ...link,
   overflow: 'hidden',

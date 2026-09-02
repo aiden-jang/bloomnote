@@ -3,18 +3,6 @@ import { createPortal } from 'react-dom'
 import { isSoundEnabled, toggleSound } from '../sound'
 import styles from './SoundToggle.module.css'
 
-/**
- * A small fixed speaker button that mutes/unmutes all of bloomnote's
- * audio (bloom chimes, the success melody, the whoosh) plus the bloom
- * haptic. The on/off state lives in the sound module and persists to
- * localStorage, so this component only mirrors it locally for the icon.
- *
- * Rendered on the views that make noise: the composer and the recipient view.
- *
- * Keep the portal to <body>. `position: fixed` measures against the nearest ancestor carrying a
- * transform, and RecipientView's wrapper animates in with one that fills forwards — inside that
- * subtree the button pins to the column's edge instead of the window's.
- */
 export default function SoundToggle() {
   const [enabled, setEnabled] = useState(() => isSoundEnabled())
 
@@ -33,8 +21,6 @@ export default function SoundToggle() {
   )
 }
 
-// Shared speaker body (the cone) — the two icons differ only in what
-// sits to the right of it (sound waves vs. an x).
 function SpeakerBody() {
   return (
     <path

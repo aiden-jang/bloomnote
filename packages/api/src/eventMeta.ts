@@ -1,13 +1,5 @@
-/*
- * The only keys allowed out of an event and into the logs.
- *
- * The client swears it sends no note text and no names, and it is careful about it. But this
- * endpoint is public and unauthenticated: anything at all can POST to it, and whatever arrives
- * used to be stringified straight into Workers Logs. On an app that exists to carry someone's
- * private message, that promise has to be kept by the server, not by the caller.
- *
- * Values are capped in length and to primitives, so a permitted key cannot smuggle a payload.
- */
+/* The only keys allowed out of an event and into the logs. An allowlist, not a denylist: the
+   client is not trusted to keep the note text out of a meta field. */
 export const META_KEYS = new Set([
   'mode',
   'errorType',

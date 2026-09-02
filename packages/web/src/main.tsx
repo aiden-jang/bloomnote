@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </React.StrictMode>,
 )
 
-// Register the service worker for installability + offline shell — production only. In dev a
+// Register the service worker for installability and the offline shell, production only. In dev a
 // cache-first worker serves stale bundles, so instead we unregister any that's lingering.
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {

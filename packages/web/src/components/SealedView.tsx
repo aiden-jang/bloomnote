@@ -2,37 +2,20 @@ import { useEffect, useState } from 'react'
 import styles from './SealedView.module.css'
 
 interface Props {
-  /** Stable garden ID, used to make imported calendar events distinct. */
   gardenId: string
   from?: string | undefined
   to?: string | undefined
-  /** ISO 8601 unlock moment. */
   unlockAt: string
-  /** Fires when the unlock moment arrives — caller swaps to the real
-   *  recipient view. */
   onUnlock: () => void
 }
 
-/**
- * Sealed envelope and countdown for a time-capsule garden.
- *
- * The recipient gets who it's from and when it opens, and nothing of the flowers — not even
- * silhouettes, because a reveal you've already half-seen isn't one. The countdown ticks by the
- * second only when it's close; a per-second tick on a three-month wait is theatre.
- *
- * The clock is the recipient's own, so spoofing the device opens it early. That's fine — this is
- * choreography for a moment, not a security boundary. Same call as `unlockAt` in garden.ts.
- */
 export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: Props) {
   const target = new Date(unlockAt).getTime()
   const [now, setNow] = useState(() => Date.now())
   const [calendarSaved, setCalendarSaved] = useState(false)
 
-  // Pick a tick interval scaled to how far away the unlock is. No
-  // point burning a setInterval every second when the next change is
-  // hours away — but right before unlock we want frame-accurate
-  // updates so the "0 seconds remaining" → bloom transition feels
-  // sharp.
+  // Tick interval scaled to how far away the unlock is. No point burning a setInterval every second
+  // on a capsule that opens in three weeks.
   useEffect(() => {
     const tick = () => setNow(Date.now())
     const remaining = target - Date.now()
@@ -48,8 +31,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
     return () => clearInterval(id)
   }, [target, now])
 
-  // Fire the unlock callback exactly once, when the clock crosses the
-  // boundary. Using `now` in the deps ensures we re-check on every tick.
+  // Fire the unlock callback exactly once, when the clock crosses the boundary.
   useEffect(() => {
     if (now >= target) onUnlock()
   }, [now, target, onUnlock])
@@ -97,8 +79,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
     a.href = href
     a.download = 'garden-opening.ics'
     // Keep the URL alive long enough for Safari and mobile browsers to hand the file to their
-    // download manager. Revoking it in the same turn can turn an apparently successful tap into
-    // a silent no-op on those browsers.
+    // download handler before it is revoked.
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -120,15 +101,8 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
         </h1>
       </div>
 
-      {/* The sealed plot. Same dimensions as GardenScene so the bloom
-          feels like *this exact place* opening, not a new page. */}
       <div className={styles.plot} aria-hidden>
         <svg viewBox="0 0 200 120" className={styles.envelope}>
-          {/* Sealed envelope, folded flap, wax seal. Deliberately not a flower: the flowers
-              stay hidden, and this screen has to hold attention without showing anything.
-
-              Paths rather than a rect and two lines, so every corner sits slightly off square
-              and the flap sags. A ruler-true envelope looked constructed rather than drawn. */}
           <ellipse cx="100" cy="109" rx="58" ry="4.5" fill="var(--green-deep)" opacity="0.07" />
 
           <path
@@ -140,7 +114,6 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
             strokeLinejoin="round"
           />
 
-          {/* The fold, shaded so the flap reads as paper lying over paper rather than as a drawn V. */}
           <path d="M 31 37 Q 62 60 100 79.5 Q 138 60 169 37 Z" fill="var(--green-deep)" opacity="0.055" />
           <path
             d="M 31 36.6 Q 62 60 100 79.5 Q 138 60 169 36.6"
@@ -151,8 +124,8 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
             strokeLinejoin="round"
           />
 
-          {/* Wax seal. The flower on it was a ✿ glyph set in Fraunces, which put a piece of the art
-              at the mercy of whether that font had the character; these are five drawn petals. */}
+          {/* Wax seal. The flower on it was a glyph set in Fraunces, which put a piece of the art at the
+              mercy of whether the font loaded. */}
           <circle cx="100" cy="80" r="10" fill="var(--pink-mid)" stroke="var(--pink-deep)" strokeWidth="1" />
           {Array.from({ length: 5 }).map((_, i) => {
             const angle = (i / 5) * Math.PI * 2 - Math.PI / 2
@@ -215,8 +188,6 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
   )
 }
 
-// ---- formatting helpers ------------------------------------------------
-
 function formatRemaining(ms: number): string {
   if (ms <= 0) return 'now'
   const totalSec = Math.floor(ms / 1000)
@@ -225,10 +196,8 @@ function formatRemaining(ms: number): string {
   const mins = Math.floor((totalSec % 3600) / 60)
   const secs = totalSec % 60
 
-  // Show the two most-significant non-zero units. "3d 14h" reads
-  // cleaner than "3 days, 14 hours, 27 minutes, 16 seconds" when
-  // you're waiting weeks. Drop to mm:ss in the last minute for the
-  // anticipation crescendo.
+  // Two most-significant non-zero units: "3d 14h" reads better than the full breakdown when you
+  // are waiting weeks. Drop to mm:ss in the last minute.
   if (days > 0) return `${days}d ${hours}h`
   if (hours > 0) return `${hours}h ${mins}m`
   if (mins > 0) return `${mins}m ${secs}s`
@@ -236,8 +205,7 @@ function formatRemaining(ms: number): string {
 }
 
 function formatExact(d: Date): string {
-  // Local-time formatting so the recipient sees their own timezone.
-  // Avoids the "this opens at 3am" footgun caused by storing UTC.
+  // Local-time formatting, so the recipient never reads "this opens at 3am" off a stored UTC value.
   return d.toLocaleString(undefined, {
     weekday: 'long',
     month: 'short',

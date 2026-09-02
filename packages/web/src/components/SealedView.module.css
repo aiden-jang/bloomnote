@@ -26,8 +26,6 @@
   font-weight: 500;
 }
 
-/* Plot — same approximate footprint as GardenScene so the unlock
-   transition feels like *this* spot opening, not a page swap. */
 .plot {
   width: 100%;
   max-width: 380px;
@@ -53,15 +51,13 @@
   }
 }
 
-/* This one runs forever on a screen someone may sit on for a while, and it was the only animation
-   in the file with nothing switching it off. */
+/* This one runs forever on a screen someone may sit on for a while, so it is gated below. */
 @media (prefers-reduced-motion: reduce) {
   .envelope {
     animation: none;
   }
 }
 
-/* Countdown stack — anchors the visual story. */
 .countdown {
   text-align: center;
   display: flex;
@@ -86,8 +82,7 @@
     'WONK' 0;
   color: var(--text-deep);
   letter-spacing: -0.01em;
-  /* Numeric tabular figures so the countdown doesn't jitter
-     horizontally as digits change width. */
+  /* Tabular figures, or the countdown jitters horizontally as digit widths change. */
   font-variant-numeric: tabular-nums;
 }
 
@@ -193,18 +188,13 @@
   text-align: center;
 }
 
-/* Same reason as RecipientView's wrap: on narrow screens the centred header runs under the fixed
-   sign-in / sound chips in the top-right corner. Drop the content below them. Desktop is
-   unaffected, because the centred column never reaches that corner. */
+/* On narrow screens the centred header runs under the fixed sign-in and sound chips. */
 @media (max-width: 560px) {
   .wrap {
     padding-top: 4rem;
   }
 }
 
-/* Desktop: let the envelope be the size of the thing it is asking someone to wait for. The same
-   phone-sized-object-on-a-monitor problem the garden plot has, on the one screen whose whole job
-   is anticipation. The column opens up with it so the envelope keeps its margin. */
 @media (min-width: 900px) {
   .wrap {
     max-width: 620px;
@@ -215,8 +205,6 @@
   }
 }
 
-/* Print: a sealed garden in a printed card is confusing — collapse
-   to a single line "(scheduled to open on …)". */
 @media print {
   .plot {
     display: none;

@@ -118,7 +118,7 @@ describe('gardens (KV)', () => {
     })
 
     test('read repairs a garden stored before the write door existed', async () => {
-      // Straight into KV, bypassing createGarden — this is what the old writes left behind.
+      // Straight into KV, bypassing createGarden. This is what the old writes left behind.
       const id = 'legacy'
       await testEnv.GARDENS.put(
         `g:${id}`,
@@ -144,7 +144,7 @@ describe('gardens (KV)', () => {
   })
 
   test('claim adopts anonymous gardens once', async () => {
-    const r = await createGarden(testEnv, GARDEN) // anonymous — no owner
+    const r = await createGarden(testEnv, GARDEN) // anonymous, no owner
     if (!r.ok) throw new Error('create failed')
     expect(await claimGardens(testEnv, 'u', [r.id])).toBe(1)
     expect((await listMine(testEnv, 'u')).sent.map((s) => s.id)).toContain(r.id)

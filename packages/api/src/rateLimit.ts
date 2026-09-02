@@ -1,12 +1,7 @@
 import type { Env } from './env.js'
 
-/**
- * Per-IP rate limiting, counted in KV.
- *
- * Fails OPEN. KV is not atomic, so counts drift a little under a burst, and a KV outage would
- * otherwise take the whole app down. These guards keep one script from filling the database;
- * they are not a security boundary, and nothing here should be relied on as one.
- */
+/** Fails OPEN. KV is not atomic, so counts drift at the margin, and this is a courtesy limit
+    rather than a security boundary. */
 export interface RateLimitResult {
   ok: boolean
   retryAfter: number
@@ -36,7 +31,6 @@ export async function checkRate(
   }
 }
 
-/** Client IP, as Cloudflare reports it. */
 export function clientIp(headers: Headers): string {
   return headers.get('cf-connecting-ip') ?? headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 }

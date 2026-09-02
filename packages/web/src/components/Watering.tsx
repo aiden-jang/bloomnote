@@ -15,20 +15,9 @@ import styles from './Watering.module.css'
 
 interface Props {
   gardenId: string
-  /** Called after a successful water, so the scene can drop the drops. */
   onWatered: () => void
 }
 
-/**
- * "I saw this."
- *
- * The sender used to get nothing back. Replying means composing an entire garden, which is far more
- * than most people will do for a feeling that only needs acknowledging, so the loop stayed open and
- * the sender never learned whether the thing landed. One tap closes it.
- *
- * Sits under the plot but mounts only after the note has appeared, so during the bloom — the one
- * moment this screen exists for — there is no button competing with the flowers.
- */
 export default function Watering({ gardenId, onWatered }: Props) {
   const [waters, setWaters] = useState(0)
   const [watered, setWatered] = useState(() => hasWatered(gardenId))
@@ -53,8 +42,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
     if (watered || busy) return
     setBusy(true)
     // Optimistic: the drops fall on the tap, not on the round trip. A failed write leaves the count
-    // where it was and the button spent, which is the right way round — nagging someone to try
-    // again would make a gesture feel like a form.
+    // where it was and the button spent, which is the right way round for a gesture.
     setWatered(true)
     playWater()
     rememberWatered(gardenId)
@@ -90,7 +78,6 @@ export default function Watering({ gardenId, onWatered }: Props) {
           {feeling ? (
             <p className={styles.feelingDone}>sent back {FEELING_COPY[feeling].sent}</p>
           ) : (
-            // Label and chips on one line; the chips slide rather than wrap, like occasion and mood.
             <div className={styles.feelings}>
               <span id="felt-like" className={styles.feelingsLabel}>
                 and it felt like
@@ -135,7 +122,6 @@ const FEELING_COPY: Record<Feeling, { emoji: string; label: string; sent: string
   hug: { emoji: 'ʕっ•ᴥ•ʔっ', label: 'a hug', sent: 'a tiny hug' },
 }
 
-/** A small can, tipped further over once it has been used. */
 function Can({ poured = false }: { poured?: boolean }) {
   return (
     <svg
@@ -143,11 +129,8 @@ function Can({ poured = false }: { poured?: boolean }) {
       className={poured ? `${styles.can} ${styles.canPoured}` : styles.can}
       aria-hidden
     >
-      {/* Spout, tapering out to the left where the water leaves. */}
       <path d="M8 7 L1.5 3.2 L3 7.4 L8 10.5 Z" fill="currentColor" />
-      {/* Body. */}
       <rect x="7.5" y="4.5" width="10.5" height="11" rx="2.4" fill="currentColor" />
-      {/* Handle, drawn as an open arc so it reads as a handle and not a lump. */}
       <path
         d="M9.8 4.6 Q12.8 0.6 15.8 4.6"
         fill="none"

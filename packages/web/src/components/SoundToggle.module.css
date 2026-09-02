@@ -1,7 +1,3 @@
-/* Fixed in the top-right corner, above content but below the grain
-   overlay (z 9999) and undo toast (z 10000). Deliberately quiet — a
-   muted cream chip that only firms up on hover, so it never competes
-   with the garden. */
 .toggle {
   position: fixed;
   top: var(--chip-edge);
@@ -38,14 +34,13 @@
   transform: scale(0.92);
 }
 
-/* Keyboard focus ring — the button is otherwise borderless on focus
-   because the global `button { outline: none }` reset strips it. */
+/* Explicit focus ring: the global `button { outline }` reset leaves this one borderless on focus. */
 .toggle:focus-visible {
   outline: 2px solid var(--green-light);
   outline-offset: 2px;
 }
 
-/* Don't print the control — it's UI chrome, not part of the card. */
+/* UI chrome, not part of the card. */
 @media print {
   .toggle {
     display: none !important;

@@ -49,7 +49,7 @@ describe('watering', () => {
    * The cap has to stop the WRITE, not just the number.
    *
    * Math.min clamped the value but still put() it every request, so a loop against one garden was an
-   * unbounded stream of KV writes — the scarce quota, shared with garden creation. This counts the
+   * unbounded stream of KV writes, the scarce quota, shared with garden creation. This counts the
    * puts directly, because a test that only asserted `waters === 99` passed the whole time the bug
    * was there.
    */
@@ -90,7 +90,7 @@ describe('readWatersBatch', () => {
 
   /**
    * The cap is a subrequest budget, not a preference. Every id is one KV read, KV reads count as
-   * subrequests, and the free tier allows 50 per request — so the fan-out has to stay under it or
+   * subrequests, and the free tier allows 50 per request, so the fan-out has to stay under it or
    * the whole list request fails on exactly the page that needed it.
    */
   test('never fans out past its cap, however many ids are asked for', async () => {

@@ -20,13 +20,8 @@ function isAnniversary(date: Date, now: Date): boolean {
   )
 }
 
-/**
- * The small daily deck behind "from the garden path".
- *
- * Exact anniversaries get the first slot. Otherwise the first memory rotates once per local day,
- * deterministically, so revisiting the page does not shuffle the card under somebody's pointer.
- * Recent gardens are an archive, not a memory yet; future time capsules stay completely sealed.
- */
+/** Exact anniversaries get the first slot, so the one date that actually means something is
+    never buried under a random pick. */
 export function gardenMemoryDeck<T extends DatedGardenMemory>(gardens: T[], now = new Date()): T[] {
   const eligible = gardens.filter((garden) => {
     const date = memoryDate(garden)
@@ -48,7 +43,6 @@ export function gardenMemoryDeck<T extends DatedGardenMemory>(gardens: T[], now 
   return [...anniversaries, ...rotated]
 }
 
-/** A human postmark for the resurfacing card, with anniversaries called out explicitly. */
 export function gardenMemoryLabel(value: string, now = new Date()): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''

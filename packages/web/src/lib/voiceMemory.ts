@@ -1,21 +1,12 @@
-/*
- * Journal entries only, never a sent garden: audio needs object storage and this app only has KV.
- * IndexedDB rather than localStorage, whose ~5MB string ceiling one minute of audio would eat. Every
- * failure path here degrades to "no voice memories": private browsing and a denied mic are ordinary.
- */
-
 const DB_NAME = 'bloomnote-voice'
 const STORE = 'memories'
 const DB_VERSION = 1
 
-/** Long enough for a real thought, short enough that a stray recording cannot fill a disk. */
 export const MAX_SECONDS = 60
 
 export interface VoiceMemory {
-  /** The journal entry this belongs to. */
   entryId: string
   blob: Blob
-  /** Seconds, as measured while recording rather than read back off the file. */
   seconds: number
   savedAt: string
 }
@@ -59,7 +50,7 @@ async function withStore<T>(
     } catch {
       resolve(null)
     } finally {
-      // Closing is safe to schedule immediately: the transaction keeps its own reference.
+      // Safe to schedule immediately: the transaction keeps its own reference.
       db.close()
     }
   })
@@ -78,13 +69,11 @@ export async function deleteVoiceMemory(entryId: string): Promise<void> {
   await withStore('readwrite', (store) => store.delete(entryId))
 }
 
-/** Which entries have a voice memory, so the journal can mark them without loading any audio. */
 export async function voiceMemoryIds(): Promise<Set<string>> {
   const keys = await withStore<IDBValidKey[]>('readonly', (store) => store.getAllKeys())
   return new Set((keys ?? []).filter((key): key is string => typeof key === 'string'))
 }
 
-/** Whether recording is possible at all. Cheap and synchronous, so it can gate a button's existence. */
 export function canRecord(): boolean {
   return (
     typeof navigator !== 'undefined' &&
@@ -93,19 +82,15 @@ export function canRecord(): boolean {
   )
 }
 
-/** An unsupported mimeType makes MediaRecorder throw rather than fall back, so undefined (browser's
- *  choice) is the right answer when no guess is supported. Safari wants mp4, everything else webm. */
+/** An unsupported mimeType makes MediaRecorder throw rather than fall back. */
 function bestMimeType(): string | undefined {
   const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
   return candidates.find((type) => MediaRecorder.isTypeSupported?.(type))
 }
 
 export interface Recording {
-  /** Resolves with the finished audio, or null if nothing usable was captured. */
   stop: () => Promise<{ blob: Blob; seconds: number } | null>
-  /** Abandon it: stops the microphone and keeps nothing. */
   cancel: () => void
-  /** The live stream, for driving the ring while recording. */
   stream: MediaStream
 }
 
@@ -121,7 +106,7 @@ export async function startRecording(maxSeconds = MAX_SECONDS): Promise<Recordin
   }
   recorder.start()
 
-  // A hard ceiling enforced here rather than trusted to the UI, so a forgotten tab cannot record forever.
+  // Enforced here rather than trusted to the UI, so a forgotten tab cannot record forever.
   const cap = window.setTimeout(() => {
     if (recorder.state === 'recording') recorder.stop()
   }, maxSeconds * 1000)

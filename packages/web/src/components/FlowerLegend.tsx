@@ -6,23 +6,11 @@ import styles from './FlowerLegend.module.css'
 
 interface Props {
   flowers: FlowerSpec[]
-  /** Index of the flower being looked at, whether from here or from the plot above. */
   focused?: number | null
-  /** Pointing at a row, or letting go of it. */
   onFocus?: (index: number | null) => void
-  /** The pointer left a row. The owner decides how long the plot's panel survives that. */
   onFocusRelease?: () => void
 }
 
-/**
- * Every flower in the garden by name and meaning, each row led by that flower drawn small so the
- * line ties back to the bloom above by being the same thing. Shown by default: the per-flower
- * meanings are the model's most personal output, and behind a tap most recipients never see them.
- *
- * The overall bouquet rationale now lives in BouquetNote (attached to
- * the message with a typewriter reveal), so this component is purely
- * the per-flower breakdown.
- */
 export default function FlowerLegend({ flowers, focused = null, onFocus, onFocusRelease }: Props) {
   return (
     <section className={styles.list} aria-label="What each flower means">
@@ -42,9 +30,8 @@ export default function FlowerLegend({ flowers, focused = null, onFocus, onFocus
             onMouseEnter={() => onFocus?.(i)}
             onMouseLeave={() => onFocusRelease?.()}
             onClick={() => onFocus?.(focused === i ? null : i)}
-            // Per-row stagger matches the GardenScene's per-flower
-            // bloom timing — rows fade in as their corresponding
-            // flower blooms above.
+            // Per-row stagger matches GardenScene's per-flower bloom timing, so a row fades in as its
+            // flower opens above.
             style={{ animationDelay: `${i * BLOOM_STAGGER_MS}ms` }}
           >
             <span className={styles.bloom} aria-hidden>

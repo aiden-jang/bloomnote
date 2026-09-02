@@ -41,7 +41,7 @@ describe('validateGarden (model-output guard)', () => {
 
   test('rejects an out-of-range petalCount', () => {
     const bad = garden(3)
-    bad.flowers[0].petalCount = 99 // schema allows 5–14
+    bad.flowers[0].petalCount = 99 // schema allows 5 to 14
     expect(() => validateGarden(bad)).toThrow(/petalCount/)
   })
 
