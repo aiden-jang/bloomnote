@@ -59,7 +59,6 @@
   --cream: #faf6ee;
   --soil: #8b5e3c;
   --soil-dark: #6b4423;
-  --sky: #e8f4fd;
   --text-dark: #1e3a10;
   --text-mid: #4a6741;
   /* Secondary copy: helper lines, counters, captions, the composer's prompts. This carries real
@@ -115,12 +114,6 @@
      stays in the stack as a graceful fallback if Fraunces ever fails
      to load. */
   --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
-  /*
-   * Alias for --serif. LegalPage's heading asks for --font-display and passes its own stack as a
-   * fallback, which had quietly drifted from this one: it omits 'Playfair Display', so the legal
-   * pages skipped straight to Georgia wherever Fraunces had not loaded.
-   */
-  --font-display: var(--serif);
   --sans: 'DM Sans', system-ui, sans-serif;
   /* The two fixed corner chips: the sound toggle and the account pill. They sit side by side but
      are drawn by different components, one in a CSS module and one in inline styles, so keep the
