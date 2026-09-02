@@ -93,6 +93,19 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
 })
 
+/*
+ * A bare `/* ... *\/` in a JSX children position is a text node, not a comment, so it renders. Two
+ * of them sat on the homepage for several commits with every unit test, typecheck and browser
+ * assertion green, because nothing here ever checked what the page does NOT say.
+ */
+test('no screen leaks comment syntax as visible text', async ({ page }) => {
+  for (const path of ['/', '/mine', '/privacy', '/terms', '/g/zzzz99']) {
+    await page.goto(path)
+    await expect(page.locator('body')).not.toContainText('/*')
+    await expect(page.locator('body')).not.toContainText('*/')
+  }
+})
+
 test.describe('compose → bloom → share → recipient', () => {
   test('a note in progress survives a refresh in the same tab', async ({ page }) => {
     await page.goto('/')
