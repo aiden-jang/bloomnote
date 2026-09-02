@@ -278,7 +278,7 @@
   color: var(--green-mid);
 }
 .charCountNear {
-  color: var(--error, #c44e4e);
+  color: var(--error, #bc4a4a);
 }
 
 .input {
@@ -765,7 +765,7 @@
 
 .scheduleErrorText {
   font-size: 12px;
-  color: var(--error, #c44e4e);
+  color: var(--error, #bc4a4a);
   letter-spacing: 0.01em;
 }
 
@@ -1540,7 +1540,7 @@
    card so the user sees it where the failed action lives. */
 .shareError {
   font-size: 13px;
-  color: var(--error, #c44e4e);
+  color: var(--error, #bc4a4a);
   letter-spacing: 0.01em;
   margin: 4px 0 -2px;
 }
@@ -1659,6 +1659,20 @@
    in case it is ever rendered from somewhere that does not check. */
 @media (prefers-reduced-motion: reduce) {
   .petalFall {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recoveredDraft,
+  .undoToast,
+  .designingPanel,
+  .previewMessage,
+  .previewSecretText,
+  .bouquetNote,
+  .shareCard {
+    animation: none;
+  }
+  .fallPetal {
     display: none;
   }
 }

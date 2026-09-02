@@ -175,6 +175,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     })
   }, [flowers.length, from, previous])
 
+  const headingRef = useRef<HTMLHeadingElement>(null)
+
   const handleOpen = (): void => {
     /* Kept to 220ms (see .module.css). A view transition cross-fades a snapshot, so anything
        animating underneath is frozen; the first petal opens at 460ms and the bloom must play live. */
@@ -183,6 +185,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     })
     playChime()
     trackGardenBloomed()
+    headingRef.current?.focus()
   }
 
   const handleReplayBloom = (): void => {
@@ -303,13 +306,17 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         </a>
       )}
       <div className={styles.topLabel}>
-        {from ? (
-          <p className={styles.fromText}>
-            <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
-          </p>
-        ) : (
-          <p className={styles.fromText}>someone grew {to ? to : 'you'} a garden</p>
-        )}
+        {/* tabIndex -1 so opening the garden can put focus here. The button that does it removes
+            itself, and without this focus drops to the body and the reader loses their place. */}
+        <h1 className={styles.fromText} tabIndex={-1} ref={headingRef}>
+          {from ? (
+            <>
+              <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
+            </>
+          ) : (
+            <>someone grew {to ? to : 'you'} a garden</>
+          )}
+        </h1>
       </div>
 
       <GardenScene

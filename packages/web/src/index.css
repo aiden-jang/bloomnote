@@ -94,12 +94,9 @@
    * Dusty rose rather than a true red: it has to read as sealing wax next to forest green on
    * cream without turning into a warning colour.
    */
-  /*
-   * Error text. Three rules in the composer ask for --error and each carries the same #c44e4e as a
-   * fallback, so this is the colour they have always drawn — declared, not changed, so the next
-   * rule that needs it has somewhere to point.
-   */
-  --error: #c44e4e;
+  /* Don't lighten this back toward #c44e4e. Error text runs at 11-13px in the composer, and that
+     red only reaches 4.28:1 on cream, under the 4.5:1 needed for small text. */
+  --error: #bc4a4a;
   /*
    * Hairline borders. Three rules in the journal shelf ask for --line and fall back to black at a
    * tenth opacity, on a cream page where the other 57 borders are var(--green-pale). They were the

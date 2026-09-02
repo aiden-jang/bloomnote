@@ -205,7 +205,11 @@ test.describe('compose → bloom → share → recipient', () => {
 
     // Not getByText('Aiden'): the footer credit "made by aiden jang" also matches it.
     await expect(page.getByText(/grew Nadia a garden/i)).toBeVisible()
+    // The button removes itself on click, so focus has to be sent somewhere deliberately.
+    const heading = page.getByRole('heading', { level: 1, name: /grew Nadia a garden/i })
+    await expect(heading).toBeVisible()
     await page.getByRole('button', { name: /open the garden/i }).click()
+    await expect(heading).toBeFocused()
 
     await expect(page.getByText(NOTE)).toBeVisible()
     await expect(petals(page).first()).toBeVisible()
@@ -282,6 +286,24 @@ test.describe('compose → bloom → share → recipient', () => {
     const shareButton = page.getByRole('button', { name: 'Share this garden' })
     await shareButton.click()
     await expect(page.getByRole('button', { name: /garden shared|link copied/i })).toBeVisible()
+
+    // --- Reduced motion ---------------------------------------------------------------------
+    /*
+     * The legend rows start at opacity 0 and are faded in by an animation. Turning that animation
+     * off without also spelling out the end state leaves them invisible forever, which is worse
+     * than the motion was.
+     *
+     * Assert the computed opacity, not toBeVisible(). Playwright counts a fully transparent
+     * element as visible, so the obvious assertion passes while nothing is on screen.
+     */
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.reload()
+    await page.getByRole('button', { name: /open the garden/i }).click()
+    const legendRows = page.getByRole('region', { name: /what each flower means/i }).getByRole('listitem')
+    await expect(legendRows).toHaveCount(GARDEN.flowers.length)
+    for (let i = 0; i < GARDEN.flowers.length; i++) {
+      await expect(legendRows.nth(i)).toHaveCSS('opacity', '1')
+    }
   })
 
   test('a dead link says the garden is still there', async ({ page }) => {

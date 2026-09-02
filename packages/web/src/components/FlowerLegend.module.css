@@ -146,3 +146,14 @@
     transform: translateY(0);
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .list {
+    animation: none;
+  }
+  /* .item starts at opacity 0 and is faded in by itemReveal, so it needs the end state spelled
+     out here. Without the opacity the whole legend is invisible under reduced motion. */
+  .item {
+    animation: none;
+    opacity: 1;
+  }
+}
