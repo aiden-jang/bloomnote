@@ -8,7 +8,15 @@
 import { readFileSync } from 'node:fs'
 import { globSync } from 'node:fs'
 
-const SRC_BUDGET = 700
+/*
+ * Raise this only when a phase adds a module, never to fit prose into it.
+ *
+ * 700 was set when src stood at 666. Phase 5 added route.ts and lazyWithReload.ts, whose comments
+ * are a deploy-time trap, a magic number's justification and two silent-failure notes, so the
+ * growth is substance. If this number has to move to accommodate an explanation you are rewriting
+ * rather than a module you are adding, trim the explanation instead.
+ */
+const SRC_BUDGET = 730
 const DUP_MIN_CHARS = 45
 
 /**

@@ -1,21 +1,19 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import Footer from './components/Footer'
-import { fetchGarden, isShortId, type GardenData } from './garden'
+import { fetchGarden, type GardenData } from './garden'
+import { lazyWithReload } from './lib/lazyWithReload'
+import { parseRoute } from './lib/route'
 import notice from './components/Notice.module.css'
 
 /* Everything except the recipient view is code-split. That one stays in the main chunk because
    it is the screen a shared link lands on, and it should not wait on a second round trip. */
-const Composer = lazy(() => import('./components/Composer'))
-const MyGardens = lazy(() => import('./components/MyGardens'))
-const LegalPage = lazy(() => import('./components/LegalPage').then((m) => ({ default: m.LegalPage })))
-
-/* Routes:
-     /g/<id>  recipient view, KV lookup
-     /r/<id>  composer in remix mode, KV lookup for the seed
-     /mine    on-device archive, client only
-     /        composer */
+const Composer = lazyWithReload(() => import('./components/Composer'))
+const MyGardens = lazyWithReload(() => import('./components/MyGardens'))
+const LegalPage = lazyWithReload(() =>
+  import('./components/LegalPage').then((m) => ({ default: m.LegalPage })),
+)
 
 type Route =
   | { kind: 'composer'; seed?: GardenData }
@@ -27,38 +25,8 @@ type Route =
   | { kind: 'privacy' }
   | { kind: 'terms' }
 
-interface ParsedRoute {
-  view: 'composer' | 'recipient' | 'mine' | 'privacy' | 'terms'
-  short?: string
-  malformed?: boolean
-}
-
-function parseRoute(): ParsedRoute {
-  const path = window.location.pathname
-
-  if (path === '/mine' || path === '/mine/') return { view: 'mine' }
-  if (path === '/privacy' || path === '/privacy/') return { view: 'privacy' }
-  if (path === '/terms' || path === '/terms/') return { view: 'terms' }
-
-  const sharedMatch = path.match(/^\/g\/(.+)$/)
-  if (sharedMatch) {
-    const seg = sharedMatch[1]!
-    return isShortId(seg) ? { view: 'recipient', short: seg } : { view: 'recipient', malformed: true }
-  }
-
-  const remixMatch = path.match(/^\/r\/(.+)$/)
-  if (remixMatch) {
-    const seg = remixMatch[1]!
-    // A malformed remix segment isn't fatal. Drop the seed and show a fresh composer rather than
-    // 404ing on a mistyped URL.
-    return isShortId(seg) ? { view: 'composer', short: seg } : { view: 'composer' }
-  }
-
-  return { view: 'composer' }
-}
-
 export default function App() {
-  const parsed = useMemo(parseRoute, [])
+  const parsed = useMemo(() => parseRoute(window.location.pathname), [])
 
   const [route, setRoute] = useState<Route>(() => {
     if (parsed.view === 'mine') return { kind: 'mine' }
