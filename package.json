@@ -18,7 +18,11 @@
     "css-vars": "node scripts/check-css-vars.mjs",
     "knip": "knip",
     "format": "prettier --write .",
-    "deploy": "pnpm --filter @bloomnote/api run deploy"
+    "deploy": "pnpm verify && pnpm deploy:only",
+    "format:check": "prettier --check .",
+    "comments": "node scripts/check-comments.mjs",
+    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm css-vars && pnpm comments && pnpm knip && pnpm build && pnpm test && pnpm --filter @bloomnote/web e2e",
+    "deploy:only": "pnpm --filter @bloomnote/api run deploy"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",

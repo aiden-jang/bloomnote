@@ -20,8 +20,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
-      - run: pnpm exec prettier --check .
+      - run: pnpm format:check
       - run: pnpm css-vars
+      # A budget and a duplicate check. A cleanup pass is a moment; drift is permanent.
+      - run: pnpm comments
       # tsc and eslint only see unused things inside a file. This catches the layer above: an export
       # nothing imports, a file nothing reaches, a dependency nothing uses. A dead fetch helper
       # survived a by-hand audit of exactly this, which is why it is a gate and not a habit.
@@ -62,8 +64,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # deploy:only, not deploy. The `deploy` script runs the full gate for a human running it by
+      # hand; here the gate is the `check` job this depends on, and re-running it would need
+      # Chromium installed in this job just to repeat work that already passed.
       - name: Deploy to Cloudflare
-        run: pnpm run deploy
-        working-directory: packages/api
+        run: pnpm run deploy:only
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -1,0 +1,80 @@
+/*
+ * Two mechanical checks on comments, run by `pnpm verify`.
+ *
+ * A budget, because a cleanup pass is a moment and drift is permanent. And a duplicate check,
+ * because the same fact copied into four files is the failure this repo actually had: each copy
+ * reads as reasonable on its own, and only a whole-repo view shows it.
+ */
+import { readFileSync } from 'node:fs'
+import { globSync } from 'node:fs'
+
+const SRC_BUDGET = 700
+const DUP_MIN_CHARS = 45
+
+/*
+ * Known duplicates, kept so the gate can fail on NEW ones today rather than after they are fixed.
+ * Phase 3 resolves these and deletes the entries. Do not add to this list.
+ */
+const KNOWN_DUPLICATES = [
+  'Local, not global. CSS Modules scopes animation names',
+  'An h1, so it needs the weight back down to normal',
+  'No opacity dimming: the colour token is already the muted one',
+  'Forgetting is harmless: the button comes back and the server still counts',
+]
+
+/**
+ * Comment spans in one file.
+ *
+ * `//` is skipped when the character before it is `:`, or the whole of `http://…` inside a string
+ * reads as a comment. That false positive is why the first version of this scan reported an SVG
+ * xmlns as a duplicated comment.
+ */
+function comments(source, isCss) {
+  const out = []
+  const re = isCss ? /\/\*[\s\S]*?\*\//g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g
+  for (const m of source.matchAll(re)) {
+    if (m[0].startsWith('//') && source[m.index - 1] === ':') continue
+    out.push({ text: m[0], lines: m[0].split('\n').length })
+  }
+  return out
+}
+
+const files = globSync('packages/*/{src,test,e2e}/**/*.{ts,tsx,css}')
+const isSrc = (f) => f.includes('/src/') && !/\.test\.tsx?$/.test(f)
+
+let srcLines = 0
+const seen = new Map()
+
+for (const file of files) {
+  const source = readFileSync(file, 'utf8')
+  for (const c of comments(source, file.endsWith('.css'))) {
+    if (isSrc(file)) srcLines += c.lines
+    const flat = c.text.replace(/\s+/g, ' ').trim()
+    if (flat.length < DUP_MIN_CHARS) continue
+    const where = seen.get(flat) ?? []
+    if (!where.includes(file)) where.push(file)
+    seen.set(flat, where)
+  }
+}
+
+const problems = []
+
+if (srcLines > SRC_BUDGET) {
+  problems.push(`src carries ${srcLines} comment lines, over the ${SRC_BUDGET} budget.`)
+}
+
+for (const [text, where] of seen) {
+  if (where.length < 2) continue
+  if (KNOWN_DUPLICATES.some((known) => text.includes(known))) continue
+  problems.push(
+    `the same comment is in ${where.length} files: "${text.slice(0, 70)}…"\n    ${where.join('\n    ')}`,
+  )
+}
+
+if (problems.length > 0) {
+  console.error('comment check failed:\n')
+  for (const p of problems) console.error(`  ${p}\n`)
+  process.exit(1)
+}
+
+console.log(`comments ok: ${srcLines}/${SRC_BUDGET} lines in src, no new duplicates`)
