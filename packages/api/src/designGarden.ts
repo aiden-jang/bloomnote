@@ -53,11 +53,34 @@ export function validateBody(raw: unknown): { ok: true; body: DesignBody } | { o
   return { ok: true, body: out }
 }
 
+/**
+ * Marks where the sender's own words start and stop.
+ *
+ * Fixed rather than a random nonce so the same inputs always build the same prompt, which the
+ * prompt eval and the tests both rely on. Any copy of it inside the note is dropped below, so a
+ * note still cannot close its own fence.
+ */
+export const NOTE_FENCE = '-----NOTE-----'
+
+/**
+ * Flatten a name onto one line.
+ *
+ * A name never legitimately contains a newline, and one that does would otherwise write its own
+ * `Occasion:` line into the labelled block above the note.
+ */
+function oneLine(value: string): string {
+  return value.replace(/\s+/g, ' ').trim()
+}
+
 export function buildPrompt(body: DesignBody): string {
-  const fromLine = body.from ? `From: ${body.from}\n` : ''
+  const fromLine = body.from ? `From: ${oneLine(body.from)}\n` : ''
   const occasionLine = body.occasion ? `Occasion: ${KNOWN_OCCASIONS[body.occasion]}\n` : ''
   const moodLine = body.mood ? `Mood guidance: ${KNOWN_MOODS[body.mood]}\n` : ''
-  return `${fromLine}To: ${body.recipient}\n${occasionLine}${moodLine}\nTheir note:\n${body.message}`
+  const note = body.message.split(NOTE_FENCE).join('')
+  return (
+    `${fromLine}To: ${oneLine(body.recipient)}\n${occasionLine}${moodLine}\n` +
+    `Their note, between the markers:\n${NOTE_FENCE}\n${note}\n${NOTE_FENCE}`
+  )
 }
 
 const PER_IP_PER_MINUTE = 8
