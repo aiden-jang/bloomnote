@@ -123,8 +123,6 @@ export async function designGarden(
 }
 
 export function friendlyError(raw: string): string {
-  // Must be matched BEFORE the generic 5xx pattern below, which also catches \b503\b, or the
-  // generic copy wins and the user is told our backend is down when Gemini is the one busy.
   if (
     /high.?demand|model.+is.+currently|model.+overloaded|spikes.+in.+demand|googlegenerativeai.+error|generativelanguage\.googleapis/i.test(
       raw,
