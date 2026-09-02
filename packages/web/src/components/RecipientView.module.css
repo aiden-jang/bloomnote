@@ -436,8 +436,6 @@
   }
 }
 
-/* Local, not global. CSS Modules scopes animation names, so a module referencing a keyframe
-   defined in index.css compiles to a name that does not exist. */
 @keyframes fadeUp {
   from {
     opacity: 0;

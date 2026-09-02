@@ -12,8 +12,7 @@
   text-align: center;
 }
 
-/* An h1, so it needs the weight back down to normal. It is the page title for a screen reader,
-   not a headline. */
+/* Keep font-weight: 400. This class sits on an h1, so it is not redundant. */
 .fromText {
   font-size: 14px;
   font-weight: 400;

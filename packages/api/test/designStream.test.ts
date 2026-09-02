@@ -57,7 +57,6 @@ async function post(body: unknown, env: unknown = testEnv): Promise<Response> {
   )
 }
 
-/** Collect an SSE body into [eventName, parsedData] pairs. */
 async function events(res: Response): Promise<[string, Record<string, unknown>][]> {
   const text = await res.text()
   return text

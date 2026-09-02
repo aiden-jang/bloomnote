@@ -11,17 +11,6 @@ import { globSync } from 'node:fs'
 const SRC_BUDGET = 700
 const DUP_MIN_CHARS = 45
 
-/*
- * Known duplicates, kept so the gate can fail on NEW ones today rather than after they are fixed.
- * Phase 3 resolves these and deletes the entries. Do not add to this list.
- */
-const KNOWN_DUPLICATES = [
-  'Local, not global. CSS Modules scopes animation names',
-  'An h1, so it needs the weight back down to normal',
-  'No opacity dimming: the colour token is already the muted one',
-  'Forgetting is harmless: the button comes back and the server still counts',
-]
-
 /**
  * Comment spans in one file.
  *
@@ -67,7 +56,6 @@ if (srcLines > SRC_BUDGET) {
 
 for (const [text, where] of seen) {
   if (where.length < 2) continue
-  if (KNOWN_DUPLICATES.some((known) => text.includes(known))) continue
   problems.push(
     `the same comment is in ${where.length} files: "${text.slice(0, 70)}…"\n    ${where.join('\n    ')}`,
   )

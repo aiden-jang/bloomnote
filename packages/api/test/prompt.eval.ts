@@ -38,7 +38,6 @@ import type { ValidatedGarden } from '../src/prompt.js'
  * it occasionally, not on every edit.
  */
 const RUNS = Number(process.env.EVAL_RUNS ?? 1)
-/** How many runs must pass a check. A majority, so one unlucky roll isn't a regression. */
 const NEEDED = Math.max(1, Math.ceil(RUNS / 2))
 
 /**
@@ -210,7 +209,6 @@ describe.skipIf(!KEY)('prompt quality', () => {
         }
       }, 600_000)
 
-      /** How many of the RUNS satisfy `ok`. */
       const scoring = (ok: (g: ValidatedGarden) => boolean): number => gardens.filter(ok).length
 
       if (fx.details.length > 0) {

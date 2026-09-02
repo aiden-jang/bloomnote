@@ -773,8 +773,7 @@
 }
 
 .drop {
-  /* Falls to the soil, never a fixed number. This layer is inset in .garden, whose height
-     follows the tallest flower. */
+  /* Same reason as --fall-distance above: inset in .garden, so never a fixed number. */
   --drop-fall: var(--garden-h, 200px);
   position: absolute;
   top: -10px;
