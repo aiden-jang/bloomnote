@@ -290,6 +290,12 @@ export default function GardenScene({
     })
 
     return () => timers.forEach(clearTimeout)
+    /*
+     * `placed.length`, not `placed`. placeFlowers builds a new array every render, so depending on
+     * the array itself restarts the bloom from sprout on any unrelated state change. The length is
+     * the only thing this effect reads, and flowerSig already covers a genuinely new garden.
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoBloom, flowerSig, placed.length, onAllBloomed, silent])
 
   const drifters =

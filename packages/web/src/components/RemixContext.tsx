@@ -23,7 +23,7 @@ export default function RemixContext({ previous, label }: Props) {
           </span>
         ))}
       </div>
-      {previous.message && <p className={styles.message}>"{previous.message}"</p>}
+      {previous.message && <p className={styles.message}>&ldquo;{previous.message}&rdquo;</p>}
       {previous.bouquetNote && <p className={styles.bouquet}>{previous.bouquetNote}</p>}
     </aside>
   )
