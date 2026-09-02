@@ -5,6 +5,20 @@ const FEELING_KEY = 'bloomnote.feeling.v1'
 export type Feeling = 'love' | 'comfort' | 'joy' | 'hug'
 export type GardenResponse = { waters: number; feelings: Partial<Record<Feeling, number>> }
 
+/**
+ * Write, or don't.
+ *
+ * Private mode and disabled storage both throw here, and forgetting is harmless: the button comes
+ * back and the server still holds the real count.
+ */
+function remember(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // See above.
+  }
+}
+
 function read(): string[] {
   try {
     const raw = localStorage.getItem(KEY)
@@ -12,8 +26,7 @@ function read(): string[] {
     const parsed: unknown = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
   } catch {
-    // Private mode, disabled storage, or junk in the key. Forgetting is harmless: the button comes
-    // back and the server still counts.
+    // Junk in the key reads as nothing watered, which is the safe direction.
     return []
   }
 }
@@ -23,13 +36,9 @@ export function hasWatered(id: string): boolean {
 }
 
 export function rememberWatered(id: string): void {
-  try {
-    const ids = read().filter((x) => x !== id)
-    ids.push(id)
-    localStorage.setItem(KEY, JSON.stringify(ids.slice(-REMEMBER_LIMIT)))
-  } catch {
-    // Forgetting is harmless: the button comes back and the server still counts.
-  }
+  const ids = read().filter((x) => x !== id)
+  ids.push(id)
+  remember(KEY, ids.slice(-REMEMBER_LIMIT))
 }
 
 export function rememberedFeeling(id: string): Feeling | null {
@@ -43,15 +52,16 @@ export function rememberedFeeling(id: string): Feeling | null {
 }
 
 function rememberFeeling(id: string, feeling: Feeling): void {
+  let parsed: Record<string, unknown> = {}
   try {
-    const parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>
-    const entries = Object.entries(parsed)
-      .filter(([gardenId]) => gardenId !== id)
-      .slice(-(REMEMBER_LIMIT - 1))
-    localStorage.setItem(FEELING_KEY, JSON.stringify(Object.fromEntries([...entries, [id, feeling]])))
+    parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>
   } catch {
-    // Forgetting is harmless: the button comes back and the server still counts.
+    // A junk key reads as no memory at all, which is the same as never having answered.
   }
+  const entries = Object.entries(parsed)
+    .filter(([gardenId]) => gardenId !== id)
+    .slice(-(REMEMBER_LIMIT - 1))
+  remember(FEELING_KEY, Object.fromEntries([...entries, [id, feeling]]))
 }
 
 export async function fetchGardenResponse(id: string): Promise<GardenResponse> {

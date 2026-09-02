@@ -63,8 +63,6 @@ interface ComposerProps {
 
 export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [phase, setPhase] = useState<Phase>('idle')
-  // sessionStorage, not localStorage: a refresh should restore the note in progress, but a
-  // private message must not become a permanent cross-device archive.
   const [recoveredDraft] = useState<Draft | null>(() => readStoredDraft())
   const [showRecoveredDraft, setShowRecoveredDraft] = useState(() => recoveredDraft !== null)
   const storageKeyRef = useRef(draftStorageKey())

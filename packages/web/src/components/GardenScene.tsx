@@ -19,8 +19,7 @@ const MOOD_AURAS = {
 } as const
 
 function auraFor(mood?: string) {
-  // Object.hasOwn, not `in`: `in` matches '__proto__' and turns a stored string into a lookup
-  // on Object.prototype.
+  // Object.hasOwn, not `in`. See gradientFor in lib/scene.ts for what `in` does with '__proto__'.
   return mood && Object.hasOwn(MOOD_AURAS, mood) ? MOOD_AURAS[mood as keyof typeof MOOD_AURAS] : null
 }
 

@@ -11,7 +11,7 @@ import { expect, test, type Page } from '@playwright/test'
  * routing, and the recipient render.
  */
 
-/** A garden shaped exactly like the Worker's `complete` payload (snake_case bouquet_note). */
+/** snake_case bouquet_note, because that is what the Worker's `complete` event sends. */
 const GARDEN = {
   bouquet_note: 'for the drive, and for not making it a thing.',
   flowers: [
@@ -51,10 +51,7 @@ const GARDEN = {
 const NOTE =
   'you drove four hours in the rain to sit in a hospital car park with me and did not once make it a big deal.'
 
-/**
- * Intercept the one paid call. Returns the whole SSE body at once, which the client reads to EOF
- * exactly as it reads the real stream.
- */
+/** The whole SSE body at once: the client reads it to EOF exactly as it reads the real stream. */
 async function stubDesign(page: Page): Promise<void> {
   await page.route('**/api/design-garden', async (route) => {
     const frames = [
@@ -70,7 +67,6 @@ async function stubDesign(page: Page): Promise<void> {
   })
 }
 
-/** Petals are <path> inside the scene; a bloomed garden has many, an empty plot has none. */
 const petals = (page: Page) => page.locator('svg path')
 
 /*
@@ -94,9 +90,9 @@ test.beforeEach(async ({ page }) => {
 })
 
 /*
- * A bare `/* ... *\/` in a JSX children position is a text node, not a comment, so it renders. Two
- * of them sat on the homepage for several commits with every unit test, typecheck and browser
- * assertion green, because nothing here ever checked what the page does NOT say.
+ * `react/jsx-no-comment-textnodes` is the real guard for this now. This stays because the lint rule
+ * only sees JSX, and it is the whole-page version of the question nothing else here asks: what does
+ * the screen say that it should not?
  */
 test('no screen leaks comment syntax as visible text', async ({ page }) => {
   for (const path of ['/', '/mine', '/privacy', '/terms', '/g/zzzz99']) {
@@ -166,14 +162,12 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.getByText(NOTE)).toBeVisible()
     await expect(page.getByText('for the drive, and for not making it a thing.').first()).toBeVisible()
 
-    // Every flower, with its meaning, and no flower repeating its own name into the meaning.
     for (const f of GARDEN.flowers) {
       await expect(page.getByText(f.name, { exact: true }).first()).toBeVisible()
       await expect(page.getByText(f.meaning).first()).toBeVisible()
     }
 
     // --- Share ------------------------------------------------------------------------------
-    // The share link is written to real KV by the real endpoint; only the AI call was faked.
     const link = page.getByText(/\/g\/[A-Za-z0-9]{6}/).first()
     await expect(link).toBeVisible()
     const shareUrl = (await link.textContent())!.trim()
@@ -229,12 +223,10 @@ test.describe('compose → bloom → share → recipient', () => {
     for (const f of GARDEN.flowers) {
       await expect(page.getByText(f.meaning).first()).toBeVisible()
     }
-    // The reply loop is the thing that makes this a conversation rather than a one-way card.
     await expect(page.getByRole('link', { name: /grow Aiden a garden/i })).toBeVisible()
 
     // --- The flower panel -------------------------------------------------------------------
-    // Escape closes one layer at a time and hands focus back to the flower that opened the panel.
-    // Nothing else asserts that, and both live in the panel rather than the scene around it.
+    // Nothing else asserts the two-layer Escape or the focus handoff, and both live in the panel.
     const first = GARDEN.flowers[0]!
     const slot = page.getByRole('button', { name: new RegExp(`^${first.name}:`) })
     await slot.click()
@@ -254,8 +246,7 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(slot).toBeFocused()
 
     // --- Constellations ---------------------------------------------------------------------
-    // Both the journal and its constellations live inside the "keep this garden" disclosure, which is
-    // collapsed until asked for. That is the right home for private-journal content, so open it.
+    // The journal and its constellations sit inside the collapsed "keep this garden" disclosure.
     await page.getByText('keep this garden').click()
     const threads = page.getByRole('region', { name: /what keeps coming back/i })
     await expect(threads).toBeVisible()
@@ -267,7 +258,6 @@ test.describe('compose → bloom → share → recipient', () => {
     for (const wrong of ['Tuesday', 'Suddenly', 'Honestly', 'Tired']) {
       await expect(threads.getByRole('button', { name: new RegExp(`^\\W*${wrong}`, 'i') })).toHaveCount(0)
     }
-    // Tapping one names it and links back to the entries it came from.
     await threads.getByRole('button', { name: /Nadia/ }).click()
     await expect(page.getByText(/Nadia is in 3 of your entries/i)).toBeVisible()
 
@@ -284,7 +274,6 @@ test.describe('compose → bloom → share → recipient', () => {
     if (await recap.count()) {
       await expect(recap.first()).not.toHaveText(/\d|streak|week|day|missed|behind/i)
     }
-    // Quiet by default, so the tally is absent and the control offers to show it.
     const quietToggle = shelf.getByRole('button', { name: /show the tallies/i })
     await expect(quietToggle).toBeVisible()
     await quietToggle.click()
