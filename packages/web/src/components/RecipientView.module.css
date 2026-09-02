@@ -12,8 +12,11 @@
   text-align: center;
 }
 
+/* An h1, so it needs the weight back down to normal. It is the page title for a screen reader,
+   not a headline. */
 .fromText {
   font-size: 15px;
+  font-weight: 400;
   color: var(--text-light);
 }
 
@@ -575,5 +578,11 @@
   .tapHint {
     animation: none;
     opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wrap,
+  .secretText {
+    animation: none;
   }
 }

@@ -109,13 +109,15 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
   return (
     <div className={styles.wrap}>
       <div className={styles.topLabel}>
-        {from ? (
-          <p className={styles.fromText}>
-            <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
-          </p>
-        ) : (
-          <p className={styles.fromText}>someone grew {to ? to : 'you'} a garden</p>
-        )}
+        <h1 className={styles.fromText}>
+          {from ? (
+            <>
+              <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
+            </>
+          ) : (
+            <>someone grew {to ? to : 'you'} a garden</>
+          )}
+        </h1>
       </div>
 
       {/* The sealed plot. Same dimensions as GardenScene so the bloom
