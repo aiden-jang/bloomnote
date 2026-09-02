@@ -35,6 +35,13 @@ import { ritual } from '../lib/rituals'
 import { withViewTransition } from '../lib/viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
+import {
+  draftStorageKey,
+  readStoredDraft,
+  removeStoredDraft,
+  writeStoredDraft,
+  type Draft,
+} from '../lib/draft'
 
 // Two phases instead of four. The message is the input; the garden +
 // share link are the output. No second-phase "now add a message" step,
@@ -64,61 +71,6 @@ const THINKING_MESSAGES = [
   'arranging the bouquet…',
   'writing the note…',
 ]
-
-// Snapshot shape used by the clear-draft undo toast and the tab-local
-// recovery cache. It deliberately lives in sessionStorage rather than
-// localStorage: a note survives an accidental refresh, but never follows
-// someone to a different browser or lingers after the tab is closed.
-interface Draft {
-  from: string
-  recipient: string
-  message: string
-  secret: string
-  occasion: string
-  mood: string
-  scheduleOpen: boolean
-  unlockLocal: string
-}
-
-const DRAFT_STORAGE_VERSION = 1
-
-function draftStorageKey(): string {
-  // A reply draft belongs to its specific garden, while a fresh draft belongs
-  // to the homepage. Keeping those separate prevents a half-written reply
-  // appearing when someone starts a new note (or the other way around).
-  return `bloomnote:draft:${window.location.pathname}`
-}
-
-function readStoredDraft(): Draft | null {
-  try {
-    const raw = window.sessionStorage.getItem(draftStorageKey())
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object') return null
-    const record = parsed as { version?: unknown; draft?: unknown }
-    if (record.version !== DRAFT_STORAGE_VERSION || !record.draft || typeof record.draft !== 'object') {
-      return null
-    }
-    const draft = record.draft as Partial<Draft>
-    if (
-      typeof draft.from !== 'string' ||
-      typeof draft.recipient !== 'string' ||
-      typeof draft.message !== 'string' ||
-      (draft.secret !== undefined && typeof draft.secret !== 'string') ||
-      typeof draft.occasion !== 'string' ||
-      typeof draft.mood !== 'string' ||
-      typeof draft.scheduleOpen !== 'boolean' ||
-      typeof draft.unlockLocal !== 'string'
-    ) {
-      return null
-    }
-    return { ...draft, secret: typeof draft.secret === 'string' ? draft.secret : '' } as Draft
-  } catch {
-    // Private browsing and storage-quota failures should never interfere
-    // with writing a garden. Recovery is a courtesy, not a dependency.
-    return null
-  }
-}
 
 /**
  * Pick a CSS modifier class for the char-count based on message
@@ -188,7 +140,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const clearStoredDraft = useCallback(() => {
     try {
-      window.sessionStorage.removeItem(storageKeyRef.current)
+      removeStoredDraft(storageKeyRef.current)
     } catch {
       // Storage is best-effort; never make a local cleanup block the flow.
     }
@@ -749,20 +701,20 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   // a successful garden, a deliberate clear, or "make another."
   useEffect(() => {
     if (phase !== 'idle') return
-    try {
-      if (!hasDraft) {
-        window.sessionStorage.removeItem(storageKeyRef.current)
-        return
-      }
-      const draft: Draft = { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal }
-      window.sessionStorage.setItem(
-        storageKeyRef.current,
-        JSON.stringify({ version: DRAFT_STORAGE_VERSION, draft }),
-      )
-    } catch {
-      // See readStoredDraft: persistence is a convenience, never a reason
-      // to make the composer feel broken.
+    if (!hasDraft) {
+      removeStoredDraft(storageKeyRef.current)
+      return
     }
+    writeStoredDraft(storageKeyRef.current, {
+      from,
+      recipient,
+      message,
+      secret,
+      occasion,
+      mood,
+      scheduleOpen,
+      unlockLocal,
+    })
   }, [phase, hasDraft, from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal])
 
   /**
