@@ -8,20 +8,15 @@ import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '
 import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
 import { trackCardDownloaded, trackGardenReshared } from '../lib/analytics'
-import { fetchResponsesBatch, watersLabel, type Feeling } from '../lib/water'
+import { watersLabel, type Feeling } from '../lib/water'
 import { labelFor as occasionLabel } from '../lib/occasions'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenMemoryDeck, gardenMemoryLabel } from '../lib/gardenMemories'
 import { gardenImpact } from '../lib/gardenImpact'
+import { useGardenLibrary, type GardenLibrary } from '../lib/useGardenLibrary'
+import { useGardenResponses } from '../lib/useGardenResponses'
 import styles from './MyGardens.module.css'
-import {
-  filterGardens,
-  orderGardens,
-  readPinnedGardens,
-  writePinnedGardens,
-  type CardData,
-  type GardenSort,
-} from '../lib/gardenList'
+import type { CardData, GardenSort } from '../lib/gardenList'
 
 type Tab = 'sent' | 'received'
 
@@ -61,6 +56,56 @@ export default function MyGardens() {
   return user ? <AccountGardens /> : <LocalGardens />
 }
 
+/* One component for both archives. It was two copies, which is the shape where a fix lands on the
+   signed-in list and quietly misses the signed-out one. */
+function LibraryTools({
+  library,
+  searchPlaceholder,
+}: {
+  library: GardenLibrary<CardData>
+  searchPlaceholder: string
+}) {
+  const { query, setQuery, sort, setSort, pinnedOnly, setPinnedOnly, visiblePinned } = library
+  return (
+    <div className={styles.libraryTools}>
+      <select
+        className={styles.sort}
+        value={sort}
+        onChange={(event) => setSort(event.target.value as GardenSort)}
+        aria-label="Sort gardens"
+      >
+        <option value="newest">newest first</option>
+        <option value="oldest">oldest first</option>
+        <option value="watered">most watered</option>
+      </select>
+      <label className={styles.search}>
+        <span className={styles.srOnly}>Find a garden</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={searchPlaceholder}
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
+            clear
+          </button>
+        )}
+      </label>
+      {visiblePinned > 0 && (
+        <button
+          type="button"
+          className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
+          aria-pressed={pinnedOnly}
+          onClick={() => setPinnedOnly((value) => !value)}
+        >
+          ★ pinned ({visiblePinned})
+        </button>
+      )}
+    </div>
+  )
+}
+
 function AccountGardens() {
   const [sent, setSent] = useState<GardenSummary[]>([])
   const [received, setReceived] = useState<GardenSummary[]>([])
@@ -70,10 +115,6 @@ function AccountGardens() {
       : 'sent',
   )
   const [busy, setBusy] = useState(true)
-  const [query, setQuery] = useState('')
-  const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
-  const [sort, setSort] = useState<GardenSort>('newest')
-  const [pinnedOnly, setPinnedOnly] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -98,31 +139,10 @@ function AccountGardens() {
   // grace window. Undo cancels the pending delete, so nothing was ever deleted.
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingCommit = useRef<(() => void) | null>(null)
-  /* Water counts for the visible list, in one request. Keyed off the ids rather than the tab, so
-     switching tabs and back doesn't refetch what it already has. */
-  const [waters, setWaters] = useState<Record<string, number>>({})
-  const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
-  const visibleIds = (tab === 'sent' ? sent : received).map((g) => g.id)
-  const idKey = visibleIds.join(',')
-  useEffect(() => {
-    if (!idKey) return
-    let cancelled = false
-    void fetchResponsesBatch(idKey.split(',')).then((responses) => {
-      if (!cancelled) {
-        setWaters((prev) => ({
-          ...prev,
-          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])),
-        }))
-        setFeelings((prev) => ({
-          ...prev,
-          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])),
-        }))
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [idKey])
+  const list = tab === 'sent' ? sent : received
+  const { waters, feelings } = useGardenResponses(list.map((g) => g.id))
+  const library = useGardenLibrary(list, waters)
+  const { query, setQuery, pinnedOnly, setPinnedOnly, pinned, togglePinned, filtered } = library
 
   const [pending, setPending] = useState<{ item: GardenSummary; list: Tab; index: number } | null>(null)
 
@@ -182,19 +202,6 @@ function AccountGardens() {
   // Commit a still-pending removal if the view unmounts, honouring the user's intent.
   useEffect(() => () => flushPending(), [])
 
-  const list = tab === 'sent' ? sent : received
-  const visiblePinned = list.filter((garden) => pinned.includes(garden.id)).length
-  const filtered = useMemo(() => {
-    const scoped = pinnedOnly ? list.filter((garden) => pinned.includes(garden.id)) : list
-    return orderGardens(filterGardens(scoped, query), pinned, sort, waters)
-  }, [list, query, pinned, pinnedOnly, sort, waters])
-  const togglePinned = (id: string) => {
-    setPinned((current) => {
-      const next = current.includes(id) ? current.filter((value) => value !== id) : [id, ...current]
-      writePinnedGardens(next)
-      return next
-    })
-  }
   const switchTab = (nextTab: Tab) => {
     setTab(nextTab)
     // A search for a recipient must not make the other collection look empty on arrival.
@@ -233,42 +240,10 @@ function AccountGardens() {
       </div>
 
       {list.length > 1 && (
-        <div className={styles.libraryTools}>
-          <select
-            className={styles.sort}
-            value={sort}
-            onChange={(event) => setSort(event.target.value as GardenSort)}
-            aria-label="Sort gardens"
-          >
-            <option value="newest">newest first</option>
-            <option value="oldest">oldest first</option>
-            <option value="watered">most watered</option>
-          </select>
-          <label className={styles.search}>
-            <span className={styles.srOnly}>Find a garden</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={tab === 'received' ? 'find someone’s garden' : 'find a garden'}
-            />
-            {query && (
-              <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
-                clear
-              </button>
-            )}
-          </label>
-          {visiblePinned > 0 && (
-            <button
-              type="button"
-              className={pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter}
-              aria-pressed={pinnedOnly}
-              onClick={() => setPinnedOnly((value) => !value)}
-            >
-              ★ pinned ({visiblePinned})
-            </button>
-          )}
-        </div>
+        <LibraryTools
+          library={library as GardenLibrary<CardData>}
+          searchPlaceholder={tab === 'received' ? 'find someone’s garden' : 'find a garden'}
+        />
       )}
 
       {!busy && <MemoryLane gardens={list} kind={tab} />}
@@ -326,50 +301,13 @@ function AccountGardens() {
 function LocalGardens() {
   const { login } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
-  const [query, setQuery] = useState('')
-  const [pinned, setPinned] = useState<string[]>(readPinnedGardens)
-  const [sort, setSort] = useState<GardenSort>('newest')
-  const [pinnedOnly, setPinnedOnly] = useState(false)
-  // bloomnote is anonymous-first, so the sender who never makes an account is the usual sender.
-  // Without this they only learn a garden was watered by reopening that exact link.
-  const [waters, setWaters] = useState<Record<string, number>>({})
-  const [feelings, setFeelings] = useState<Record<string, Partial<Record<Feeling, number>>>>({})
-  const idKey = records.map((r) => r.id).join(',')
-  useEffect(() => {
-    if (!idKey) return
-    let cancelled = false
-    void fetchResponsesBatch(idKey.split(',')).then((responses) => {
-      if (!cancelled) {
-        setWaters((prev) => ({
-          ...prev,
-          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.waters])),
-        }))
-        setFeelings((prev) => ({
-          ...prev,
-          ...Object.fromEntries(Object.entries(responses).map(([id, response]) => [id, response.feelings])),
-        }))
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [idKey])
+  const { waters, feelings } = useGardenResponses(records.map((r) => r.id))
+  const library = useGardenLibrary(records, waters)
+  const { query, setQuery, pinnedOnly, setPinnedOnly, pinned, togglePinned, filtered } = library
 
   const handleRemove = (id: string) => {
     removeSentGarden(id)
     setRecords((rs) => rs.filter((r) => r.id !== id))
-  }
-  const visiblePinned = records.filter((record) => pinned.includes(record.id)).length
-  const filtered = useMemo(() => {
-    const scoped = pinnedOnly ? records.filter((record) => pinned.includes(record.id)) : records
-    return orderGardens(filterGardens(scoped, query), pinned, sort, waters)
-  }, [records, query, pinned, pinnedOnly, sort, waters])
-  const togglePinned = (id: string) => {
-    setPinned((current) => {
-      const next = current.includes(id) ? current.filter((value) => value !== id) : [id, ...current]
-      writePinnedGardens(next)
-      return next
-    })
   }
 
   return (
@@ -395,44 +333,7 @@ function LocalGardens() {
       ) : (
         <>
           {records.length > 1 && (
-            <div className={styles.libraryTools}>
-              <select
-                className={styles.sort}
-                value={sort}
-                onChange={(event) => setSort(event.target.value as GardenSort)}
-                aria-label="Sort gardens"
-              >
-                <option value="newest">newest first</option>
-                <option value="oldest">oldest first</option>
-                <option value="watered">most watered</option>
-              </select>
-              <label className={styles.search}>
-                <span className={styles.srOnly}>Find a garden</span>
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="find a garden"
-                />
-                {query && (
-                  <button type="button" onClick={() => setQuery('')} aria-label="Clear garden search">
-                    clear
-                  </button>
-                )}
-              </label>
-              {visiblePinned > 0 && (
-                <button
-                  type="button"
-                  className={
-                    pinnedOnly ? `${styles.pinnedFilter} ${styles.pinnedFilterOn}` : styles.pinnedFilter
-                  }
-                  aria-pressed={pinnedOnly}
-                  onClick={() => setPinnedOnly((value) => !value)}
-                >
-                  ★ pinned ({visiblePinned})
-                </button>
-              )}
-            </div>
+            <LibraryTools library={library as GardenLibrary<CardData>} searchPlaceholder="find a garden" />
           )}
           <MemoryLane gardens={records} kind="sent" />
           <GardenImpactCard gardens={records} waters={waters} feelings={feelings} />
