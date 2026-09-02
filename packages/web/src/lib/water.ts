@@ -90,23 +90,6 @@ export async function fetchResponsesBatch(ids: string[]): Promise<Record<string,
   }
 }
 
-export async function fetchWatersBatch(ids: string[]): Promise<Record<string, number>> {
-  if (ids.length === 0) return {}
-  try {
-    const r = await fetch(`/api/waters?ids=${encodeURIComponent(ids.join(','))}`)
-    if (!r.ok) return {}
-    const raw = ((await r.json()) as { waters?: unknown }).waters
-    if (!raw || typeof raw !== 'object') return {}
-    const out: Record<string, number> = {}
-    for (const [id, n] of Object.entries(raw as Record<string, unknown>)) {
-      if (typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = n
-    }
-    return out
-  } catch {
-    return {}
-  }
-}
-
 export async function sendWater(id: string): Promise<number | null> {
   try {
     const r = await fetch(`/api/garden/${id}/water`, { method: 'POST' })
