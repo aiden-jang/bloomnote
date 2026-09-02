@@ -124,5 +124,8 @@ export function removeFlowerJournalEntry(id: string): void {
     )
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
-  } catch {}
+  } catch {
+    // Storage disabled or full. The journal is an optional keepsake, so failing to write is not
+    // worth telling anyone about.
+  }
 }
