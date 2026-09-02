@@ -322,3 +322,125 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.locator('body')).not.toContainText(/(link|garden).{0,20}expired/i)
   })
 })
+
+/** A garden written straight to the real KV, for the screens that need one to exist first. */
+async function createGarden(page: Page, extra: Record<string, unknown> = {}): Promise<string> {
+  const response = await page.request.post('/api/garden', {
+    headers: { origin: new URL(page.url() || 'http://localhost:32100').origin },
+    data: { from: 'Aiden', to: 'Nadia', message: NOTE, ...GARDEN, ...extra },
+  })
+  const body = (await response.json()) as { id: string }
+  return body.id
+}
+
+/*
+ * The archive, both halves of it.
+ *
+ * Every one of these was verified by hand and by nothing else: the signed-out list, its search, its
+ * sort and its pinned filter all share one hook and one toolbar with the signed-in list, which is
+ * exactly the shape where a change lands on one and silently misses the other.
+ */
+test.describe('your gardens', () => {
+  const record = (id: string, to: string, createdAt: string, occasion: string) => ({
+    id,
+    to,
+    from: 'Aiden',
+    createdAt,
+    occasion,
+    swatches: ['#6f8fd0'],
+  })
+
+  test('lists, searches, sorts and filters the on-device archive', async ({ page }) => {
+    await page.goto('/')
+    const ids = [await createGarden(page), await createGarden(page), await createGarden(page)]
+    await page.addInitScript(([a, b, c]) => {
+      window.localStorage.setItem(
+        'bloomnote:mine',
+        JSON.stringify([
+          {
+            id: a,
+            to: 'Nadia',
+            from: 'Aiden',
+            createdAt: '2026-08-20T10:00:00.000Z',
+            occasion: 'thank-you',
+            swatches: ['#6f8fd0'],
+          },
+          {
+            id: b,
+            to: 'Theo',
+            from: 'Aiden',
+            createdAt: '2026-08-25T10:00:00.000Z',
+            occasion: 'birthday',
+            swatches: ['#d1477a'],
+          },
+          {
+            id: c,
+            to: 'Roberta',
+            from: 'Aiden',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            occasion: 'just-because',
+            swatches: ['#e8a33d'],
+          },
+        ]),
+      )
+      window.localStorage.setItem('bloomnote:pinned-gardens', JSON.stringify([b]))
+    }, ids)
+    await page.goto('/mine')
+
+    const rows = page.getByRole('listitem')
+    await expect(rows).toHaveCount(3)
+    // Pinned first, then newest. Theo is pinned; Roberta is the newest of the rest.
+    await expect(rows.nth(0)).toContainText('Theo')
+    await expect(rows.nth(1)).toContainText('Roberta')
+
+    const search = page.getByRole('searchbox')
+    await search.fill('Roberta')
+    await expect(rows).toHaveCount(1)
+    await expect(rows.first()).toContainText('Roberta')
+    await search.fill('')
+    await expect(rows).toHaveCount(3)
+
+    await page.getByLabel('Sort gardens').selectOption('oldest')
+    // Pinning outranks the sort, so Theo stays on top and the rest reverse behind him.
+    await expect(rows.nth(0)).toContainText('Theo')
+    await expect(rows.nth(1)).toContainText('Nadia')
+
+    const pinnedFilter = page.getByRole('button', { name: /pinned \(1\)/i })
+    await pinnedFilter.click()
+    await expect(pinnedFilter).toHaveAttribute('aria-pressed', 'true')
+    await expect(rows).toHaveCount(1)
+    await pinnedFilter.click()
+    await expect(rows).toHaveCount(3)
+  })
+
+  test('offers exactly one way out of an empty archive', async ({ page }) => {
+    // Two links to the same page read as a mistake, so the empty state carries its own.
+    await page.goto('/mine')
+    await expect(page.getByRole('heading', { level: 1, name: /your gardens/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /grow one/i })).toHaveCount(1)
+  })
+})
+
+test('a scheduled garden counts down instead of opening', async ({ page }) => {
+  await page.goto('/')
+  const id = await createGarden(page, { unlockAt: '2099-06-01T12:00:00.000Z' })
+  await page.goto(`/g/${id}`)
+
+  await expect(page.getByRole('heading', { level: 1, name: /grew Nadia a garden/i })).toBeVisible()
+  await expect(page.getByText(/opens in/i)).toBeVisible()
+  // The flowers must not be reachable before the moment the sender picked.
+  await expect(page.getByRole('button', { name: /open the garden/i })).toHaveCount(0)
+  await expect(page.getByText(NOTE)).toHaveCount(0)
+})
+
+test('the legal pages render as real documents', async ({ page }) => {
+  for (const [path, title] of [
+    ['/privacy', /privacy/i],
+    ['/terms', /terms/i],
+  ] as const) {
+    await page.goto(path)
+    await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /bloomnote/i }).first()).toBeVisible()
+  }
+})
