@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { getSessionUser } from '@aidenjang/auth-client'
 import { harden } from './harden.js'
 import type { Env } from './env.js'
@@ -19,6 +19,35 @@ import {
   waterGarden,
 } from './gardens.js'
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js'
+import { checkRate, clientIp } from './rateLimit.js'
+
+/*
+ * Per-IP ceilings on the endpoints that write.
+ *
+ * bloomnote is anonymous-first, so most of these cannot ask who is calling. Gardens are stored
+ * with no expiry on purpose (a keepsake link must keep working), which means anything a script
+ * writes here is permanent. Every number is far above real use: sending one garden is one create,
+ * and a recipient waters once.
+ *
+ * Separate buckets so a burst of one action never spends another's allowance.
+ */
+const LIMITS = {
+  create: 12,
+  water: 30,
+  feeling: 20,
+  event: 60,
+  account: 30,
+} as const
+
+/** 429 with a Retry-After, or null to continue. */
+const limited = async (c: Context<{ Bindings: Env }>, bucket: string, perMinute: number) => {
+  const result = await checkRate(c.env, bucket, clientIp(c.req.raw.headers), perMinute)
+  return result.ok
+    ? null
+    : c.json({ error: 'RATE_LIMITED', message: result.message }, 429, {
+        'retry-after': String(result.retryAfter),
+      })
+}
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -90,6 +119,8 @@ app.get('/api/garden', async (c) => {
 // Create a garden, returning its short id. Body is the garden JSON. When the creator is signed
 // in, the garden is stamped with their ownerId and added to their Sent list; anonymous still works.
 app.post('/api/garden', async (c) => {
+  const stop = await limited(c, 'create', LIMITS.create)
+  if (stop) return stop
   const body = await c.req.json().catch(() => null)
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
   const result = await createGarden(c.env, body, user?.id)
@@ -134,6 +165,8 @@ app.get('/og/:id', async (c) => {
  * when the first visitor arrived, and the sender would never see it move.
  */
 app.post('/api/garden/:id/water', async (c) => {
+  const stop = await limited(c, 'water', LIMITS.water)
+  if (stop) return stop
   const result = await waterGarden(c.env, c.req.param('id'))
   if (!result.ok) return c.json({ error: result.message }, result.status)
   return c.json({ waters: result.waters }, 200, { 'cache-control': 'no-store' })
@@ -156,6 +189,8 @@ app.get('/api/garden/:id/water', async (c) => {
 })
 
 app.post('/api/garden/:id/feeling', async (c) => {
+  const stop = await limited(c, 'feeling', LIMITS.feeling)
+  if (stop) return stop
   const body: unknown = await c.req.json().catch(() => null)
   const feeling =
     body && typeof body === 'object' && 'feeling' in body && typeof body.feeling === 'string'
@@ -180,6 +215,8 @@ app.get('/api/garden/:id/response', async (c) => {
 
 // Record that the signed-in caller opened someone else's garden (adds it to their Received list).
 app.post('/api/garden/:id/receive', async (c) => {
+  const stop = await limited(c, 'account', LIMITS.account)
+  if (stop) return stop
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
   if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
   const saved = await recordReceived(c.env, user.id, c.req.param('id'))
@@ -189,6 +226,8 @@ app.post('/api/garden/:id/receive', async (c) => {
 // Remove a garden from the signed-in user's Sent/Received lists. Keeps the garden itself, so a
 // link already shared still opens; this just detaches it from this account.
 app.delete('/api/garden/:id', async (c) => {
+  const stop = await limited(c, 'account', LIMITS.account)
+  if (stop) return stop
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
   if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
   await removeFromAccount(c.env, user.id, c.req.param('id'))
@@ -213,6 +252,8 @@ const TRACKED_EVENTS = new Set([
   'reply_started',
 ])
 app.post('/api/event', async (c) => {
+  const stop = await limited(c, 'event', LIMITS.event)
+  if (stop) return stop
   const raw = await c.req.text().catch(() => '')
   let name = ''
   let meta: unknown = {}
@@ -238,6 +279,8 @@ app.get('/api/mine', async (c) => {
 
 // First-login claim: adopt anonymous on-device gardens (their ids) into the account.
 app.post('/api/mine/claim', async (c) => {
+  const stop = await limited(c, 'account', LIMITS.account)
+  if (stop) return stop
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
   if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
   const body = (await c.req.json().catch(() => ({}))) as { ids?: unknown }
