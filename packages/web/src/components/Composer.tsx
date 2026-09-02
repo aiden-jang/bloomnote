@@ -24,7 +24,7 @@ import { prefersReducedMotion } from '../lib/motion'
 import { prewarmGardenImage, uploadOgImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
-import { countSentGardens, recordSentGarden, updateSentGardenId, type MineRecord } from '../lib/mine'
+import { countSentGardens, recordSentGarden, updateSentGardenId } from '../lib/mine'
 import { DEFAULT_MOOD, MOODS } from '../lib/moods'
 import { DEFAULT_OCCASION, OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
@@ -39,6 +39,7 @@ import {
   writeStoredDraft,
   type Draft,
 } from '../lib/draft'
+import { buildMineRecord, charCountTierClass, classifyError } from '../lib/composerHelpers'
 import { useShareActions } from '../lib/useShareActions'
 
 // Two phases instead of four. The message is the input; the garden +
@@ -69,56 +70,6 @@ const THINKING_MESSAGES = [
   'arranging the bouquet…',
   'writing the note…',
 ]
-
-/**
- * Pick a CSS modifier class for the char-count based on message
- * length. Teaches the user that longer notes get better gardens —
- * not via copy, just by quietly turning the count more confident as
- * the note grows. Anywhere past 320 nudges amber as a "you're near
- * the limit" warning.
- */
-function charCountTierClass(len: number, styles: Record<string, string>): string {
-  if (len === 0) return ''
-  if (len < 40) return styles.charCountThin ?? ''
-  if (len < 320) return styles.charCountGood ?? ''
-  return styles.charCountNear ?? ''
-}
-
-/**
- * Build the thin on-device archive summary for a just-created garden.
- * Pulls names/occasion/mood from the stored record and one
- * representative petal color per flower (capped at 5) for the swatch
- * chip on /mine. Kept out of the handlers so handleDesign and
- * handleReroll stay in sync on what gets archived.
- */
-function buildMineRecord(id: string, data: GardenData): MineRecord {
-  return {
-    id,
-    to: data.to ?? '',
-    from: data.from ?? '',
-    occasion: data.occasion,
-    mood: data.mood,
-    createdAt: data.createdAt ?? new Date().toISOString(),
-    unlockAt: data.unlockAt,
-    swatches: data.flowers.map((f) => f.petalColors[0]).slice(0, 5),
-  }
-}
-
-/**
- * Coarse bucket for analytics. Raw error messages can carry pieces of
- * the model's output (and indirectly, the user's note), so we map to
- * a small set of stable labels here and only ever log the label.
- */
-function classifyError(err: unknown): string {
-  if (!(err instanceof Error)) return 'unknown'
-  const m = err.message.toLowerCase()
-  if (m.includes('abort')) return 'aborted'
-  if (m.includes('rate')) return 'rate_limited'
-  if (m.includes('timeout') || m.includes('timed out')) return 'timeout'
-  if (m.includes('network') || m.includes('fetch')) return 'network'
-  if (m.includes('validation') || m.includes('invalid')) return 'validation'
-  return 'model'
-}
 
 interface ComposerProps {
   /** Optional remix seed; when present, the composer renders in
