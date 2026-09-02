@@ -26,7 +26,9 @@ export function readPinnedGardens(): string[] {
 export function writePinnedGardens(ids: string[]): void {
   try {
     window.localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids))
-  } catch {}
+  } catch {
+    // Storage disabled or full. A pin that doesn't survive a reload is better than an error.
+  }
 }
 
 /** Pinned first, then the chosen sort. Pinning always outranks the sort, so a pinned garden

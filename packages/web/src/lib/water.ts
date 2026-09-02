@@ -27,7 +27,9 @@ export function rememberWatered(id: string): void {
     const ids = read().filter((x) => x !== id)
     ids.push(id)
     localStorage.setItem(KEY, JSON.stringify(ids.slice(-REMEMBER_LIMIT)))
-  } catch {}
+  } catch {
+    // Forgetting is harmless: the button comes back and the server still counts.
+  }
 }
 
 export function rememberedFeeling(id: string): Feeling | null {
@@ -47,7 +49,9 @@ function rememberFeeling(id: string, feeling: Feeling): void {
       .filter(([gardenId]) => gardenId !== id)
       .slice(-(REMEMBER_LIMIT - 1))
     localStorage.setItem(FEELING_KEY, JSON.stringify(Object.fromEntries([...entries, [id, feeling]])))
-  } catch {}
+  } catch {
+    // Forgetting is harmless: the button comes back and the server still counts.
+  }
 }
 
 export async function fetchGardenResponse(id: string): Promise<GardenResponse> {
