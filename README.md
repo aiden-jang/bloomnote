@@ -20,7 +20,7 @@ design brief, so a specific note produces a specific garden. Occasion and mood b
 and prose without forcing you through a combinatorial menu.
 
 The Worker hands the note to Gemini, which is _forced_ to call a `design_garden` function and
-returns 3–5 flowers with palettes, petal shapes, and a one-line meaning each. The flowers render
+returns 3 to 5 flowers with palettes, petal shapes, and a one-line meaning each. The flowers render
 in SVG and bloom in sequence, streamed over SSE so you see progress. "Different flowers" re-rolls
 with the same inputs.
 
@@ -30,12 +30,14 @@ can also schedule delivery: the recipient sees a sealed envelope counting down t
 picked. bloomnote works fully signed out; an account just gives you a synced list of gardens
 you've sent and received.
 
-Two smaller things on the recipient's side, both aimed at the same gap. Pointing at a flower
-highlights its line in the legend and vice versa: every meaning was written about one specific
-flower, so without that link the garden is a picture, the meanings are a list, and matching them
-up means comparing colour swatches by eye. And a watering can under the plot gives a one-tap way
-to answer, because otherwise the sender hears nothing at all unless someone composes a whole
-garden back, which is more than most people will do for a feeling that only needs acknowledging.
+Two smaller things on the recipient's side close the same gap. Pointing at a flower highlights its
+line in the legend, and pointing at a line lifts the flower. Each meaning was written about one
+specific flower, and without that link the garden is a picture and the meanings are a list, matched
+up by comparing colour swatches by eye.
+
+The other is a watering can under the plot: one tap to say "I saw this." Without it the sender hears
+nothing unless the recipient composes a whole garden back, which is more than most people will do
+for a feeling that only needs acknowledging.
 
 ## Architecture
 
@@ -46,7 +48,9 @@ garden back, which is more than most people will do for a feeling that only need
         │     start | thinking | complete          (raw REST generateContent, function call)
         │  POST /api/garden  ──────────────────▶   gardens.ts  ─────▶  KV
         │  GET  /api/garden?id=… ◀──────────────   g:<shortId> → garden JSON
+        │  POST /api/garden/:id/water ─────────▶   waters:<id> (capped counter, no-store)
         │  GET  /api/me ───────────────────────▶   getSessionUser → accounts.aidenjang (optional)
+        │  GET  /g/:id ───────────────────────▶    SPA shell with the garden's OG tags rewritten
         │  app.all('*') ──────────────────────▶    built SPA (static assets + fallback)
 ```
 
@@ -65,7 +69,8 @@ bounds, so those rules live in the field descriptions (which the model reads) an
 clean error event, not a half-drawn flower.
 
 **Short links on our own domain, in KV.** `POST /api/garden` writes the garden under a 6-char
-base62 id (alphabet minus `0/O/1/l/I` for legibility) and returns it; `GET` reads it back with a
+id from a 57-character alphabet (base62 minus `0/O/1/l/I`, which are the pairs people misread)
+and returns it; `GET` reads it back with a
 one-year immutable cache header, since a garden never changes once written. KV is the natural fit:
 the id is the only thing you ever query on, reads are edge-cached, and there's no relational shape
 to model. An earlier version used a third-party shortener, which put the recipient on someone
@@ -111,6 +116,23 @@ takes about a second to rasterize. Rendering it inside the tap handler spent the
 the sheet opened, `share` threw, and the code fell through to a plain download, which lands in
 Files. The PNG is now rendered when the share card first appears, so the tap has a blob waiting.
 
+**Every write is rate-limited per IP, and the limiter fails open.** Generation was metered from the
+start, but the endpoints around it were not: watering, feelings, event beacons and garden creation
+all took unlimited writes from anyone with the URL. KV writes are the scarce quota on this plan and
+they are shared with garden creation, so a loop against any one of them could stop people making
+gardens. Each write endpoint now has its own per-minute ceiling in `rateLimit.ts`, sized to what a
+person could plausibly do. It counts in KV, which is not atomic, so counts drift at the margin and a
+determined caller can exceed a ceiling slightly. That is the right trade: this is a courtesy limit
+protecting a quota, not a security boundary, and a metering blip must never block a real garden.
+
+**The recipient screen is built for a keyboard and a screen reader too.** Flowers are real buttons
+with `aria-expanded` and `aria-controls`, Escape closes the meaning panel one layer at a time so a
+half-written journal note survives it, and focus returns to the flower that opened the panel rather
+than the top of the page. "Open the garden" removes itself on click, so it hands focus to the page
+heading instead of dropping it on `<body>`. Every animation is off under `prefers-reduced-motion`,
+and where a keyframe fades in from `opacity: 0` the stylesheet also spells out the end state, or
+turning the animation off would leave the content invisible rather than still.
+
 **Accounts are optional and additive.** Anonymous create + public links always work. Signing in
 adds a synced archive: gardens are indexed under `sent:<uid>:<id>` and `recv:<uid>:<id>` prefixes
 in the same KV, and a first-login claim step attaches anonymously-created gardens to the new
@@ -123,37 +145,42 @@ the browser never talks to accounts cross-origin.
   matters for a public demo. Where it shows is the prose: a frontier model reaches for the note's
   specifics more reliably and needs less prompting not to drift into greeting-card filler. Swapping
   the provider is `designGarden.ts` + `prompt.ts`, roughly thirty lines.
-- **Link-preview cards are written once, by the sender's browser.** The card is rasterised
-  client-side after the bloom and POSTed to `/api/garden/:id/og`, which accepts it only if the
-  garden exists, the bytes start with a PNG signature, and nothing is stored there yet. Anyone can
-  POST to a known id, so allowing overwrites would let a stranger replace the picture on somebody's
-  gift; first write wins and the rest get a 409. Gardens created before this shipped have no card
-  and unfurl with the homepage image, which is the honest outcome of not backfilling.
-- **Watering is an anonymous counter, not a vote.** The recipient taps a watering can and the
-  sender sees it next time they open their own link, the only signal that a garden landed short of
-  composing a whole one back. There is no identity to hang it on, so the client remembers its own tap
-  and the server caps the total at 99. Someone determined can walk a garden they were given up to the
-  cap; the worst outcome is a number that reads "a lot", which isn't a lie about anything that
-  matters. Making it honest would mean making people sign in to say "this was nice", which costs more
-  than the gesture is worth.
+- **Link-preview cards are written once, by the sender's browser.** The Worker has no canvas, and
+  the sender is already holding the garden it needs to draw. So the card is rasterised client-side
+  after the bloom and POSTed to `/api/garden/:id/og`. That endpoint takes it only if the garden
+  exists, the bytes start with a PNG signature, and nothing is stored there yet. Anyone can POST to
+  a known id, so overwrites would let a stranger replace the picture on somebody's gift. First write
+  wins; the rest get a 409. Gardens made before this shipped have no card and unfurl with the
+  homepage image, which is the honest outcome of not backfilling.
+- **Watering is an anonymous counter, not a vote.** The recipient taps a watering can; the sender
+  sees the count next time they open their own link. There is no identity to hang it on, so the
+  client remembers its own tap and the server caps the total at 99. Someone determined can walk a
+  garden they were given up to that cap. The worst outcome is a number that reads "a lot", which is
+  not a lie about anything that matters. Making it exact would mean making people sign in to say
+  "this was nice", which costs more than the gesture is worth.
 - **Orphaned records.** Re-rolling writes a new record and abandons the old one. Fine at this
   scale; past heavy traffic I'd overwrite in place or expire them.
 
 ## Project layout
 
 ```
-api/                     bloomnote Worker (Hono)
-  src/index.ts           routes: /api/* + SPA fallback; harden() middleware
+packages/api/            bloomnote Worker (Hono)
+  src/index.ts           routes: /api/* + SPA fallback; harden() and rate-limit middleware
   src/gardens.ts         KV store: create/read + sent/received indexes + first-login claim
   src/designGarden.ts    SSE proxy to Gemini (function calling) + KV budget cap
   src/prompt.ts          system prompt + function schema + validateGarden()
-web/                     React + Vite SPA
+  src/rateLimit.ts       per-IP per-minute ceilings on every write, KV-backed and fail-open
+  src/eventMeta.ts       the allowlist of event fields that may reach the logs
+packages/web/            React + Vite SPA
   src/components/        Composer, RecipientView, SealedView, GardenScene, FlowerSVG, MyGardens …
   src/garden.ts          schema + short-link client helpers
   src/auth/, AuthNav     optional shared-auth integration
-  src/lib/gardenImage     the garden as a PNG: share card, link preview, pressed-flower card
+  src/lib/               pure helpers, each with its own tests: scene geometry, draft storage,
+                         archive ordering, journal, constellations, recap
+  src/lib/gardenImage    the garden as a PNG: share card, link preview, pressed-flower card
   public/                favicon + generated icons + manifest + og.svg (see gen:icons)
-scripts/check-css-vars.mjs  fails the build on a var() naming an undeclared custom property
+scripts/check-css-vars.mjs     fails the build on a var() naming an undeclared custom property
+scripts/report-bundle-size.mjs prints gzip and raw size per file after a build
 ```
 
 ## Running locally
@@ -178,14 +205,15 @@ See [DEPLOY.md](DEPLOY.md) for the production runbook.
 ## Privacy
 
 The note goes to Google's Gemini for processing and is stored in KV under the short id. Anyone
-with the link can read it. Ids are random 6-char base62 (~56 billion values) so they aren't
-guessable, but the link _is_ the access token, so don't write anything you wouldn't forward.
+with the link can read it. Ids are 6 random characters from a 57-character alphabet, so there are
+about 34 billion of them and they aren't guessable, but the link _is_ the access token, so don't write anything you wouldn't forward.
 
 ## Tests
 
 ```bash
-pnpm -r test                         # 154 tests: 69 API, 85 web
-                                     # KV store, validation, quota classifier, SSE route
+pnpm -r test                         # 213 tests: 87 API, 126 web
+                                     # KV store, validation, quota classifier, SSE route,
+                                     # rate limits, and every pure helper in web/src/lib
 pnpm --filter @bloomnote/web e2e     # Playwright: compose → bloom → share → recipient
 ```
 
@@ -214,10 +242,10 @@ fall, the sky gradients, the per-shape petal control points. Those are grids you
 one entry per line destroys the thing they exist to show.
 
 `pnpm css-vars` (run by `build` and in CI) fails on a `var(--x)` naming a custom property nothing
-declares. This failure is silent by construction: with a fallback the rule quietly uses it, and
-without one `color` inherits while `fill` renders black. Six of these shipped before the check
-existed, including a wax seal that rendered as a black dot on the screen it is the centrepiece of.
-A fallback does not make the reference legitimate, so it is reported either way.
+declares. That mistake is silent by construction. With a fallback the rule quietly uses it; without
+one, `color` inherits from the parent and `fill` renders black. Six of these shipped before the
+check existed, including a wax seal that drew as a black dot on the screen it is the centrepiece of.
+A fallback does not make the reference legitimate, so both are reported.
 
 ### Prompt eval
 
@@ -245,10 +273,6 @@ Run it after editing `prompt.ts`. If the daily quota is gone it says so in those
 rather than reporting a prompt regression it never observed.
 
 Knobs: `EVAL_RUNS` (default 1) and `EVAL_PACE_MS` (default 4000).
-
-The same 20/day limit is why `DAILY_CAP` in `designGarden.ts` is 15 and not 800: past the real
-quota the app should say "at capacity for today", not "the garden service is busy, please try
-again" about something that cannot succeed until midnight Pacific.
 
 ## Talking about this
 

@@ -1,7 +1,7 @@
 import type { Env } from './env.js'
 
-// The short code IS the primary key; KV stores work this way. 6 chars of curated base62
-// (no 0/O/1/l/I) makes a collision effectively impossible, but retry on the rare hit.
+// The short code IS the primary key; KV stores work this way. 6 chars of a 57-character
+// alphabet is about 34 billion ids, so a collision is vanishingly rare, but retry on a hit.
 const ID_ALPHABET = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const ID_LENGTH = 6
 const MAX_COLLISION_RETRIES = 4
