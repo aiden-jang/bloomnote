@@ -112,11 +112,8 @@ describe('readResponsesBatch', () => {
     expect(reads).toBeLessThanOrEqual(40)
   })
 
-  /**
-   * Junk ids are dropped before the cap, not after. `readGardenResponse` already returns an empty
-   * response for one, so filtering later would look identical here while quietly letting 40 pieces
-   * of junk fill the budget and push the one real garden out of the batch.
-   */
+  // Junk is dropped before the cap, not after. Filtering later looks identical here while letting
+  // 40 pieces of junk fill the budget and push the one real garden out.
   test('does not let unusable ids crowd a real garden out of the cap', async () => {
     const id = await newGarden()
     await waterGarden(env as never, id)
