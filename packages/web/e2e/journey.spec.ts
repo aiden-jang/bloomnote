@@ -401,8 +401,8 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(other).toHaveAttribute('aria-checked', 'false')
   })
 
-  // Two ways out of the designing phase that nothing else here takes, and both used to leave the
-  // composer with no way back: a cancel, and a stream that stops before it says anything.
+  // Two ways out of the designing phase that nothing else here takes: a cancel, and a stream that
+  // stops before it says anything.
   test('cancelling puts the note back', async ({ page }) => {
     await page.route('**/api/design-garden', async () => {
       // Never answered: the point is to sit in the designing phase long enough to cancel.
@@ -443,8 +443,8 @@ test.describe('compose → bloom → share → recipient', () => {
 
   /*
    * The share card is built from the flowers the design hook hands out, not from what is drawn on
-   * screen, so emptying that list used to pass every spec here while quietly shipping a blank
-   * card. handleSaveImage returns early on an empty list, which makes the button label the tell.
+   * screen, so emptying that list passed every other spec here. handleSaveImage returns early on
+   * an empty list, which is what makes the button label the tell.
    */
   test('the share card is built from the garden that grew', async ({ page }) => {
     await page.addInitScript(() => {

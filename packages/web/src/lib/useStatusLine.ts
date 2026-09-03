@@ -10,17 +10,12 @@ const THINKING_MESSAGES = [
 
 export interface StatusLine {
   statusText: string
-  /** Replace the line and stop any rotation. */
   say: (text: string) => void
-  /** Rotate the thinking messages until something else is said. */
   think: () => void
 }
 
-/*
- * The one line under the spinner. Either it says a specific thing, or it cycles while the model
- * is thinking, and the caller should never have to remember to stop the cycle: saying anything
- * stops it, and so does leaving the designing phase.
- */
+/* The one line under the spinner. Nothing has to remember to stop the cycle: saying anything
+   stops it, and so does leaving the designing phase. */
 export function useStatusLine(designing: boolean): StatusLine {
   const [statusText, setStatusText] = useState('')
   const [thinking, setThinking] = useState(false)

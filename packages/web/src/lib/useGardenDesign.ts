@@ -57,8 +57,8 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
   const [isRerolling, setIsRerolling] = useState(false)
   const [garden, setGarden] = useState<DesignResult | null>(null)
   const [gardenId, setGardenId] = useState<string | null>(null)
-  // Derived, not stored. Every write used to set all four together, so a fifth write that forgot
-  // one was a garden showing somebody else's flowers.
+  // Derived, not stored: as four values every write had to set them in step, and the one that
+  // forgets puts somebody else's flowers in a garden.
   const flowers = garden?.flowers ?? []
   const shareUrl = gardenId === null ? null : buildShareUrl(gardenId)
 
