@@ -9,7 +9,7 @@ const post = (path: string, ip: string, body?: unknown) =>
   SELF.fetch(`https://x${path}`, {
     method: 'POST',
     headers: { 'cf-connecting-ip': ip, 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   })
 
 describe('write endpoints are rate limited', () => {
