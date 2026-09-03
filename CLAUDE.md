@@ -103,9 +103,10 @@ Those paths are covered by the Playwright journey instead. If you need to test h
 extract the decision into a pure function and test that.
 
 The journey does not cover everything it looks like it covers, and the way to find out is to break
-something and watch. Emptying the `flowers` the design hook hands out passed every spec, because
-the names on screen come from `garden.flowers` while that value feeds the share image and the
-prewarm. Clicking an occasion chip was uncovered until the rows became one shared component.
+something and watch. Emptying the `flowers` the design hook hands out once passed every spec,
+because the names on screen come from `garden.flowers` while that value feeds the share card;
+clicking an occasion chip was uncovered until the rows became one shared component. Both have
+tests now, and both were found by mutating, not by reading.
 
 Watch for the opposite too: an assertion that cannot fail. `statusText` only renders inside the
 designing panel, so a test checking the composer for a left-over "choosing flowers…" passes

@@ -24,9 +24,12 @@ export interface StatusLine {
 export function useStatusLine(designing: boolean): StatusLine {
   const [statusText, setStatusText] = useState('')
   const [thinking, setThinking] = useState(false)
+  // Both, so leaving the designing phase tears the interval down on its own. Clearing a flag
+  // afterwards works until the one path that forgets, and then it rotates forever off-screen.
+  const rotating = thinking && designing
 
   useEffect(() => {
-    if (!thinking) return
+    if (!rotating) return
     let i = 0
     setStatusText(THINKING_MESSAGES[0]!)
     const id = setInterval(() => {
@@ -34,11 +37,7 @@ export function useStatusLine(designing: boolean): StatusLine {
       setStatusText(THINKING_MESSAGES[i]!)
     }, 2500)
     return () => clearInterval(id)
-  }, [thinking])
-
-  useEffect(() => {
-    if (!designing) setThinking(false)
-  }, [designing])
+  }, [rotating])
 
   const say = useCallback((text: string) => {
     setThinking(false)
