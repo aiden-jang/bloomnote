@@ -27,6 +27,14 @@ const THINKING_MESSAGES = [
 
 const SHORTEN_TIMEOUT_MS = 3000
 
+const request = (fields: Draft): Parameters<typeof designGarden>[0] => ({
+  message: fields.message.trim(),
+  recipient: fields.recipient.trim(),
+  from: fields.from.trim() || undefined,
+  occasion: fields.occasion,
+  mood: fields.mood,
+})
+
 export interface GardenDesign {
   phase: Phase
   statusText: string
@@ -110,14 +118,6 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
     },
     [remixSeed],
   )
-
-  const request = (fields: Draft): Parameters<typeof designGarden>[0] => ({
-    message: fields.message.trim(),
-    recipient: fields.recipient.trim(),
-    from: fields.from.trim() || undefined,
-    occasion: fields.occasion,
-    mood: fields.mood,
-  })
 
   const start = useCallback(
     async (fields: Draft, onSaved: () => void) => {
