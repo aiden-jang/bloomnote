@@ -107,11 +107,11 @@ const petals = (page: Page) => page.locator('svg path')
  * Sharing one address puts every test in one rate-limit bucket, and a run spends enough of
  * LIMITS.create that the suite starts failing on whichever test comes next. Numbering the tests
  * alone is not enough: the same test draws the same address every run, so the buckets still fill
- * up across reruns, which showed as a create timing out on a different test each time. The pid
- * gives each run its own range. Only the local worker trusts this header; Cloudflare overwrites
- * it at the edge.
+ * up across reruns, which showed as a create timing out on a different test each time, so each
+ * run draws its own range. Only the local worker trusts this header; Cloudflare overwrites it at
+ * the edge.
  */
-const RUN_RANGE = `10.${(process.pid >> 8) & 0xff}.${process.pid & 0xff}`
+const RUN_RANGE = `10.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`
 let visitor = 0
 /* Also handed to page.request below: setExtraHTTPHeaders covers the browser's own requests and
    not the API context, so without this every helper-made garden shares one bucket. */

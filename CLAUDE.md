@@ -130,12 +130,16 @@ whatever the code does.
 - A check that names its own target. `check-docs.mjs` scanned `scripts/*.mjs` and its own header
   named the symbol it was written to find, which made that symbol resolve and the check useless.
 
-## The test tooling is deliberately one major behind
+## Testing inside the Workers runtime
 
-`@cloudflare/vitest-pool-workers` 0.14 and later require vitest 4, and that release rewrites the
-pool as a Vite plugin: `fetchMock` and `isolatedStorage` are gone, and `env` and `SELF` from
-`cloudflare:test` are deprecated. Dropping them costs the outbound-fetch stubbing in
-`auth-boundary.test.ts` and the per-test storage isolation that keeps `gardens.test.ts` honest,
-which is a bad trade for advisories that only exist in build tooling. Wrangler and vitest 3 are
-current; the remaining high advisories are all dev-only and none reaches the Worker at request
-time.
+The pool is a Vite plugin, not a `poolOptions` block, and it hands tests the worker's own isolate.
+Two things follow, and both used to be handled by the pool itself:
+
+- Stub `fetch` with `vi.stubGlobal` to intercept what the Worker calls out to. There is no
+  `fetchMock` any more. `test/auth-boundary.test.ts` is the worked example, and it fails an
+  unexpected origin rather than letting a request reach the network.
+- `test/reset-storage.ts` empties KV before each test. Storage is no longer isolated per test, so
+  without it one test's gardens turn up in another's list, which reads as a logic bug in whichever
+  test happens to run second.
+
+Bindings are typed by widening the global `Cloudflare.Env`, not `ProvidedEnv`.

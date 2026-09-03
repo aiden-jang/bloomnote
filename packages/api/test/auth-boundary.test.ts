@@ -1,5 +1,5 @@
-import { SELF, env, fetchMock } from 'cloudflare:test'
-import { beforeAll, afterEach, describe, expect, it } from 'vitest'
+import { SELF, env } from 'cloudflare:test'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 /*
  * A signed-in caller whose auth service is unreachable must not be told they are signed out.
@@ -8,11 +8,17 @@ import { beforeAll, afterEach, describe, expect, it } from 'vitest'
  */
 const AUTH = new URL(env.AUTH_URL).origin
 
-beforeAll(() => {
-  fetchMock.activate()
-  fetchMock.disableNetConnect()
-})
-afterEach(() => fetchMock.assertNoPendingInterceptors())
+/* The worker runs in this isolate, so stubbing fetch here is what it calls. Anything but the auth
+   service is a mistake worth failing on rather than quietly letting out to the network. */
+function authReplies(status: number, body: unknown): void {
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+    const url = new URL(input instanceof Request ? input.url : String(input))
+    if (url.origin !== AUTH) throw new Error(`unexpected fetch to ${url.origin}`)
+    return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+  })
+}
+
+afterEach(() => vi.unstubAllGlobals())
 
 const authed = (path: string, init: RequestInit = {}) =>
   SELF.fetch(`https://x${path}`, { headers: { cookie: 'session=abc' }, ...init })
@@ -25,14 +31,14 @@ describe('the authenticated routes', () => {
   })
 
   it('answers 401 when the auth service says the session is not valid', async () => {
-    fetchMock.get(AUTH).intercept({ path: '/auth/me' }).reply(401, {})
+    authReplies(401, {})
     const res = await authed('/api/mine')
     expect(res.status).toBe(401)
     expect((await res.json<{ error: string }>()).error).toBe('UNAUTHENTICATED')
   })
 
   it('answers 503, not 401, when the auth service is failing', async () => {
-    fetchMock.get(AUTH).intercept({ path: '/auth/me' }).reply(500, 'nope')
+    authReplies(500, { error: 'nope' })
     const res = await authed('/api/mine')
     expect(res.status).toBe(503)
     expect((await res.json<{ error: string }>()).error).toBe('AUTH_UNAVAILABLE')
@@ -40,10 +46,7 @@ describe('the authenticated routes', () => {
   })
 
   it('serves the account once the session resolves', async () => {
-    fetchMock
-      .get(AUTH)
-      .intercept({ path: '/auth/me' })
-      .reply(200, { user: { id: 'u1', email: 'a@b.c', displayName: 'A' } })
+    authReplies(200, { user: { id: 'u1', email: 'a@b.c', displayName: 'A' } })
     const res = await authed('/api/mine')
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ sent: [], received: [] })

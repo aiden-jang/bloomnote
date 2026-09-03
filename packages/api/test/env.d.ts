@@ -1,8 +1,10 @@
-// Types the bindings `cloudflare:test` hands the tests. bloomnote injects nothing beyond the
-// Worker's own Env, so this only widens ProvidedEnv to it.
+// Types the bindings the test runtime hands the tests. bloomnote injects nothing beyond the
+// Worker's own Env, so this only widens Cloudflare.Env to it.
 import type { Env as WorkerEnv } from '../src/env'
 
-declare module 'cloudflare:test' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface ProvidedEnv extends WorkerEnv {}
+declare global {
+  namespace Cloudflare {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    interface Env extends WorkerEnv {}
+  }
 }

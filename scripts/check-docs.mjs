@@ -15,7 +15,10 @@ const NOT_OURS = new Set([
   'reducedMotion', // Playwright's config option
   'expirationTtl', // KV's option, deliberately unused
   'generateContent', // Gemini's endpoint
-  'isolatedStorage', // a vitest-pool-workers option, named here because we rely on its default
+  // The pool API the docs name only to say it is gone and what replaced it.
+  'isolatedStorage',
+  'fetchMock',
+  'poolOptions',
   'runTests',
 ])
 
