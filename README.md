@@ -97,6 +97,7 @@ packages/web/            React + Vite SPA
                          storage, archive ordering, journal, constellations, recap
   src/lib/useGardenDesign the design lifecycle: write, wait, garden and link, reroll. The React
                          hooks here are covered through the Playwright journey, not unit tests
+  src/lib/useStatusLine  the line under the spinner: says one thing, or cycles while thinking
   src/lib/imageCards     the four card compositions, as SVG
   src/lib/gardenImage    rasterising those cards: share card, link preview, pressed flower
   src/lib/lazyWithReload a code-split import that survives a deploy
