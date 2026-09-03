@@ -401,6 +401,46 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(other).toHaveAttribute('aria-checked', 'false')
   })
 
+  // Two ways out of the designing phase that nothing else here takes, and both used to leave the
+  // composer with no way back: a cancel, and a stream that stops before it says anything.
+  test('cancelling puts the note back', async ({ page }) => {
+    await page.route('**/api/design-garden', async () => {
+      // Never answered: the point is to sit in the designing phase long enough to cancel.
+      await new Promise(() => {})
+    })
+    await page.goto('/')
+
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.getByLabel('your note').fill(NOTE)
+    await page.getByRole('button', { name: /grow .* garden/i }).click()
+
+    const cancel = page.getByRole('button', { name: 'cancel', exact: true })
+    await expect(cancel).toBeVisible()
+    await cancel.click()
+
+    await expect(cancel).toHaveCount(0)
+    await expect(page.getByLabel('your note')).toHaveValue(NOTE)
+  })
+
+  test('a stream that stops early says so instead of spinning', async ({ page }) => {
+    await page.route('**/api/design-garden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
+        body: `event: start\ndata: {"ok":true}\n\nevent: thinking\ndata: {}\n\n`,
+      })
+    })
+    await page.goto('/')
+
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.getByLabel('your note').fill(NOTE)
+    await page.getByRole('button', { name: /grow .* garden/i }).click()
+
+    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'cancel', exact: true })).toHaveCount(0)
+    await expect(page.getByLabel('your note')).toHaveValue(NOTE)
+  })
+
   test('a dead link says the garden is still there', async ({ page }) => {
     // Recipients arrive by pasted link, so a truncated one is a normal event, not an edge case.
     // Gardens have no TTL, so this page must never claim the gift expired.
