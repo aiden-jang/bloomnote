@@ -40,11 +40,15 @@ jobs:
       - run: pnpm run build
       - run: pnpm run test
       # --prod on purpose. The full audit reports ~19 high/critical advisories, every one of them
-      # in build tooling (vite, vitest, wrangler, sharp, postcss) that never reaches a browser or
-      # the Worker at request time, and most unfixable without an upstream release. Blocking on
-      # those is a permanently red light everyone learns to scroll past. This scopes the gate to
-      # what actually ships, where it can stay green and therefore still mean something.
-      - run: pnpm audit --prod --audit-level high
+      # in build tooling (vite, vitest, wrangler, sharp, postcss) or something those pull in, so
+      # none reaches a browser or the Worker at request time, and most need an upstream release.
+      # Blocking on those is a permanently red light everyone learns to scroll past. This scopes
+      # the gate to what actually ships, where it can stay green and therefore still mean something.
+      #
+      # moderate, not high: what ships is hono and the auth client, and it currently reports
+      # nothing at all. A ceiling above the actual count is not a gate, so this sits just above
+      # clean and fails on the next advisory in either of them.
+      - run: pnpm audit --prod --audit-level moderate
       # The one layer the unit tests cannot see: whether a person can actually get from an empty
       # form to a garden their friend can open. Playwright starts the Worker and the SPA itself.
       - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium

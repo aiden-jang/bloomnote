@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.2.0",
-    "hono": "^4.6.14"
+    "hono": "^4.12.34"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.8.24",
