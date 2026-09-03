@@ -11,6 +11,21 @@ have is a piece that cannot break a link somebody was sent.
 
 ---
 
+### Signed out and unreachable are different answers
+
+The account routes resolve the session through `resolveSession`, which separates "no valid
+session" from "could not reach the auth service". The first is a 401, the second a 503 with a
+`Retry-After`. Answering 401 for an outage tells a signed-in caller they are signed out, and the
+clients act on that: `claimGardens` used to read any failure as "claimed nothing" while its caller
+deleted the on-device copy of every id it had handed over, so one failed request emptied somebody's
+archive for good.
+
+Creating a garden and reading `/api/me` still fall back to anonymous when auth is unreachable,
+because refusing to send a garden is worse than sending it unowned. That is only safe because the
+sender keeps an on-device record and `/api/mine/claim` adopts it on their next visit.
+
+---
+
 ## Storage
 
 ### Gardens have no expiry, on purpose

@@ -18,16 +18,22 @@ export async function fetchMine(): Promise<{ sent: GardenSummary[]; received: Ga
   return (await r.json()) as { sent: GardenSummary[]; received: GardenSummary[] }
 }
 
-export async function claimGardens(ids: string[]): Promise<number> {
+/** null when the request did not land. Callers drop the on-device copy on a number, never on
+    null, or a failed claim deletes the only record that the garden was ever theirs. */
+export async function claimGardens(ids: string[]): Promise<number | null> {
   if (ids.length === 0) return 0
-  const r = await fetch('/api/mine/claim', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ ids }),
-  })
-  if (!r.ok) return 0
-  return ((await r.json()) as { claimed: number }).claimed
+  try {
+    const r = await fetch('/api/mine/claim', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    if (!r.ok) return null
+    return ((await r.json()) as { claimed: number }).claimed
+  } catch {
+    return null
+  }
 }
 
 export async function recordReceived(id: string): Promise<boolean> {

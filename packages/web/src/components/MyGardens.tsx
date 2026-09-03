@@ -116,8 +116,8 @@ function AccountGardens() {
     void (async () => {
       const localIds = loadSentGardens().map((r) => r.id)
       if (localIds.length > 0) {
-        await claimGardens(localIds)
-        localIds.forEach(removeSentGarden)
+        const claimed = await claimGardens(localIds)
+        if (claimed !== null) localIds.forEach(removeSentGarden)
       }
       const mine = await fetchMine().catch(() => ({ sent: [], received: [] }))
       if (cancelled) return
