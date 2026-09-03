@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
-import ChipRow from './ChipRow'
+import ChipPicker from './ChipPicker'
+import NoteField from './NoteField'
+import GardenForecastPanel from './GardenForecastPanel'
 import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
@@ -23,7 +25,7 @@ import { OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
 import { ritual } from '../lib/rituals'
 import styles from './Composer.module.css'
-import { charCountTierClass, disabledReasonFor, scheduleErrorFor } from '../lib/composerHelpers'
+import { disabledReasonFor, scheduleErrorFor } from '../lib/composerHelpers'
 import { useComposerDraft } from '../lib/useComposerDraft'
 import { useHeroDemo } from '../lib/useHeroDemo'
 import { useShareActions } from '../lib/useShareActions'
@@ -203,58 +205,15 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'idle' && (
         <>
-          <section className={styles.section}>
-            {/* htmlFor and id, not adjacency. Every label on this form sits beside its input rather
-                than wrapping it, so without the pairing each field's only name is its placeholder. */}
-            <label className={styles.label} htmlFor="note">
-              your note
-            </label>
-            <p className={styles.ritual}>
-              {todaysRitual.invitation}
-              {todaysRitual.permission && <span>{todaysRitual.permission}</span>}
-            </p>
-            <textarea
-              id="note"
-              ref={messageRef}
-              className={styles.textarea}
-              placeholder={writingPrompt}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={6}
-              maxLength={400}
-            />
-            <div className={styles.helperRow}>
-              <span className={styles.helper}>
-                quirks beat vibes. the weirder the detail, the better the bouquet.
-              </span>
-              <span className={`${styles.charCount} ${charCountTierClass(message.length, styles)}`}>
-                {message.length}/400
-              </span>
-            </div>
-            {!message.trim() && (
-              <div className={styles.promptRow}>
-                <button
-                  type="button"
-                  className={styles.promptLink}
-                  onClick={() => {
-                    setMessage(writingPrompt)
-                    messageRef.current?.focus()
-                  }}
-                >
-                  use this thought
-                </button>
-                {promptOptions.length > 1 && (
-                  <button
-                    type="button"
-                    className={styles.promptLink}
-                    onClick={() => setPromptIndex((index) => index + 1)}
-                  >
-                    another angle ↻
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
+          <NoteField
+            ritual={todaysRitual}
+            value={message}
+            onChange={setMessage}
+            inputRef={messageRef}
+            prompt={writingPrompt}
+            hasAnotherPrompt={promptOptions.length > 1}
+            onAnotherPrompt={() => setPromptIndex((index) => index + 1)}
+          />
 
           {!remixSeed && (
             <ExampleCarousel
@@ -310,73 +269,16 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             </div>
           </details>
 
-          <section className={styles.section}>
-            <span className={styles.label} id="occasion-label">
-              occasion
-            </span>
-            <ChipRow labelledBy="occasion-label">
-              {OCCASIONS.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={occasion === o.value}
-                  className={occasion === o.value ? `${styles.chip} ${styles.chipOn}` : styles.chip}
-                  onClick={() => setOccasion(o.value)}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </ChipRow>
-          </section>
-          <section className={styles.section}>
-            <span className={styles.label} id="mood-label">
-              mood
-            </span>
-            <ChipRow labelledBy="mood-label">
-              {MOODS.map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={mood === m.value}
-                  className={mood === m.value ? `${styles.chip} ${styles.chipOn}` : styles.chip}
-                  onClick={() => setMood(m.value)}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </ChipRow>
-          </section>
+          <ChipPicker
+            label="occasion"
+            name="occasion"
+            options={OCCASIONS}
+            value={occasion}
+            onChange={setOccasion}
+          />
+          <ChipPicker label="mood" name="mood" options={MOODS} value={mood} onChange={setMood} />
 
-          {message.trim().length >= 4 && (
-            <section className={styles.forecast} aria-label="Garden forecast" aria-live="polite">
-              <div className={styles.forecastHead}>
-                <span>
-                  <span className={styles.forecastEyebrow}>garden forecast</span>
-                  <strong>{forecast.tone}</strong>
-                </span>
-                <span className={styles.forecastSwatches} aria-label={forecast.palette}>
-                  {forecast.colors.map((color) => (
-                    <i key={color} style={{ backgroundColor: color }} />
-                  ))}
-                </span>
-              </div>
-              <p>
-                likely {forecast.shape} in {forecast.palette}, under {forecast.light}.
-              </p>
-              <div className={styles.forecastSoil}>
-                <span className={styles.forecastDots} aria-hidden>
-                  {[1, 2, 3].map((level) => (
-                    <i key={level} data-grown={level <= forecast.detailLevel} />
-                  ))}
-                </span>
-                <span>{forecast.detailCopy}</span>
-              </div>
-              <small>direction only. the final garden still gets to surprise you.</small>
-            </section>
-          )}
-
+          {message.trim().length >= 4 && <GardenForecastPanel forecast={forecast} />}
           <ScheduleInput
             open={scheduleOpen}
             value={unlockLocal}
