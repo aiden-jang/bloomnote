@@ -53,10 +53,8 @@ for (const doc of DOCS) {
     .forEach((line, i) => {
       const at = `${doc}:${i + 1}`
 
-      for (const [, path] of line
-        .matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml)\b/g)
-        .map((m) => [0, m[0]])) {
-        const bare = path.replace(/^`|`$/g, '')
+      for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml)\b/g)) {
+        const bare = m[0].replace(/^`|`$/g, '')
         if (![...files].some((f) => f.endsWith(bare) || f.endsWith(`/${bare.split('/').pop()}`))) {
           problems.push(`${at}: no such file \`${bare}\``)
         }
@@ -73,17 +71,15 @@ for (const doc of DOCS) {
         /(\/api\/[\w:-]+(?:\/[\w:-]+)*|\/og\/[\w:-]+|\/g\/[\w:-]+|\/health)\b/g,
       )) {
         const base = m[1]
-        if (!code.includes(`'${base}'`) && !code.includes(base)) {
-          problems.push(`${at}: no route \`${base}\``)
-        }
+        if (!code.includes(base)) problems.push(`${at}: no route \`${base}\``)
       }
 
       // Bare, not just `name()`: the rename that prompted this gate sat in a diagram with no
       // parentheses and no backticks. camelCase in English prose is almost always a symbol.
       for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*(?:[A-Z][A-Za-z0-9]*)+)\b/g)) {
         const name = m[1]
-        if (NOT_OURS.has(name) || !has(name)) {
-          if (!NOT_OURS.has(name)) problems.push(`${at}: nothing named \`${name}\` in the code`)
+        if (!NOT_OURS.has(name) && !has(name)) {
+          problems.push(`${at}: nothing named \`${name}\` in the code`)
         }
       }
     })
