@@ -1,3 +1,4 @@
+/** Remove a stored leading flower name when the heading already says it. */
 export function withoutLeadingFlowerName(name: string, meaning: string): string {
   const normalizedName = name.trim()
   if (!normalizedName || !meaning.toLowerCase().startsWith(normalizedName.toLowerCase())) return meaning

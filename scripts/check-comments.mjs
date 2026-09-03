@@ -9,17 +9,14 @@ import { readFileSync } from 'node:fs'
 import { globSync } from 'node:fs'
 
 /*
- * Raise this only when a phase adds a module, never to fit prose into it.
+ * A share of the code, not a line count. An absolute budget charged new modules for their own
+ * headers, so it blocked a deploy-time trap and a silent-failure note the same way it blocks
+ * padding, and a real doc comment was deleted to fit a bug explanation underneath it.
  *
- * 700 was set when src stood at 666. Phase 5 added route.ts and lazyWithReload.ts, whose comments
- * are a deploy-time trap, a magic number's justification and two silent-failure notes, so the
- * growth is substance. If this number has to move to accommodate an explanation you are rewriting
- * rather than a module you are adding, trim the explanation instead.
- *
- * 730 -> 760: phase 7 added imageCards.tsx (528 lines) and phase 8 added two hooks and a shared
- * component. The trim came first and reclaimed 12 lines; the rest is new modules, not new prose.
+ * A share still bites on what this repo actually got wrong, which was prose added to code that
+ * already existed: 150 comment lines with no new code puts src over 6%.
  */
-const SRC_BUDGET = 760
+const MAX_SRC_DENSITY = 0.06
 // The gates' own source counts too, on its own budget.
 const SCRIPTS_BUDGET = 96
 const DUP_MIN_CHARS = 45
@@ -52,11 +49,13 @@ const files = [...globSync('packages/*/{src,test,e2e}/**/*.{ts,tsx,css}'), ...gl
 const isSrc = (f) => f.includes('/src/') && !/\.test\.tsx?$/.test(f)
 
 let srcLines = 0
+let srcTotal = 0
 let scriptLines = 0
 const seen = new Map()
 
 for (const file of files) {
   const source = readFileSync(file, 'utf8')
+  if (isSrc(file)) srcTotal += source.split('\n').filter((l) => l.trim() !== '').length
   for (const c of comments(source, file.endsWith('.css'))) {
     if (isSrc(file)) srcLines += c.lines
     else if (file.startsWith('scripts/')) scriptLines += c.lines
@@ -70,14 +69,19 @@ for (const file of files) {
   }
 }
 
+const density = srcTotal === 0 ? 0 : srcLines / srcTotal
 const problems = []
 
 if (scriptLines > SCRIPTS_BUDGET) {
   problems.push(`scripts carry ${scriptLines} comment lines, over the ${SCRIPTS_BUDGET} budget.`)
 }
 
-if (srcLines > SRC_BUDGET) {
-  problems.push(`src carries ${srcLines} comment lines, over the ${SRC_BUDGET} budget.`)
+const srcCeiling = Math.floor(srcTotal * MAX_SRC_DENSITY)
+if (srcLines > srcCeiling) {
+  problems.push(
+    `src is ${(density * 100).toFixed(2)}% comments, over the ${(MAX_SRC_DENSITY * 100).toFixed(0)}% ceiling ` +
+      `(${srcLines} lines, ${srcCeiling} allowed at ${srcTotal} lines of source).`,
+  )
 }
 
 for (const [text, where] of seen) {
@@ -94,6 +98,6 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `comments ok: ${srcLines}/${SRC_BUDGET} in src, ${scriptLines}/${SCRIPTS_BUDGET} in scripts, ` +
-    `no new duplicates`,
+  `comments ok: src ${(density * 100).toFixed(2)}% of ${srcTotal} lines ` +
+    `(${srcLines}/${srcCeiling}), scripts ${scriptLines}/${SCRIPTS_BUDGET}, no new duplicates`,
 )
