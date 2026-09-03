@@ -163,7 +163,7 @@ describe('gardens (KV)', () => {
  */
 describe('share-card image', () => {
   const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]).buffer
-  const NOT_PNG = new TextEncoder().encode('<svg>nope</svg>').buffer
+  const NOT_PNG = Uint8Array.from('<svg>nope</svg>', (ch) => ch.charCodeAt(0)).buffer as ArrayBuffer
 
   const madeGarden = async (): Promise<string> => {
     const r = await createGarden(testEnv, GARDEN)

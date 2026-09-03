@@ -41,17 +41,18 @@ describe('validateGarden (model-output guard)', () => {
 
   test('rejects an out-of-range petalCount', () => {
     const bad = garden(3)
-    bad.flowers[0].petalCount = 99 // schema allows 5 to 14
+    const flower = bad.flowers[0]!
+    flower.petalCount = 99 // schema allows 5 to 14
     expect(() => validateGarden(bad)).toThrow(/petalCount/)
   })
 
   test('rejects a bad hex color and an unknown petal shape', () => {
     const badHex = garden(3)
-    badHex.flowers[0].centerColor = 'red'
+    badHex.flowers[0]!.centerColor = 'red'
     expect(() => validateGarden(badHex)).toThrow(/centerColor/)
 
     const badShape = garden(3)
-    badShape.flowers[0].petalShape = 'spiky'
+    badShape.flowers[0]!.petalShape = 'spiky'
     expect(() => validateGarden(badShape)).toThrow(/shape/)
   })
 })
