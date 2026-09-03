@@ -101,18 +101,27 @@ const petals = (page: Page) => page.locator('svg path')
  * a path it deliberately supports. The trade-off is real: the entrance animations themselves (the
  * staged bloom, the typewriter note) are not exercised, only their end state.
  */
+/*
+ * A different caller per test, and a different range per run.
+ *
+ * Sharing one address puts every test in one rate-limit bucket, and a run spends enough of
+ * LIMITS.create that the suite starts failing on whichever test comes next. Numbering the tests
+ * alone is not enough: the same test draws the same address every run, so the buckets still fill
+ * up across reruns, which showed as a create timing out on a different test each time. The pid
+ * gives each run its own range. Only the local worker trusts this header; Cloudflare overwrites
+ * it at the edge.
+ */
+const RUN_RANGE = `10.${(process.pid >> 8) & 0xff}.${process.pid & 0xff}`
 let visitor = 0
+/* Also handed to page.request below: setExtraHTTPHeaders covers the browser's own requests and
+   not the API context, so without this every helper-made garden shares one bucket. */
+let callerIp = ''
 
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  /*
-   * A different caller per test. They otherwise share one rate-limit bucket, and at four garden
-   * creates a run against a ceiling of twelve a minute, the third run inside a minute starts
-   * failing on whichever test happens to be next. Only the local worker trusts this header;
-   * Cloudflare overwrites it at the edge.
-   */
   visitor += 1
-  await page.setExtraHTTPHeaders({ 'cf-connecting-ip': `203.0.113.${visitor}` })
+  callerIp = `${RUN_RANGE}.${visitor}`
+  await page.setExtraHTTPHeaders({ 'cf-connecting-ip': callerIp })
 })
 
 /*
@@ -395,9 +404,17 @@ test.describe('compose → bloom → share → recipient', () => {
 /** A garden written straight to the real KV, for the screens that need one to exist first. */
 async function createGarden(page: Page, extra: Record<string, unknown> = {}): Promise<string> {
   const response = await page.request.post('/api/garden', {
-    headers: { origin: new URL(page.url() || 'http://localhost:32100').origin },
+    headers: {
+      origin: new URL(page.url() || 'http://localhost:32100').origin,
+      'cf-connecting-ip': callerIp,
+    },
     data: { from: 'Aiden', to: 'Nadia', message: NOTE, ...GARDEN, ...extra },
   })
+  // Say so here rather than returning an undefined id: a refused create used to surface fifteen
+  // seconds later as an empty list, which reads like a rendering bug.
+  if (!response.ok()) {
+    throw new Error(`could not seed a garden: ${response.status()} ${await response.text()}`)
+  }
   const body = (await response.json()) as { id: string }
   return body.id
 }
