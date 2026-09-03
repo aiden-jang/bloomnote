@@ -75,8 +75,8 @@ export function buildPrompt(body: DesignBody): string {
   )
 }
 
-const PER_IP_PER_MINUTE = 8
-/** Global daily ceiling on garden generations, sized to the Gemini free tier. */
+/** Gemini's free tier for this key: 5 requests a minute, 20 a day, both per project. */
+export const PER_IP_PER_MINUTE = 5
 export const DAILY_CAP = 15
 const DAILY_BUDGET_INSTANCE = 'daily-budget'
 
