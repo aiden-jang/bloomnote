@@ -441,6 +441,29 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.getByLabel('your note')).toHaveValue(NOTE)
   })
 
+  /*
+   * The share card is built from the flowers the design hook hands out, not from what is drawn on
+   * screen, so emptying that list used to pass every spec here while quietly shipping a blank
+   * card. handleSaveImage returns early on an empty list, which makes the button label the tell.
+   */
+  test('the share card is built from the garden that grew', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: () => Promise.resolve() })
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true })
+    })
+    await stubDesign(page)
+    await page.goto('/')
+
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.getByLabel('your note').fill(NOTE)
+    await page.getByRole('button', { name: /grow .* garden/i }).click()
+
+    const save = page.getByRole('button', { name: 'save as image' })
+    await expect(save).toBeVisible()
+    await save.click()
+    await expect(page.getByRole('button', { name: /image shared|image downloaded/ })).toBeVisible()
+  })
+
   test('a dead link says the garden is still there', async ({ page }) => {
     // Recipients arrive by pasted link, so a truncated one is a normal event, not an edge case.
     // Gardens have no TTL, so this page must never claim the gift expired.
