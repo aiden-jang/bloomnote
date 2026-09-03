@@ -67,6 +67,22 @@ async function stubDesign(page: Page): Promise<void> {
   })
 }
 
+/** Serves a different garden on each call, so a reroll is distinguishable from a repaint. */
+async function stubDesignSequence(page: Page, gardens: unknown[]): Promise<void> {
+  let call = 0
+  await page.route('**/api/design-garden', async (route) => {
+    const garden = gardens[Math.min(call, gardens.length - 1)]
+    call += 1
+    await route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
+      body:
+        `event: start\ndata: ${JSON.stringify({ ok: true })}\n\n` +
+        `event: complete\ndata: ${JSON.stringify({ garden })}\n\n`,
+    })
+  })
+}
+
 const petals = (page: Page) => page.locator('svg path')
 
 /*
@@ -308,6 +324,49 @@ test.describe('compose → bloom → share → recipient', () => {
     for (let i = 0; i < GARDEN.flowers.length; i++) {
       await expect(legendRows.nth(i)).toHaveCSS('opacity', '1')
     }
+  })
+
+  /*
+   * Reroll and the failure path, the two branches of the design lifecycle the happy path never
+   * touches. Both were uncovered while that lifecycle sat in the middle of a 889-line component,
+   * which is the worst combination for changing it.
+   */
+  test('rerolling replaces the flowers rather than repainting the same ones', async ({ page }) => {
+    const second = {
+      ...GARDEN,
+      flowers: [{ ...GARDEN.flowers[0]!, name: 'Bluebell', meaning: 'For the second attempt.' }],
+    }
+    await stubDesignSequence(page, [GARDEN, second])
+    await page.goto('/')
+
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.getByLabel('your note').fill(NOTE)
+    await page.getByRole('button', { name: /grow .* garden/i }).click()
+    await expect(page.getByText(GARDEN.flowers[0]!.name, { exact: true }).first()).toBeVisible()
+
+    await page.getByRole('button', { name: /different flowers/i }).click()
+    await expect(page.getByText('Bluebell', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText(GARDEN.flowers[0]!.name, { exact: true })).toHaveCount(0)
+  })
+
+  test('a failed generation says so and leaves the note intact', async ({ page }) => {
+    await page.route('**/api/design-garden', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
+        body: 'event: error\ndata: {"error":"bloomnote is at capacity for today. try again tomorrow."}\n\n',
+      })
+    })
+    await page.goto('/')
+
+    await page.getByPlaceholder('their name').fill('Nadia')
+    await page.getByLabel('your note').fill(NOTE)
+    await page.getByRole('button', { name: /grow .* garden/i }).click()
+
+    await expect(page.getByRole('alert')).toContainText('at capacity for today')
+    // The note has to survive: losing what someone wrote because generation failed is the one
+    // outcome this screen cannot have.
+    await expect(page.getByLabel('your note')).toHaveValue(NOTE)
   })
 
   test('a dead link says the garden is still there', async ({ page }) => {
