@@ -36,6 +36,9 @@ jobs:
       # tsc and eslint only see unused things inside a file. This catches the layer above: an export
       # nothing imports, a file nothing reaches, a dependency nothing uses. A dead fetch helper
       # survived a by-hand audit of exactly this, which is why it is a gate and not a habit.
+      # Prose rots with nothing to fail: a rename leaves the README describing a symbol that is
+      # gone and every sentence still reads fine.
+      - run: pnpm run check:docs
       - run: pnpm run knip
       - run: pnpm run build
       - run: pnpm run test

@@ -49,7 +49,7 @@ for a feeling that only needs acknowledging.
         │  POST /api/garden  ──────────────────▶   gardens.ts  ─────▶  KV
         │  GET  /api/garden?id=… ◀──────────────   g:<shortId> → garden JSON
         │  POST /api/garden/:id/water ─────────▶   waters:<id> (capped counter, no-store)
-        │  GET  /api/me ───────────────────────▶   getSessionUser → accounts.aidenjang (optional)
+        │  GET  /api/me ───────────────────────▶   resolveSession → accounts.aidenjang (optional)
         │  GET  /g/:id ───────────────────────▶    SPA shell with the garden's OG tags rewritten
         │  app.all('*') ──────────────────────▶    built SPA (static assets + fallback)
 ```
@@ -93,8 +93,10 @@ packages/web/            React + Vite SPA
   src/components/        Composer, RecipientView, SealedView, GardenScene, FlowerSVG, MyGardens …
   src/garden.ts          schema + short-link client helpers
   src/auth/, AuthNav     optional shared-auth integration
-  src/lib/               pure helpers and hooks, each with its own tests: routing, scene geometry,
-                         draft storage, archive ordering, journal, constellations, recap
+  src/lib/               pure helpers, each with its own tests: routing, scene geometry, draft
+                         storage, archive ordering, journal, constellations, recap
+  src/lib/useGardenDesign the design lifecycle: write, wait, garden and link, reroll. The React
+                         hooks here are covered through the Playwright journey, not unit tests
   src/lib/imageCards     the four card compositions, as SVG
   src/lib/gardenImage    rasterising those cards: share card, link preview, pressed flower
   src/lib/lazyWithReload a code-split import that survives a deploy

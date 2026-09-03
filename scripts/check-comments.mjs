@@ -17,8 +17,9 @@ import { globSync } from 'node:fs'
  * already existed: 150 comment lines with no new code puts src over 6%.
  */
 const MAX_SRC_DENSITY = 0.06
-// The gates' own source counts too, on its own budget.
-const SCRIPTS_BUDGET = 96
+/* A count, not the share used above: these run at four times src's rate because a gate's header
+   is mostly the reason it exists, so a share would not bite. Move it only to admit a new gate. */
+const SCRIPTS_BUDGET = 110
 const DUP_MIN_CHARS = 45
 
 /**
