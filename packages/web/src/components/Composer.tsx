@@ -13,6 +13,7 @@ import { type ExampleGarden } from '../data/exampleGardens'
 import { type GardenData } from '../garden'
 import { trackComposerOpened } from '../lib/analytics'
 import { useGardenDesign } from '../lib/useGardenDesign'
+import { countSentGardens } from '../lib/mine'
 import { Spinner, PetalFall } from './ComposerBloom'
 import { prewarmGardenImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
@@ -33,19 +34,11 @@ interface ComposerProps {
 
 export default function Composer({ remixSeed }: ComposerProps = {}) {
   const design = useGardenDesign(remixSeed)
-  const {
-    phase,
-    statusText,
-    errorText,
-    garden,
-    flowers,
-    shareUrl,
-    gardenId,
-    isRerolling,
-    mineCount,
-    previewSecretRevealed,
-    togglePreviewSecret,
-  } = design
+  const { phase, statusText, errorText, garden, flowers, shareUrl, gardenId, isRerolling } = design
+
+  const [mineCount, setMineCount] = useState(() => countSentGardens())
+  const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
+  useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
   const draft = useComposerDraft({ remixSeed, idle: phase === 'idle' })
   const { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
   const {
@@ -115,7 +108,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const runDesign = useCallback(() => {
     if (!canSubmit) return
-    void design.start(draft.fields, draft.forget)
+    void design.start(draft.fields, () => {
+      draft.forget()
+      setMineCount(countSentGardens())
+    })
   }, [canSubmit, design, draft])
 
   const handleStartOver = useCallback(() => {
@@ -493,7 +489,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   <button
                     type="button"
                     className={styles.previewSecretReveal}
-                    onClick={togglePreviewSecret}
+                    onClick={() => setPreviewSecretRevealed((revealed) => !revealed)}
                     aria-expanded={previewSecretRevealed}
                   >
                     <SecretEnvelope open={previewSecretRevealed} />
