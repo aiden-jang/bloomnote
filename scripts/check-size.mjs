@@ -20,7 +20,6 @@ const MAX_STATE = 12
  */
 const ALREADY_OVER = {
   'packages/web/src/components/Composer.tsx': { lines: 890, state: 15 },
-  'packages/web/src/components/MyGardens.tsx': { lines: 771, state: 12 },
 }
 
 const files = globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f))
