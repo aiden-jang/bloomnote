@@ -10,7 +10,7 @@ import {
 } from './analytics'
 import { designGarden, type DesignResult } from './designGarden'
 import { uploadOgImage } from './gardenImage'
-import { countSentGardens, recordSentGarden, updateSentGardenId } from './mine'
+import { recordSentGarden, updateSentGardenId } from './mine'
 import { withViewTransition } from './viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import type { Draft } from './draft'
@@ -36,13 +36,10 @@ export interface GardenDesign {
   shareUrl: string | null
   gardenId: string | null
   isRerolling: boolean
-  mineCount: number
-  previewSecretRevealed: boolean
-  togglePreviewSecret: () => void
   start: (fields: Draft, onSaved: () => void) => Promise<void>
   cancel: () => void
   reroll: (fields: Draft) => Promise<void>
-  startOver: (afterReset: () => void) => void
+  startOver: (resetTheForm: () => void) => void
 }
 
 /*
@@ -62,8 +59,6 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
   const [flowers, setFlowers] = useState<FlowerSpec[]>([])
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [gardenId, setGardenId] = useState<string | null>(null)
-  const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
-  const [mineCount, setMineCount] = useState(() => countSentGardens())
 
   const abortRef = useRef<AbortController | null>(null)
   // The button doesn't unmount until the view transition swaps the DOM, so without this a
@@ -84,8 +79,6 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
   useEffect(() => {
     if (phase !== 'designing') setThinking(false)
   }, [phase])
-
-  useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
 
   const buildGardenData = useCallback(
     (fields: Draft, result: DesignResult): GardenData => {
@@ -176,7 +169,6 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         })
 
         recordSentGarden(buildMineRecord(shortId, data))
-        setMineCount(countSentGardens())
 
         playSuccess()
         withViewTransition(() => {
@@ -277,7 +269,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
     [buildGardenData, isRerolling, garden, flowers, shareUrl, gardenId, rerollAttempt],
   )
 
-  const startOver = useCallback((afterReset: () => void) => {
+  const startOver = useCallback((resetTheForm: () => void) => {
     withViewTransition(() => {
       setPhase('idle')
       setGarden(null)
@@ -286,12 +278,10 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
       setGardenId(null)
       setErrorText(null)
       setRerollAttempt(0)
-      afterReset()
+      resetTheForm()
     })
     trackMakeAnother()
   }, [])
-
-  const togglePreviewSecret = useCallback(() => setPreviewSecretRevealed((revealed) => !revealed), [])
 
   return {
     phase,
@@ -302,9 +292,6 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
     shareUrl,
     gardenId,
     isRerolling,
-    mineCount,
-    previewSecretRevealed,
-    togglePreviewSecret,
     start,
     cancel,
     reroll,

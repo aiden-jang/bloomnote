@@ -11,7 +11,6 @@ export interface CardData {
 
 export type GardenSort = 'newest' | 'oldest' | 'watered'
 
-/** Which shelf a garden is on: one you sent, or one you were sent. */
 export type Tab = 'sent' | 'received'
 
 const PINNED_STORAGE_KEY = 'bloomnote:pinned-gardens'

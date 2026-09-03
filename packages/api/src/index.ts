@@ -40,21 +40,19 @@ const limited = async (c: Context<{ Bindings: Env }>, bucket: string, perMinute:
       })
 }
 
-/*
- * Returns the user, or the response to send instead. A signed-out caller gets 401; an auth
- * service we cannot reach gets 503, because answering 401 tells a signed-in caller they are
- * signed out and the clients act on that by clearing what they hold.
- */
-const requireUser = async (
-  c: Context<{ Bindings: Env }>,
-): Promise<{ user: AuthUser; stop?: never } | { user?: never; stop: Response }> => {
+type Caller = { state: 'signed-in'; user: AuthUser } | { state: 'signed-out' } | { state: 'unavailable' }
+
+const callerOf = async (c: Context<{ Bindings: Env }>): Promise<Caller> => {
   const session = await resolveSession(c.req.raw, c.env.AUTH_URL)
-  if (session.state === 'signed-in') return { user: session.user }
-  if (session.state === 'unavailable') {
-    return { stop: c.json({ error: 'AUTH_UNAVAILABLE' }, 503, { 'retry-after': '30' }) }
-  }
-  return { stop: c.json({ error: 'UNAUTHENTICATED' }, 401) }
+  return session.state === 'signed-in' ? { state: 'signed-in', user: session.user } : { state: session.state }
 }
+
+/* 503 for an unreachable auth service, not 401: answering 401 tells a signed-in caller they are
+   signed out, and the clients act on that by clearing what they hold. */
+const refuse = (c: Context<{ Bindings: Env }>, caller: Exclude<Caller, { state: 'signed-in' }>): Response =>
+  caller.state === 'unavailable'
+    ? c.json({ error: 'AUTH_UNAVAILABLE' }, 503, { 'retry-after': '30' })
+    : c.json({ error: 'UNAUTHENTICATED' }, 401)
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -87,8 +85,7 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }))
 
 app.get('/api/me', async (c) => {
   // An unreachable auth service reads as signed out here on purpose: rendering the anonymous app
-  // is the honest degraded state. The routes that write to an account are the ones that must
-  // tell the two apart, and they do.
+  // is the honest degraded state. The routes that write to an account tell the two apart.
   const session = await resolveSession(c.req.raw, c.env.AUTH_URL)
   const user = session.state === 'signed-in' ? session.user : null
   return c.json({ user: user ? { id: user.id, email: user.email, displayName: user.displayName } : null })
@@ -179,8 +176,9 @@ app.get('/api/garden/:id/response', async (c) => {
 app.post('/api/garden/:id/receive', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
-  const { user, stop: unauthed } = await requireUser(c)
-  if (unauthed) return unauthed
+  const caller = await callerOf(c)
+  if (caller.state !== 'signed-in') return refuse(c, caller)
+  const user = caller.user
   const saved = await recordReceived(c.env, user.id, c.req.param('id'))
   return c.json({ saved })
 })
@@ -188,8 +186,9 @@ app.post('/api/garden/:id/receive', async (c) => {
 app.delete('/api/garden/:id', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
-  const { user, stop: unauthed } = await requireUser(c)
-  if (unauthed) return unauthed
+  const caller = await callerOf(c)
+  if (caller.state !== 'signed-in') return refuse(c, caller)
+  const user = caller.user
   await removeFromAccount(c.env, user.id, c.req.param('id'))
   return c.json({ ok: true })
 })
@@ -230,16 +229,18 @@ app.post('/api/event', async (c) => {
 })
 
 app.get('/api/mine', async (c) => {
-  const { user, stop: unauthed } = await requireUser(c)
-  if (unauthed) return unauthed
+  const caller = await callerOf(c)
+  if (caller.state !== 'signed-in') return refuse(c, caller)
+  const user = caller.user
   return c.json(await listMine(c.env, user.id))
 })
 
 app.post('/api/mine/claim', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
-  const { user, stop: unauthed } = await requireUser(c)
-  if (unauthed) return unauthed
+  const caller = await callerOf(c)
+  if (caller.state !== 'signed-in') return refuse(c, caller)
+  const user = caller.user
   const body = (await c.req.json().catch(() => ({}))) as { ids?: unknown }
   const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : []
   return c.json({ claimed: await claimGardens(c.env, user.id, ids) })
