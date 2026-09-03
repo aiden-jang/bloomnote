@@ -1,5 +1,8 @@
+import type { Counters } from './counters.js'
+
 export interface Env {
   GARDENS: KVNamespace
+  COUNTERS: DurableObjectNamespace<Counters>
   ASSETS: Fetcher
   // Base URL of the shared auth service; sessions are validated against it server-side.
   // Local dev overrides this with `--var AUTH_URL:http://localhost:34100`.

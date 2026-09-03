@@ -1,3 +1,4 @@
+import type { WindowResult } from './counters.js'
 import type { Env } from './env.js'
 import { FLOWER_DESIGN_FUNCTION, SYSTEM_PROMPT, validateGarden, type ValidatedGarden } from './prompt.js'
 
@@ -76,39 +77,45 @@ export function buildPrompt(body: DesignBody): string {
 
 const PER_IP_PER_MINUTE = 8
 /** Global daily ceiling on garden generations, sized to the Gemini free tier. */
-const DAILY_CAP = 15
+export const DAILY_CAP = 15
+const DAILY_BUDGET_INSTANCE = 'daily-budget'
 
 export type BudgetResult =
   { ok: true } | { ok: false; status: 429 | 503; retryAfter: number; message: string }
 
-/** Two soft guards, both KV-backed and fail-open: a per-IP per-minute limit and a global daily
-    cap. Neither is a security boundary. */
 export async function checkBudget(env: Env, ip: string): Promise<BudgetResult> {
   try {
-    const minute = Math.floor(Date.now() / 60_000)
-    const ipKey = `rl:design:${ip}:${minute}`
-    const ipCount = (Number(await env.GARDENS.get(ipKey)) || 0) + 1
-    await env.GARDENS.put(ipKey, String(ipCount), { expirationTtl: 120 })
-    if (ipCount > PER_IP_PER_MINUTE) {
-      return { ok: false, status: 429, retryAfter: 60, message: 'Rate limit reached. Give it a minute.' }
-    }
-
-    const day = new Date().toISOString().slice(0, 10)
-    const dayKey = `budget:design:${day}`
-    const dayCount = (Number(await env.GARDENS.get(dayKey)) || 0) + 1
-    await env.GARDENS.put(dayKey, String(dayCount), { expirationTtl: 90_000 })
-    if (dayCount > DAILY_CAP) {
+    const perIp = env.COUNTERS.get(env.COUNTERS.idFromName(ip))
+    const burst = await perIp.bump('design', PER_IP_PER_MINUTE, 60)
+    if (!burst.ok) {
       return {
         ok: false,
-        status: 503,
-        retryAfter: 3600,
-        message: 'bloomnote is at capacity for today. try again tomorrow.',
+        status: 429,
+        retryAfter: burst.retryAfter,
+        message: 'Rate limit reached. Give it a minute.',
       }
     }
-    return { ok: true }
   } catch {
-    return { ok: true }
+    // One user's request is not worth failing over an unreachable counter.
   }
+
+  // Fails CLOSED, unlike the burst above: this cap is the only bound on what Gemini costs.
+  let spend: WindowResult
+  try {
+    const daily = env.COUNTERS.get(env.COUNTERS.idFromName(DAILY_BUDGET_INSTANCE))
+    spend = await daily.bump('design-daily', DAILY_CAP, 86_400)
+  } catch {
+    spend = { ok: false, retryAfter: 3600 }
+  }
+  if (!spend.ok) {
+    return {
+      ok: false,
+      status: 503,
+      retryAfter: spend.retryAfter,
+      message: 'bloomnote is at capacity for today. try again tomorrow.',
+    }
+  }
+  return { ok: true }
 }
 
 interface GeminiResponse {

@@ -147,7 +147,7 @@ describe('buildPrompt', () => {
   })
 })
 
-describe('checkBudget (KV cost guard)', () => {
+describe('checkBudget (cost guard)', () => {
   test('allows up to the per-IP minute limit, then 429s', async () => {
     const ip = `test-${Math.random().toString(36).slice(2)}`
     for (let i = 0; i < 8; i++) {
@@ -156,6 +156,20 @@ describe('checkBudget (KV cost guard)', () => {
     const blocked = await checkBudget(testEnv, ip)
     expect(blocked.ok).toBe(false)
     if (!blocked.ok) expect(blocked.status).toBe(429)
+  })
+
+  // The opposite call from checkRate, which fails open.
+  test('refuses when the counter is unreachable, rather than spending', async () => {
+    const broken = {
+      COUNTERS: {
+        idFromName: () => {
+          throw new Error('counter unreachable')
+        },
+      },
+    } as unknown as typeof testEnv
+    const result = await checkBudget(broken, '4.4.4.4')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(503)
   })
 })
 

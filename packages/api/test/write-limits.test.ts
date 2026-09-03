@@ -21,7 +21,9 @@ describe('write endpoints are rate limited', () => {
       if (res.status === 429) sawLimit = res
     }
     expect(sawLimit, 'never hit the limit in 20 attempts').toBeDefined()
-    expect(sawLimit!.headers.get('retry-after')).toBe('60')
+    const retryAfter = Number(sawLimit!.headers.get('retry-after'))
+    expect(retryAfter).toBeGreaterThan(0)
+    expect(retryAfter).toBeLessThanOrEqual(60)
     expect((await sawLimit!.json<{ error: string }>()).error).toBe('RATE_LIMITED')
   })
 

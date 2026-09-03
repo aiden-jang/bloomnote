@@ -338,4 +338,6 @@ app.get('/g/:id', async (c) => {
 // Everything that isn't the API is the web SPA. run_worker_first routes it all through here.
 app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw))
 
+export { Counters } from './counters.js'
+
 export default app
