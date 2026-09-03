@@ -125,10 +125,11 @@ to: it is the design brief. What it can no longer do is impersonate the request 
 
 ### A daily cap sized to the real quota
 
-Generation is metered in KV: 8 per IP per minute, and a global ceiling of 15 per day.
+Generation is metered in a durable object: 5 per IP per minute, and a global ceiling of 15 per day.
 
-Fifteen looks arbitrarily small until you check what it guards. The Gemini free tier allows 20
-`generateContent` requests per day per project for this model. The cap was originally 800, a number
+Fifteen looks arbitrarily small until you check what it guards. The Gemini free tier for this key allows 5
+`generateContent` requests per minute and 20 per day, both per project rather than per caller, so
+no per-IP number can bound them on its own. The cap was originally 800, a number
 chosen without looking anything up, so the guard could never fire. Past the real quota, every
 visitor
 got "the garden service is busy, please try again" about something that could not succeed until

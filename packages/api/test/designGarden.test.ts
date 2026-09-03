@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, test } from 'vitest'
-import { buildPrompt, checkBudget, generateGarden, NOTE_FENCE, validateBody } from '../src/designGarden.js'
+import {
+  buildPrompt,
+  checkBudget,
+  generateGarden,
+  NOTE_FENCE,
+  PER_IP_PER_MINUTE,
+  validateBody,
+} from '../src/designGarden.js'
 import { validateGarden } from '../src/prompt.js'
 import { testEnv } from './helpers.js'
 
@@ -150,7 +157,7 @@ describe('buildPrompt', () => {
 describe('checkBudget (cost guard)', () => {
   test('allows up to the per-IP minute limit, then 429s', async () => {
     const ip = `test-${Math.random().toString(36).slice(2)}`
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < PER_IP_PER_MINUTE; i++) {
       expect((await checkBudget(testEnv, ip)).ok).toBe(true)
     }
     const blocked = await checkBudget(testEnv, ip)
