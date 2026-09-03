@@ -20,6 +20,8 @@ import { globSync } from 'node:fs'
  * component. The trim came first and reclaimed 12 lines; the rest is new modules, not new prose.
  */
 const SRC_BUDGET = 760
+// The gates' own source counts too, on its own budget.
+const SCRIPTS_BUDGET = 96
 const DUP_MIN_CHARS = 45
 
 /**
@@ -30,25 +32,34 @@ const DUP_MIN_CHARS = 45
  * xmlns as a duplicated comment.
  */
 function comments(source, isCss) {
+  // Strings are blanked first: the source is full of things that look like comment openers, and a
+  // route path or glob containing `/*` opens a block comment that swallows the code after it.
+  const masked = source.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g, (m) =>
+    ' '.repeat(m.length),
+  )
   const out = []
   const re = isCss ? /\/\*[\s\S]*?\*\//g : /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g
-  for (const m of source.matchAll(re)) {
-    if (m[0].startsWith('//') && source[m.index - 1] === ':') continue
-    out.push({ text: m[0], lines: m[0].split('\n').length })
+  for (const m of masked.matchAll(re)) {
+    const text = source.slice(m.index, m.index + m[0].length)
+    out.push({ text, lines: text.split('\n').length })
   }
   return out
 }
 
-const files = globSync('packages/*/{src,test,e2e}/**/*.{ts,tsx,css}')
+// scripts/ included: the checks were not checking themselves, and a budget comment is exactly the
+// place a changelog quietly accumulates.
+const files = [...globSync('packages/*/{src,test,e2e}/**/*.{ts,tsx,css}'), ...globSync('scripts/*.mjs')]
 const isSrc = (f) => f.includes('/src/') && !/\.test\.tsx?$/.test(f)
 
 let srcLines = 0
+let scriptLines = 0
 const seen = new Map()
 
 for (const file of files) {
   const source = readFileSync(file, 'utf8')
   for (const c of comments(source, file.endsWith('.css'))) {
     if (isSrc(file)) srcLines += c.lines
+    else if (file.startsWith('scripts/')) scriptLines += c.lines
     const flat = c.text.replace(/\s+/g, ' ').trim()
     if (flat.length < DUP_MIN_CHARS) continue
     // Directives are meant to repeat: two files suppressing the same rule is not duplication.
@@ -60,6 +71,10 @@ for (const file of files) {
 }
 
 const problems = []
+
+if (scriptLines > SCRIPTS_BUDGET) {
+  problems.push(`scripts carry ${scriptLines} comment lines, over the ${SCRIPTS_BUDGET} budget.`)
+}
 
 if (srcLines > SRC_BUDGET) {
   problems.push(`src carries ${srcLines} comment lines, over the ${SRC_BUDGET} budget.`)
@@ -78,4 +93,7 @@ if (problems.length > 0) {
   process.exit(1)
 }
 
-console.log(`comments ok: ${srcLines}/${SRC_BUDGET} lines in src, no new duplicates`)
+console.log(
+  `comments ok: ${srcLines}/${SRC_BUDGET} in src, ${scriptLines}/${SCRIPTS_BUDGET} in scripts, ` +
+    `no new duplicates`,
+)

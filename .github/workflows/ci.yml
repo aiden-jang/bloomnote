@@ -18,21 +18,27 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm format:check
-      - run: pnpm css-vars
+      # Every gate below must actually run: a bare `pnpm <name>` can resolve to a command of the
+      # same name instead of the script, and npm's own `docs` exits 0 having done nothing.
+      - run: pnpm run gates
+      - run: pnpm run typecheck
+      # Ceilings on file length and component state, with the files under decomposition listed at
+      # their current size so nothing else can grow past the ceiling meanwhile.
+      - run: pnpm run size
+      - run: pnpm run lint
+      - run: pnpm run format:check
+      - run: pnpm run css-vars
       # `styles.typo` is undefined, which React renders as no class at all. Nothing else here
       # reads CSS modules, so the element just arrives unstyled and no check fails.
-      - run: pnpm css-classes
+      - run: pnpm run css-classes
       # A budget and a duplicate check. A cleanup pass is a moment; drift is permanent.
-      - run: pnpm comments
+      - run: pnpm run comments
       # tsc and eslint only see unused things inside a file. This catches the layer above: an export
       # nothing imports, a file nothing reaches, a dependency nothing uses. A dead fetch helper
       # survived a by-hand audit of exactly this, which is why it is a gate and not a habit.
-      - run: pnpm knip
-      - run: pnpm build
-      - run: pnpm test
+      - run: pnpm run knip
+      - run: pnpm run build
+      - run: pnpm run test
       # --prod on purpose. The full audit reports ~19 high/critical advisories, every one of them
       # in build tooling (vite, vitest, wrangler, sharp, postcss) that never reaches a browser or
       # the Worker at request time, and most unfixable without an upstream release. Blocking on

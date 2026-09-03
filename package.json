@@ -21,9 +21,11 @@
     "deploy": "pnpm verify && pnpm deploy:only",
     "format:check": "prettier --check .",
     "comments": "node scripts/check-comments.mjs",
-    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm css-vars && pnpm css-classes && pnpm comments && pnpm knip && pnpm build && pnpm test && pnpm --filter @bloomnote/web e2e",
+    "verify": "pnpm run gates && pnpm run typecheck && pnpm run size && pnpm run lint && pnpm run format:check && pnpm run css-vars && pnpm run css-classes && pnpm run comments && pnpm run knip && pnpm run build && pnpm run test && pnpm --filter @bloomnote/web e2e",
     "deploy:only": "pnpm --filter @bloomnote/api run deploy",
-    "css-classes": "node scripts/check-css-classes.mjs"
+    "css-classes": "node scripts/check-css-classes.mjs",
+    "gates": "node scripts/check-gates.mjs",
+    "size": "node scripts/check-size.mjs"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",
