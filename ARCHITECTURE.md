@@ -142,9 +142,10 @@ different things, the client reads the error body to tell a per-day quota exhaus
 per-minute burst, retrying the second and never the first, since retrying the first only spends two
 more seconds to fail identically.
 
-Both checks fail **open**. If KV hiccups, a legitimate garden goes through. This is a courtesy limit
-protecting a budget, not a security boundary, and the failure mode of blocking a real gift is worse
-than the failure mode of allowing one extra generation.
+The per-IP burst limit fails **open** and the daily cap fails **closed**. Blocking a real gift is
+worse than allowing one extra generation, so an unreachable counter lets a single request through.
+The daily cap is the opposite call: it is the only thing bounding what the Gemini calls cost, so a
+counter it cannot read has to mean no.
 
 ---
 
@@ -274,9 +275,13 @@ there yet. Anyone can POST to a known id, so allowing overwrites would let a str
 picture on somebody's gift. Gardens made before this shipped have no card and unfurl with the
 homepage image.
 
-**The rate limiter is approximate.** It counts in KV, which is not atomic, so two requests in the
-same millisecond can both read the same count. A determined caller can exceed a ceiling slightly.
-It is sized to protect a quota from a loop, not to withstand somebody who wants to beat it.
+**The counters are atomic, and were not always.** Both the per-IP ceilings and the daily cap live
+in a Durable Object. They counted in KV until a test fired forty parallel requests at a limit of
+five and all forty passed: KV's read-modify-write let every one of them read the same count, so
+every limit in the app was bypassable by sending requests in parallel instead of in sequence.
+Sequential callers were limited correctly, which is why no existing test caught it. Per-IP counts
+shard across one durable object instance per caller; the daily cap is a single instance, so its
+count is global rather than per-colo.
 
 **The prose is the weakest part of the output.** Flash gets most of the way there and costs nothing
 on the free tier, which is what makes a public demo possible at all. A frontier model reaches for

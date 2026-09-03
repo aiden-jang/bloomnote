@@ -10,7 +10,9 @@ describe('per-IP rate limiting', () => {
     }
     const over = await checkRate(env, 'test', ip, 3)
     expect(over.ok).toBe(false)
-    expect(over.retryAfter).toBe(60)
+    // Seconds until the window rolls, so it moves with the clock rather than being a constant.
+    expect(over.retryAfter).toBeGreaterThan(0)
+    expect(over.retryAfter).toBeLessThanOrEqual(60)
     expect(over.message).toMatch(/slow down/i)
   })
 
@@ -28,11 +30,11 @@ describe('per-IP rate limiting', () => {
     expect((await checkRate(env, 'bucket-b', ip, 1)).ok).toBe(true)
   })
 
-  it('fails open, because a KV outage must not take the app down', async () => {
+  it('fails open, because an unreachable counter must not take the app down', async () => {
     const broken = {
-      GARDENS: {
-        get: () => {
-          throw new Error('KV down')
+      COUNTERS: {
+        idFromName: () => {
+          throw new Error('counter unreachable')
         },
       },
     } as unknown as typeof env

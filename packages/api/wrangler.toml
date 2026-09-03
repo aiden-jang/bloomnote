@@ -23,6 +23,18 @@ id = "17772866b1ae4b468ee00b07e65c9646"
 # Serve the built web SPA (apps/bloomnote/web) from this same Worker so the UI and the /api/*
 # routes share the bloomnote.aidenjang.com origin. run_worker_first = true → the Worker routes
 # everything; /health + /api/* are the API, the app.all('*') catch-all serves assets + SPA.
+# Rate limits and the daily AI spend cap. A Durable Object, not KV: KV's read-modify-write is
+# not atomic, so parallel requests all read the same count and every limit was bypassable.
+# Per-IP counters shard across instances (one per IP); the spend cap is a single instance.
+[durable_objects]
+bindings = [{ name = "COUNTERS", class_name = "Counters" }]
+
+# sqlite, not the key-value backend: that one needs a paid plan and this app runs on free tiers.
+# A class cannot change backend after it ships, so this had to be right the first time.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Counters"]
+
 [assets]
 directory = "../web/dist"
 binding = "ASSETS"

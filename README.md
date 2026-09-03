@@ -84,9 +84,10 @@ for anyone who never signs in, and any moderation lever beyond a rate limit, all
 packages/api/            bloomnote Worker (Hono)
   src/index.ts           routes: /api/* + SPA fallback; harden() and rate-limit middleware
   src/gardens.ts         KV store: create/read + sent/received indexes + first-login claim
-  src/designGarden.ts    SSE proxy to Gemini (function calling) + KV budget cap
+  src/designGarden.ts    SSE proxy to Gemini (function calling) + daily spend cap
   src/prompt.ts          system prompt + function schema + validateGarden()
-  src/rateLimit.ts       per-IP per-minute ceilings on every write, KV-backed and fail-open
+  src/rateLimit.ts       per-IP per-minute ceilings on every write, atomic and fail-open
+  src/counters.ts        durable object holding both counters; KV could not count atomically
   src/eventMeta.ts       the allowlist of event fields that may reach the logs
 packages/web/            React + Vite SPA
   src/components/        Composer, RecipientView, SealedView, GardenScene, FlowerSVG, MyGardens …
