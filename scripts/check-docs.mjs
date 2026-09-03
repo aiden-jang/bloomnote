@@ -15,12 +15,14 @@ const NOT_OURS = new Set([
   'reducedMotion', // Playwright's config option
   'expirationTtl', // KV's option, deliberately unused
   'generateContent', // Gemini's endpoint
+  'isolatedStorage', // a vitest-pool-workers option, named here because we rely on its default
   'runTests',
 ])
 
 const code = [
   ...globSync('packages/*/src/**/*.{ts,tsx}'),
   ...globSync('packages/*/e2e/**/*.ts'),
+  ...globSync('packages/*/test/**/*.ts'),
   // Not this file: its own header names the symbol that prompted it, which was enough to make
   // that symbol resolve and the check silently useless.
   ...globSync('scripts/*.mjs').filter((f) => !f.endsWith('check-docs.mjs')),

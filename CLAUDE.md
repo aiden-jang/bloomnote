@@ -115,3 +115,13 @@ extract the decision into a pure function and test that.
   starts failing on whichever test is next. It passes in CI, which runs it once.
 - A check that names its own target. `check-docs.mjs` scanned `scripts/*.mjs` and its own header
   named the symbol it was written to find, which made that symbol resolve and the check useless.
+
+## The test tooling is deliberately one major behind
+
+`@cloudflare/vitest-pool-workers` 0.14 and later require vitest 4, and that release rewrites the
+pool as a Vite plugin: `fetchMock` and `isolatedStorage` are gone, and `env` and `SELF` from
+`cloudflare:test` are deprecated. Dropping them costs the outbound-fetch stubbing in
+`auth-boundary.test.ts` and the per-test storage isolation that keeps `gardens.test.ts` honest,
+which is a bad trade for advisories that only exist in build tooling. Wrangler and vitest 3 are
+current; the remaining high advisories are all dev-only and none reaches the Worker at request
+time.
