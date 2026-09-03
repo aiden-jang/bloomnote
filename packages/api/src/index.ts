@@ -1,5 +1,5 @@
 import { Hono, type Context } from 'hono'
-import { getSessionUser } from '@aidenjang/auth-client'
+import { resolveSession, type AuthUser } from '@aidenjang/auth-client'
 import { harden } from './harden.js'
 import type { Env } from './env.js'
 import {
@@ -40,6 +40,22 @@ const limited = async (c: Context<{ Bindings: Env }>, bucket: string, perMinute:
       })
 }
 
+/*
+ * Returns the user, or the response to send instead. A signed-out caller gets 401; an auth
+ * service we cannot reach gets 503, because answering 401 tells a signed-in caller they are
+ * signed out and the clients act on that by clearing what they hold.
+ */
+const requireUser = async (
+  c: Context<{ Bindings: Env }>,
+): Promise<{ user: AuthUser; stop?: never } | { user?: never; stop: Response }> => {
+  const session = await resolveSession(c.req.raw, c.env.AUTH_URL)
+  if (session.state === 'signed-in') return { user: session.user }
+  if (session.state === 'unavailable') {
+    return { stop: c.json({ error: 'AUTH_UNAVAILABLE' }, 503, { 'retry-after': '30' }) }
+  }
+  return { stop: c.json({ error: 'UNAUTHENTICATED' }, 401) }
+}
+
 const app = new Hono<{ Bindings: Env }>()
 
 function ogImageUrl(reqUrl: string, id: string): string {
@@ -70,7 +86,11 @@ app.use('*', async (c, next) => {
 app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }))
 
 app.get('/api/me', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
+  // An unreachable auth service reads as signed out here on purpose: rendering the anonymous app
+  // is the honest degraded state. The routes that write to an account are the ones that must
+  // tell the two apart, and they do.
+  const session = await resolveSession(c.req.raw, c.env.AUTH_URL)
+  const user = session.state === 'signed-in' ? session.user : null
   return c.json({ user: user ? { id: user.id, email: user.email, displayName: user.displayName } : null })
 })
 
@@ -88,8 +108,10 @@ app.post('/api/garden', async (c) => {
   const stop = await limited(c, 'create', LIMITS.create)
   if (stop) return stop
   const body = await c.req.json().catch(() => null)
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
-  const result = await createGarden(c.env, body, user?.id)
+  // Also anonymous when auth is unreachable, rather than refusing to send the garden. The sender
+  // keeps an on-device record and /api/mine/claim adopts it on their next visit.
+  const session = await resolveSession(c.req.raw, c.env.AUTH_URL)
+  const result = await createGarden(c.env, body, session.state === 'signed-in' ? session.user.id : undefined)
   if (!result.ok) return c.json({ error: result.message }, result.status)
   return c.json({ id: result.id })
 })
@@ -157,8 +179,8 @@ app.get('/api/garden/:id/response', async (c) => {
 app.post('/api/garden/:id/receive', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  const { user, stop: unauthed } = await requireUser(c)
+  if (unauthed) return unauthed
   const saved = await recordReceived(c.env, user.id, c.req.param('id'))
   return c.json({ saved })
 })
@@ -166,8 +188,8 @@ app.post('/api/garden/:id/receive', async (c) => {
 app.delete('/api/garden/:id', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  const { user, stop: unauthed } = await requireUser(c)
+  if (unauthed) return unauthed
   await removeFromAccount(c.env, user.id, c.req.param('id'))
   return c.json({ ok: true })
 })
@@ -208,16 +230,16 @@ app.post('/api/event', async (c) => {
 })
 
 app.get('/api/mine', async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  const { user, stop: unauthed } = await requireUser(c)
+  if (unauthed) return unauthed
   return c.json(await listMine(c.env, user.id))
 })
 
 app.post('/api/mine/claim', async (c) => {
   const stop = await limited(c, 'account', LIMITS.account)
   if (stop) return stop
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL)
-  if (!user) return c.json({ error: 'UNAUTHENTICATED' }, 401)
+  const { user, stop: unauthed } = await requireUser(c)
+  if (unauthed) return unauthed
   const body = (await c.req.json().catch(() => ({}))) as { ids?: unknown }
   const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : []
   return c.json({ claimed: await claimGardens(c.env, user.id, ids) })
