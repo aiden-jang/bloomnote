@@ -388,6 +388,19 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.getByLabel('your note')).toHaveValue(NOTE)
   })
 
+  // The occasion and mood rows are one shared picker, and nothing else here clicks a chip: the
+  // journey fills the note and grows a garden on the defaults.
+  test('picking an occasion moves the selection to exactly one chip', async ({ page }) => {
+    await page.goto('/')
+    const chosen = page.getByRole('radio', { name: 'hbd', exact: true })
+    const other = page.getByRole('radio', { name: 'just bc', exact: true })
+    await expect(other).toHaveAttribute('aria-checked', 'true')
+
+    await chosen.click()
+    await expect(chosen).toHaveAttribute('aria-checked', 'true')
+    await expect(other).toHaveAttribute('aria-checked', 'false')
+  })
+
   test('a dead link says the garden is still there', async ({ page }) => {
     // Recipients arrive by pasted link, so a truncated one is a normal event, not an edge case.
     // Gardens have no TTL, so this page must never claim the gift expired.
