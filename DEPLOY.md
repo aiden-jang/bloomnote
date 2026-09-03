@@ -16,8 +16,9 @@ All commands run from `packages/api`.
 ## First deploy (once, in order)
 
 ```bash
-# 1. Create the garden store, then paste the printed id into wrangler.toml,
-#    replacing "local-dev-placeholder" under [[kv_namespaces]].
+# 1. Create the garden store, then paste the printed id into wrangler.toml as the `id`
+#    under [[kv_namespaces]]. The COUNTERS durable object needs no step of its own:
+#    `wrangler deploy` applies the [[migrations]] block that creates it.
 pnpm exec wrangler kv namespace create GARDENS
 
 # 2. Garden generation key (Gemini). Optional: without it, /api/design-garden returns 503
@@ -37,9 +38,9 @@ pnpm run deploy            # redeploy to attach bloomnote.aidenjang.com
 ## Routine redeploy
 
 CI deploys on merge to `main`, and nothing here is run by hand. The gate is
-`.github/workflows/ci.yml`: typecheck, lint, a Prettier check, `css-vars`, `css-classes`,
-`comments`, `knip`, build and unit tests, then a production-only `pnpm audit`, the Playwright suite
-in Chromium, and a bundle-size report (which prints, and does not fail).
+`.github/workflows/ci.yml`: `gates`, typecheck, `size`, lint, a Prettier check, `css-vars`,
+`css-classes`, `comments`, `knip`, build and unit tests, then a production-only `pnpm audit`, the
+Playwright suite in Chromium, and a bundle-size report (which prints, and does not fail).
 
 `pnpm verify` runs that same list locally, and `pnpm run deploy` depends on it, so the break-glass
 path below cannot ship past a failing check. CI's own deploy job calls `pnpm run deploy:only`

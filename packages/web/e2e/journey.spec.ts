@@ -101,8 +101,18 @@ const petals = (page: Page) => page.locator('svg path')
  * a path it deliberately supports. The trade-off is real: the entrance animations themselves (the
  * staged bloom, the typewriter note) are not exercised, only their end state.
  */
+let visitor = 0
+
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
+  /*
+   * A different caller per test. They otherwise share one rate-limit bucket, and at four garden
+   * creates a run against a ceiling of twelve a minute, the third run inside a minute starts
+   * failing on whichever test happens to be next. Only the local worker trusts this header;
+   * Cloudflare overwrites it at the edge.
+   */
+  visitor += 1
+  await page.setExtraHTTPHeaders({ 'cf-connecting-ip': `203.0.113.${visitor}` })
 })
 
 /*
