@@ -42,9 +42,10 @@ jobs:
       - run: pnpm run knip
       - run: pnpm run build
       - run: pnpm run test
-      # --prod on purpose. The full audit reports ~19 high/critical advisories, every one of them
-      # in build tooling (vite, vitest, wrangler, sharp, postcss) or something those pull in, so
-      # none reaches a browser or the Worker at request time, and most need an upstream release.
+      # --prod on purpose. The full audit reports high advisories in build tooling (vite, sharp,
+      # postcss, and what miniflare and vite pull in), none of which reaches a browser or the
+      # Worker at request time. Clearing the rest needs vitest 4, whose pool rewrite drops
+      # fetchMock and isolatedStorage; see CLAUDE.md before attempting it.
       # Blocking on those is a permanently red light everyone learns to scroll past. This scopes
       # the gate to what actually ships, where it can stay green and therefore still mean something.
       #
