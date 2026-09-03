@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { buildShareUrl, createShortGarden, type FlowerSpec, type GardenData } from '../garden'
 import { buildMineRecord, classifyError } from './composerHelpers'
 import {
@@ -11,19 +11,12 @@ import {
 import { designGarden, type DesignResult } from './designGarden'
 import { uploadOgImage } from './gardenImage'
 import { recordSentGarden, updateSentGardenId } from './mine'
+import { useStatusLine } from './useStatusLine'
 import { withViewTransition } from './viewTransition'
 import { playSuccess, playWhoosh } from '../sound'
 import type { Draft } from './draft'
 
 export type Phase = 'idle' | 'designing' | 'designed'
-
-const THINKING_MESSAGES = [
-  'reading between the lines…',
-  'choosing flowers…',
-  'mixing the palette…',
-  'arranging the bouquet…',
-  'writing the note…',
-]
 
 const SHORTEN_TIMEOUT_MS = 3000
 
@@ -58,35 +51,21 @@ export interface GardenDesign {
  */
 export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign {
   const [phase, setPhase] = useState<Phase>('idle')
-  const [statusText, setStatusText] = useState('')
-  const [thinking, setThinking] = useState(false)
+  const { statusText, say, think } = useStatusLine(phase === 'designing')
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rerollAttempt, setRerollAttempt] = useState(0)
   const [isRerolling, setIsRerolling] = useState(false)
   const [garden, setGarden] = useState<DesignResult | null>(null)
-  const [flowers, setFlowers] = useState<FlowerSpec[]>([])
-  const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [gardenId, setGardenId] = useState<string | null>(null)
+  // Derived, not stored. Every write used to set all four together, so a fifth write that forgot
+  // one was a garden showing somebody else's flowers.
+  const flowers = garden?.flowers ?? []
+  const shareUrl = gardenId === null ? null : buildShareUrl(gardenId)
 
   const abortRef = useRef<AbortController | null>(null)
   // The button doesn't unmount until the view transition swaps the DOM, so without this a
   // fast second tap runs designGarden twice.
   const designingRef = useRef(false)
-
-  useEffect(() => {
-    if (!thinking) return
-    let i = 0
-    setStatusText(THINKING_MESSAGES[0]!)
-    const id = setInterval(() => {
-      i = (i + 1) % THINKING_MESSAGES.length
-      setStatusText(THINKING_MESSAGES[i]!)
-    }, 2500)
-    return () => clearInterval(id)
-  }, [thinking])
-
-  useEffect(() => {
-    if (phase !== 'designing') setThinking(false)
-  }, [phase])
 
   const buildGardenData = useCallback(
     (fields: Draft, result: DesignResult): GardenData => {
@@ -127,7 +106,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
       withViewTransition(() => {
         setPhase('designing')
         setErrorText(null)
-        setStatusText('reading the room…')
+        say('reading the room…')
       })
 
       const ctrl = new AbortController()
@@ -138,17 +117,15 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         playWhoosh()
         const result = await designGarden(request(fields), {
           signal: ctrl.signal,
-          onThinking: () => setThinking(true),
+          onThinking: think,
         })
         setGarden(result)
-        setFlowers(result.flowers)
 
         const data = buildGardenData(fields, result)
 
         // Don't fall back to a self-contained URL here. It costs the user the garden they waited
         // five seconds for, but a share link that silently half-works is worse.
-        setThinking(false)
-        setStatusText('wrapping it up…')
+        say('wrapping it up…')
 
         const shortId = await Promise.race([
           createShortGarden(data, ctrl.signal),
@@ -172,9 +149,8 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
 
         playSuccess()
         withViewTransition(() => {
-          setShareUrl(buildShareUrl(shortId))
           setGardenId(shortId)
-          setStatusText('')
+          say('')
           setPhase('designed')
         })
 
@@ -204,7 +180,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         designingRef.current = false
       }
     },
-    [buildGardenData, remixSeed],
+    [buildGardenData, remixSeed, say, think],
   )
 
   const cancel = useCallback(() => {
@@ -214,17 +190,15 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
   const reroll = useCallback(
     async (fields: Draft) => {
       if (isRerolling) return
-      const previous = { garden, flowers, shareUrl, gardenId }
+      const previous = { garden, gardenId }
       const restore = (): void => {
         setGarden(previous.garden)
-        setFlowers(previous.flowers)
-        setShareUrl(previous.shareUrl)
         setGardenId(previous.gardenId)
-        setStatusText('')
+        say('')
       }
 
       setIsRerolling(true)
-      setStatusText('regrowing…')
+      say('regrowing…')
       setErrorText(null)
 
       const ctrl = new AbortController()
@@ -249,10 +223,8 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         // No extra orchestration: GardenScene re-keys on the flower signature, so the new flowers
         // re-bloom from sprout on their own.
         setGarden(result)
-        setFlowers(result.flowers)
-        setShareUrl(buildShareUrl(shortId))
         setGardenId(shortId)
-        setStatusText('')
+        say('')
         setRerollAttempt(attempt)
 
         trackGardenRerolled({ attempt, durationMs: Math.round(performance.now() - startedAt) })
@@ -266,15 +238,13 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         setIsRerolling(false)
       }
     },
-    [buildGardenData, isRerolling, garden, flowers, shareUrl, gardenId, rerollAttempt],
+    [buildGardenData, isRerolling, garden, gardenId, rerollAttempt, say],
   )
 
   const startOver = useCallback((resetTheForm: () => void) => {
     withViewTransition(() => {
       setPhase('idle')
       setGarden(null)
-      setFlowers([])
-      setShareUrl(null)
       setGardenId(null)
       setErrorText(null)
       setRerollAttempt(0)

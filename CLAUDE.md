@@ -102,6 +102,10 @@ React wiring around it and have no unit tests, because there is no DOM environme
 Those paths are covered by the Playwright journey instead. If you need to test hook behaviour,
 extract the decision into a pure function and test that.
 
+The journey does not cover everything it looks like it covers. Emptying the `flowers` the design
+hook hands out passes all ten specs, because the names on screen come from `garden.flowers` while
+that value feeds the share image and the prewarm, and no spec inspects either.
+
 ## Traps this repo has actually hit
 
 - A failed request read as an empty result. `claimGardens` returned 0 for "could not ask", and its
