@@ -1,9 +1,9 @@
 /*
  * Ceilings on file length and component state, run by `pnpm verify`.
  *
- * Nothing else here notices a file growing, and a god-file is never added -- it accretes twenty
- * lines at a time and no single diff looks wrong. Composer reached 889 lines holding 16 pieces of
- * state *after* a cleanup had already extracted its draft, hero demo and validation.
+ * Nothing else here notices a file growing, and a god-file is never added. It accretes twenty
+ * lines at a time and no single diff looks wrong, which is how Composer reached 889 lines and 15
+ * pieces of state despite an earlier cleanup having already pulled its draft and hero demo out.
  *
  * Lines are the proxy; the state count is the signal. Ratchet both down after a refactor rather
  * than leaving slack. Splitting the file is almost always the right answer to a failure here.
@@ -14,13 +14,11 @@ const MAX_LINES = 600
 const MAX_STATE = 12
 
 /*
- * Two files are already over and are being decomposed. They are listed at their current size rather
- * than the ceiling being raised for everyone, so nothing else can grow past 600 in the meantime.
- * Shrink an entry when the file shrinks; delete it when the file is under the ceiling.
+ * Empty, and worth keeping that way. A file mid-decomposition goes here at its current size, so it
+ * cannot grow while nothing else gets the slack. Shrink the entry as the file shrinks, delete it
+ * once the file is under the ceiling.
  */
-const ALREADY_OVER = {
-  'packages/web/src/components/Composer.tsx': { lines: 890, state: 15 },
-}
+const ALREADY_OVER = {}
 
 const files = globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f))
 const problems = []
