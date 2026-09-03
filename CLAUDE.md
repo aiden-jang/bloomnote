@@ -110,9 +110,13 @@ extract the decision into a pure function and test that.
 - Prefix matching on model output. The flower name was stripped off the front of its meaning by
   `startsWith`, so "Roses, for a quiet year." rendered as "S, for a quiet year." The model writes
   plurals constantly; match whole words.
-- Each e2e test needs its own `cf-connecting-ip`. They otherwise share one rate-limit bucket, and
-  a full run spends enough of `LIMITS.create` that running the suite a few times inside a minute
-  starts failing on whichever test is next. It passes in CI, which runs it once.
+- Each e2e test needs its own `cf-connecting-ip`, and the helpers that use `page.request` have to
+  be handed it explicitly: `page.setExtraHTTPHeaders` covers the browser's own requests and not the
+  API context, so those creates all shared one bucket and the suite failed on a different test
+  every few runs. It passes in CI, which runs the suite once.
+- A test helper that does not check its response turns a refused request into a puzzle. A rate
+  limited create returned an undefined id and surfaced fifteen seconds later as an empty list,
+  which reads like a rendering bug in a completely different feature.
 - A check that names its own target. `check-docs.mjs` scanned `scripts/*.mjs` and its own header
   named the symbol it was written to find, which made that symbol resolve and the check useless.
 
