@@ -10,55 +10,42 @@ import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import SoundToggle from './SoundToggle'
 import { type ExampleGarden } from '../data/exampleGardens'
-import { buildShareUrl, createShortGarden, type FlowerSpec, type GardenData } from '../garden'
-import {
-  trackComposerOpened,
-  trackGardenCanceled,
-  trackGardenError,
-  trackGardenGenerated,
-  trackGardenRerolled,
-  trackMakeAnother,
-} from '../lib/analytics'
-import { designGarden, type DesignResult } from '../lib/designGarden'
-import { prefersReducedMotion } from '../lib/motion'
-import { prewarmGardenImage, uploadOgImage } from '../lib/gardenImage'
+import { type GardenData } from '../garden'
+import { trackComposerOpened } from '../lib/analytics'
+import { useGardenDesign } from '../lib/useGardenDesign'
+import { Spinner, PetalFall } from './ComposerBloom'
+import { prewarmGardenImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
-import { countSentGardens, recordSentGarden, updateSentGardenId } from '../lib/mine'
 import { MOODS } from '../lib/moods'
 import { OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
 import { ritual } from '../lib/rituals'
-import { withViewTransition } from '../lib/viewTransition'
-import { playSuccess, playWhoosh } from '../sound'
 import styles from './Composer.module.css'
-import {
-  buildMineRecord,
-  charCountTierClass,
-  classifyError,
-  disabledReasonFor,
-  scheduleErrorFor,
-} from '../lib/composerHelpers'
+import { charCountTierClass, disabledReasonFor, scheduleErrorFor } from '../lib/composerHelpers'
 import { useComposerDraft } from '../lib/useComposerDraft'
 import { useHeroDemo } from '../lib/useHeroDemo'
 import { useShareActions } from '../lib/useShareActions'
-
-type Phase = 'idle' | 'designing' | 'designed'
-
-const THINKING_MESSAGES = [
-  'reading between the lines…',
-  'choosing flowers…',
-  'mixing the palette…',
-  'arranging the bouquet…',
-  'writing the note…',
-]
 
 interface ComposerProps {
   remixSeed?: GardenData | undefined
 }
 
 export default function Composer({ remixSeed }: ComposerProps = {}) {
-  const [phase, setPhase] = useState<Phase>('idle')
+  const design = useGardenDesign(remixSeed)
+  const {
+    phase,
+    statusText,
+    errorText,
+    garden,
+    flowers,
+    shareUrl,
+    gardenId,
+    isRerolling,
+    mineCount,
+    previewSecretRevealed,
+    togglePreviewSecret,
+  } = design
   const draft = useComposerDraft({ remixSeed, idle: phase === 'idle' })
   const { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
   const {
@@ -72,7 +59,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     unlockLocal: setUnlockLocal,
   } = draft.set
   const { hasDraft, undoDraft } = draft
-  const clearStoredDraft = draft.forget
 
   // Keyed on occasion only. Re-reading the clock every render would change the copy under
   // somebody who happens to be writing at 11:59.
@@ -83,42 +69,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [promptIndex, setPromptIndex] = useState(0)
   const writingPrompt = promptOptions[promptIndex % promptOptions.length] ?? placeholder
   useEffect(() => setPromptIndex(0), [occasion, mood])
-
-  const [mineCount, setMineCount] = useState(() => countSentGardens())
-
-  const [statusText, setStatusText] = useState<string>('')
-  const [thinking, setThinking] = useState(false)
-  const [errorText, setErrorText] = useState<string | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
-  // The button doesn't unmount until the view transition swaps the DOM, so without this a
-  // fast second tap runs designGarden twice.
-  const designingRef = useRef(false)
-
-  useEffect(() => {
-    if (!thinking) return
-    let i = 0
-    setStatusText(THINKING_MESSAGES[0]!)
-    const id = setInterval(() => {
-      i = (i + 1) % THINKING_MESSAGES.length
-      setStatusText(THINKING_MESSAGES[i]!)
-    }, 2500)
-    return () => clearInterval(id)
-  }, [thinking])
-
-  useEffect(() => {
-    if (phase !== 'designing') setThinking(false)
-  }, [phase])
-
-  const [rerollAttempt, setRerollAttempt] = useState(0)
-  const [isRerolling, setIsRerolling] = useState(false)
-
-  const [garden, setGarden] = useState<DesignResult | null>(null)
-  const [flowers, setFlowers] = useState<FlowerSpec[]>([])
-  const [shareUrl, setShareUrl] = useState<string | null>(null)
-  const [gardenId, setGardenId] = useState<string | null>(null)
-  const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
-
-  useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
 
   const messageRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
@@ -162,240 +112,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   }, [phase, flowers, from, recipient])
 
   const canSubmit = disabledReason === null
-  const forecast = useMemo(() => gardenForecast(message, mood, occasion), [message, mood, occasion])
 
-  const buildGardenData = useCallback(
-    (result: DesignResult): GardenData => {
-      // Clamp a time that has already passed, or the capsule ships already unlocked. The
-      // 30-second grace matches the server.
-      let unlockAt: string | undefined
-      if (scheduleOpen && unlockLocal) {
-        const t = new Date(unlockLocal).getTime()
-        if (Number.isFinite(t) && t > Date.now() + 30_000) {
-          unlockAt = new Date(t).toISOString()
-        }
-      }
-      // Cap reply depth at 1. The recipient view only renders one level back, and without the
-      // strip a long thread nests a garden per reply.
-      const seedForPrevious = remixSeed ? { ...remixSeed, previous: undefined } : undefined
-      return {
-        flowers: result.flowers,
-        bouquetNote: result.bouquetNote,
-        message: message.trim(),
-        ...(secret.trim() ? { secret: secret.trim() } : {}),
-        from: from.trim(),
-        to: recipient.trim(),
-        createdAt: new Date().toISOString(),
-        unlockAt,
-        occasion,
-        mood,
-        previous: seedForPrevious,
-      }
-    },
-    [scheduleOpen, unlockLocal, remixSeed, message, secret, from, recipient, occasion, mood],
-  )
-
-  const handleDesign = useCallback(async () => {
-    if (!canSubmit || designingRef.current) return
-    designingRef.current = true
-    setRerollAttempt(0)
-    withViewTransition(() => {
-      setPhase('designing')
-      setErrorText(null)
-      setStatusText('reading the room…')
-    })
-
-    const ctrl = new AbortController()
-    abortRef.current = ctrl
-
-    const startedAt = performance.now()
-
-    try {
-      playWhoosh()
-      const result = await designGarden(
-        {
-          message: message.trim(),
-          recipient: recipient.trim(),
-          from: from.trim() || undefined,
-          occasion,
-          mood,
-        },
-        {
-          signal: ctrl.signal,
-          onThinking: () => setThinking(true),
-        },
-      )
-      setGarden(result)
-      setFlowers(result.flowers)
-
-      const data = buildGardenData(result)
-
-      // Don't fall back to a self-contained URL here. It costs the user the garden they waited
-      // five seconds for, but a share link that silently half-works is worse.
-      setThinking(false)
-      setStatusText('wrapping it up…')
-
-      const SHORTEN_TIMEOUT_MS = 3000
-      const shortId = await Promise.race([
-        createShortGarden(data, ctrl.signal),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), SHORTEN_TIMEOUT_MS)),
-      ])
-      if (!shortId) {
-        throw new Error("couldn't save your garden. try again?")
-      }
-      const finalUrl = buildShareUrl(shortId)
-
-      clearStoredDraft()
-
-      /* Not awaited. It costs a canvas rasterize and a round trip, and nobody should wait on the
-         link preview to get their link. */
-      void uploadOgImage(shortId, { flowers: result.flowers, from: from.trim(), to: recipient.trim() })
-
-      recordSentGarden(buildMineRecord(shortId, data))
-      setMineCount(countSentGardens())
-
-      playSuccess()
-      withViewTransition(() => {
-        setShareUrl(finalUrl)
-        setGardenId(shortId)
-        setStatusText('')
-        setPhase('designed')
-      })
-
-      // Structural metadata only. Never the note text or the names.
-      trackGardenGenerated({
-        occasion,
-        mood,
-        flowerCount: result.flowers.length,
-        hasFromName: from.trim().length > 0,
-        isRemix: !!remixSeed,
-        durationMs: Math.round(performance.now() - startedAt),
-      })
-    } catch (err) {
-      if (ctrl.signal.aborted) {
-        withViewTransition(() => setPhase('idle'))
-        trackGardenCanceled()
-        return
-      }
-      const msg = err instanceof Error ? err.message : 'something went wrong.'
-      withViewTransition(() => {
-        setErrorText(msg)
-        setPhase('idle')
-      })
-      // Bucket by error shape. Raw model error text can carry pieces of the user's note.
-      trackGardenError(classifyError(err))
-    } finally {
-      abortRef.current = null
-      designingRef.current = false
-    }
-  }, [buildGardenData, canSubmit, from, message, mood, occasion, recipient, remixSeed, clearStoredDraft])
-
-  const handleCancel = useCallback(() => {
-    abortRef.current?.abort()
-  }, [])
-
-  const handleReroll = useCallback(async () => {
-    if (isRerolling) return
-    const prevGarden = garden
-    const prevFlowers = flowers
-    const prevShareUrl = shareUrl
-    const prevGardenId = gardenId
-
-    setIsRerolling(true)
-    setStatusText('regrowing…')
-    setErrorText(null)
-
-    const ctrl = new AbortController()
-    abortRef.current = ctrl
-    const startedAt = performance.now()
-    const attempt = rerollAttempt + 1
-
-    try {
-      const result = await designGarden(
-        {
-          message: message.trim(),
-          recipient: recipient.trim(),
-          from: from.trim() || undefined,
-          occasion,
-          mood,
-        },
-        { signal: ctrl.signal },
-      )
-
-      const data = buildGardenData(result)
-
-      const shortId = await createShortGarden(data, ctrl.signal)
-      if (!shortId) {
-        throw new Error("couldn't save the new garden. try again?")
-      }
-
-      void uploadOgImage(shortId, { flowers: result.flowers, from: from.trim(), to: recipient.trim() })
-
-      updateSentGardenId(prevGardenId, buildMineRecord(shortId, data))
-
-      // No extra orchestration: GardenScene re-keys on the flower signature, so the new flowers
-      // re-bloom from sprout on their own.
-      setGarden(result)
-      setFlowers(result.flowers)
-      setShareUrl(buildShareUrl(shortId))
-      setGardenId(shortId)
-      setStatusText('')
-      setRerollAttempt(attempt)
-
-      trackGardenRerolled({
-        attempt,
-        durationMs: Math.round(performance.now() - startedAt),
-      })
-    } catch (err) {
-      if (ctrl.signal.aborted) {
-        setGarden(prevGarden)
-        setFlowers(prevFlowers)
-        setShareUrl(prevShareUrl)
-        setGardenId(prevGardenId)
-        setStatusText('')
-        return
-      }
-      setGarden(prevGarden)
-      setFlowers(prevFlowers)
-      setShareUrl(prevShareUrl)
-      setGardenId(prevGardenId)
-      const msg = err instanceof Error ? err.message : 'something went wrong.'
-      setErrorText(msg)
-      setStatusText('')
-      trackGardenError(classifyError(err))
-    } finally {
-      abortRef.current = null
-      setIsRerolling(false)
-    }
-  }, [
-    buildGardenData,
-    isRerolling,
-    garden,
-    flowers,
-    shareUrl,
-    gardenId,
-    rerollAttempt,
-    message,
-    recipient,
-    from,
-    occasion,
-    mood,
-  ])
+  const runDesign = useCallback(() => {
+    if (!canSubmit) return
+    void design.start(draft.fields, draft.forget)
+  }, [canSubmit, design, draft])
 
   const handleStartOver = useCallback(() => {
-    clearStoredDraft()
-    withViewTransition(() => {
-      setPhase('idle')
-      setGarden(null)
-      setFlowers([])
-      setShareUrl(null)
-      setGardenId(null)
-      setErrorText(null)
-      draft.reset()
-      setRerollAttempt(0)
-    })
-    trackMakeAnother()
-  }, [clearStoredDraft, draft])
+    draft.forget()
+    design.startOver(draft.reset)
+  }, [design, draft])
+  const forecast = useMemo(() => gardenForecast(message, mood, occasion), [message, mood, occasion])
 
   const showDemo = phase === 'idle' && !remixSeed && !hasDraft && flowers.length === 0
   const hero = useHeroDemo({
@@ -673,7 +400,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <div className={styles.actions}>
-            <button className={styles.generateBtn} onClick={handleDesign} disabled={!canSubmit}>
+            <button className={styles.generateBtn} onClick={runDesign} disabled={!canSubmit}>
               {remixSeed ? 'grow one back' : 'grow their garden'}
             </button>
           </div>
@@ -706,7 +433,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <Spinner />
             <span>{statusText || 'growing…'}</span>
           </div>
-          <button className={styles.cancelBtn} onClick={handleCancel}>
+          <button className={styles.cancelBtn} onClick={design.cancel}>
             cancel
           </button>
         </div>
@@ -766,7 +493,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   <button
                     type="button"
                     className={styles.previewSecretReveal}
-                    onClick={() => setPreviewSecretRevealed((revealed) => !revealed)}
+                    onClick={togglePreviewSecret}
                     aria-expanded={previewSecretRevealed}
                   >
                     <SecretEnvelope open={previewSecretRevealed} />
@@ -799,7 +526,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             onShare={handleShare}
             onCopy={handleCopy}
             onSaveImage={handleSaveImage}
-            onReroll={handleReroll}
+            onReroll={() => void design.reroll(draft.fields)}
             onStartOver={handleStartOver}
           />
         </>
@@ -815,75 +542,3 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     </div>
   )
 }
-
-function Spinner() {
-  return (
-    <span className={styles.spinner} aria-hidden>
-      <svg width="20" height="26" viewBox="0 0 20 26" fill="none">
-        <line
-          x1="10"
-          y1="26"
-          x2="10"
-          y2="10"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className={styles.sproutStem}
-        />
-        <path d="M 10 14 Q 17 9, 14 16 Q 11 15, 10 14" fill="currentColor" className={styles.sproutLeaf} />
-      </svg>
-    </span>
-  )
-}
-
-/* Don't merge this with the plot's ambient drift. That one loops forever and belongs to the
-   scene; this one falls once, when a garden is finished. */
-const FALL_MS = 4200
-
-function PetalFall({ flowers }: { flowers: FlowerSpec[] }) {
-  const [done, setDone] = useState(prefersReducedMotion())
-
-  useEffect(() => {
-    if (prefersReducedMotion()) return
-    const t = setTimeout(() => setDone(true), FALL_MS)
-    return () => clearTimeout(t)
-  }, [])
-
-  // Unmounted, not left at opacity 0: eighteen absolutely-positioned nodes should not outlive
-  // the four seconds they are visible for.
-  if (done || flowers.length === 0) return null
-
-  return (
-    <div className={styles.petalFall} aria-hidden>
-      {PETAL_FALL.map(([left, size, delay, duration, drift, rotate], i) => {
-        const flower = flowers[i % flowers.length]!
-        return (
-          <span
-            key={i}
-            className={styles.fallPetal}
-            style={{
-              ['--left' as string]: `${left}%`,
-              ['--size' as string]: `${size}px`,
-              ['--delay' as string]: `${delay}ms`,
-              ['--duration' as string]: `${duration}ms`,
-              ['--drift' as string]: `${drift}px`,
-              ['--rotate' as string]: `${rotate}deg`,
-              ['--color' as string]: flower.petalColors[i % flower.petalColors.length]!,
-            }}
-          />
-        )
-      })}
-    </div>
-  )
-}
-
-/* left %, size px, delay ms, duration ms, drift px, start rotation deg.
-   Hand-placed rather than random so the spread stays uneven without clumping. */
-// prettier-ignore
-const PETAL_FALL: Array<[number, number, number, number, number, number]> = [
-  [6, 10, 0, 3000, 42, 12], [18, 7, 320, 3400, -28, 200], [29, 11, 120, 2700, 60, 74],
-  [41, 8, 560, 3200, -46, 310], [52, 9, 240, 3050, 34, 140], [63, 6, 700, 3500, -22, 20],
-  [74, 10, 90, 2850, 52, 250], [86, 8, 430, 3300, -38, 96], [94, 7, 620, 3100, 26, 175],
-  [12, 8, 880, 2900, -34, 58], [35, 6, 1010, 3250, 44, 290], [58, 10, 760, 2950, -50, 130],
-  [80, 7, 1120, 3150, 30, 218], [24, 9, 1240, 3050, -40, 66],
-]
