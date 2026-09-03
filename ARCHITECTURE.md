@@ -245,9 +245,9 @@ a separate autosave. They are genuinely one responsibility: every field feeds th
 and clear and undo have to move all of them together or the form ends up half reset.
 
 The component still reads `from`, `recipient`, `message` and the rest as plain locals, destructured
-from the hook. That was deliberate: there are around two hundred references to those names in the
-JSX, and rewriting every one of them to `draft.fields.from` would have been a wide mechanical change
-to the product's central form for no gain the reader can see.
+from the hook. That was deliberate: those names run all through the JSX, and rewriting every one of
+them to `draft.fields.from` would be a wide mechanical change to the product's central form for no
+gain the reader can see.
 
 **The trap it introduced:** the first version built the setters fresh on every render, which defeats
 any `useCallback` depending on one and makes any effect listing them re-run constantly. They are
