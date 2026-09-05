@@ -46,7 +46,18 @@ for (const file of walk(SRC)) {
     for (const m of source.matchAll(/['"`](--[\w-]+)['"`]/g)) declared.add(m[1])
   }
 
-  for (const m of source.matchAll(/var\(\s*(--[\w-]+)/g)) {
+  /*
+   * Comments masked first. A note explaining what `var(--x)` does is prose, and counting it as a
+   * reference means the gate reports a property nobody meant to use.
+   */
+  const live = source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => ' '.repeat(m.length))
+
+  for (const m of live.matchAll(/var\(\s*(--[\w-]+)/g)) {
+    /*
+     * A name broken by an interpolation is built at runtime, so there is nothing here to check
+     * against: `var(--p-cat-${key})` matches as `--p-cat-` and no such property is ever declared.
+     */
+    if (live[m.index + m[0].length] === '$') continue
     references.push({
       name: m[1],
       file: relative(ROOT, file),
