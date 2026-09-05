@@ -322,3 +322,31 @@ but it means the entrance animations themselves are never exercised, only their 
 and immediately read from a different edge location can miss. In practice the sender reads back what
 they just wrote through the same connection and it has not been a problem, but there is no read-
 after-write guarantee here and the code does not pretend otherwise.
+
+# Decisions, moved out of the README
+
+*Moved out of the README, which is the front door and was carrying the whole house.*
+
+## Decisions worth explaining
+
+The full decision log, with the alternatives that were rejected and the limitations that are still
+open, is in [ARCHITECTURE.md](ARCHITECTURE.md). The four that shape everything else:
+
+**The model designs the flowers; it doesn't pick from a list.** This started as a "choose from 8
+presets" toy. Letting the model invent the palette, petal shape, and count for each flower is the
+whole product. `FlowerSVG.tsx` takes a flower spec directly and draws whatever comes back, so a new
+petal shape is one switch arm.
+
+**Function calling instead of "please return JSON."** Gemini is forced to call `design_garden` with
+a typed schema, which removes the "what if it answered in prose" failure mode rather than handling
+it. Its schema can't express regex or array bounds, so those rules live in the field descriptions
+and in a `validateGarden()` pass that rejects bad output with a real error.
+
+**Short links on our own domain, in KV, with no expiry.** A garden is a keepsake, so a link that was
+already sent has to keep working. Gardens are written under a 6-character id and read back with a
+one-year immutable cache header, since a garden never changes once written.
+
+**Anonymous first; accounts are additive.** Writing, sending and opening a garden all work with no
+account. Signing in adds a synced archive and nothing else. That bet costs attribution, durability
+for anyone who never signs in, and any moderation lever beyond a rate limit, all of which
+[ARCHITECTURE.md](ARCHITECTURE.md) goes into.
