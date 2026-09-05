@@ -325,7 +325,7 @@ after-write guarantee here and the code does not pretend otherwise.
 
 # Decisions, moved out of the README
 
-*Moved out of the README, which is the front door and was carrying the whole house.*
+_Moved out of the README, which is the front door and was carrying the whole house._
 
 ## Decisions worth explaining
 
