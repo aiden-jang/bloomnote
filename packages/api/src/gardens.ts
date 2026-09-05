@@ -44,7 +44,6 @@ function generateId(): string {
 //
 // So the shape is enforced at both doors: write rejects what can't be drawn, read repairs it,
 // because gardens stored before this check are already in KV and their links have to work.
-
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
 const SHAPES = new Set(['round', 'elongated', 'bell', 'small', 'star'])
 // Wider than the design prompt's ranges (petalCount 5-14, stemHeight 70-115) on purpose. This

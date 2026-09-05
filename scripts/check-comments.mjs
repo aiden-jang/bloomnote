@@ -1,9 +1,10 @@
 /*
- * Two mechanical checks on comments, run by `pnpm verify`.
+ * Three mechanical checks on comments, run by `pnpm verify`.
  *
- * A budget, because a cleanup pass is a moment and drift is permanent. And a duplicate check,
- * because the same fact copied into four files is the failure this repo actually had: each copy
- * reads as reasonable on its own, and only a whole-repo view shows it.
+ * A budget, because a cleanup pass is a moment and drift is permanent. A duplicate check, because
+ * the same fact copied into four files is the failure this repo actually had: each copy reads as
+ * reasonable on its own, and only a whole-repo view shows it. And a stranded check, because moving
+ * code leaves its comment behind describing something that is no longer underneath it.
  */
 import { readFileSync } from 'node:fs'
 import { globSync } from 'node:fs'
@@ -17,9 +18,12 @@ import { globSync } from 'node:fs'
  * already existed: 150 comment lines with no new code puts src over 6%.
  */
 const MAX_SRC_DENSITY = 0.06
-/* A count, not the share used above: these run at four times src's rate because a gate's header
-   is mostly the reason it exists, so a share would not bite. Move it only to admit a new gate. */
-const SCRIPTS_BUDGET = 110
+/*
+ * A share here too, at a higher rate than src because a gate's header is mostly the reason it
+ * exists. It was a count, and a count charges every new gate for its own header: adding the
+ * stranded check put it one line over and the fix would have been to move the number.
+ */
+const SCRIPTS_CEILING = 0.25
 const DUP_MIN_CHARS = 45
 
 /**
@@ -52,11 +56,15 @@ const isSrc = (f) => f.includes('/src/') && !/\.test\.tsx?$/.test(f)
 let srcLines = 0
 let srcTotal = 0
 let scriptLines = 0
+let scriptTotal = 0
 const seen = new Map()
+const stranded = []
 
 for (const file of files) {
   const source = readFileSync(file, 'utf8')
-  if (isSrc(file)) srcTotal += source.split('\n').filter((l) => l.trim() !== '').length
+  const nonBlank = source.split('\n').filter((l) => l.trim() !== '').length
+  if (isSrc(file)) srcTotal += nonBlank
+  else if (file.startsWith('scripts/')) scriptTotal += nonBlank
   for (const c of comments(source, file.endsWith('.css'))) {
     if (isSrc(file)) srcLines += c.lines
     else if (file.startsWith('scripts/')) scriptLines += c.lines
@@ -68,13 +76,52 @@ for (const file of files) {
     if (!where.includes(file)) where.push(file)
     seen.set(flat, where)
   }
+
+  const lines = source.split('\n')
+  let afterDeclaration = false
+  for (let i = 1; i < lines.length - 2; i++) {
+    if (/^\}\)?;?$/.test(lines[i])) afterDeclaration = true
+    /*
+     * A doc block with nothing under it but a closing brace. `/**` exists to describe the next
+     * declaration, so one describing a brace documents a prop or a field that has been removed.
+     * Ungated: the first interface in a file is where this happens.
+     */
+    if (/\*\/\s*$/.test(lines[i])) {
+      let open = i
+      while (open >= 0 && !lines[open].includes('/*')) open--
+      const under = lines.slice(i + 1).find((l) => l.trim()) ?? ''
+      if (open >= 0 && lines[open].includes('/**') && /^[)}\]]/.test(under.trim())) {
+        const quoted = (open === i ? lines[open] : lines[open + 1]) ?? ''
+        stranded.push(
+          `${file}:${open + 1} — a doc block with nothing under it: "${quoted.trim().slice(0, 56)}…"`,
+        )
+      }
+    }
+    if (!afterDeclaration) continue
+    /*
+     * A comment, then a blank line, then a declaration. A file header sits above the first one of
+     * those and is fine; a paragraph floating above an export further down is one whose subject
+     * moved without it. Keep a comment on the line above what it describes and this never fires.
+     */
+    const ends = /^\s*(\/\/|\*\/)/.test(lines[i])
+    const next = lines.slice(i + 2, i + 4).find((l) => l.trim()) ?? ''
+    if (ends && lines[i + 1].trim() === '' && /^(export |const |function )/.test(next.trim())) {
+      stranded.push(
+        `${file}:${i + 1} — "${lines[i].trim().slice(0, 56)}…" then a gap, then ${next.trim().slice(0, 36)}`,
+      )
+    }
+  }
 }
 
 const density = srcTotal === 0 ? 0 : srcLines / srcTotal
 const problems = []
 
-if (scriptLines > SCRIPTS_BUDGET) {
-  problems.push(`scripts carry ${scriptLines} comment lines, over the ${SCRIPTS_BUDGET} budget.`)
+const scriptsAllowed = Math.floor(scriptTotal * SCRIPTS_CEILING)
+if (scriptLines > scriptsAllowed) {
+  problems.push(
+    `scripts are ${((scriptLines / scriptTotal) * 100).toFixed(1)}% comments, over the ` +
+      `${(SCRIPTS_CEILING * 100).toFixed(0)}% ceiling (${scriptLines} lines, ${scriptsAllowed} allowed).`,
+  )
 }
 
 const srcCeiling = Math.floor(srcTotal * MAX_SRC_DENSITY)
@@ -84,6 +131,8 @@ if (srcLines > srcCeiling) {
       `(${srcLines} lines, ${srcCeiling} allowed at ${srcTotal} lines of source).`,
   )
 }
+
+for (const s of stranded) problems.push(`a comment left behind by a move: ${s}`)
 
 for (const [text, where] of seen) {
   if (where.length < 2) continue
@@ -100,5 +149,6 @@ if (problems.length > 0) {
 
 console.log(
   `comments ok: src ${(density * 100).toFixed(2)}% of ${srcTotal} lines ` +
-    `(${srcLines}/${srcCeiling}), scripts ${scriptLines}/${SCRIPTS_BUDGET}, no new duplicates`,
+    `(${srcLines}/${srcCeiling}), scripts ${((scriptLines / scriptTotal) * 100).toFixed(1)}%, ` +
+    `no new duplicates, none stranded`,
 )

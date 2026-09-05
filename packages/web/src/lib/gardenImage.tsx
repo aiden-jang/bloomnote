@@ -168,7 +168,6 @@ export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Prom
 //
 // Deliberately separate rather than the square one parameterised: fold them together and every
 // future tweak to the download card silently changes what strangers see in a chat preview.
-
 export async function uploadOgImage(id: string, opts: GardenImageOpts): Promise<void> {
   try {
     const svg = renderToStaticMarkup(<OgCard {...opts} />)
