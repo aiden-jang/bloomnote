@@ -10,15 +10,21 @@
  */
 import { globSync, readFileSync } from 'node:fs'
 
-const MAX_LINES = 600
+const MAX_LINES = 400
 const MAX_STATE = 12
 
 /*
- * Empty, and worth keeping that way. A file mid-decomposition goes here at its current size, so it
- * cannot grow while nothing else gets the slack. Shrink the entry as the file shrinks, delete it
- * once the file is under the ceiling.
+ * Already over, and being decomposed. Listed at their own size rather than the ceiling being raised
+ * for everyone, so nothing else can grow past it meanwhile.
+ * An entry sitting above its file fails too, so nobody has to remember to shrink one.
  */
-const ALREADY_OVER = {}
+const ALREADY_OVER = {
+  'packages/web/src/components/MyGardens.tsx': { lines: 582 },
+  'packages/web/src/components/GardenScene.tsx': { lines: 566 },
+  'packages/web/src/lib/imageCards.tsx': { lines: 529 },
+  'packages/web/src/components/RecipientView.tsx': { lines: 471 },
+  'packages/web/src/components/Composer.tsx': { lines: 443 },
+}
 
 const files = globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f))
 const problems = []
@@ -35,6 +41,19 @@ for (const file of files) {
   if (state > busiest.state) busiest = { file, state }
 
   const allowed = ALREADY_OVER[file] ?? { lines: MAX_LINES, state: MAX_STATE }
+
+  if (ALREADY_OVER[file]) {
+    if (lines <= MAX_LINES && state <= MAX_STATE) {
+      problems.push(`${file} is under the ceiling now: drop it from ALREADY_OVER`)
+    } else {
+      if (allowed.lines !== undefined && lines < allowed.lines) {
+        problems.push(`${file} is down to ${lines} lines: lower its ALREADY_OVER entry from ${allowed.lines}`)
+      }
+      if (allowed.state !== undefined && state < allowed.state) {
+        problems.push(`${file} is down to ${state} state: lower its ALREADY_OVER entry from ${allowed.state}`)
+      }
+    }
+  }
 
   if (lines > allowed.lines) {
     problems.push(`${file} is ${lines} lines, over ${allowed.lines}. Split it rather than raising this.`)
