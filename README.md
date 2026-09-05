@@ -54,30 +54,6 @@ for a feeling that only needs acknowledging.
         │  app.all('*') ──────────────────────▶    built SPA (static assets + fallback)
 ```
 
-## Decisions worth explaining
-
-The full decision log, with the alternatives that were rejected and the limitations that are still
-open, is in [ARCHITECTURE.md](ARCHITECTURE.md). The four that shape everything else:
-
-**The model designs the flowers; it doesn't pick from a list.** This started as a "choose from 8
-presets" toy. Letting the model invent the palette, petal shape, and count for each flower is the
-whole product. `FlowerSVG.tsx` takes a flower spec directly and draws whatever comes back, so a new
-petal shape is one switch arm.
-
-**Function calling instead of "please return JSON."** Gemini is forced to call `design_garden` with
-a typed schema, which removes the "what if it answered in prose" failure mode rather than handling
-it. Its schema can't express regex or array bounds, so those rules live in the field descriptions
-and in a `validateGarden()` pass that rejects bad output with a real error.
-
-**Short links on our own domain, in KV, with no expiry.** A garden is a keepsake, so a link that was
-already sent has to keep working. Gardens are written under a 6-character id and read back with a
-one-year immutable cache header, since a garden never changes once written.
-
-**Anonymous first; accounts are additive.** Writing, sending and opening a garden all work with no
-account. Signing in adds a synced archive and nothing else. That bet costs attribution, durability
-for anyone who never signs in, and any moderation lever beyond a rate limit, all of which
-[ARCHITECTURE.md](ARCHITECTURE.md) goes into.
-
 ## Project layout
 
 ```
@@ -227,39 +203,6 @@ Run it after editing `prompt.ts`. If the daily quota is gone it says so in those
 rather than reporting a prompt regression it never observed.
 
 Knobs: `EVAL_RUNS` (default 1) and `EVAL_PACE_MS` (default 4000).
-
-## Talking about this
-
-**The short version.** Write someone a note and a language model grows them a garden from it. The
-note is the design brief, so a specific note produces a specific garden, and no two are the same.
-
-**The shape.** The browser posts the note to a Worker, which calls Gemini and streams progress back
-over SSE while the flowers bloom in sequence. Gemini is forced to call a `design_garden` function
-with a typed schema, so it returns structured flowers instead of prose I'd have to parse. The garden
-gets written to KV under a 6-character id and that's the share link. Reads are edge-cached for a
-year because a garden never changes once it's written.
-
-**The call I'd defend.** Function calling instead of asking for JSON. Prompting a model to "return
-JSON" leaves you a parser and a failure mode where it answers in a sentence. Forcing a function call
-removes that mode entirely. The catch is that the schema is a subset of OpenAPI and can't express
-regex or array bounds, so those rules live in the field descriptions where the model reads them, plus
-a validation pass that rejects bad output. A bad petal count becomes a clean error event rather than
-a half-drawn flower.
-
-**The number I got wrong.** The daily generation cap was 800, picked without looking anything up. The
-actual Gemini free tier is 20 requests a day for this model. So the guard could never fire, and past
-the real quota every visitor got "the service is busy, try again" about something that couldn't
-succeed until midnight Pacific. It's 15 now, deliberately under 20, because one generation can spend
-more than one request when a transient failure retries. A cap that never fires isn't conservative,
-it's decorative.
-
-**What breaks first.** The model quota, by a wide margin. It's the only metered thing and it's small.
-Everything else is KV reads at the edge, which is the cheap part.
-
-**What I'd change.** Time capsules are entirely client-side: scheduling writes one `unlockAt` string
-and the browser counts down. Changing your device clock opens it early. That was the right call for
-choreography, but if it ever needed to be a real guarantee it would need the read path to check the
-time server-side, and I'd rather have built that seam in from the start than retrofit it.
 
 ## Observability
 
