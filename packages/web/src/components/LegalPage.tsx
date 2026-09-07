@@ -6,7 +6,7 @@ interface Section {
   body: string
 }
 
-const UPDATED = 'July 13, 2026'
+const UPDATED = 'September 7, 2026'
 
 const PRIVACY: Section[] = [
   {
@@ -15,7 +15,7 @@ const PRIVACY: Section[] = [
   },
   {
     heading: 'where it goes',
-    body: 'Your note is processed by Google (Gemini) to generate the flowers; send only what you are comfortable sharing with that service. The garden is stored by Cloudflare (KV) under an unguessable short id, so anyone with the link can open it. We do not sell your data, and there are no advertising trackers. Analytics, if any, are aggregate and cookieless.',
+    body: 'Your note is processed by Google (Gemini) to generate the flowers; send only what you are comfortable sharing with that service. The garden is stored by Cloudflare (KV) under an unguessable short id, so anyone with the link can open it. We do not sell your data, and there are no advertising trackers. We count aggregate usage events (a garden generated, a card downloaded, a link shared) along with the occasion, mood and number of flowers, never your note text, and no cookies are involved.',
   },
   {
     heading: 'accounts are optional',

@@ -20,6 +20,7 @@ import {
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js'
 import { checkRate, clientIp } from './rateLimit.js'
 import { safeMeta } from './eventMeta.js'
+import { writeEvent } from './events.js'
 
 /* Per-IP ceilings on the endpoints that write. bloomnote is anonymous-first, so most of these
    cannot ask who is calling. */
@@ -224,6 +225,7 @@ app.post('/api/event', async (c) => {
   }
   if (TRACKED_EVENTS.has(name)) {
     console.log(`bloomnote_event ${name} ${JSON.stringify(safeMeta(meta))}`)
+    writeEvent(c.env, name, meta)
   }
   return c.body(null, 204)
 })

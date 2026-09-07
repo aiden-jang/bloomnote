@@ -8,4 +8,6 @@ export interface Env {
   // Local dev overrides this with `--var AUTH_URL:http://localhost:34100`.
   AUTH_URL: string
   GEMINI_API_KEY?: string
+  // Optional so local dev and tests run without it: an absent binding just drops the events.
+  EVENTS?: AnalyticsEngineDataset
 }
