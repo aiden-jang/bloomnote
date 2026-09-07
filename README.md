@@ -119,8 +119,8 @@ the note being untrusted model input does and doesn't protect against.
 
 ```bash
 pnpm verify                          # everything CI runs, in one command
-pnpm -r test                         # 308 tests: 90 API, 218 web
-pnpm --filter @bloomnote/web e2e     # 8 Playwright journeys
+pnpm -r test                         # every unit suite: api, web
+pnpm --filter @bloomnote/web e2e     # the Playwright journeys
 ```
 
 `pnpm verify` is the gate: typecheck, lint, format, `css-vars`, `css-classes`, `comments`, `knip`,

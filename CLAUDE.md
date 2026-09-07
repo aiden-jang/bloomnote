@@ -16,7 +16,7 @@ runtime; a script name silently resolved to an npm builtin, so a check reported 
 without ever executing.
 
 So: an impossibly clean result means suspect the scan first. And **green is not proof unless you
-have seen that check fail** — break the thing it guards, watch it go red, then believe it.
+have seen that check fail**: break the thing it guards, watch it go red, then believe it.
 
 ## Writing a new check
 
