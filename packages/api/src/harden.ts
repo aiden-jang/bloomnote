@@ -1,12 +1,13 @@
 import type { MiddlewareHandler } from 'hono'
 
 /** Conservative CSP the Vite SPAs run under unchanged. 'unsafe-inline' is on style-src only,
-    because Vite inlines critical CSS and React sets inline styles; script-src stays 'self'. */
+    because Vite inlines critical CSS and React sets inline styles. script-src carries the Web
+    Analytics beacon, which is a script: allowing it in connect-src alone never loads it. */
 export const DEFAULT_CSP = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "script-src 'self'",
+  "script-src 'self' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob:",
   "font-src 'self' https://fonts.gstatic.com data:",
