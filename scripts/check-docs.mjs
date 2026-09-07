@@ -7,7 +7,8 @@
  */
 import { globSync, readFileSync } from 'node:fs'
 
-const DOCS = ['README.md', 'ARCHITECTURE.md', 'DEPLOY.md', 'CLAUDE.md', 'AGENTS.md']
+// CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice.
+const DOCS = ['README.md', 'ARCHITECTURE.md', 'DEPLOY.md', 'CONVENTIONS.md']
 
 /* Absent on purpose, or somebody else's API. Never add a name the code actually lost. */
 const NOT_OURS = new Set([
