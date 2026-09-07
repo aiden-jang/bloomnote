@@ -14,6 +14,12 @@ port = 32200
 [vars]
 AUTH_URL = "https://accounts.aidenjang.com"
 
+# Product events, written fire-and-forget from the /api/event route. One dataset across every app,
+# with the app name in index1 and blob1, so a single query can compare them.
+[[analytics_engine_datasets]]
+binding = "EVENTS"
+dataset = "aidenjang_events"
+
 # Garden store: `g:<shortId>` -> garden JSON. The short code IS the key (no relational schema).
 # id is filled in at deploy from `wrangler kv namespace create GARDENS`.
 [[kv_namespaces]]
