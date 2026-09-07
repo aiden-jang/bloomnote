@@ -392,13 +392,49 @@ test.describe('compose → bloom → share → recipient', () => {
   // journey fills the note and grows a garden on the defaults.
   test('picking an occasion moves the selection to exactly one chip', async ({ page }) => {
     await page.goto('/')
-    const chosen = page.getByRole('radio', { name: 'hbd', exact: true })
-    const other = page.getByRole('radio', { name: 'just bc', exact: true })
-    await expect(other).toHaveAttribute('aria-checked', 'true')
+    const row = page.getByRole('radiogroup').first()
+    const checked = row.getByRole('radio', { checked: true })
+    // The count, not a named chip: two checked at once is the failure this is named for.
+    await expect(checked).toHaveCount(1)
 
+    const chosen = row.getByRole('radio', { name: 'hbd', exact: true })
     await chosen.click()
     await expect(chosen).toHaveAttribute('aria-checked', 'true')
-    await expect(other).toHaveAttribute('aria-checked', 'false')
+    await expect(checked).toHaveCount(1)
+  })
+
+  /* Pins a width because the row has to overflow before `ChipRow` takes a pointer capture at all,
+     and a capture is what used to eat the click. A wide default window hid this entirely. */
+  test('a chip still selects when the row is narrow enough to scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 })
+    await page.goto('/')
+    const row = page.getByRole('radiogroup').first()
+    expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)
+
+    await row.getByRole('radio', { name: 'hbd', exact: true }).click()
+    await expect(row.getByRole('radio', { name: 'hbd', exact: true })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  /* The capture still has to happen once it is a drag, or the row stops scrolling by mouse and a
+     drag that ends on a chip selects it. */
+  test('dragging the row scrolls it without selecting what it lands on', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 })
+    await page.goto('/')
+    const row = page.getByRole('radiogroup').first()
+    await row.scrollIntoViewIfNeeded()
+    const box = (await row.boundingBox())!
+    const y = box.y + box.height / 2
+
+    await page.mouse.move(box.x + box.width - 20, y)
+    await page.mouse.down()
+    for (let x = box.width - 20; x > 40; x -= 20) await page.mouse.move(box.x + x, y)
+    await page.mouse.up()
+
+    expect(await row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0)
+    await expect(row.getByRole('radio', { name: 'just bc', exact: true })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
   })
 
   // Two ways out of the designing phase that nothing else here takes: a cancel, and a stream that

@@ -83,14 +83,18 @@ export default function ChipRow({ labelledBy, selectable = true, children }: Pro
       moved = 0
       startX = e.clientX
       startScroll = el.scrollLeft
-      el.setPointerCapture(e.pointerId)
-      el.dataset.dragging = 'true'
     }
 
     const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return
       const dx = e.clientX - startX
       moved = Math.max(moved, Math.abs(dx))
+      /* Never capture on the press: a capture here retargets the click to this row, so a plain
+         click never reaches the chip. Only bites where the row scrolls, so a wide window hides it. */
+      if (moved > DRAG_SLOP_PX && !el.hasPointerCapture(e.pointerId)) {
+        el.setPointerCapture(e.pointerId)
+        el.dataset.dragging = 'true'
+      }
       el.scrollLeft = startScroll - dx
     }
 
