@@ -2,7 +2,7 @@
 
 **Status: live** at `bloomnote.aidenjang.com` (KV provisioned, custom domain attached). For a new
 version use the **Routine redeploy** section; the first-deploy steps are kept for reference. One
-Cloudflare Worker (`bloomnote-api`) serves both the API (`/api/*`, `/health`) and the web SPA on
+Cloudflare Worker (`bloomnote`) serves both the API (`/api/*`, `/health`) and the web SPA on
 one origin. Gardens live in a KV namespace (`GARDENS`). Free tier; you pay only for DNS.
 
 Accounts are optional and use the shared auth service (`accounts.aidenjang.com`). The browser
