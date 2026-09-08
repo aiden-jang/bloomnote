@@ -72,10 +72,19 @@ app.onError((err, c) => {
 
 app.use('*', harden())
 
+/* Vite's hashed bundles cannot change under a given name, so a year and `immutable`. Workers
+   Assets serves them `max-age=0, must-revalidate`, which spends a revalidation round trip per
+   chunk on every repeat visit. index.html keeps its name and must still revalidate. */
+const HASHED = /^\/assets\//
+
 /* A GET with no Cache-Control is heuristically cacheable, so a per-user response would be
    stored and handed to the next person on the same browser. */
 app.use('*', async (c, next) => {
   await next()
+  if (HASHED.test(c.req.path)) {
+    c.header('Cache-Control', 'public, max-age=31536000, immutable')
+    return
+  }
   if (!c.res.headers.get('cache-control')) {
     c.header('Cache-Control', 'no-store, max-age=0')
     c.header('Pragma', 'no-cache')
