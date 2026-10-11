@@ -43,27 +43,24 @@
     1
   );
 
-  --green-deep: #2d5a1b;
-  --green-mid: #4a7c3f;
-  --green-light: #7db56a;
-  --green-pale: #c8e6b0;
-  --cream: #faf6ee;
-  --soil: #8b5e3c;
-  --soil-dark: #6b4423;
-  --text-dark: #1e3a10;
-  --text-mid: #4a6741;
-  /* Secondary copy: helper lines, counters, captions. This carries real text, not decoration, so
-     it has to clear 4.5:1. It sits at 4.54 on cream and 4.89 on the white cards. */
-  --text-light: #5a7953;
-  /* Standalone text links. Don't spend violet or pink here: that is reserved for the AI sparkle on
-     "why this garden", the only thing marking generated content. Four rules referenced this token
-     before it existed and fell through to a hardcoded magenta. */
-  --color-accent: #4a7c3f;
+  --green-deep: #294b3a;
+  --green-mid: #3d6550;
+  --green-light: #85a38b;
+  --green-pale: #dddcd0;
+  --cream: #f7f5ec;
+  --soil: #77634e;
+  --soil-dark: #604b37;
+  --text-dark: #263f32;
+  --text-mid: #526354;
+  /* Helper lines and captions carry real text; this clears 4.5:1 on both paper surfaces. */
+  --text-light: #657163;
+  /* Text links follow the green ink. Generated explanations retain their separate sparkle. */
+  --color-accent: #3d6550;
   /* Muted chrome text. Seven inline styles across six files read this, so change it here. */
   --color-ink-muted: var(--text-mid);
   /* Alias for --text-dark. Four rules ask for --text-deep and none pass a fallback. `color` is
      inherited, so an invalid var() silently resolves to the parent's colour instead of failing. */
-  --text-deep: #1e3a10;
+  --text-deep: #263f32;
   /* Wax seal on the time capsule envelope. `fill` is NOT inherited, so an invalid var() falls back
      to the CSS initial value, which for fill is black. */
   /* Don't lighten this back toward #c44e4e. Error text runs at 11-13px in the composer, and that
@@ -73,8 +70,8 @@
      tenth opacity, which was the only neutral line in the app and only by accident. */
   --line: var(--green-pale);
 
-  --pink-mid: #e0919f;
-  --pink-deep: #a3546a;
+  --pink-mid: #dfadb6;
+  --pink-deep: #995168;
   --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
   --sans: 'DM Sans', system-ui, sans-serif;
   /* The sound toggle and the account pill sit side by side but are drawn by different components,
@@ -93,7 +90,7 @@ body,
 
 body {
   font-family: var(--sans);
-  background: radial-gradient(115% 75% at 50% -8%, #fffdf7 0%, var(--cream) 58%), var(--cream);
+  background: var(--cream);
   background-attachment: fixed;
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
@@ -105,7 +102,7 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.04;
+  opacity: 0.018;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-size: 240px 240px;
   background-repeat: repeat;

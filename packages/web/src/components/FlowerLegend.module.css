@@ -1,8 +1,8 @@
 .list {
-  background: white;
+  background: #fffdf8;
   border: 1px solid var(--green-pale);
-  border-radius: 14px;
-  padding: 14px 18px 16px;
+  border-radius: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;

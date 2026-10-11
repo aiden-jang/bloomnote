@@ -1478,3 +1478,78 @@
     display: none;
   }
 }
+
+.textarea {
+  border-width: 1px;
+  border-color: var(--line);
+  border-radius: 16px;
+  background: var(--cream);
+  padding: 18px;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.6;
+  min-height: 190px;
+  box-shadow: none;
+}
+.input {
+  min-height: 46px;
+  font-size: 16px;
+  border-width: 1px;
+  background: var(--cream);
+  box-shadow: none;
+}
+.label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.chip {
+  min-height: 36px;
+  border-width: 1px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+.generateBtn {
+  min-height: 50px;
+  border-radius: 14px;
+  background: var(--green-deep);
+  box-shadow: none;
+  font-size: 14px;
+}
+.generateBtn:hover:not(:disabled) {
+  background: var(--green-mid);
+  box-shadow: 0 4px 12px #294b3a20;
+}
+.secretNote {
+  border-radius: 12px;
+  background: var(--cream);
+}
+.secretNote summary {
+  padding: 13px 14px;
+}
+.shareCard,
+.designingPanel,
+.previewMessage {
+  border-radius: 18px;
+  box-shadow: none;
+}
+.shareBtn,
+.copyBtn,
+.copyBtnSecondary,
+.resetBtn,
+.rerollBtn {
+  border-radius: 12px;
+  min-height: 44px;
+}
+@media (max-width: 480px) {
+  .textarea {
+    padding: 14px;
+    font-size: 18px;
+  }
+  .nameRow {
+    gap: 10px;
+  }
+  .helper {
+    font-size: 11px;
+  }
+}

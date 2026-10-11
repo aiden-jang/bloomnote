@@ -1,0 +1,187 @@
+.wrap {
+  max-width: 1200px;
+  padding: 26px 40px 48px;
+  margin: 0 auto;
+}
+.header {
+  height: 58px;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+.wordmark {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: -1.2px;
+}
+.wordmark a {
+  color: var(--green-deep);
+  text-decoration: none;
+}
+.wordmark span {
+  display: inline-block;
+  color: var(--pink-deep);
+  font-family: var(--sans);
+  font-size: 26px;
+  margin-left: 7px;
+}
+.studio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+}
+.garden {
+  position: sticky;
+  top: 84px;
+  min-width: 0;
+}
+.kicker {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--soil);
+  margin-bottom: 18px;
+}
+.headline {
+  font-family: var(--serif);
+  font-size: clamp(42px, 4.8vw, 64px);
+  font-weight: 450;
+  line-height: 1.06;
+  letter-spacing: -2.8px;
+  text-wrap: initial;
+}
+.headline em {
+  color: var(--pink-deep);
+  font-weight: inherit;
+}
+.subtitle {
+  max-width: 340px;
+  margin-top: 18px;
+  color: var(--text-mid);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.specimen {
+  margin-top: 32px;
+  padding: 12px;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 10px 26px #344f3810;
+}
+.specimenLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-mid);
+}
+.specimenLabel span:last-child {
+  font-size: 18px;
+}
+.caption {
+  padding: 15px 6px 5px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-mid);
+}
+.how {
+  margin-top: 20px;
+  color: var(--text-light);
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 330px;
+}
+.workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 8px 30px #344f3808;
+}
+@media (max-width: 899px) {
+  .wrap {
+    max-width: 620px;
+    padding: 20px 24px 32px;
+  }
+  .header {
+    margin-bottom: 26px;
+  }
+  .studio {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .garden {
+    position: static;
+  }
+  .headline {
+    font-size: 52px;
+  }
+  .specimen {
+    margin-top: 24px;
+  }
+  .how {
+    max-width: none;
+  }
+}
+@media (max-width: 480px) {
+  .wrap {
+    padding: 64px 16px 24px;
+  }
+  .header {
+    height: auto;
+    margin-bottom: 28px;
+  }
+  .wordmark {
+    font-size: 27px;
+  }
+  .headline {
+    font-size: 44px;
+    letter-spacing: -2px;
+  }
+  .kicker {
+    font-size: 10px;
+    margin-bottom: 14px;
+  }
+  .subtitle {
+    font-size: 14px;
+    margin-top: 14px;
+  }
+  .specimen {
+    border-radius: 20px;
+    padding: 9px;
+  }
+  .caption {
+    font-size: 11px;
+  }
+  .workspace {
+    padding: 20px;
+    border-radius: 20px;
+  }
+}
+@media print {
+  .garden {
+    position: static;
+  }
+  .studio {
+    display: block;
+  }
+  .header,
+  .kicker,
+  .headline,
+  .subtitle,
+  .caption,
+  .how {
+    display: none;
+  }
+}

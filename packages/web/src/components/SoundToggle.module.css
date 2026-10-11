@@ -11,9 +11,9 @@
   height: var(--chip-size);
 
   color: var(--text-light);
-  background: rgba(250, 246, 238, 0.72);
+  background: rgba(247, 245, 236, 0.94);
   border: 1px solid var(--green-pale);
-  border-radius: 999px;
+  border-radius: 12px;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 

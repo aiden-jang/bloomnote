@@ -658,17 +658,6 @@
   }
 }
 
-@media (min-width: 900px) {
-  .scene {
-    --garden-zoom: 1.35;
-    scale: var(--garden-zoom);
-    transform-origin: top center;
-    margin-bottom: calc(
-      (var(--garden-h, 200px) + var(--soil-h) + var(--sway-headroom)) * (var(--garden-zoom) - 1)
-    );
-  }
-}
-
 @media (max-width: 480px) {
   .scene {
     height: 220px;

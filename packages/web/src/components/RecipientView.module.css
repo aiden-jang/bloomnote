@@ -525,3 +525,48 @@
     animation: none;
   }
 }
+
+.wrap {
+  max-width: 620px;
+  gap: 24px;
+  padding-top: 80px;
+}
+.messageWrap {
+  background: #fffdf8;
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: 0 8px 24px #344f3808;
+}
+.messageText {
+  font-size: 23px;
+  line-height: 1.65;
+  letter-spacing: -0.3px;
+}
+.openBtn {
+  border-radius: 14px;
+  background: var(--green-deep);
+  animation: none;
+  min-height: 48px;
+}
+.ctaBtn {
+  border-radius: 12px;
+  background: var(--green-deep);
+  box-shadow: none;
+  min-height: 44px;
+}
+.ctaShareBtn {
+  border-radius: 12px;
+  min-height: 44px;
+  background: #fffdf8;
+}
+@media (max-width: 480px) {
+  .wrap {
+    padding: 72px 16px 32px;
+  }
+  .messageWrap {
+    padding: 24px 20px;
+  }
+  .messageText {
+    font-size: 20px;
+  }
+}

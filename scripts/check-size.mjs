@@ -23,7 +23,7 @@ const ALREADY_OVER = {
   'packages/web/src/components/GardenScene.tsx': { lines: 566 },
   'packages/web/src/lib/imageCards.tsx': { lines: 529 },
   'packages/web/src/components/RecipientView.tsx': { lines: 471 },
-  'packages/web/src/components/Composer.tsx': { lines: 443 },
+  'packages/web/src/components/Composer.tsx': { lines: 435 },
 }
 
 const files = globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f))

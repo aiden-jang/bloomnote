@@ -46,9 +46,7 @@ export default function NoteField({
         maxLength={MAX_NOTE}
       />
       <div className={styles.helperRow}>
-        <span className={styles.helper}>
-          quirks beat vibes. the weirder the detail, the better the bouquet.
-        </span>
+        <span className={styles.helper}>One oddly specific detail goes a long way.</span>
         <span className={`${styles.charCount} ${charCountTierClass(value.length, styles)}`}>
           {value.length}/{MAX_NOTE}
         </span>

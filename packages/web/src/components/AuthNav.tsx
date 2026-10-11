@@ -19,9 +19,9 @@ const wrap: CSSProperties = {
   // Never let the pill run past the viewport's left edge on a phone: it grows leftward from
   // right:64, and a long name would push it across the centred header title.
   maxWidth: 'calc(100vw - var(--chip-edge) * 2 - var(--chip-size) - var(--chip-gap) * 2)',
-  background: 'rgba(250, 246, 238, 0.82)',
+  background: 'rgba(247, 245, 236, 0.94)',
   border: '1px solid var(--green-pale, #e2e8dc)',
-  borderRadius: 999,
+  borderRadius: 12,
   backdropFilter: 'blur(6px)',
   WebkitBackdropFilter: 'blur(6px)',
 }

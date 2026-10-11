@@ -84,9 +84,9 @@
   gap: 8px;
   width: 158px;
   padding: 12px 14px 14px;
-  background: white;
+  background: var(--cream);
   border: 1px solid var(--green-pale);
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   font-family: inherit;
   text-align: left;

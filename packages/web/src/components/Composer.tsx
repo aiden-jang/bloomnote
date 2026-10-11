@@ -10,7 +10,7 @@ import RemixContext from './RemixContext'
 import { SecretEnvelope } from './RecipientView'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
-import SoundToggle from './SoundToggle'
+import ComposerFrame from './ComposerFrame'
 import { type ExampleGarden } from '../data/exampleGardens'
 import { type GardenData } from '../garden'
 import { trackComposerOpened } from '../lib/analytics'
@@ -159,42 +159,34 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     useShareActions(shareUrl, recipient, from, flowers)
 
   return (
-    <div className={styles.wrap}>
-      <SoundToggle />
-      <header className={styles.header}>
-        <p className={styles.kicker}>for someone who matters</p>
-        <h1 className={styles.title}>
-          <a href="/" aria-label="bloomnote home" style={{ color: 'inherit', textDecoration: 'none' }}>
-            bloomnote
-          </a>
-        </h1>
-        <p className={styles.subtitle}>
-          {phase === 'designed'
-            ? recipient.trim()
-              ? `it's ${recipient.trim()}'s now. send it when you're ready.`
-              : "it's theirs now. send it when you're ready."
-            : remixSeed
-              ? `write ${remixSeed.from || 'them'} back.`
-              : 'write a note. they get a whole garden.'}
-        </p>
-      </header>
+    <ComposerFrame
+      subtitle={
+        phase === 'designed'
+          ? "it's theirs now. send it when you're ready."
+          : remixSeed
+            ? `write ${remixSeed.from || 'them'} back.`
+            : 'Write someone a note. We turn the details into flowers, ready to send.'
+      }
+      demo={showDemo}
+      scene={
+        <GardenScene
+          flowers={hero.flowers}
+          autoBloom
+          occasion={hero.occasion}
+          mood={hero.mood}
+          silent={showDemo}
+          sprouting={phase === 'designing'}
+          compact={hasDraft}
+          draftGrowth={hero.draftGrowth}
+          key={hero.sceneKey}
+        />
+      }
+    >
       {draft.showRecovered && (
         <p className={styles.recoveredDraft} role="status">
           Your draft is still here.
         </p>
       )}
-
-      <GardenScene
-        flowers={hero.flowers}
-        autoBloom
-        occasion={hero.occasion}
-        mood={hero.mood}
-        silent={showDemo}
-        sprouting={phase === 'designing'}
-        compact={hasDraft}
-        draftGrowth={hero.draftGrowth}
-        key={hero.sceneKey}
-      />
 
       {phase === 'idle' && remixSeed && (
         <RemixContext
@@ -437,6 +429,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           </p>
         </footer>
       )}
-    </div>
+    </ComposerFrame>
   )
 }
