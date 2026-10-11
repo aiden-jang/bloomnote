@@ -30,29 +30,16 @@ if (!existsSync(SRC)) {
 
 const svg = readFileSync(SRC, 'utf8')
 
-// Each entry: [output filename, pixel size]. Add new sizes here when
-// a new surface needs one (e.g. 'icon-32.png' for browser-tab favicon
-// fallback on legacy Edge).
-// apple-touch (iOS) and the maskable icon (Android) get their own rounded mask and turn any
-// transparency black — and this mark is drawn on a transparent background — so composite those
-// onto the app's cream. The plain favicon (icon-192) keeps its transparency.
-const CREAM = '#faf6ee'
+const fullBleed = svg.replace('rx="120"', 'rx="0"')
 const TARGETS = [
-  ['apple-touch-icon.png', 180, CREAM],
-  ['icon-192.png', 192, undefined],
-  ['icon-512.png', 512, CREAM],
+  ['icon-32.png', 32, svg],
+  ['apple-touch-icon.png', 180, fullBleed],
+  ['icon-192.png', 192, svg],
+  ['icon-512.png', 512, fullBleed],
 ]
 
-for (const [name, size, background] of TARGETS) {
-  // fitTo: width tells resvg to render at exactly `size` pixels wide.
-  // Since our SVG has a square viewBox (32×32) and we want square
-  // outputs, that's all we need to pin the aspect ratio.
-  const resvg = new Resvg(svg, {
-    fitTo: { mode: 'width', value: size },
-    ...(background ? { background } : {}),
-  })
-  const png = resvg.render().asPng()
-  const outPath = resolve(ROOT, 'public', name)
-  writeFileSync(outPath, png)
+for (const [name, size, source] of TARGETS) {
+  const png = new Resvg(source, { fitTo: { mode: 'width', value: size } }).render().asPng()
+  writeFileSync(resolve(ROOT, 'public', name), png)
   console.log(`wrote ${name} (${size}×${size}, ${png.length.toLocaleString()} bytes)`)
 }
