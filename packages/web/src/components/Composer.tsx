@@ -341,6 +341,26 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'designed' && garden && shareUrl && (
         <>
+          <ShareCard
+            shareUrl={shareUrl}
+            gardenId={gardenId}
+            recipient={recipient}
+            copied={copied}
+            shareStatus={shareStatus}
+            imageStatus={imageStatus}
+            canShare={canShare}
+            isRerolling={isRerolling}
+            errorText={errorText}
+            statusText={statusText}
+            scheduleOpen={scheduleOpen}
+            unlockLocal={unlockLocal}
+            onShare={handleShare}
+            onCopy={handleCopy}
+            onSaveImage={handleSaveImage}
+            onReroll={() => void design.reroll(draft.fields)}
+            onStartOver={handleStartOver}
+          />
+
           <p className={styles.previewLabel}>
             {recipient.trim() ? `what ${recipient.trim()} sees` : 'what they see'}
           </p>
@@ -388,28 +408,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           )}
 
           <FlowerLegend flowers={garden.flowers} />
-
-          <hr className={styles.shareDivider} aria-hidden />
-
-          <ShareCard
-            shareUrl={shareUrl}
-            gardenId={gardenId}
-            recipient={recipient}
-            copied={copied}
-            shareStatus={shareStatus}
-            imageStatus={imageStatus}
-            canShare={canShare}
-            isRerolling={isRerolling}
-            errorText={errorText}
-            statusText={statusText}
-            scheduleOpen={scheduleOpen}
-            unlockLocal={unlockLocal}
-            onShare={handleShare}
-            onCopy={handleCopy}
-            onSaveImage={handleSaveImage}
-            onReroll={() => void design.reroll(draft.fields)}
-            onStartOver={handleStartOver}
-          />
         </>
       )}
 

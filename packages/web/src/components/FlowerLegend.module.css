@@ -1,11 +1,11 @@
 .list {
-  background: #fffdf8;
-  border: 1px solid var(--green-pale);
-  border-radius: 18px;
-  padding: 20px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 4px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   animation: fadeUp 0.4s var(--ease-spring) forwards;
 }
 
@@ -23,13 +23,13 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   opacity: 0;
   animation: itemReveal 0.5s ease forwards;
   /* animation-delay is applied inline per row from FlowerLegend.tsx, so each row matches the bloom

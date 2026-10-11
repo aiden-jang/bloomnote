@@ -1161,12 +1161,6 @@
   margin-top: 4px;
 }
 
-.shareDivider {
-  border: none;
-  border-top: 1px dashed var(--green-pale);
-  margin: 6px 0 -2px;
-}
-
 .bouquetNote {
   background: #fbf8f0;
   border: 1px solid #e6dfc6;
@@ -1390,7 +1384,6 @@
   .escape,
   .error,
   .shareCard,
-  .shareDivider,
   .footer {
     display: none !important;
   }
@@ -1592,4 +1585,18 @@
   .shareMore button {
     width: auto;
   }
+}
+
+.shareCard {
+  padding: 0 0 24px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.previewMessage {
+  padding: 18px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--cream);
 }

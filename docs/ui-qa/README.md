@@ -37,3 +37,5 @@ mobile demonstration uses the scene’s geometry scale so flowers remain inside 
 recipient and generated gardens retain their normal scale. The full verification suite passed
 (97 API tests, 245 web tests and 16 browser journeys), followed by final source checks and a
 production build. These changes are committed locally on main; no push or deployment is included.
+
+The October 10 sharing pass places Share and Copy link above the recipient preview in the finished composer. The note and flower meanings use flatter surfaces and tighter spacing. Generated and open-recipient captures were inspected at desktop and phone sizes; checks also cover 320, 430 and 768px.

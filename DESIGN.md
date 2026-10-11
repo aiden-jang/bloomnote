@@ -25,3 +25,5 @@ with recipient names above a quieter action row. Shared wordmarks link back to t
 Growing feedback retains the real status and Cancel action with a short supporting caption.
 Sharing is visually primary; regrowing and starting over sit together below a divider. Empty
 libraries keep one clear creation action and a small sprout.
+
+The finished composer leads with sending and copying before the recipient preview. Preview notes and flower meanings use quieter, flatter surfaces so the garden and sharing controls carry the hierarchy.
