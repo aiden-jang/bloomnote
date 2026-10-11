@@ -118,7 +118,7 @@ export default function GardenRow({
         <span className={styles.swatches} aria-hidden>
           {(swatches.length > 0 ? swatches : ['#cbd6c2']).map((c, i) => (
             <span key={i} className={styles.swatch}>
-              <FlowerHead flower={cardBloom(c, id, i)} size={24} />
+              <FlowerHead flower={cardBloom(c, id, i)} size={44} />
             </span>
           ))}
         </span>

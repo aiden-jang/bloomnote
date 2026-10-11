@@ -40,6 +40,7 @@ export default function ShareCard({
 }: Props) {
   return (
     <div className={styles.shareCard}>
+      <p className={styles.readyEyebrow}>ready for their inbox</p>
       <p className={styles.shareTitle}>
         {scheduleOpen
           ? recipient
@@ -105,19 +106,21 @@ export default function ShareCard({
                 : 'save as image'}
         </button>
 
-        <button
-          type="button"
-          className={styles.rerollBtn}
-          onClick={onReroll}
-          disabled={isRerolling}
-          aria-busy={isRerolling}
-        >
-          ⟳ different flowers
-        </button>
+        <div className={styles.shareMore}>
+          <button
+            type="button"
+            className={styles.rerollBtn}
+            onClick={onReroll}
+            disabled={isRerolling}
+            aria-busy={isRerolling}
+          >
+            ⟳ different flowers
+          </button>
 
-        <button className={styles.resetBtn} onClick={onStartOver} disabled={isRerolling}>
-          make another
-        </button>
+          <button className={styles.resetBtn} onClick={onStartOver} disabled={isRerolling}>
+            make another
+          </button>
+        </div>
       </div>
     </div>
   )

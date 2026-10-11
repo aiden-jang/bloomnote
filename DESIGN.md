@@ -16,3 +16,12 @@ separate paper card; opening, secret notes, watering, replies and keepsakes reta
 Dry humor belongs in supporting copy, never user-written notes, errors, dates, privacy or account
 controls. Garden growth remains the main motion; reduced-motion behavior and keyboard focus remain
 available. UI captures use isolated fixtures, never production account or garden writes.
+
+The phone composer keeps the first note field inside the opening viewport. Its labeled example
+preview uses the existing scene geometry at a smaller scale; generated and recipient gardens
+keep their full presentation. The library gives color-based bouquet previews a separate band,
+with recipient names above a quieter action row. Shared wordmarks link back to the composer.
+
+Growing feedback retains the real status and Cancel action with a short supporting caption.
+Sharing is visually primary; regrowing and starting over sit together below a divider. Empty
+libraries keep one clear creation action and a small sprout.

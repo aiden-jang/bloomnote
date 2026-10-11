@@ -1,3 +1,4 @@
+import RecipientHeader from './RecipientHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
 import GardenScene from './GardenScene'
@@ -257,19 +258,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           saved to your gardens →
         </a>
       )}
-      <div className={styles.topLabel}>
-        {/* tabIndex -1 so opening the garden can put focus here. The button that does it removes
-            itself, and without this focus drops to the body and the reader loses their place. */}
-        <h1 className={styles.fromText} tabIndex={-1} ref={headingRef}>
-          {from ? (
-            <>
-              <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
-            </>
-          ) : (
-            <>someone grew {to ? to : 'you'} a garden</>
-          )}
-        </h1>
-      </div>
+      <RecipientHeader from={from} to={to} headingRef={headingRef} />
 
       <GardenScene
         flowers={flowers}

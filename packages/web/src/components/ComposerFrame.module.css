@@ -185,3 +185,36 @@
     display: none;
   }
 }
+
+@media (max-width: 480px) {
+  .wrap {
+    padding-top: 56px;
+  }
+  .header {
+    margin-bottom: 18px;
+  }
+  .headline {
+    font-size: 34px;
+    letter-spacing: -1.5px;
+  }
+  .kicker {
+    margin-bottom: 10px;
+  }
+  .subtitle {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .studio {
+    gap: 20px;
+  }
+  .specimen {
+    margin-top: 16px;
+  }
+  .demoSpecimen {
+    --preview-scale: 0.7;
+  }
+  .caption,
+  .how {
+    display: none;
+  }
+}

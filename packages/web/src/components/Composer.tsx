@@ -16,7 +16,8 @@ import { type GardenData } from '../garden'
 import { trackComposerOpened } from '../lib/analytics'
 import { useGardenDesign } from '../lib/useGardenDesign'
 import { countSentGardens } from '../lib/mine'
-import { Spinner, PetalFall } from './ComposerBloom'
+import { PetalFall } from './ComposerBloom'
+import GrowFeedback from './GrowFeedback'
 import { prewarmGardenImage } from '../lib/gardenImage'
 import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
@@ -317,17 +318,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </>
       )}
 
-      {phase === 'designing' && (
-        <div className={styles.designingPanel}>
-          <div className={styles.designingRow} role="status" aria-live="polite">
-            <Spinner />
-            <span>{statusText || 'growing…'}</span>
-          </div>
-          <button className={styles.cancelBtn} onClick={design.cancel}>
-            cancel
-          </button>
-        </div>
-      )}
+      {phase === 'designing' && <GrowFeedback statusText={statusText} onCancel={design.cancel} />}
 
       {undoDraft && (
         <div className={styles.undoToast} role="status" aria-live="polite">

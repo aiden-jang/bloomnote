@@ -666,7 +666,7 @@
   /* Scaled on a phone, so the scene only needs the scaled height back. */
   .scene {
     --soil-h: 44px;
-    height: calc(var(--garden-h, 200px) * 0.85 + var(--soil-h) + var(--sway-headroom));
+    height: calc(var(--garden-h, 200px) * var(--preview-scale, 0.85) + var(--soil-h) + var(--sway-headroom));
   }
 
   /* Restate the cropped height inside the query. `.sceneCompact` sits above this block, so on
@@ -678,12 +678,12 @@
   .garden {
     bottom: var(--soil-h);
     height: var(--garden-h, 200px);
-    transform: scale(0.85);
+    transform: scale(var(--preview-scale, 0.85));
     transform-origin: bottom center;
   }
 
   .petalLayer {
-    --fall-distance: calc(var(--garden-h, 200px) * 0.85 + var(--sway-headroom) + 24px);
+    --fall-distance: calc(var(--garden-h, 200px) * var(--preview-scale, 0.85) + var(--sway-headroom) + 24px);
   }
 }
 

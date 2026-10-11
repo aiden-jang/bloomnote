@@ -5,7 +5,7 @@ blush headlines and a two-column composer that stacks on phones. Recipient notes
 paper card; the library becomes a two-column directory on desktop.
 
 `packages/web/scripts/capture-ui.cjs` uses intercepted responses in isolated browser contexts.
-It captures the fresh composer, a draft, a generated garden and sharing controls, the recipient
+It captures the fresh composer, a draft, a generated garden and sharing controls, growth feedback, the recipient
 before and after opening, a scheduled garden, the signed-in library, an empty library and privacy.
 No fixture enters production storage. The preview runs on port 32112. Optional
 `BLOOMNOTE_BROWSER_PATH` and `BLOOMNOTE_PLAYWRIGHT_MODULE` select a local browser and runtime.
@@ -23,3 +23,17 @@ pages. Garden animation, focus, user-written notes, account redirects and storag
 The new composer layout deliberately replaces the centered stack. The oversized desktop garden
 zoom was removed so previews fit their columns. The open-garden button no longer pulses forever;
 growth and opening remain the central animation. This update does not include a push or deployment.
+
+The October 10 follow-up brings the note field into the first phone viewport, adds larger
+color-based bouquet previews to library cards, and uses the same linked wordmark across the
+composer, library and recipient screens. Growth keeps the real status and cancellation controls;
+“A small botanical overreaction.” adds a quiet aside. Sharing gives sending and copying priority
+above rerolling or starting another note. The empty archive now reads “Nothing growing yet. Very
+low maintenance.”
+
+Refreshed desktop and phone captures were inspected, including growth and the empty archive.
+Five-swatch library fixtures also passed the 320, 390, 430, 768 and 1440px overflow checks. The
+mobile demonstration uses the scene’s geometry scale so flowers remain inside the shorter garden;
+recipient and generated gardens retain their normal scale. The full verification suite passed
+(97 API tests, 245 web tests and 16 browser journeys), followed by final source checks and a
+production build. These changes are committed locally on main; no push or deployment is included.

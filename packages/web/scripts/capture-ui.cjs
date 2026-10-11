@@ -32,7 +32,7 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
   to,
   occasion: 'ty',
   createdAt: '2026-10-10T12:00:00Z',
-  swatches: flowers.map((f) => f.petalColors[0]),
+  swatches: [...flowers.map((f) => f.petalColors[0]), '#a7bca4', '#e6bdcd'],
 }))
 ;(async () => {
   const out = path.resolve(__dirname, '../../../docs/ui-qa')
@@ -45,6 +45,7 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
       'composer',
       'draft',
       'generated',
+      'growing',
       'recipient-sealed',
       'recipient-open',
       'scheduled',
@@ -76,6 +77,8 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
               },
             })
           if (p === '/api/mine') return route.fulfill({ json: { sent: records, received: [] } })
+          if (p === '/api/design-garden' && name === 'growing')
+            return new Promise((resolve) => page.once('close', resolve))
           if (p === '/api/design-garden')
             return route.fulfill({
               headers: { 'content-type': 'text/event-stream' },
@@ -104,14 +107,18 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
                 ? '/privacy'
                 : '/'
         await page.goto('http://127.0.0.1:32112' + url)
-        if (name === 'composer' || name === 'draft' || name === 'generated') {
+        if (name === 'composer' || name === 'draft' || name === 'generated' || name === 'growing') {
           await page.getByLabel('your note', { exact: true }).waitFor()
-          if (name === 'draft' || name === 'generated') {
+          if (name === 'draft' || name === 'generated' || name === 'growing') {
             await page.getByLabel('your note', { exact: true }).fill(garden.message)
             await page.getByLabel('from', { exact: true }).fill('Alex')
             await page.getByLabel('to', { exact: true }).fill('Sam')
             await page.getByRole('button', { name: 'grow their garden', exact: true }).waitFor()
           }
+        }
+        if (name === 'growing') {
+          await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+          await page.getByText('A small botanical overreaction.', { exact: true }).waitFor()
         }
         if (name === 'generated') {
           await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
@@ -137,6 +144,10 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
           name + ' horizontal overflow at ' + width,
         )
         assert.deepEqual(errors, [], name + ' page errors')
+        if (name === 'composer' && width <= 480) {
+          const note = await page.getByLabel('your note', { exact: true }).boundingBox()
+          assert.ok(note && note.y < 764, 'Writing starts inside the first phone viewport')
+        }
         if (width === 1440 || width === 390)
           await page.screenshot({ path: path.join(out, `${name}-${width}.png`), fullPage: true })
         await context.close()

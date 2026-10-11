@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import SoundToggle from './SoundToggle'
+import BloomBrand from './BloomBrand'
 import styles from './ComposerFrame.module.css'
 
 export default function ComposerFrame({
@@ -18,9 +19,7 @@ export default function ComposerFrame({
       <SoundToggle />
       <header className={styles.header}>
         <h1 className={styles.wordmark}>
-          <a href="/" aria-label="bloomnote home">
-            bloomnote<span aria-hidden>✳</span>
-          </a>
+          <BloomBrand />
         </h1>
       </header>
       <div className={styles.studio}>
@@ -32,10 +31,10 @@ export default function ComposerFrame({
             <em>A whole garden.</em>
           </h2>
           <p className={styles.subtitle}>{subtitle}</p>
-          <div className={styles.specimen}>
+          <div className={`${styles.specimen} ${demo ? styles.demoSpecimen : ''}`}>
             <div className={styles.specimenLabel}>
               <span>{demo ? 'example garden' : 'your garden'}</span>
-              <span aria-hidden>↗</span>
+              <span aria-hidden>✳</span>
             </div>
             {scene}
             <p className={styles.caption}>No watering required. Emotionally, anyway.</p>

@@ -19,11 +19,11 @@ const MAX_STATE = 12
  * An entry sitting above its file fails too, so nobody has to remember to shrink one.
  */
 const ALREADY_OVER = {
-  'packages/web/src/components/MyGardens.tsx': { lines: 582 },
+  'packages/web/src/components/MyGardens.tsx': { lines: 556 },
   'packages/web/src/components/GardenScene.tsx': { lines: 566 },
   'packages/web/src/lib/imageCards.tsx': { lines: 529 },
-  'packages/web/src/components/RecipientView.tsx': { lines: 471 },
-  'packages/web/src/components/Composer.tsx': { lines: 435 },
+  'packages/web/src/components/RecipientView.tsx': { lines: 460 },
+  'packages/web/src/components/Composer.tsx': { lines: 426 },
 }
 
 const files = globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f))

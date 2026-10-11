@@ -1553,3 +1553,43 @@
     font-size: 11px;
   }
 }
+
+.readyEyebrow {
+  color: var(--text-mid);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.shareTitle {
+  font-size: 26px;
+  letter-spacing: -0.5px;
+}
+.shareActionsPrimary > button {
+  min-height: 52px;
+  font-size: 15px;
+}
+.shareMore {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.shareMore button {
+  font-size: 12px;
+}
+.designingPanel {
+  padding: 28px;
+  background: var(--cream);
+}
+.growingAside {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--text-mid);
+  font-size: 17px;
+}
+@media (max-width: 480px) {
+  .shareMore button {
+    width: auto;
+  }
+}

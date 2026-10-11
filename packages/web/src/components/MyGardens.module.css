@@ -698,3 +698,88 @@
     padding: 14px;
   }
 }
+
+.header > a {
+  margin-bottom: 24px;
+}
+.card {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.cardMain {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+.swatches {
+  min-height: 108px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: linear-gradient(135deg, #eeeee4, #f8ecec);
+  border-bottom: 1px solid var(--line);
+}
+.swatch {
+  width: 44px;
+  height: 44px;
+}
+.swatch:not(:first-child) {
+  margin-left: 0;
+}
+.swatch:nth-child(even) {
+  translate: 0 -7px;
+  rotate: 8deg;
+}
+.cardText {
+  padding: 18px 18px 8px;
+  gap: 6px;
+}
+.recipient {
+  font-size: 23px;
+}
+.cardActions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 18px 18px;
+  gap: 8px;
+}
+.actionBtn {
+  border-radius: 8px;
+  border-color: var(--line);
+  min-height: 34px;
+}
+.pinBtn,
+.removeBtn {
+  min-height: 34px;
+}
+.removeBtn {
+  margin-left: auto;
+}
+@media (max-width: 480px) {
+  .search input,
+  .sort {
+    font-size: 16px;
+  }
+  .header > a {
+    margin-bottom: 20px;
+  }
+  .card {
+    padding: 0;
+  }
+  .swatches {
+    min-height: 94px;
+    gap: 6px;
+    padding: 16px;
+  }
+  .cardActions {
+    width: auto;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+}

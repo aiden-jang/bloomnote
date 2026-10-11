@@ -1,3 +1,4 @@
+import BloomBrand from './BloomBrand'
 import { useEffect, useState } from 'react'
 import styles from './SealedView.module.css'
 
@@ -90,6 +91,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
   return (
     <div className={styles.wrap}>
       <div className={styles.topLabel}>
+        <BloomBrand />
         <h1 className={styles.fromText}>
           {from ? (
             <>

@@ -1,4 +1,5 @@
 import GardenScene from './GardenScene'
+import Shell from './GardenLibraryShell'
 import GardenRow from './GardenRow'
 import { FlowerHead } from './FlowerSVG'
 import { cardBloom } from '../lib/cardBloom'
@@ -320,7 +321,7 @@ function LocalGardens() {
           <div className={styles.emptyPlot}>
             <GardenScene flowers={[]} autoBloom={false} silent draftGrowth={2} />
           </div>
-          <p className={styles.emptyText}>you haven&rsquo;t grown any yet.</p>
+          <p className={styles.emptyText}>Nothing growing yet. Very low maintenance.</p>
           <a href="/" className={styles.emptyLink}>
             grow one
           </a>
@@ -550,32 +551,5 @@ function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }) {
         </button>
       )}
     </aside>
-  )
-}
-
-function Shell({
-  subtitle,
-  children,
-  hideBackLink = false,
-}: {
-  subtitle: string
-  children: React.ReactNode
-  hideBackLink?: boolean
-}) {
-  return (
-    <div className={styles.wrap}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>your gardens</h1>
-        {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
-      </header>
-      {children}
-      {!hideBackLink && (
-        <footer className={styles.footer}>
-          <a href="/" className={styles.backLink}>
-            ← grow another
-          </a>
-        </footer>
-      )}
-    </div>
   )
 }
