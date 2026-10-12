@@ -23,14 +23,17 @@ export default function ComposerFrame({
         </h1>
       </header>
       <div className={styles.studio}>
-        <aside className={styles.garden} aria-label="Garden preview">
-          <p className={styles.kicker}>a small gesture, overgrown</p>
+        <div className={styles.workspace}>
+          <p className={styles.kicker}>A NOTE FOR SOMEONE</p>
           <h2 className={styles.headline}>
-            A little note.
+            What do you want
             <br />
-            <em>A whole garden.</em>
+            <em>to tell them?</em>
           </h2>
           <p className={styles.subtitle}>{subtitle}</p>
+          {children}
+        </div>
+        <aside className={styles.garden} aria-label="Garden preview">
           <div className={`${styles.specimen} ${demo ? styles.demoSpecimen : ''}`}>
             <div className={styles.specimenLabel}>
               <span>{demo ? 'example garden' : 'your garden'}</span>
@@ -39,9 +42,8 @@ export default function ComposerFrame({
             {scene}
             <p className={styles.caption}>No watering required. Emotionally, anyway.</p>
           </div>
-          <p className={styles.how}>Your words. Flowers chosen for them. A link worth opening.</p>
+          <p className={styles.how}>Your words decide what grows here.</p>
         </aside>
-        <div className={styles.workspace}>{children}</div>
       </div>
     </div>
   )

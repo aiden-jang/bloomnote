@@ -4,8 +4,7 @@ Bloomnote is botanical stationery: ivory paper, deep green ink and restrained bl
 The garden is the visual centerpiece, with the recipient's words kept distinct from generated
 flower meanings. Fraunces carries the expressive headlines and notes; DM Sans carries controls.
 
-The composer uses a two-column studio at 900px and above, capped at 1200px: a garden preview on
-one side and a paper writing surface on the other. Below that it becomes one column. On phones,
+The composer uses a two-column studio at 900px and above, capped at 1200px: a paper writing surface first and an open garden preview beside it, without matching rounded cards. Below that it becomes one column, with writing before the preview. On phones,
 compact spacing and fields of at least 16px avoid focus zoom. The fresh garden preview is labeled
 as an example; draft and generated previews are labeled as the person's garden.
 

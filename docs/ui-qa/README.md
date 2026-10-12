@@ -39,3 +39,16 @@ recipient and generated gardens retain their normal scale. The full verification
 production build. These changes are committed locally on main; no push or deployment is included.
 
 The October 10 sharing pass places Share and Copy link above the recipient preview in the finished composer. The note and flower meanings use flatter surfaces and tighter spacing. Generated and open-recipient captures were inspected at desktop and phone sizes; checks also cover 320, 430 and 768px.
+
+## Writing desk landing — October 11
+
+The composer leads with the note on an open writing surface. The garden sits beside it on desktop
+and follows the writing controls on phones; keyboard order follows the same sequence. Matching
+rounded studio cards and the separate marketing headline have been removed. Examples stay labeled,
+and composing, draft recovery, generation and sharing retain their existing behavior.
+
+Desktop (1280 × 900) and phone (390 × 844) captures were inspected. The note field is visible in
+the opening phone viewport. Static checks, the production build and the frontend suite passed.
+Two API checks timed out during the combined run and passed when rerun separately. The first
+browser run lost its local Worker mid-suite; the restarted browser suite passed. The combined
+runner is not recorded as green.

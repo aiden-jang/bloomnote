@@ -218,3 +218,88 @@
     display: none;
   }
 }
+
+.studio {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 80px;
+}
+.workspace {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 0 0 32px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.workspace .kicker {
+  margin-bottom: 0;
+}
+.headline {
+  font-size: clamp(38px, 4vw, 54px);
+  letter-spacing: -1.8px;
+}
+.subtitle {
+  margin: -4px 0 8px;
+  max-width: 400px;
+}
+.garden {
+  grid-column: 2;
+  grid-row: 1;
+  top: 100px;
+  padding-top: 70px;
+}
+.specimen {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin-top: 0;
+}
+.specimenLabel {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+  padding: 0 0 12px;
+}
+.specimenLabel span:last-child {
+  color: var(--pink-deep);
+}
+.caption {
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+.how {
+  margin-top: 12px;
+}
+@media (max-width: 899px) {
+  .studio {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .workspace {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .garden {
+    grid-column: 1;
+    grid-row: 2;
+    padding-top: 0;
+  }
+}
+@media (max-width: 480px) {
+  .workspace {
+    padding: 0;
+  }
+  .headline {
+    font-size: 38px;
+  }
+  .subtitle {
+    font-size: 14px;
+  }
+  .caption,
+  .how {
+    display: block;
+  }
+}
