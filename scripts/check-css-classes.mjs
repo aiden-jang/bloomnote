@@ -12,7 +12,7 @@
  * is worse than no check.
  */
 import { readFileSync, globSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { basename } from 'node:path'
 
 /** Class names a module stylesheet defines, including those only reached through composition. */
 function definedClasses(cssPath) {

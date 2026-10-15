@@ -1,93 +1,70 @@
-# Deploying bloomnote → bloomnote.aidenjang.com
+# Deployment and recovery
 
-**Status: live** at `bloomnote.aidenjang.com` (KV provisioned, custom domain attached). For a new
-version use the **Routine redeploy** section; the first-deploy steps are kept for reference. One
-Cloudflare Worker (`bloomnote`) serves both the API (`/api/*`, `/health`) and the web SPA on
-one origin. Gardens live in a KV namespace (`GARDENS`). Free tier; you pay only for DNS.
+Bloomnote runs at [bloomnote.aidenjang.com](https://bloomnote.aidenjang.com). One Cloudflare Worker
+serves the API and built SPA on the same origin. Gardens are stored in the `GARDENS` KV namespace;
+`COUNTERS` holds atomic rate and daily-generation limits. The shared account service is separate.
 
-Accounts are optional and use the shared auth service (`accounts.aidenjang.com`). The browser
-redirects there to sign in and out. bloomnote's own `/api/me` route then validates the
-`platform_session` cookie server-side, by calling the auth service's `/auth/me` from the Worker, so
-the browser never talks to accounts cross-origin. The cookie is scoped to `.aidenjang.com`, so it is
-shared with owewell.
+## Automatic release
 
-All commands run from `packages/api`.
+Merge a verified pull request into `main`. `.github/workflows/ci.yml` runs the repository checks
+and Chromium journeys in parallel. Both `check` and `browser-check` must pass before deployment.
+Superseded PR runs are cancelled; main runs queue so releases are not interrupted mid-deploy.
 
-## First deploy (once, in order)
+The check job uploads the production web assets. The deploy job downloads that artifact and
+runs `pnpm --filter @bloomnote/api run deploy:assets`, so it deploys the exact SPA that passed the
+build checks. It does not rebuild the UI or repeat the test suite. Browser durations and failure
+traces/screenshots are retained as the `browser-results` artifact.
 
-```bash
-# 1. Create the garden store, then paste the printed id into wrangler.toml as the `id`
-#    under [[kv_namespaces]]. The COUNTERS durable object needs no step of its own:
-#    `wrangler deploy` applies the [[migrations]] block that creates it.
-pnpm exec wrangler kv namespace create GARDENS
+The repository needs `CLOUDFLARE_API_TOKEN` with permission to deploy this Worker. Keep it in GitHub
+Actions secrets. The model key lives in the Worker’s `GEMINI_API_KEY` secret; `AUTH_URL` is public
+configuration in `packages/api/wrangler.toml`. Do not place secrets in commits, screenshots, logs,
+or command arguments.
 
-# 2. Garden generation key (Gemini). Optional: without it, /api/design-garden returns 503
-#    gracefully and the rest of the app still works.
-echo "<gemini-api-key>" | pnpm exec wrangler secret put GEMINI_API_KEY
+## Verify a release
 
-# 3. Custom-domain two-step: a Worker needs a deployment before a custom domain attaches.
-#    - Comment out the [[routes]] custom_domain block in wrangler.toml.
-pnpm run deploy            # builds bloomnote-web, then wrangler deploy (first deployment)
-#    - Uncomment the [[routes]] block.
-pnpm run deploy            # redeploy to attach bloomnote.aidenjang.com
-```
-
-- `AUTH_URL` is committed in `wrangler.toml` `[vars]` (`https://accounts.aidenjang.com`), so no
-  auth secret to set. The account already has a `workers.dev` subdomain, so `error 10063` won't recur.
-
-## Routine redeploy
-
-CI deploys on merge to `main`, and nothing here is run by hand. The gate is
-`.github/workflows/ci.yml`: `gates`, typecheck, `size`, lint, a Prettier check, `css-vars`,
-`css-classes`, `comments`, `knip`, build and unit tests, then a production-only `pnpm audit`, the
-Playwright suite in Chromium, and a bundle-size report (which prints, and does not fail).
-
-`pnpm verify` runs that same list locally, and `pnpm run deploy` depends on it, so the break-glass
-path below cannot ship past a failing check. CI's own deploy job calls `pnpm run deploy:only`
-instead: its gate is the `check` job it depends on, and repeating the suite there would need
-Chromium installed just to redo work that already passed.
-
-The manual commands are break-glass only, for when CI itself is broken:
+Confirm the workflow’s exact main commit and successful check, browser, and deploy jobs.
 
 ```bash
-pnpm run deploy            # builds the SPA + deploys (use whenever web/ changed)
-pnpm exec wrangler deploy  # API/config-only change (reuses the last-built SPA)
+curl --fail https://bloomnote.aidenjang.com/health
+curl --fail https://bloomnote.aidenjang.com/api/me
 ```
 
-## Dependency: the auth service
+The first reports the service as healthy. The second reports a null user in a signed-out browser.
+Open the writing desk, an existing garden link, and the library. Verify optional sign-in returns
+from the account service. Creating a real garden spends model quota; use an existing link for
+routine read-only smoke checks.
 
-bloomnote relies on the shared auth service at `accounts.aidenjang.com` for sign-in and sign-out
-redirects and for server-side `/auth/me` validation. Auth lives in its own repo and is already live.
-If its contract changes, deploy it from there first: bloomnote reads `/auth/me` through
-`@aidenjang/auth-client`, so a change there breaks sign-in here.
+## Rollback and diagnosis
 
-## Smoke test (verify SSO + /mine cross-device)
+Revert the offending merge through a pull request and let the same checks and automatic release
+run. For an urgent incident, Cloudflare’s dashboard can restore a previously deployed Worker
+version. Confirm its assets and configuration together, then bring the repository back into line.
+Do not delete KV records or change Durable Object migrations to roll back a UI change.
+
+Inspect Actions logs for build and browser failures; use the retained trace to inspect a failed
+journey. Workers Logs is enabled. From the repository root:
 
 ```bash
-curl https://bloomnote.aidenjang.com/health   # {"status":"ok","service":"bloomnote"}
-curl https://bloomnote.aidenjang.com/api/me   # {"user":null} when signed out
+pnpm --filter @bloomnote/api exec wrangler tail
 ```
 
-Then in a browser:
+Account outages and signed-out sessions are distinct on account mutations: an outage returns
+503, an invalid session returns 401. Garden creation can fall back to anonymous; the local library
+is claimed when account access returns. Model failures retain the draft and show recovery copy.
 
-1. Anonymous: create a garden, open its `/g/<id>` link. Works with no account.
-2. Click **Sign in** (top-right) → lands on `accounts.aidenjang.com`, sign in → back to bloomnote.
-   If you're already signed into owewell, this should be seamless (shared `.aidenjang.com` cookie).
-3. `/mine` → your **Sent** garden appears; any anonymous gardens made on this device get claimed.
-4. Open someone else's `/g/<id>` while signed in → it shows under **Received**.
-5. Cross-device check: sign in on another browser/device → the same Sent/Received lists load
-   (they're server-side in KV, not localStorage).
+## Manual recovery and initial provisioning
 
-## Local dev (no Cloudflare needed)
+Manual deployment is a recovery path. From the repository root, `pnpm run deploy` runs the full
+verification gate, builds the SPA, and deploys the Worker. The API package’s `deploy:assets` script
+assumes the checked web build already exists; CI supplies it from its artifact.
+
+For a new environment, create the KV namespace with Wrangler and set its ID in
+`packages/api/wrangler.toml`. Wrangler applies the committed Durable Object migration. Set the
+model secret interactively:
 
 ```bash
-# auth (:34100) + bloomnote API (:32200) + bloomnote web (:32100)
-# auth runs from its own repo:
-cd ../auth/packages/api && pnpm exec wrangler dev --port 34100 --inspector-port 9229 --local
-# bloomnote (this repo):
-cd packages/api && pnpm exec wrangler dev --port 32200 --inspector-port 9231 --local --var AUTH_URL:http://localhost:34100 --var GEMINI_API_KEY:<key>
-cd packages/web && VITE_AUTH_URL=http://localhost:34100 pnpm dev
+pnpm --filter @bloomnote/api exec wrangler secret put GEMINI_API_KEY
 ```
 
-The web dev server proxies `/api` → the Worker at `:32200`; `VITE_AUTH_URL` points sign-in at the
-local auth service instead of prod.
+Attach the custom domain through the configured route. Provisioning and changing the account
+service belong to their own workflows; routine Bloomnote releases do neither.

@@ -81,6 +81,10 @@ const HASHED = /^\/assets\//
    stored and handed to the next person on the same browser. */
 app.use('*', async (c, next) => {
   await next()
+  // Gift URLs are access tokens; keep gardens, their images, and account views out of search.
+  if (/^\/(?:api|g|r|og|mine)(?:\/|$)/.test(c.req.path)) {
+    c.header('X-Robots-Tag', 'noindex, nofollow')
+  }
   if (HASHED.test(c.req.path)) {
     c.header('Cache-Control', 'public, max-age=31536000, immutable')
     return

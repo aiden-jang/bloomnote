@@ -54,3 +54,16 @@ describe('cache headers', () => {
     expect(res.headers.get('cache-control')).toContain('no-store')
   })
 })
+
+it.each(['/api/garden?id=AbCdEf', '/g/AbCdEf', '/r/AbCdEf', '/mine', '/og/AbCdEf.png'])(
+  'keeps private garden and library route %s out of search indexing',
+  async (path) => {
+    const response = await SELF.fetch(`https://x${path}`)
+    expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow')
+  },
+)
+
+it('leaves the public homepage discoverable', async () => {
+  const response = await SELF.fetch('https://x/')
+  expect(response.headers.get('x-robots-tag')).toBeNull()
+})

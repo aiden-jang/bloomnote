@@ -6,9 +6,9 @@ const flowers = ['Dahlia', 'Cosmos', 'Sunflower'].map((name, i) => ({
   name,
   meaning: ['For showing up, every time.', 'For the very specific jokes.', 'For the brighter days.'][i],
   petalColors: [
-    ['#d993aa', '#e6b7c5'],
-    ['#a9a1cf', '#c4bddd'],
-    ['#e8b653', '#f1cd78'],
+    ['#d993aa', '#e6b7c5', '#f3d5de'],
+    ['#a9a1cf', '#c4bddd', '#e2def0'],
+    ['#e8b653', '#f1cd78', '#f8dea7'],
   ][i],
   centerColor: '#d9aa52',
   stemColor: '#607d56',
@@ -21,8 +21,8 @@ const garden = {
   to: 'Sam',
   message: 'Thanks for showing up with soup and absolutely no useful advice. Exactly what I needed.',
   flowers,
-  occasion: 'ty',
-  mood: 'soft',
+  occasion: 'thank-you',
+  mood: 'tender',
   createdAt: '2026-10-10T12:00:00Z',
   secret: 'The soup was excellent. The jokes were fine.',
 }
@@ -30,12 +30,14 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
   id: ['AbCdEf', 'BcDeFg', 'CdEfGh', 'DeFgHj'][i],
   from: 'Alex',
   to,
-  occasion: 'ty',
+  occasion: 'thank-you',
   createdAt: '2026-10-10T12:00:00Z',
   swatches: [...flowers.map((f) => f.petalColors[0]), '#a7bca4', '#e6bdcd'],
 }))
 ;(async () => {
-  const out = path.resolve(__dirname, '../../../docs/ui-qa')
+  const out = process.env.BLOOMNOTE_UI_OUTPUT
+    ? path.resolve(process.env.BLOOMNOTE_UI_OUTPUT)
+    : path.resolve(__dirname, '../../../docs/ui-qa')
   await fs.mkdir(out, { recursive: true })
   const browser = await chromium.launch(
     process.env.BLOOMNOTE_BROWSER_PATH ? { executablePath: process.env.BLOOMNOTE_BROWSER_PATH } : {},

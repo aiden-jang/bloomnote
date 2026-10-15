@@ -37,7 +37,7 @@ export function charCountTierClass(len: number, styles: Record<string, string>):
 /** Named so the copy under the disabled button and the rule that disables it cannot drift. */
 export const MIN_MESSAGE_CHARS = 4
 
-/** The 30-second grace has to match handleDesign and the server. Without it, picking a time and
+/** The 30-second grace has to match saved-garden validation. Without it, picking a time and
     then sitting on the page for a few seconds drops the schedule silently. */
 export function scheduleErrorFor(
   scheduleOpen: boolean,

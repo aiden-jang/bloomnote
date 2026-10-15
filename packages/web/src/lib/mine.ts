@@ -24,10 +24,18 @@ function read(): MineRecord[] {
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    // Drop anything without a string id, so one corrupted entry can't crash the archive view.
-    return parsed.filter(
-      (r): r is MineRecord => !!r && typeof r === 'object' && typeof (r as MineRecord).id === 'string',
-    )
+    // Preserve usable links while repairing fields the library reads as strings and arrays.
+    return parsed
+      .filter(
+        (r): r is MineRecord => !!r && typeof r === 'object' && typeof (r as MineRecord).id === 'string',
+      )
+      .map((r) => ({
+        ...r,
+        to: typeof r.to === 'string' ? r.to : '',
+        from: typeof r.from === 'string' ? r.from : '',
+        createdAt: typeof r.createdAt === 'string' ? r.createdAt : '',
+        swatches: Array.isArray(r.swatches) ? r.swatches.filter((color) => typeof color === 'string') : [],
+      }))
   } catch {
     return []
   }

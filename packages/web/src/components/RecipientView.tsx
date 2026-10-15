@@ -1,6 +1,7 @@
 import RecipientHeader from './RecipientHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
+import { SecretEnvelope } from './SecretEnvelope'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import MemoryTrail from './MemoryTrail'
@@ -8,16 +9,11 @@ import FlowerJournalShelf from './FlowerJournalShelf'
 import SoundToggle from './SoundToggle'
 import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
-import { prewarmGardenImage, saveGardenDuetImage, saveGardenImage } from '../lib/gardenImage'
+import { prewarmGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
 import { recordReceived } from '../lib/account'
-import {
-  trackCardDownloaded,
-  trackGardenBloomed,
-  trackGardenOpened,
-  trackGardenReshared,
-  trackReplyStarted,
-} from '../lib/analytics'
+import { trackGardenBloomed, trackGardenOpened, trackReplyStarted } from '../lib/analytics'
+import { useRecipientKeepsakes } from '../lib/useRecipientKeepsakes'
 import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
 import { withViewTransition } from '../lib/viewTransition'
@@ -38,92 +34,18 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion, mood } = gardenData
   const grownOn = formatGardenDate(createdAt)
 
-  // Guard against a double-tap opening two share sheets, and swallow the rare canvas or decode
-  // failure so it isn't an unhandled rejection.
-  const savingImageRef = useRef(false)
-  const savingDuetRef = useRef(false)
-  const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
-  const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
-  const [duetStatus, setDuetStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
-  const [noteCopied, setNoteCopied] = useState(false)
+  const {
+    shareStatus,
+    imageStatus,
+    duetStatus,
+    noteCopied,
+    shareError,
+    handleSaveImage,
+    handleSaveDuet,
+    handleShareGarden,
+    handleCopyNote,
+  } = useRecipientKeepsakes(gardenData)
   const [secretRevealed, setSecretRevealed] = useState(false)
-  const handleSaveImage = useCallback(async () => {
-    if (savingImageRef.current) return
-    savingImageRef.current = true
-    setImageStatus('saving')
-    try {
-      const result = await saveGardenImage({ flowers, from, to })
-      if (result === 'dismissed') {
-        setImageStatus(null)
-        return
-      }
-      setImageStatus(result)
-      if (result === 'downloaded') trackCardDownloaded('recipient', 'square')
-      window.setTimeout(() => setImageStatus(null), 2500)
-    } catch {
-      // The garden stays on screen, so the recipient can just try again.
-      setImageStatus(null)
-    } finally {
-      savingImageRef.current = false
-    }
-  }, [flowers, from, to])
-  const handleSaveDuet = useCallback(async () => {
-    if (!previous || savingDuetRef.current) return
-    savingDuetRef.current = true
-    setDuetStatus('saving')
-    try {
-      const result = await saveGardenDuetImage({ previous, current: gardenData })
-      if (result === 'dismissed') {
-        setDuetStatus(null)
-        return
-      }
-      setDuetStatus(result)
-      if (result === 'downloaded') trackCardDownloaded('recipient', 'duet')
-      window.setTimeout(() => setDuetStatus(null), 2500)
-    } catch {
-      setDuetStatus(null)
-    } finally {
-      savingDuetRef.current = false
-    }
-  }, [gardenData, previous])
-  const handleShareGarden = useCallback(async () => {
-    if (shareStatus) return
-    setShareStatus('sharing')
-    const shareData: ShareData = {
-      title: 'bloomnote',
-      text: from ? `A garden from ${from}` : 'A garden for you',
-      url: window.location.href,
-    }
-    try {
-      if (typeof navigator.share === 'function') {
-        await navigator.share(shareData)
-        setShareStatus('shared')
-        trackGardenReshared('native')
-      } else {
-        await navigator.clipboard.writeText(window.location.href)
-        setShareStatus('copied')
-        trackGardenReshared('copy')
-      }
-      window.setTimeout(() => setShareStatus(null), 2500)
-    } catch (err) {
-      // Closing a native sheet is a normal outcome, not an error. Leave the garden as it was.
-      setShareStatus(null)
-      if (err instanceof Error && err.name === 'AbortError') return
-    }
-  }, [from, shareStatus])
-
-  const handleCopyNote = useCallback(async () => {
-    if (!message || noteCopied) return
-    try {
-      // This is the text she pastes into a message to someone else, so a stray em dash would travel
-      // further than the page it came from.
-      await navigator.clipboard.writeText(`${message}${from ? `\n\n${from}` : ''}`)
-      setNoteCopied(true)
-      window.setTimeout(() => setNoteCopied(false), 2200)
-    } catch {
-      // The garden is still legible and selectable, so a clipboard failure needs no alert.
-    }
-  }, [from, message, noteCopied])
 
   const { user } = useAuth()
   const [savedToGardens, setSavedToGardens] = useState(false)
@@ -170,6 +92,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   }
 
   const handleReplayBloom = (): void => {
+    if (revealTimer.current) clearTimeout(revealTimer.current)
     setFocused(null)
     setMsgVisible(false)
     setBloomVersion((version) => version + 1)
@@ -221,10 +144,16 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   // A counter, not a flag, so the scene can replay the drops without this component timing a reset.
   const [wateredAt, setWateredAt] = useState(0)
 
-  // Stable across re-renders. GardenScene's bloom effect lists onAllBloomed as a dep, so a new
-  // identity replays the whole animation when unrelated state changes.
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current)
+    },
+    [],
+  )
+  // A stable callback preserves the bloom timeline across unrelated state changes.
   const handleAllBloomed = useCallback((): void => {
-    setTimeout(() => setMsgVisible(true), 300)
+    revealTimer.current = setTimeout(() => setMsgVisible(true), 300)
   }, [])
 
   // The reply URL points at the SAME short id: `/g/abc123` and `/r/abc123` are two views of one
@@ -301,7 +230,11 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             <Watering gardenId={gardenId} onWatered={() => setWateredAt((n) => n + 1)} />
           )}
 
-          <div className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}>
+          <div
+            className={`${styles.messageWrap} ${msgVisible ? styles.visible : ''}`}
+            aria-hidden={!msgVisible}
+            style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
+          >
             {message ? (
               <>
                 <p className={styles.messageText}>{message}</p>
@@ -330,7 +263,11 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
           </div>
 
-          <div className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}>
+          <div
+            className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}
+            aria-hidden={!msgVisible}
+            style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
+          >
             <FlowerLegend
               flowers={flowers}
               focused={focused}
@@ -340,12 +277,21 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
           </div>
 
           {previous && (
-            <div className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}>
+            <div
+              className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}
+              aria-hidden={!msgVisible}
+              style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
+            >
               <MemoryTrail previous={previous} current={gardenData} />
             </div>
           )}
 
-          <div className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}>
+          <div
+            className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}
+            aria-hidden={!msgVisible}
+            style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
+          >
+            {shareError && <p role="alert">{shareError}</p>}
             <p className={styles.ctaText}>grow one back?</p>
             <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
               {from ? `grow ${from} a garden` : 'grow one back'}
@@ -425,35 +371,5 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         </>
       )}
     </div>
-  )
-}
-
-export function SecretEnvelope({ open }: { open: boolean }) {
-  return (
-    <svg width="18" height="14" viewBox="0 0 20 15" fill="none" aria-hidden focusable="false">
-      <rect
-        x="1"
-        y="2.6"
-        width="18"
-        height="11.8"
-        rx="2.2"
-        fill="var(--cream)"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-      <path
-        d="M1.7 3.3 L10 9.1 L18.3 3.3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Only the wax changes between states, because sealed-or-unsealed is exactly what this button
-          reports. */}
-      {!open && (
-        <circle cx="10" cy="9.2" r="2.1" fill="var(--pink-mid)" stroke="var(--pink-deep)" strokeWidth="0.8" />
-      )}
-    </svg>
   )
 }

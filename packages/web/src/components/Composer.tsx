@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import BouquetNote from './BouquetNote'
 import ChipPicker from './ChipPicker'
+import ComposerPreview from './ComposerPreview'
 import NoteField from './NoteField'
 import GardenForecastPanel from './GardenForecastPanel'
 import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
-import FlowerLegend from './FlowerLegend'
 import RemixContext from './RemixContext'
-import { SecretEnvelope } from './RecipientView'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import ComposerFrame from './ComposerFrame'
@@ -19,7 +17,6 @@ import { countSentGardens } from '../lib/mine'
 import { PetalFall } from './ComposerBloom'
 import GrowFeedback from './GrowFeedback'
 import { prewarmGardenImage } from '../lib/gardenImage'
-import { formatGardenDate } from '../lib/formatDate'
 import { gardenForecast } from '../lib/gardenForecast'
 import { MOODS } from '../lib/moods'
 import { OCCASIONS } from '../lib/occasions'
@@ -40,8 +37,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const { phase, statusText, errorText, garden, flowers, shareUrl, gardenId, isRerolling } = design
 
   const [mineCount, setMineCount] = useState(() => countSentGardens())
-  const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
-  useEffect(() => setPreviewSecretRevealed(false), [gardenId, garden?.flowers])
   const draft = useComposerDraft({ remixSeed, idle: phase === 'idle' })
   const { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
   const {
@@ -156,7 +151,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const handleUndoClear = draft.undoClear
   const handleDismissUndo = draft.dismissUndo
 
-  const { copied, shareStatus, imageStatus, canShare, handleCopy, handleShare, handleSaveImage } =
+  const { copied, shareStatus, imageStatus, canShare, shareError, handleCopy, handleShare, handleSaveImage } =
     useShareActions(shareUrl, recipient, from, flowers)
 
   return (
@@ -343,17 +338,17 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         <>
           <ShareCard
             shareUrl={shareUrl}
-            gardenId={gardenId}
             recipient={recipient}
             copied={copied}
             shareStatus={shareStatus}
             imageStatus={imageStatus}
             canShare={canShare}
+            shareError={shareError}
             isRerolling={isRerolling}
             errorText={errorText}
             statusText={statusText}
-            scheduleOpen={scheduleOpen}
-            unlockLocal={unlockLocal}
+            scheduleOpen={!!garden.unlockAt}
+            unlockLocal={garden.unlockAt ?? ''}
             onShare={handleShare}
             onCopy={handleCopy}
             onSaveImage={handleSaveImage}
@@ -361,53 +356,15 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             onStartOver={handleStartOver}
           />
 
-          <p className={styles.previewLabel}>
-            {recipient.trim() ? `what ${recipient.trim()} sees` : 'what they see'}
-          </p>
-
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className={styles.fullRevealPreview}>
-            <span aria-hidden>◌</span>
-            preview the full reveal
-            <span aria-hidden>↗</span>
-          </a>
-
-          <p className={styles.previewSenderLine}>
-            {from.trim() ? (
-              <>
-                <span className={styles.previewFromName}>{from.trim()}</span>
-                {' grew '}
-                {recipient.trim() || 'them'}
-                {' a garden'}
-              </>
-            ) : (
-              `someone grew ${recipient.trim() || 'them'} a garden`
-            )}
-          </p>
-
-          {message.trim() && (
-            <div className={styles.previewMessage}>
-              <p className={styles.previewMessageText}>{message.trim()}</p>
-              {from.trim() && <p className={styles.previewSig}>— {from.trim()}</p>}
-              {garden.bouquetNote && <BouquetNote note={garden.bouquetNote} />}
-              {secret.trim() && (
-                <div className={styles.previewSecret}>
-                  <button
-                    type="button"
-                    className={styles.previewSecretReveal}
-                    onClick={() => setPreviewSecretRevealed((revealed) => !revealed)}
-                    aria-expanded={previewSecretRevealed}
-                  >
-                    <SecretEnvelope open={previewSecretRevealed} />
-                    {previewSecretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
-                  </button>
-                  {previewSecretRevealed && <p className={styles.previewSecretText}>{secret.trim()}</p>}
-                </div>
-              )}
-              <p className={styles.previewGrownOn}>grown {formatGardenDate(new Date().toISOString())}</p>
-            </div>
-          )}
-
-          <FlowerLegend flowers={garden.flowers} />
+          <ComposerPreview
+            key={gardenId}
+            garden={garden}
+            shareUrl={shareUrl}
+            recipient={recipient}
+            from={from}
+            message={message}
+            secret={secret}
+          />
         </>
       )}
 

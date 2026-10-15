@@ -1,0 +1,21 @@
+name: Bug report
+description: Report a reproducible problem using synthetic notes and links.
+title: 'Bug: '
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: What happened?
+      description: Include steps, expected behavior, and actual behavior. Omit private notes, real garden links, and credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Browser and screen size
+      description: Include browser, device, and whether reduced motion was enabled.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Optional screenshots or logs with private information removed.

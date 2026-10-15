@@ -90,6 +90,16 @@ describe('the on-device archive', () => {
     expect(loadSentGardens().map((r) => r.id)).toEqual(['good'])
   })
 
+  it('repairs damaged summaries without losing their garden link', () => {
+    store.set(
+      'bloomnote:mine',
+      JSON.stringify([{ id: 'AbCdEf', to: null, from: 7, createdAt: null, swatches: [7, '#6f8fd0'] }]),
+    )
+    expect(loadSentGardens()).toEqual([
+      { id: 'AbCdEf', to: '', from: '', createdAt: '', swatches: ['#6f8fd0'] },
+    ])
+  })
+
   it('reads a pre-rename archive so it carries over', () => {
     store.set('blossom:mine', JSON.stringify([record('legacy')]))
     expect(loadSentGardens().map((r) => r.id)).toEqual(['legacy'])

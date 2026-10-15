@@ -1,6 +1,4 @@
-//
-// Every thrown error goes through friendlyError() before leaving this module, so the Composer
-// never shows a raw model error or a stack trace. The original is logged to the console.
+// Model failures are mapped to readable recovery messages before reaching the composer.
 
 import type { FlowerSpec } from '../garden'
 
@@ -136,7 +134,7 @@ export function friendlyError(raw: string): string {
   }
 
   if (/quota.?exceeded|generate.?content.?free.?tier|resource.?exhausted/i.test(raw)) {
-    return 'bloomnote has used up its daily gemini quota. try again tomorrow, or clone the repo and run it locally with your own free key.'
+    return 'bloomnote has reached its daily garden limit. Your note is still here; try again tomorrow.'
   }
 
   if (/\b404\b|not.?found.?for.?api.?version|model.+not.+found/i.test(raw)) {
@@ -152,7 +150,7 @@ export function friendlyError(raw: string): string {
   }
 
   if (/gemini_api_key|missing.+api.?key/i.test(raw)) {
-    return "bloomnote isn't configured with an api key right now. (try cloning the repo + adding your own to run locally.)"
+    return 'garden growing is temporarily unavailable. Your note is still here; try again later.'
   }
 
   if (/invalid garden|invalid.+payload|content_sha256/i.test(raw)) {

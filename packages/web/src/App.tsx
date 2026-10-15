@@ -128,7 +128,7 @@ function RecipientGateway({ garden, gardenId }: { garden: GardenData; gardenId: 
 
 function LoadingShell() {
   return (
-    <div className={notice.loading}>
+    <div className={notice.loading} role="status">
       <span>opening…</span>
     </div>
   )

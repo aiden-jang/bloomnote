@@ -24,6 +24,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
   const [busy, setBusy] = useState(false)
   const [feeling, setFeeling] = useState<Feeling | null>(() => rememberedFeeling(gardenId))
   const [feelings, setFeelings] = useState<Partial<Record<Feeling, number>>>({})
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -54,9 +55,14 @@ export default function Watering({ gardenId, onWatered }: Props) {
 
   const respond = async (next: Feeling): Promise<void> => {
     if (feeling || busy) return
-    setFeeling(next)
+    setBusy(true)
+    setError(null)
     const response = await sendFeeling(gardenId, next)
-    if (response) setFeelings(response.feelings)
+    if (response) {
+      setFeeling(next)
+      setFeelings(response.feelings)
+    } else setError('Couldn’t send that feeling. Try again.')
+    setBusy(false)
   }
 
   // Your own tap is already reflected in `waters`, so the rest of them is one fewer.
@@ -85,7 +91,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
               <div className={styles.feelingsChips}>
                 <ChipRow labelledBy="felt-like" selectable={false}>
                   {(Object.keys(FEELING_COPY) as Feeling[]).map((kind) => (
-                    <button key={kind} type="button" onClick={() => void respond(kind)}>
+                    <button key={kind} type="button" disabled={busy} onClick={() => void respond(kind)}>
                       <span aria-hidden>{FEELING_COPY[kind].emoji}</span> {FEELING_COPY[kind].label}
                     </button>
                   ))}
@@ -101,6 +107,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
                 .join('  ·  ')}
             </p>
           )}
+          {error && <p role="alert">{error}</p>}
         </div>
       ) : (
         <>

@@ -35,7 +35,9 @@ describe('friendlyError', () => {
     expect(friendlyError('Failed to fetch')).toMatch(/connection/i)
     expect(friendlyError('the request timed out')).toMatch(/longer than expected/i)
     expect(friendlyError('404 not found for api version v1beta')).toMatch(/model isn/i)
-    expect(friendlyError('GEMINI_API_KEY is missing')).toMatch(/api key/i)
+    expect(friendlyError('GEMINI_API_KEY is missing')).toBe(
+      'garden growing is temporarily unavailable. Your note is still here; try again later.',
+    )
     expect(friendlyError('invalid garden: flowers[1].petalCount out of range')).toMatch(/confused/i)
     expect(friendlyError('stream ended without a garden')).toMatch(/didn't return a garden/i)
   })

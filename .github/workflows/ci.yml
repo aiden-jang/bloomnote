@@ -5,86 +5,73 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v6
-        with:
-          version: 9.15.0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Every gate below must actually run: a bare `pnpm <name>` can resolve to a command of the
-      # same name instead of the script, and npm's own `docs` exits 0 having done nothing.
-      - run: pnpm run gates
-      - run: pnpm run typecheck
-      # Ceilings on file length and component state, with the files under decomposition listed at
-      # their current size so nothing else can grow past the ceiling meanwhile.
-      - run: pnpm run size
-      - run: pnpm run lint
-      - run: pnpm run format:check
-      - run: pnpm run css-vars
-      # `styles.typo` is undefined, which React renders as no class at all. Nothing else here
-      # reads CSS modules, so the element just arrives unstyled and no check fails.
-      - run: pnpm run css-classes
-      # A budget and a duplicate check. A cleanup pass is a moment; drift is permanent.
-      - run: pnpm run comments
-      # tsc and eslint only see unused things inside a file. This catches the layer above: an export
-      # nothing imports, a file nothing reaches, a dependency nothing uses. A dead fetch helper
-      # survived a by-hand audit of exactly this, which is why it is a gate and not a habit.
-      # Prose rots with nothing to fail: a rename leaves the README describing a symbol that is
-      # gone and every sentence still reads fine.
-      - run: pnpm run check:docs
-      - run: pnpm run knip
-      - run: pnpm run build
-      - run: pnpm run test
-      # --prod on purpose. The full audit reports high advisories in build tooling (sharp, postcss,
-      # and what miniflare and vite pull in), none of which reaches a browser or the Worker at
-      # request time, and most need an upstream release. This scopes the gate to what ships, where
-      # it can stay green and therefore still mean something.
-      # Blocking on those is a permanently red light everyone learns to scroll past. This scopes
-      # the gate to what actually ships, where it can stay green and therefore still mean something.
-      #
-      # moderate, not high: what ships is hono and the auth client, and it currently reports
-      # nothing at all. A ceiling above the actual count is not a gate, so this sits just above
-      # clean and fails on the next advisory in either of them.
-      - run: pnpm audit --prod --audit-level moderate
-      # The one layer the unit tests cannot see: whether a person can actually get from an empty
-      # form to a garden their friend can open. Playwright starts the Worker and the SPA itself.
+      - run: pnpm run verify:fast
+      - uses: actions/upload-artifact@v6
+        with:
+          name: production-assets
+          path: packages/web/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  browser-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium
       - run: pnpm --filter @bloomnote/web e2e
-      # An animated, image-heavy app has no other signal that a dependency or an asset just made
-      # the bundle much worse.
-      - run: pnpm --filter @bloomnote/web exec node ../../scripts/report-bundle-size.mjs
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: browser-results
+          path: packages/web/test-results
+          if-no-files-found: warn
+          retention-days: 7
 
-  # Auto-deploy to Cloudflare on merge to main, only after the checks above pass.
-  # Requires a CLOUDFLARE_API_TOKEN repo secret (Workers-scoped). Wrangler infers the
-  # account from the token, so no account_id is needed here.
   deploy:
-    needs: check
+    needs: [check, browser-check]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-bloomnote
-      cancel-in-progress: false
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v6
-        with:
-          version: 9.15.0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # deploy:only, not deploy. The `deploy` script runs the full gate for a human running it by
-      # hand; here the gate is the `check` job this depends on, and re-running it would need
-      # Chromium installed in this job just to repeat work that already passed.
+      - uses: actions/download-artifact@v7
+        with:
+          name: production-assets
+          path: packages/web/dist
+      # Deploy exactly the assets that passed the build gates.
       - name: Deploy to Cloudflare
-        run: pnpm run deploy:only
+        run: pnpm --filter @bloomnote/api run deploy:assets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
