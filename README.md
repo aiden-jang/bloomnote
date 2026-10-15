@@ -93,3 +93,9 @@ empty, and sharing failures leave the garden and its link available.
 - [Security reporting](.github/SECURITY.md)
 
 Released under the [MIT license](LICENSE).
+
+Installed apps can offer **Write a note**, which opens and focuses the existing
+composer without clearing its saved draft. Browser titles identify the composer,
+library, or garden without putting the note or secret in the tab. Current public
+composer screenshots in `packages/web/public/screenshots/` supply phone and desktop
+install previews; capture the running composer again when its layout changes.
