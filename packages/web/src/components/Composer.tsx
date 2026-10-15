@@ -63,7 +63,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const messageRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
-    if (remixSeed && messageRef.current) {
+    if (
+      (remixSeed || new URLSearchParams(window.location.search).get('write') === '1') &&
+      messageRef.current
+    ) {
       messageRef.current.focus()
     }
   }, [remixSeed])

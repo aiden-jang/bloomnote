@@ -72,6 +72,26 @@ export default function App() {
     return () => ctrl.abort()
   }, [parsed, retryNonce])
 
+  useEffect(() => {
+    const title =
+      route.kind === 'recipient'
+        ? `A garden${route.garden.to ? ` for ${route.garden.to}` : ' for you'}`
+        : route.kind === 'mine'
+          ? 'Your gardens'
+          : route.kind === 'composer'
+            ? 'Write a note'
+            : route.kind === 'privacy'
+              ? 'Privacy'
+              : route.kind === 'terms'
+                ? 'Terms'
+                : route.kind === 'notfound'
+                  ? 'Garden not found'
+                  : route.kind === 'loaderror'
+                    ? 'Couldn’t open garden'
+                    : 'Opening garden'
+    document.title = `${title} · bloomnote`
+  }, [route])
+
   const view =
     route.kind === 'mine' ? (
       <MyGardens />
