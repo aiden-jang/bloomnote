@@ -138,3 +138,15 @@ describe('service worker', () => {
     expect([...stores.keys()]).not.toContain('bloomnote-v1')
   })
 })
+
+it('lets a no-store update check reach the network instead of the shell cache', async () => {
+  const { handlers } = runWorker()
+  expect(
+    await respondTo(handlers, {
+      url: 'https://bloomnote.test/',
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+    }),
+  ).toBeUndefined()
+})

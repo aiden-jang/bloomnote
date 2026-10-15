@@ -51,6 +51,9 @@ export default function ShareCard({
             ? `${recipient}'s garden is ready`
             : 'ready to send'}
       </p>
+      <p className={styles.scheduleConfirm}>
+        Nothing has been sent. Share the link with {recipient.trim() || 'your person'} when you’re ready.
+      </p>
       {/* Re-roll failures land here; idle-phase errors render in a different slot during composition. */}
       {(errorText || shareError) && (
         <p className={styles.shareError} role="alert">
@@ -66,6 +69,8 @@ export default function ShareCard({
             day: 'numeric',
             hour: 'numeric',
             minute: '2-digit',
+            year: 'numeric',
+            timeZoneName: 'short',
           })}
         </p>
       )}

@@ -77,6 +77,21 @@ test('copy failures explain how to send the visible link and allow retry', async
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await grow(page)
+  await expect(page.getByText('Nothing has been sent.', { exact: false })).toBeVisible()
+  {
+    for (const [name, width, height] of [
+      ['desktop', 1440, 900],
+      ['mobile', 390, 844],
+    ] as const) {
+      await page.setViewportSize({ width, height })
+      await page.getByText('Nothing has been sent.', { exact: false }).scrollIntoViewIfNeeded()
+      await page.screenshot({
+        path: test.info().outputPath(`sharing-${name}.png`),
+        fullPage: false,
+        animations: 'disabled',
+      })
+    }
+  }
   await page.getByRole('button', { name: 'copy link', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText(/select.*link/i)
   await expect(page.getByRole('button', { name: 'copied', exact: true })).toHaveCount(0)

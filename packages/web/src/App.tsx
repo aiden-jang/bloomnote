@@ -1,3 +1,4 @@
+import { AppUpdate } from './AppUpdate'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
@@ -118,6 +119,7 @@ export default function App() {
       <main>
         <Suspense fallback={<LoadingShell />}>{view}</Suspense>
       </main>
+      <AppUpdate />
       <Footer />
     </>
   )

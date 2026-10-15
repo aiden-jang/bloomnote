@@ -1192,6 +1192,7 @@
 }
 
 .shareTitle {
+  overflow-wrap: anywhere;
   font-family: var(--serif);
   font-size: 18px;
   color: var(--green-deep);
@@ -1199,6 +1200,7 @@
 }
 
 .scheduleConfirm {
+  overflow-wrap: anywhere;
   font-size: 13px;
   color: var(--text-mid);
   margin-top: -2px;

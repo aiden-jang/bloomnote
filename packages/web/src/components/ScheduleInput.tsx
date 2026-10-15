@@ -69,14 +69,6 @@ function atTime(d: Date, h: number, m: number): Date {
   return n
 }
 
-function timeLabel(h: number, m: number): string {
-  const preset = TIME_OPTIONS.find((t) => t.h === h && t.m === m)
-  if (preset) return preset.label
-  const period = h < 12 ? 'am' : 'pm'
-  const hour12 = h % 12 === 0 ? 12 : h % 12
-  return `${hour12}:${String(m).padStart(2, '0')} ${period}`
-}
-
 const OCCASIONS: { label: string; forYear: (y: number) => Date }[] = [
   { label: "new year's", forYear: (y) => new Date(y, 0, 1) },
   { label: "galentine's", forYear: (y) => new Date(y, 1, 13) },
@@ -364,7 +356,12 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
               month: 'short',
               day: 'numeric',
             })}{' '}
-            · {timeLabel(selected.getHours(), selected.getMinutes())}
+            ·{' '}
+            {selected.toLocaleTimeString(undefined, {
+              hour: 'numeric',
+              minute: '2-digit',
+              timeZoneName: 'short',
+            })}
           </p>
         )}
 

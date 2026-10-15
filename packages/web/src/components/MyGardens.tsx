@@ -204,6 +204,10 @@ function AccountGardens() {
 
   const switchTab = (nextTab: Tab) => {
     setTab(nextTab)
+    const url = new URL(location.href)
+    if (nextTab === 'received') url.searchParams.set('tab', 'received')
+    else url.searchParams.delete('tab')
+    history.replaceState(history.state, '', url)
     // A search for a recipient must not make the other collection look empty on arrival.
     setQuery('')
   }
