@@ -28,7 +28,8 @@ export default defineConfig({
       // The Worker. AUTH_URL points at the local auth service, which is not running here; the
       // app is anonymous-first, so /api/me simply resolves to a signed-out user and every flow
       // this suite covers works signed out.
-      command: 'pnpm --filter @bloomnote/api dev',
+      // Wrangler validates its static assets directory even though Vite serves these journeys.
+      command: 'pnpm --filter @bloomnote/web build && pnpm --filter @bloomnote/api dev',
       url: 'http://localhost:32200/health',
       reuseExistingServer: false,
       timeout: 120_000,
