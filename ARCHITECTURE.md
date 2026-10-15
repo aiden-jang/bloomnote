@@ -2,12 +2,46 @@
 
 Why bloomnote is built the way it is. [README.md](README.md) covers what it does and how to run
 it; this file is the decision log, including the parts that are compromises and the parts that are
-still wrong.
+still deliberate compromises. The current module map below is followed by the decision history.
 
 One Cloudflare Worker serves the API and the built SPA from one origin. Gardens live in a single KV
 namespace. Gemini designs the flowers. There is no database, no queue, no cron, and no server-side
 scheduler. That is not minimalism for its own sake: every piece of infrastructure this app does not
 have is a piece that cannot break a link somebody was sent.
+
+## Current module boundaries
+
+The browser loads routes through `App.tsx`. The recipient view is in the initial bundle; composition
+and the library are lazy-loaded. `Composer.tsx` coordinates draft and design hooks, while
+`ComposerPreview.tsx` presents the result. `useGardenDesign.ts` owns one cancellable generation
+or reroll at a time, bounds the save request, and records the local garden before clearing the draft.
+
+`RecipientView.tsx` owns opening, flower focus, replay, and note visibility. `useRecipientKeepsakes.ts`
+owns sharing and image actions. Invisible reveal sections stay outside keyboard navigation until
+shown. Bloom, reveal, pointer, and scroll timers are cancelled when their owner leaves or restarts.
+`GardenScene.tsx` coordinates the flowers; `GardenScenery.tsx` draws decorative elements and
+`useSceneMotion.ts` manages pointer and scroll effects. Layout remains in `lib/scene.ts`.
+
+`MyGardens.tsx` presents account and device collections through shared filtering and row controls.
+`GardenLibraryHighlights.tsx` presents memories and response summaries. A failed account fetch is
+an error with retry, never an empty collection. The account-removal undo window remains separate
+from permanent garden storage: removing a library entry leaves the gift link intact.
+
+`imageCards.tsx` contains the square, pressed-flower, and link-preview layouts. `GardenDuetImage.tsx`
+contains the reply pair; `imageCardPrimitives.tsx` shares dimensions and soil. `gardenImage.tsx`
+handles rasterization, prewarming, and saving. All exported images remain self-contained SVG before
+rasterization, so there are no external assets to taint the canvas.
+
+The API entry owns routing, session boundaries, cache headers, and crawler metadata. Storage stays
+in `gardens.ts`, validated model generation in `designGarden.ts` and `prompt.ts`, atomic ceilings
+in `counters.ts`, and allowlisted event metadata in `eventMeta.ts`. The API and SPA share an origin.
+Private routes send a noindex header while the public homepage stays discoverable.
+A garden link is its access token; a scheduled reveal does not prevent a holder from reading the API.
+
+[CONTRIBUTING.md](CONTRIBUTING.md) describes verification. [DEPLOY.md](DEPLOY.md) describes the two
+required CI jobs and deployment of the same checked web assets. [DESIGN.md](DESIGN.md) defines the
+writing-first presentation. The sections below retain the reasons for the storage, sharing, model,
+and interaction choices.
 
 ---
 

@@ -351,6 +351,8 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
             }
             onChange={(e) => pickExactTime(e.target.value)}
             aria-label="exact time"
+            aria-invalid={!!error}
+            aria-describedby={error ? 'schedule-error' : undefined}
           />
         </label>
 
@@ -367,7 +369,7 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
         )}
 
         {error && (
-          <p id="schedule-error" className={styles.scheduleErrorText}>
+          <p id="schedule-error" className={styles.scheduleErrorText} role="alert">
             {error}
           </p>
         )}

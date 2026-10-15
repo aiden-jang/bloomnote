@@ -5,10 +5,15 @@
  * Prose rots with nothing to fail. A rename left the request diagram naming a function that had
  * been gone a phase, and the sentence still read fine.
  */
-import { globSync, readFileSync } from 'node:fs'
+import { existsSync, globSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
 // CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice.
-const DOCS = ['README.md', 'ARCHITECTURE.md', 'DEPLOY.md', 'CONVENTIONS.md']
+const DOCS = [
+  ...globSync('*.md').filter((f) => !['AGENTS.md', 'CLAUDE.md'].includes(f)),
+  ...globSync('.github/**/*.md'),
+  ...globSync('docs/**/*.md'),
+]
 
 /* Absent on purpose, or somebody else's API. Never add a name the code actually lost. */
 const NOT_OURS = new Set([
@@ -21,15 +26,17 @@ const NOT_OURS = new Set([
   'fetchMock',
   'poolOptions',
   'runTests',
+  'stubGlobal', // Vitest's request-mocking API
 ])
 
 const code = [
-  ...globSync('packages/*/src/**/*.{ts,tsx}'),
+  ...globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f)),
   ...globSync('packages/*/e2e/**/*.ts'),
-  ...globSync('packages/*/test/**/*.ts'),
+  ...globSync('packages/*/test/**/*.ts').filter((f) => !/\.(test|eval)\.ts$/.test(f)),
   // Not this file: its own header names the symbol that prompted it, which was enough to make
   // that symbol resolve and the check silently useless.
-  ...globSync('scripts/*.mjs').filter((f) => !f.endsWith('check-docs.mjs')),
+  ...globSync('scripts/*.mjs').filter((f) => !f.endsWith('check-docs.mjs') && !f.endsWith('.test.mjs')),
+  ...globSync('packages/*/*.config.ts'),
   ...globSync('packages/*/*.{toml,json}'),
   'package.json',
 ]
@@ -43,7 +50,10 @@ const scripts = new Set(
 )
 
 const files = new Set(
-  globSync('{packages,scripts,.github}/**/*', { withFileTypes: true })
+  [
+    ...globSync('{packages,scripts,.github,docs}/**/*', { withFileTypes: true }),
+    ...globSync('*.mjs', { withFileTypes: true }),
+  ]
     .filter((d) => d.isFile())
     .map((d) => `${d.parentPath}/${d.name}`),
 )
@@ -56,6 +66,13 @@ for (const doc of DOCS) {
     .split('\n')
     .forEach((line, i) => {
       const at = `${doc}:${i + 1}`
+
+      for (const m of line.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
+        const target = m[1].split('#')[0]
+        if (target && !/^[a-z]+:/i.test(target) && !existsSync(resolve(dirname(doc), target))) {
+          problems.push(`${at}: broken local link \`${target}\``)
+        }
+      }
 
       for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml)\b/g)) {
         const bare = m[0].replace(/^`|`$/g, '')
@@ -72,7 +89,7 @@ for (const doc of DOCS) {
 
       // Anchored per prefix, or `/g` also swallows `/gardens.ts` and `/api` swallows `/apikey`.
       for (const m of line.matchAll(
-        /(\/api\/[\w:-]+(?:\/[\w:-]+)*|\/og\/[\w:-]+|\/g\/[\w:-]+|\/health)\b/g,
+        /(?<![\w/])(\/api\/[\w:-]+(?:\/[\w:-]+)*|\/og\/[\w:-]+|\/g\/[\w:-]+|\/health)\b/g,
       )) {
         const base = m[1]
         if (!code.includes(base)) problems.push(`${at}: no route \`${base}\``)
@@ -80,7 +97,7 @@ for (const doc of DOCS) {
 
       // Bare, not just `name()`: the rename that prompted this gate sat in a diagram with no
       // parentheses and no backticks. camelCase in English prose is almost always a symbol.
-      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*(?:[A-Z][A-Za-z0-9]*)+)\b/g)) {
+      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
         const name = m[1]
         if (!NOT_OURS.has(name) && !has(name)) {
           problems.push(`${at}: nothing named \`${name}\` in the code`)

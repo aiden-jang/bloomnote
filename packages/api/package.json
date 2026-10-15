@@ -8,19 +8,20 @@
     "dev": "wrangler dev --var AUTH_URL:http://localhost:34100",
     "deploy": "pnpm --filter @bloomnote/web build && wrangler deploy",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.eval.json",
-    "test": "vitest run --passWithNoTests",
-    "eval": "vitest run --config vitest.eval.config.ts"
+    "test": "vitest run",
+    "eval": "vitest run --config vitest.eval.config.ts",
+    "deploy:assets": "wrangler deploy"
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.2.0",
     "hono": "^4.13.13"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.14.9",
-    "@cloudflare/workers-types": "^4.20241230.0",
-    "@types/node": "^22",
-    "typescript": "^5.6.2",
+    "@cloudflare/workers-types": "^5.20261014.1",
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.11",
-    "wrangler": "^4.72.0"
+    "wrangler": "^4.151.0",
+    "@cloudflare/vitest-plugin": "^1.4.2"
   }
 }

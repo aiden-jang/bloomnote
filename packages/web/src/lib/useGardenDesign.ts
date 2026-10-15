@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { buildShareUrl, createShortGarden, type FlowerSpec, type GardenData } from '../garden'
 import { buildMineRecord, classifyError } from './composerHelpers'
 import {
@@ -17,6 +17,7 @@ import { playSuccess, playWhoosh } from '../sound'
 import type { Draft } from './draft'
 
 export type Phase = 'idle' | 'designing' | 'designed'
+type GardenDesignResult = DesignResult & Pick<GardenData, 'unlockAt'>
 
 const SHORTEN_TIMEOUT_MS = 3000
 
@@ -32,7 +33,7 @@ export interface GardenDesign {
   phase: Phase
   statusText: string
   errorText: string | null
-  garden: DesignResult | null
+  garden: GardenDesignResult | null
   flowers: FlowerSpec[]
   shareUrl: string | null
   gardenId: string | null
@@ -55,14 +56,14 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rerollAttempt, setRerollAttempt] = useState(0)
   const [isRerolling, setIsRerolling] = useState(false)
-  const [garden, setGarden] = useState<DesignResult | null>(null)
+  const [garden, setGarden] = useState<GardenDesignResult | null>(null)
   const [gardenId, setGardenId] = useState<string | null>(null)
-  // Derived, not stored: as four values every write had to set them in step, and the one that
-  // forgets puts somebody else's flowers in a garden.
+  // Keep flowers and the share link derived from the saved design.
   const flowers = garden?.flowers ?? []
   const shareUrl = gardenId === null ? null : buildShareUrl(gardenId)
 
   const abortRef = useRef<AbortController | null>(null)
+  useEffect(() => () => abortRef.current?.abort(), [])
   // The button doesn't unmount until the view transition swaps the DOM, so without this a
   // fast second tap runs designGarden twice.
   const designingRef = useRef(false)
@@ -119,6 +120,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
           signal: ctrl.signal,
           onThinking: think,
         })
+        ctrl.signal.throwIfAborted()
         setGarden(result)
 
         const data = buildGardenData(fields, result)
@@ -127,14 +129,16 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         // five seconds for, but a share link that silently half-works is worse.
         say('wrapping it up…')
 
-        const shortId = await Promise.race([
-          createShortGarden(data, ctrl.signal),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), SHORTEN_TIMEOUT_MS)),
-        ])
+        const shortId = await createShortGarden(
+          data,
+          AbortSignal.any([ctrl.signal, AbortSignal.timeout(SHORTEN_TIMEOUT_MS)]),
+        )
+        ctrl.signal.throwIfAborted()
         if (!shortId) throw new Error("couldn't save your garden. try again?")
 
         // Only once it is saved. Clearing on the way out would take the note with it when
         // generation fails, which is the one thing this screen must not do.
+        recordSentGarden(buildMineRecord(shortId, data))
         onSaved()
 
         /* Not awaited. It costs a canvas rasterize and a round trip, and nobody should wait on
@@ -145,11 +149,12 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
           to: fields.recipient.trim(),
         })
 
-        recordSentGarden(buildMineRecord(shortId, data))
-
         playSuccess()
         withViewTransition(() => {
+          setGarden({ ...result, unlockAt: data.unlockAt })
           setGardenId(shortId)
+          if (fields.scheduleOpen && !data.unlockAt)
+            setErrorText('The scheduled time passed while growing. This garden opens now.')
           say('')
           setPhase('designed')
         })
@@ -189,7 +194,8 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
 
   const reroll = useCallback(
     async (fields: Draft) => {
-      if (isRerolling) return
+      if (designingRef.current) return
+      designingRef.current = true
       const previous = { garden, gardenId }
       const restore = (): void => {
         setGarden(previous.garden)
@@ -208,9 +214,14 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
 
       try {
         const result = await designGarden(request(fields), { signal: ctrl.signal })
+        ctrl.signal.throwIfAborted()
         const data = buildGardenData(fields, result)
 
-        const shortId = await createShortGarden(data, ctrl.signal)
+        const shortId = await createShortGarden(
+          data,
+          AbortSignal.any([ctrl.signal, AbortSignal.timeout(SHORTEN_TIMEOUT_MS)]),
+        )
+        ctrl.signal.throwIfAborted()
         if (!shortId) throw new Error("couldn't save the new garden. try again?")
 
         void uploadOgImage(shortId, {
@@ -222,8 +233,10 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
 
         // No extra orchestration: GardenScene re-keys on the flower signature, so the new flowers
         // re-bloom from sprout on their own.
-        setGarden(result)
+        setGarden({ ...result, unlockAt: data.unlockAt })
         setGardenId(shortId)
+        if (fields.scheduleOpen && !data.unlockAt)
+          setErrorText('The scheduled time passed while growing. This garden opens now.')
         say('')
         setRerollAttempt(attempt)
 
@@ -235,10 +248,11 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         trackGardenError(classifyError(err))
       } finally {
         abortRef.current = null
+        designingRef.current = false
         setIsRerolling(false)
       }
     },
-    [buildGardenData, isRerolling, garden, gardenId, rerollAttempt, say],
+    [buildGardenData, garden, gardenId, rerollAttempt, say],
   )
 
   const startOver = useCallback((resetTheForm: () => void) => {

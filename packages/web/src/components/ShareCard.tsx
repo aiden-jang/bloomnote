@@ -2,12 +2,12 @@ import styles from './Composer.module.css'
 
 interface Props {
   shareUrl: string
-  gardenId: string | null
   recipient: string
   copied: boolean
   shareStatus: 'sharing' | 'shared' | null
   imageStatus: 'saving' | 'shared' | 'downloaded' | null
   canShare: boolean
+  shareError: string | null
   isRerolling: boolean
   errorText: string | null
   statusText: string
@@ -27,6 +27,7 @@ export default function ShareCard({
   shareStatus,
   imageStatus,
   canShare,
+  shareError,
   isRerolling,
   errorText,
   statusText,
@@ -51,7 +52,11 @@ export default function ShareCard({
             : 'ready to send'}
       </p>
       {/* Re-roll failures land here; idle-phase errors render in a different slot during composition. */}
-      {errorText && <p className={styles.shareError}>{errorText}</p>}
+      {(errorText || shareError) && (
+        <p className={styles.shareError} role="alert">
+          {errorText || shareError}
+        </p>
+      )}
       {scheduleOpen && unlockLocal && (
         <p className={styles.scheduleConfirm}>
           it opens on{' '}

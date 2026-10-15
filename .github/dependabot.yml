@@ -7,6 +7,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: build
     open-pull-requests-limit: 10
     groups:
       # Non-breaking updates batched into one PR.
@@ -27,3 +29,5 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: ci

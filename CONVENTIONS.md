@@ -56,7 +56,7 @@ this file in the same commit.
 
 ## The gates
 
-`pnpm run verify` and CI run the same list. Four of them are homemade and worth knowing: `gates`
+`pnpm run verify` runs `verify:fast` and the browser journeys; CI runs those in parallel jobs. Four of them are homemade and worth knowing: `gates`
 (every step of verify and ci.yml resolves to a real script), `size` (a line and `useState` ceiling
 per file), `comments` (src capped as a _share_ of the code, scripts as a count), `check:docs`
 (paths, script names, routes and symbols named in the docs exist). Each prints its own numbers.
@@ -77,8 +77,7 @@ Counters live in the `COUNTERS` durable object, never KV. KV's read-modify-write
 forty parallel requests once passed a limit of five, because every one of them read the same
 count. Sequential callers were limited correctly, which is why no test caught it.
 
-The two guards fail in opposite directions and that is deliberate. Per-IP limits fail open, since
-blocking a real gift beats one extra generation. The daily spend cap fails closed, since it is the
+The two guards fail in opposite directions and that is deliberate. Per-IP limits fail open to preserve anonymous access during a counter outage. The daily spend cap fails closed, since it is the
 only bound on what Gemini costs. `PER_IP_PER_MINUTE` is 5 and `DAILY_CAP` is 15 because the free
 tier for this key allows 5 requests a minute and 20 a day, both per project rather than per
 caller.
@@ -132,7 +131,7 @@ whatever the code does.
 
 ## Testing inside the Workers runtime
 
-The pool is a Vite plugin, not a `poolOptions` block, and it hands tests the worker's own isolate.
+The Worker test integration is `@cloudflare/vitest-plugin`, a Vite plugin, not a `poolOptions` block, and it hands tests the worker's own isolate.
 Two things follow, and both used to be handled by the pool itself:
 
 - Stub `fetch` with `vi.stubGlobal` to intercept what the Worker calls out to. There is no

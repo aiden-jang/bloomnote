@@ -52,3 +52,9 @@ the opening phone viewport. Static checks, the production build and the frontend
 Two API checks timed out during the combined run and passed when rerun separately. The first
 browser run lost its local Worker mid-suite; the restarted browser suite passed. The combined
 runner is not recorded as green.
+
+## Repository and recovery polish — October 14
+
+See the [October 14 verification](october-14/README.md) for current responsive evidence, keyboard
+and error recovery checks, and the limits of the browser review. Historical captures above record
+the earlier design passes.

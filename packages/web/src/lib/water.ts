@@ -54,7 +54,9 @@ export function rememberedFeeling(id: string): Feeling | null {
 function rememberFeeling(id: string, feeling: Feeling): void {
   let parsed: Record<string, unknown> = {}
   try {
-    parsed = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}') as Record<string, unknown>
+    const value: unknown = JSON.parse(localStorage.getItem(FEELING_KEY) ?? '{}')
+    if (value !== null && typeof value === 'object' && !Array.isArray(value))
+      parsed = value as Record<string, unknown>
   } catch {
     // A junk key reads as no memory at all, which is the same as never having answered.
   }

@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 # Served only on the custom domain (bloomnote.aidenjang.com), not a *.workers.dev route.
 workers_dev = false
 
-# Local dev port — matches the bloomnote-web Vite proxy target (apps/bloomnote/web/vite.config.ts).
+# Local dev port — matches the bloomnote-web Vite proxy target (packages/web/vite.config.ts).
 [dev]
 port = 32200
 
@@ -26,9 +26,6 @@ dataset = "aidenjang_events"
 binding = "GARDENS"
 id = "17772866b1ae4b468ee00b07e65c9646"
 
-# Serve the built web SPA (apps/bloomnote/web) from this same Worker so the UI and the /api/*
-# routes share the bloomnote.aidenjang.com origin. run_worker_first = true → the Worker routes
-# everything; /health + /api/* are the API, the app.all('*') catch-all serves assets + SPA.
 # Rate limits and the daily AI spend cap. A Durable Object, not KV: KV's read-modify-write is
 # not atomic, so parallel requests all read the same count and every limit was bypassable.
 # Per-IP counters shard across instances (one per IP); the spend cap is a single instance.
@@ -41,6 +38,7 @@ bindings = [{ name = "COUNTERS", class_name = "Counters" }]
 tag = "v1"
 new_sqlite_classes = ["Counters"]
 
+# The Worker serves the checked SPA and API together on one origin.
 [assets]
 directory = "../web/dist"
 binding = "ASSETS"
