@@ -577,3 +577,35 @@
   align-items: center;
   gap: 24px;
 }
+
+.readingSize {
+  display: block;
+  margin: 0 0 14px auto;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--green-pale);
+  border-radius: 22px;
+  color: var(--green-deep);
+  background: var(--cream);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.readingSize[aria-pressed='true'] {
+  border-color: var(--green-mid);
+}
+.readingNote[data-large='true'] .messageText {
+  font-size: 1.75rem;
+  line-height: 1.65;
+}
+@media print {
+  .readingSize {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .readingNote[data-large='true'] .messageText {
+    font-size: 1.5rem;
+  }
+}

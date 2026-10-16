@@ -179,3 +179,29 @@ test('a schedule that passes during generation is described as opening now', asy
   expect(stored).not.toHaveProperty('unlockAt')
   await expect(page.getByRole('alert')).toContainText(/opens now/i)
 })
+
+test('larger note text preserves the message and remembers the reading choice', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockApp(page)
+  await page.goto('/g/AbCdEf')
+  await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+  const control = page.getByRole('button', { name: 'Larger text', exact: true })
+  await expect(control).toBeVisible()
+  const note = page.getByText(garden.message, { exact: true })
+  const before = await note.evaluate((node) => parseFloat(getComputedStyle(node).fontSize))
+  await control.click()
+  await expect(control).toHaveAttribute('aria-pressed', 'true')
+  expect(await note.evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThan(before)
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    await note.scrollIntoViewIfNeeded()
+    await page.screenshot({
+      path: test.info().outputPath(`refinement-reading-${width}.png`),
+      animations: 'disabled',
+    })
+  }
+  await page.reload()
+  await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+  await expect(control).toHaveAttribute('aria-pressed', 'true')
+  await expect(note).toHaveText(garden.message)
+})

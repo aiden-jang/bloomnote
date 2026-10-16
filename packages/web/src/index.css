@@ -260,3 +260,20 @@ p {
     --chip-size: 34px;
   }
 }
+
+input:is(:autofill, :-webkit-autofill),
+textarea:is(:autofill, :-webkit-autofill) {
+  -webkit-text-fill-color: var(--text-dark);
+  caret-color: var(--text-dark);
+  box-shadow: 0 0 0 1000px var(--cream) inset;
+}
+
+::selection {
+  background: var(--green-deep);
+  color: var(--cream);
+}
+
+input::selection,
+textarea::selection {
+  -webkit-text-fill-color: var(--cream);
+}

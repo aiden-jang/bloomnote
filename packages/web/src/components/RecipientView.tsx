@@ -1,3 +1,4 @@
+import ReadingSize from './ReadingSize'
 import RecipientHeader from './RecipientHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import BouquetNote from './BouquetNote'
@@ -236,10 +237,10 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
           >
             {message ? (
-              <>
+              <ReadingSize>
                 <p className={styles.messageText}>{message}</p>
                 {from && <p className={styles.sig}>{from}</p>}
-              </>
+              </ReadingSize>
             ) : (
               <p className={styles.messageText} style={{ fontStyle: 'italic', opacity: 0.6 }}>
                 a garden, for you.
