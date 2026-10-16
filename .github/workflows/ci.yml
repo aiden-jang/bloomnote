@@ -43,7 +43,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium webkit
       - run: pnpm --filter @bloomnote/web e2e
       - uses: actions/upload-artifact@v6
         if: always()

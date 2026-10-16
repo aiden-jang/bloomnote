@@ -1,5 +1,8 @@
 # Bloomnote UI verification
 
+The [October 16 Safari flow review](flow-audit-oct16/README.md) records the current cross-browser
+journeys and sharing recovery.
+
 The [design](../../DESIGN.md) defines the botanical stationery treatment: green ink, ivory paper,
 blush headlines and a two-column composer that stacks on phones. Recipient notes retain their own
 paper card; the library becomes a two-column directory on desktop.

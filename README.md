@@ -44,13 +44,15 @@ separate auth service on port 34100; anonymous composition works without it.
 ## Verify a change
 
 ```bash
+pnpm --filter @bloomnote/web exec playwright install --with-deps chromium webkit
 pnpm run verify
 ```
 
 This runs repository guards, types, lint with no warnings, formatting, CSS checks, documentation
 checks, unused-code detection, a complete dependency audit, guard tests, builds, API and frontend
-unit tests, a bundle report, and the Chromium journeys. CI runs the same checks, with browser
-journeys in a parallel job. The tests stub Gemini and do not spend its quota.
+unit tests, a bundle report, and desktop Chromium plus iPhone-sized WebKit journeys. CI runs the same checks, with browser
+journeys in a parallel job. The tests stub Gemini and do not spend its quota. WebKit emulation
+does not verify a physical phone’s keyboard, gestures or native share sheet.
 
 `pnpm run verify:fast` runs everything except the browser suite. The normal browser suite starts
 its own local servers and refuses to reuse a manually running app, so stop local development first.

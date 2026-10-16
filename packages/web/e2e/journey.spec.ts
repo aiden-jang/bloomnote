@@ -132,6 +132,7 @@ test.beforeEach(async ({ page }) => {
 test('no screen leaks comment syntax as visible text', async ({ page }) => {
   for (const path of ['/', '/mine', '/privacy', '/terms', '/g/zzzz99']) {
     await page.goto(path)
+    await expect(page.getByRole('heading').first()).toBeVisible()
     await expect(page.locator('body')).not.toContainText('/*')
     await expect(page.locator('body')).not.toContainText('*/')
   }
@@ -189,7 +190,7 @@ test.describe('compose → bloom → share → recipient', () => {
     // Starting a draft clears the demo and shrinks the plot to a waiting bed, so the note field
     // is not pushed below the fold by 260px of empty sky.
     const scene = page.locator('[class*="scene"]').first()
-    await expect(scene).toHaveJSProperty('offsetHeight', 132)
+    await expect(scene).toHaveJSProperty('offsetHeight', page.viewportSize()!.width <= 480 ? 112 : 132)
 
     // --- Bloom ------------------------------------------------------------------------------
     await page.getByRole('button', { name: /grow .* garden/i }).click()

@@ -63,33 +63,39 @@ export function useRecipientKeepsakes(gardenData: GardenData) {
       savingDuetRef.current = false
     }
   }, [gardenData, previous])
-  const handleShareGarden = useCallback(async () => {
-    if (shareStatus) return
-    setShareError(null)
-    setShareStatus('sharing')
-    const shareData: ShareData = {
-      title: 'bloomnote',
-      text: from ? `A garden from ${from}` : 'A garden for you',
-      url: window.location.href,
-    }
-    try {
-      if (typeof navigator.share === 'function') {
-        await navigator.share(shareData)
-        setShareStatus('shared')
-        trackGardenReshared('native')
-      } else {
-        await navigator.clipboard.writeText(window.location.href)
-        setShareStatus('copied')
-        trackGardenReshared('copy')
+  const handleShareGarden = useCallback(
+    async (trigger: HTMLButtonElement) => {
+      if (shareStatus) return
+      setShareError(null)
+      setShareStatus('sharing')
+      const shareData: ShareData = {
+        title: 'bloomnote',
+        text: from ? `A garden from ${from}` : 'A garden for you',
+        url: window.location.href,
       }
-      timers.current.push(setTimeout(() => setShareStatus(null), 2500))
-    } catch (err) {
-      // Closing a native sheet is a normal outcome, not an error. Leave the garden as it was.
-      setShareStatus(null)
-      if (err instanceof Error && err.name === 'AbortError') return
-      setShareError('Couldn’t share. Copy the garden link below instead.')
-    }
-  }, [from, shareStatus])
+      try {
+        if (typeof navigator.share === 'function') {
+          await navigator.share(shareData)
+          setShareStatus('shared')
+          trackGardenReshared('native')
+        } else {
+          await navigator.clipboard.writeText(window.location.href)
+          setShareStatus('copied')
+          trackGardenReshared('copy')
+        }
+        timers.current.push(setTimeout(() => setShareStatus(null), 2500))
+      } catch (err) {
+        // Closing a native sheet is a normal outcome, not an error. Leave the garden as it was.
+        setShareStatus(null)
+        requestAnimationFrame(() => {
+          if (trigger.isConnected) trigger.focus()
+        })
+        if (err instanceof Error && err.name === 'AbortError') return
+        setShareError('Couldn’t share. Copy the garden link below instead.')
+      }
+    },
+    [from, shareStatus],
+  )
 
   const handleCopyNote = useCallback(async () => {
     if (!message || noteCopied) return

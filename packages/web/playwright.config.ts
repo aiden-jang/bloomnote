@@ -22,7 +22,10 @@ export default defineConfig({
   // Reduced motion is emulated per-page in the spec, not declared here. Setting it in `use` (at
   // either level) left `matchMedia('(prefers-reduced-motion: reduce)')` reporting false in the
   // page, so it looked configured and did nothing. See the beforeEach in journey.spec.ts.
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'webkit', use: { ...devices['iPhone 13'] } },
+  ],
   webServer: [
     {
       // The Worker. AUTH_URL points at the local auth service, which is not running here; the

@@ -312,7 +312,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             <button
               type="button"
               className={styles.ctaShareBtn}
-              onClick={() => void handleShareGarden()}
+              onClick={(event) => void handleShareGarden(event.currentTarget)}
               disabled={shareStatus !== null}
             >
               {shareStatus === 'sharing'

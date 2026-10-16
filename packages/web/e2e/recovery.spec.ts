@@ -100,7 +100,10 @@ test('copy failures explain how to send the visible link and allow retry', async
   expect(errors).toEqual([])
 })
 
-test('recipient actions stay unreachable until the animated reveal finishes', async ({ page }) => {
+test('recipient actions stay unreachable until the animated reveal finishes', async ({
+  page,
+  browserName,
+}) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await mockApp(page)
   await page.goto('/g/AbCdEf')
@@ -109,7 +112,7 @@ test('recipient actions stay unreachable until the animated reveal finishes', as
   await expect(share).toBeHidden()
   await expect(share).toBeVisible()
   for (let step = 0; step < 5; step++) {
-    await page.keyboard.press('Tab')
+    await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab')
     await expect(page.locator(':focus')).toBeVisible()
   }
 })
@@ -208,6 +211,7 @@ test('larger note text preserves the message and remembers the reading choice', 
 
 test('garden downloads keep unicode names and calendar reminders have descriptive filenames', async ({
   page,
+  browserName,
 }) => {
   await mockApp(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -224,15 +228,15 @@ test('garden downloads keep unicode names and calendar reminders have descriptiv
   const imageWait = page.waitForEvent('download')
   await save.click()
   const image = await imageWait
-  expect(image.suggestedFilename()).toMatch(/^bloomnote-수진-\d{4}-\d{2}-\d{2}T.+Z\.png$/)
+  expect(image.suggestedFilename().normalize('NFC')).toMatch(/^bloomnote-수진-\d{4}-\d{2}-\d{2}T.+Z\.png$/)
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 844 })
     for (const forcedColors of ['none', 'active'] as const) {
       await page.emulateMedia({ forcedColors })
       const copy = page.getByRole('button', { name: 'copy the note', exact: true })
       await copy.focus()
-      await page.keyboard.press('Tab')
-      await page.keyboard.press('Shift+Tab')
+      await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab')
+      await page.keyboard.press(browserName === 'webkit' ? 'Alt+Shift+Tab' : 'Shift+Tab')
       await expect(copy).toBeFocused()
       if (forcedColors === 'active') await expect(copy).not.toHaveCSS('outline-style', 'none')
       await page.screenshot({
@@ -250,7 +254,9 @@ test('garden downloads keep unicode names and calendar reminders have descriptiv
   const calendarWait = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Apple Calendar / other', exact: false }).click()
   const calendar = await calendarWait
-  expect(calendar.suggestedFilename()).toMatch(/^bloomnote-garden-opening-수진-\d{4}-.*Z\.ics$/)
+  expect(calendar.suggestedFilename().normalize('NFC')).toMatch(
+    /^bloomnote-garden-opening-수진-\d{4}-.*Z\.ics$/,
+  )
 })
 
 test('recipient sharing can be cancelled and has a selectable link when sharing fails', async ({ page }) => {
