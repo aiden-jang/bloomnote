@@ -15,3 +15,6 @@ a garden with a Korean recipient name. Captures show keyboard focus on the copy
 control in both display modes. The filename test was checked against a deliberate
 ASCII-only regression, then restored and passed. Native share sheets and actual
 assistive technology remain device checks.
+
+High-contrast selections use a heavier bottom rule while labels retain native
+system text colors. This avoids text backplates obscuring a filled selection.
