@@ -87,7 +87,7 @@ export function useRecipientKeepsakes(gardenData: GardenData) {
       // Closing a native sheet is a normal outcome, not an error. Leave the garden as it was.
       setShareStatus(null)
       if (err instanceof Error && err.name === 'AbortError') return
-      setShareError('Couldn’t share. Copy the address from your browser and send it instead.')
+      setShareError('Couldn’t share. Copy the garden link below instead.')
     }
   }, [from, shareStatus])
 

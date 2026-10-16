@@ -170,6 +170,28 @@
   color: var(--text-light);
 }
 
+.shareFallback {
+  width: min(100%, 30rem);
+  font: 13px/1.5 var(--sans);
+  overflow-wrap: anywhere;
+}
+.shareFallback label {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  text-align: left;
+}
+.shareFallback input {
+  min-width: 0;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--text-light);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
 .ctaBtn {
   display: inline-block;
   padding: 10px 24px;

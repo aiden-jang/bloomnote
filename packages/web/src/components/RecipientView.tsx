@@ -292,7 +292,19 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             aria-hidden={!msgVisible}
             style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
           >
-            {shareError && <p role="alert">{shareError}</p>}
+            {shareError && (
+              <div className={styles.shareFallback}>
+                <p role="alert">{shareError}</p>
+                <label>
+                  Garden link
+                  <input
+                    readOnly
+                    value={window.location.href}
+                    onFocus={(event) => event.currentTarget.select()}
+                  />
+                </label>
+              </div>
+            )}
             <p className={styles.ctaText}>grow one back?</p>
             <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
               {from ? `grow ${from} a garden` : 'grow one back'}

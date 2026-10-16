@@ -252,3 +252,52 @@ test('garden downloads keep unicode names and calendar reminders have descriptiv
   const calendar = await calendarWait
   expect(calendar.suggestedFilename()).toMatch(/^bloomnote-garden-opening-수진-\d{4}-.*Z\.ics$/)
 })
+
+test('recipient sharing can be cancelled and has a selectable link when sharing fails', async ({ page }) => {
+  await mockApp(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: async () => {
+        throw new DOMException('Dismissed', 'AbortError')
+      },
+    })
+  })
+  await page.goto('/g/AbCdEf')
+  await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+  const share = page.getByRole('button', { name: 'share this garden', exact: true })
+  await share.click()
+  await expect(share).toBeEnabled()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByText(garden.message, { exact: true })).toBeVisible()
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined })
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new DOMException('Denied', 'NotAllowedError')
+        },
+      },
+    })
+  })
+  await share.click()
+  const link = page.getByRole('textbox', { name: 'Garden link', exact: true })
+  await expect(link).toHaveValue(page.url())
+  await expect(link).toHaveAttribute('readonly', '')
+  await expect(share).toBeFocused()
+  await link.focus()
+  expect(await link.evaluate((node: HTMLInputElement) => node.selectionEnd! - node.selectionStart!)).toBe(
+    page.url().length,
+  )
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await link.scrollIntoViewIfNeeded()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({
+      path: test.info().outputPath(`share-fallback-${width}.png`),
+      animations: 'disabled',
+    })
+  }
+})
