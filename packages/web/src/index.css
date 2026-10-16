@@ -277,3 +277,42 @@ input::selection,
 textarea::selection {
   -webkit-text-fill-color: var(--cream);
 }
+
+@media (forced-colors: active) {
+  :is(button, [role='button'], input, select, textarea, summary) {
+    forced-color-adjust: auto;
+    border: 1px solid ButtonText !important;
+  }
+  :is(dialog, [role='dialog']) {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  :is([aria-pressed='true'], [aria-selected='true'], [aria-current='page']) {
+    border: 2px solid Highlight !important;
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
+  :focus-visible {
+    outline: 2px dashed Highlight !important;
+    outline-offset: 3px;
+  }
+  a[href] {
+    text-decoration: underline;
+  }
+  input:is(:autofill, :-webkit-autofill),
+  textarea:is(:autofill, :-webkit-autofill) {
+    -webkit-text-fill-color: FieldText;
+    caret-color: FieldText;
+    box-shadow: none;
+    background: Field;
+  }
+  ::selection {
+    background: Highlight;
+    color: HighlightText;
+  }
+  input::selection,
+  textarea::selection {
+    -webkit-text-fill-color: HighlightText;
+  }
+}

@@ -1,5 +1,6 @@
 // Turning those pictures into a PNG somebody can keep: rasterize, prewarm, save, upload.
 import { renderToStaticMarkup } from 'react-dom/server'
+import { keepsakeFilename } from './keepsakeFilename'
 import type { FlowerSpec } from '../garden'
 import {
   GardenDuetImage,
@@ -89,8 +90,7 @@ async function gardenPng(opts: GardenImageOpts): Promise<Blob> {
 
 export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImageSaveResult> {
   const blob = await gardenPng(opts)
-  const base = (opts.to || 'garden').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
-  const filename = `bloomnote-${base}.png`
+  const filename = keepsakeFilename(opts.to || 'garden', 'png')
   const file = new File([blob], filename, { type: 'image/png' })
 
   const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
@@ -115,12 +115,7 @@ export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImag
 export async function saveGardenDuetImage(opts: GardenDuetImageOpts): Promise<GardenImageSaveResult> {
   const blob = await rasterize(renderToStaticMarkup(<GardenDuetImage {...opts} />), W, H)
   const participant = opts.current.to || opts.current.from || 'garden-duet'
-  const base =
-    participant
-      .replace(/[^a-z0-9]+/gi, '-')
-      .replace(/^-|-$/g, '')
-      .toLowerCase() || 'garden-duet'
-  const filename = `bloomnote-duet-${base}.png`
+  const filename = keepsakeFilename(`duet-${participant}`, 'png')
   const file = new File([blob], filename, { type: 'image/png' })
   const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
 
@@ -142,12 +137,7 @@ export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Prom
     W,
     H,
   )
-  const base =
-    flower.name
-      .replace(/[^a-z0-9]+/gi, '-')
-      .replace(/^-|-$/g, '')
-      .toLowerCase() || 'flower'
-  const filename = `bloomnote-${base}.png`
+  const filename = keepsakeFilename(flower.name || 'flower', 'png')
   const file = new File([blob], filename, { type: 'image/png' })
   const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
   if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {

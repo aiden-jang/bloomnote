@@ -1,6 +1,7 @@
 import BloomBrand from './BloomBrand'
 import { useEffect, useState } from 'react'
 import styles from './SealedView.module.css'
+import { keepsakeFilename } from '../lib/keepsakeFilename'
 
 interface Props {
   gardenId: string
@@ -78,7 +79,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
     const href = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = href
-    a.download = 'garden-opening.ics'
+    a.download = keepsakeFilename(`garden-opening-${to || from || 'garden'}`, 'ics')
     // Keep the URL alive long enough for Safari and mobile browsers to hand the file to their
     // download handler before it is revoked.
     document.body.appendChild(a)

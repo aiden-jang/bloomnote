@@ -205,3 +205,50 @@ test('larger note text preserves the message and remembers the reading choice', 
   await expect(control).toHaveAttribute('aria-pressed', 'true')
   await expect(note).toHaveText(garden.message)
 })
+
+test('garden downloads keep unicode names and calendar reminders have descriptive filenames', async ({
+  page,
+}) => {
+  await mockApp(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { value: () => false, configurable: true })
+  })
+  await page.route('**/api/garden?*', (route) =>
+    route.fulfill({ json: { garden: { ...garden, to: '수진' } } }),
+  )
+  await page.goto('/g/AbCdEf')
+  await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+  await page.getByText('keep this garden', { exact: true }).click()
+  const save = page.getByRole('button', { name: /^(save it as an image|image downloaded)$/ })
+  const imageWait = page.waitForEvent('download')
+  await save.click()
+  const image = await imageWait
+  expect(image.suggestedFilename()).toMatch(/^bloomnote-수진-\d{4}-\d{2}-\d{2}T.+Z\.png$/)
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    for (const forcedColors of ['none', 'active'] as const) {
+      await page.emulateMedia({ forcedColors })
+      const copy = page.getByRole('button', { name: 'copy the note', exact: true })
+      await copy.focus()
+      await page.keyboard.press('Tab')
+      await page.keyboard.press('Shift+Tab')
+      await expect(copy).toBeFocused()
+      if (forcedColors === 'active') await expect(copy).not.toHaveCSS('outline-style', 'none')
+      await page.screenshot({
+        path: test.info().outputPath(`details2-garden-${width}-${forcedColors}.png`),
+        animations: 'disabled',
+      })
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+  await page.route('**/api/garden?*', (route) =>
+    route.fulfill({ json: { garden: { ...garden, to: '수진', unlockAt: '2099-06-01T12:00:00.000Z' } } }),
+  )
+  await page.reload()
+  await page.getByText('add a reminder', { exact: true }).click()
+  const calendarWait = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Apple Calendar / other', exact: false }).click()
+  const calendar = await calendarWait
+  expect(calendar.suggestedFilename()).toMatch(/^bloomnote-garden-opening-수진-\d{4}-.*Z\.ics$/)
+})
