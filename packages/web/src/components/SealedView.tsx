@@ -30,7 +30,14 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
             ? 30_000 // under a day    → every 30s
             : 300_000 // longer         → every 5m
     const id = setInterval(tick, interval)
-    return () => clearInterval(id)
+    const onShow = () => {
+      if (!document.hidden) tick()
+    }
+    document.addEventListener('visibilitychange', onShow)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onShow)
+    }
   }, [target, now])
 
   // Fire the unlock callback exactly once, when the clock crosses the boundary.
@@ -165,11 +172,21 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
         <details className={styles.reminderMenu}>
           <summary>add a reminder</summary>
           <div className={styles.reminderOptions}>
-            <a href={googleCalendarUrl} target="_blank" rel="noreferrer">
+            <a
+              href={googleCalendarUrl}
+              target="_blank"
+              aria-describedby="external-link-hint"
+              rel="noreferrer"
+            >
               <span>Google Calendar</span>
               <span aria-hidden>↗</span>
             </a>
-            <a href={outlookCalendarUrl} target="_blank" rel="noreferrer">
+            <a
+              href={outlookCalendarUrl}
+              target="_blank"
+              aria-describedby="external-link-hint"
+              rel="noreferrer"
+            >
               <span>Outlook Calendar</span>
               <span aria-hidden>↗</span>
             </a>

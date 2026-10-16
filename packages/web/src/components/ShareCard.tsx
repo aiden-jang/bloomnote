@@ -112,7 +112,7 @@ export default function ShareCard({
             : imageStatus === 'shared'
               ? 'image shared'
               : imageStatus === 'downloaded'
-                ? 'image downloaded'
+                ? 'download started'
                 : 'save as image'}
         </button>
 

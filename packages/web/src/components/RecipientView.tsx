@@ -338,7 +338,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                       : duetStatus === 'shared'
                         ? 'garden duet shared'
                         : duetStatus === 'downloaded'
-                          ? 'garden duet saved'
+                          ? 'download started'
                           : 'save both as a garden duet'}
                   </button>
                 )}
@@ -353,7 +353,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                     : imageStatus === 'shared'
                       ? 'image shared'
                       : imageStatus === 'downloaded'
-                        ? 'image downloaded'
+                        ? 'download started'
                         : 'save it as an image'}
                 </button>
                 {message && (

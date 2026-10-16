@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { prefersReducedMotion } from '../lib/motion'
+import { graphemes } from '../lib/graphemes'
 import styles from './BouquetNote.module.css'
 
 interface Props {
@@ -12,14 +13,15 @@ const TYPE_MS = 22
 
 export default function BouquetNote({ note, start = true }: Props) {
   const text = note.trim()
+  const parts = useMemo(() => graphemes(text), [text])
   const reduced = prefersReducedMotion()
-  const [count, setCount] = useState(reduced ? text.length : 0)
+  const [count, setCount] = useState(reduced ? parts.length : 0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    if (!text) return
+    if (!parts.length) return
     if (reduced) {
-      setCount(text.length)
+      setCount(parts.length)
       return
     }
     if (!start) {
@@ -29,7 +31,7 @@ export default function BouquetNote({ note, start = true }: Props) {
     setCount(0)
     timerRef.current = setInterval(() => {
       setCount((c) => {
-        if (c >= text.length) {
+        if (c >= parts.length) {
           if (timerRef.current) clearInterval(timerRef.current)
           return c
         }
@@ -39,11 +41,11 @@ export default function BouquetNote({ note, start = true }: Props) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
-  }, [text, start, reduced])
+  }, [parts, start, reduced])
 
   if (!text) return null
 
-  const typing = count < text.length
+  const typing = count < parts.length
 
   return (
     <div className={styles.wrap}>
@@ -54,7 +56,9 @@ export default function BouquetNote({ note, start = true }: Props) {
         why this garden
       </p>
       <p className={styles.text}>
-        <span aria-hidden>{text.slice(0, count)}</span>
+        <span className={styles.stream} aria-hidden>
+          {parts.slice(0, count).join('')}
+        </span>
         {typing && <span className={styles.cursor} aria-hidden />}
         {/* Full text for screen readers. The visible stream is hidden from them, because a character at
             a time reads as gibberish. */}

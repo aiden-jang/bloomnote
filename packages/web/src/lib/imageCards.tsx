@@ -5,6 +5,7 @@
  * Self-contained SVG with no external assets, or the canvas that rasterizes them is tainted and the
  * export fails. Image preparation must preserve the live user gesture native sharing requires.
  */
+import { clipText, graphemes } from './graphemes'
 import type { FlowerSpec, GardenData } from '../garden'
 import { drawableFlower } from '../garden'
 import FlowerSVG from '../components/FlowerSVG'
@@ -25,15 +26,26 @@ export interface GardenDuetImageOpts {
   current: GardenData
 }
 
-export function wrapMeaning(value: string, max = 38): string[] {
-  const words = value.trim().split(/\s+/)
+export function wrapMeaning(value: string, max = 24): string[] {
   const lines: string[] = []
-  for (const word of words) {
-    const current = lines[lines.length - 1]
-    if (!current || current.length + word.length + 1 > max) lines.push(word)
-    else lines[lines.length - 1] = `${current} ${word}`
+  let line = ''
+  for (const word of value.trim().split(/\s+/).filter(Boolean)) {
+    if (line && graphemes(`${line} ${word}`).length <= max) line += ` ${word}`
+    else {
+      if (line) lines.push(line)
+      const parts = graphemes(word)
+      while (parts.length > max) lines.push(parts.splice(0, max).join(''))
+      line = parts.join('')
+    }
   }
-  return lines.slice(0, 4)
+  if (line) lines.push(line)
+  if (lines.length <= 4) return lines
+  return [
+    ...lines.slice(0, 3),
+    `${graphemes(lines[3]!)
+      .slice(0, max - 1)
+      .join('')}…`,
+  ]
 }
 
 export function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: string }) {
@@ -144,7 +156,7 @@ export function ShareImage({ flowers, from, to }: GardenImageOpts) {
   const n = Math.max(1, flowers.length)
   // Names allow 60 chars but the headline is one non-wrapping line, so truncate or it runs off
   // both edges of the exported PNG.
-  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s)
+  const clipName = (s: string): string => clipText(s, 18)
   const toName = to ? clipName(to) : 'you'
   const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`
 
@@ -239,7 +251,7 @@ export function OgCard({ flowers, from, to }: GardenImageOpts) {
   const tallest = Math.max(150, ...drawable.map((f) => f.stemHeight + 80))
   const headroom = 18
   const scale = Math.min(1.9, (groundSurface + 5 - (panelY + headroom)) / tallest)
-  const clipName = (s: string): string => (s.length > 18 ? `${s.slice(0, 17)}…` : s)
+  const clipName = (s: string): string => clipText(s, 18)
   const toName = to ? clipName(to) : 'you'
   const headline = from ? `${clipName(from)} grew ${toName} a garden` : `a garden, for ${toName}`
 

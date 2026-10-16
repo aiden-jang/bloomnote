@@ -1,10 +1,11 @@
 import { drawableFlower, type GardenData } from '../garden'
+import { clipText } from './graphemes'
 import FlowerSVG from '../components/FlowerSVG'
 import { W, H, Soil, SoilDefs } from './imageCardPrimitives'
 import type { GardenDuetImageOpts } from './imageCards'
 
 export function duetLabel(garden: GardenData): string {
-  const clip = (value: string): string => (value.length > 16 ? `${value.slice(0, 15)}…` : value)
+  const clip = (value: string): string => clipText(value, 16)
   if (garden.from && garden.to) return `${clip(garden.from)} → ${clip(garden.to)}`
   if (garden.from) return `from ${clip(garden.from)}`
   if (garden.to) return `for ${clip(garden.to)}`

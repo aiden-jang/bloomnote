@@ -184,7 +184,7 @@ export default function GardenRow({
             : imageStatus === 'shared'
               ? 'image shared'
               : imageStatus === 'downloaded'
-                ? 'image downloaded'
+                ? 'download started'
                 : 'save image'}
         </button>
         {onRemove && (

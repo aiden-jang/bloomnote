@@ -151,7 +151,7 @@ export default function FlowerPeek({
             : imageStatus === 'shared'
               ? 'keepsake shared'
               : imageStatus === 'downloaded'
-                ? 'keepsake saved'
+                ? 'download started'
                 : 'save a pressed-flower card'}
         </button>
         {journalGardenId && (

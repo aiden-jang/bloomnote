@@ -220,7 +220,7 @@ test('garden downloads keep unicode names and calendar reminders have descriptiv
   await page.goto('/g/AbCdEf')
   await page.getByRole('button', { name: 'open the garden', exact: true }).click()
   await page.getByText('keep this garden', { exact: true }).click()
-  const save = page.getByRole('button', { name: /^(save it as an image|image downloaded)$/ })
+  const save = page.getByRole('button', { name: /^(save it as an image|download started)$/ })
   const imageWait = page.waitForEvent('download')
   await save.click()
   const image = await imageWait
@@ -297,6 +297,94 @@ test('recipient sharing can be cancelled and has a selectable link when sharing 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({
       path: test.info().outputPath(`share-fallback-${width}.png`),
+      animations: 'disabled',
+    })
+  }
+})
+
+test('a sealed garden opens immediately after returning from sleep', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockApp(page)
+  const initial = new Date('2026-10-16T12:00:00Z')
+  await page.clock.setFixedTime(initial)
+  await page.route('**/api/garden?*', (route) =>
+    route.fulfill({
+      json: {
+        garden: { ...garden, unlockAt: '2026-10-19T12:00:00Z' },
+      },
+    }),
+  )
+  await page.goto('/g/AbCdEf')
+  await expect(page.getByText('3d 0h', { exact: true })).toBeVisible()
+  await page.getByText('add a reminder', { exact: false }).click()
+  await expect(page.getByRole('link', { name: 'Google Calendar', exact: true })).toHaveAccessibleDescription(
+    'Opens in a new tab',
+  )
+  await page.clock.setFixedTime(new Date('2026-10-19T12:00:01Z'))
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  await expect(page.getByRole('button', { name: 'open the garden', exact: true })).toBeVisible()
+})
+
+test('note animation keeps whole emoji and printing includes the complete note', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await mockApp(page)
+  const note = '👩🏽‍💻 café A small thank you. '.repeat(18)
+  await page.route('**/api/garden?*', (route) =>
+    route.fulfill({
+      json: {
+        garden: { ...garden, bouquetNote: note },
+      },
+    }),
+  )
+  await page.goto('/g/AbCdEf')
+  await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+  const label = page.locator('p').filter({ hasText: /why this garden/ })
+  await expect(label).toHaveCount(1)
+  const stream = label.locator('..').locator('p').last().locator('span[aria-hidden]').first()
+  await expect(stream).toBeAttached()
+  const prefixes = await stream.evaluate(async (span, text) => {
+    const parts = Array.from(
+      new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text),
+      (s) => s.segment,
+    )
+    const allowed = new Set(parts.map((_, i) => parts.slice(0, i + 1).join('')))
+    return new Promise<{ valid: boolean; seen: number }>((resolve) => {
+      let valid = true
+      let seen = 0
+      const observer = new MutationObserver(() => {
+        const value = span.textContent!
+        if (value) {
+          seen++
+          if (!allowed.has(value)) valid = false
+        }
+      })
+      observer.observe(span, { childList: true, characterData: true, subtree: true })
+      setTimeout(() => {
+        observer.disconnect()
+        resolve({ valid, seen })
+      }, 4500)
+    })
+  }, note)
+  expect(prefixes.valid).toBe(true)
+  expect(prefixes.seen).toBeGreaterThan(0)
+  await expect(stream).toBeVisible()
+  await page.emulateMedia({ media: 'print' })
+  const full = page.getByText(note, { exact: true }).last()
+  await expect(full).toBeVisible()
+  expect(await full.evaluate((node) => getComputedStyle(node).position)).toBe('static')
+  await expect(stream).toBeHidden()
+  const flowersOnPaper = page.locator('button[aria-controls="flower-peek"]')
+  await expect(flowersOnPaper).toHaveCount(3)
+  for (const flower of await flowersOnPaper.all()) {
+    await expect(flower).toBeVisible()
+    expect(await flower.locator('svg path').count()).toBeGreaterThan(0)
+    expect(await flower.evaluate((node) => getComputedStyle(node).transform)).not.toBe('none')
+  }
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.screenshot({
+      path: test.info().outputPath(`printed-note-${width}.png`),
+      fullPage: true,
       animations: 'disabled',
     })
   }

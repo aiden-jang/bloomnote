@@ -497,7 +497,7 @@ test.describe('compose → bloom → share → recipient', () => {
     const save = page.getByRole('button', { name: 'save as image' })
     await expect(save).toBeVisible()
     await save.click()
-    await expect(page.getByRole('button', { name: /image shared|image downloaded/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /image shared|download started/ })).toBeVisible()
   })
 
   test('a dead link says the garden is still there', async ({ page }) => {
@@ -616,7 +616,7 @@ test('a scheduled garden counts down instead of opening', async ({ page }) => {
   await page.goto(`/g/${id}`)
 
   await expect(page.getByRole('heading', { level: 1, name: /grew Nadia a garden/i })).toBeVisible()
-  await expect(page.getByText(/opens in/i)).toBeVisible()
+  await expect(page.getByText('opens in', { exact: true })).toBeVisible()
   // The flowers must not be reachable before the moment the sender picked.
   await expect(page.getByRole('button', { name: /open the garden/i })).toHaveCount(0)
   await expect(page.getByText(NOTE)).toHaveCount(0)

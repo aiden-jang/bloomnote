@@ -143,3 +143,24 @@ describe('the rendered cards', () => {
     expect(svg).not.toMatch(/NaN/)
   })
 })
+
+it('keeps complete emoji and combining marks within exported name limits', () => {
+  const unit = '👩🏽‍💻'
+  const name = 'A'.repeat(8) + unit.repeat(5)
+  const clipped = `${'A'.repeat(8)}${unit}…`
+  expect(duetLabel({ flowers: [], from: name } as never)).toBe(`from ${clipped}`)
+  const markup = renderToStaticMarkup(<ShareImage flowers={[flower()]} from={name} />)
+  expect(markup).toContain(clipped)
+  const accent = 'e\u0301'
+  expect(duetLabel({ flowers: [], from: accent.repeat(10) } as never)).toBe(`from ${accent.repeat(7)}…`)
+})
+
+it('wraps unspaced pressed-flower meanings without cutting emoji or overflowing the card', () => {
+  const emoji = '👩🏽‍💻'
+  const text = '花'.repeat(30) + emoji.repeat(12)
+  const lines = wrapMeaning(text, 12)
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+  expect(lines.join('')).toBe(text)
+  for (const line of lines) expect(Array.from(segmenter.segment(line)).length).toBeLessThanOrEqual(12)
+  expect(wrapMeaning(text.repeat(3), 12).at(-1)).toMatch(/…$/)
+})

@@ -520,6 +520,14 @@
 }
 
 @media print {
+  .scene {
+    break-inside: avoid;
+  }
+  .flowerSlot {
+    transform: translateX(-50%) !important;
+    scale: var(--depth, 1) !important;
+    translate: 0 calc((1 - var(--depth, 1)) * -30px) !important;
+  }
   .ghostSprout {
     display: none;
   }

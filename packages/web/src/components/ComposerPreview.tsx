@@ -23,7 +23,13 @@ export default function ComposerPreview({ garden, shareUrl, recipient, from, mes
         {recipient.trim() ? `what ${recipient.trim()} sees` : 'what they see'}
       </p>
 
-      <a href={shareUrl} target="_blank" rel="noopener noreferrer" className={styles.fullRevealPreview}>
+      <a
+        href={shareUrl}
+        target="_blank"
+        aria-describedby="external-link-hint"
+        rel="noopener noreferrer"
+        className={styles.fullRevealPreview}
+      >
         <span aria-hidden>◌</span>
         preview the full reveal
         <span aria-hidden>↗</span>

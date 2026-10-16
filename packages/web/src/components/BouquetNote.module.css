@@ -95,7 +95,17 @@
   .sparkle {
     animation: none;
   }
+  .stream,
   .cursor {
     display: none;
+  }
+  .srOnly {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
   }
 }
