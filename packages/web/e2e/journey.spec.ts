@@ -129,7 +129,7 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.getByLabel('your note')).toHaveValue('')
   })
 
-  test('a garden can be grown, shared, and opened', async ({ page }) => {
+  test('a garden can be grown, shared, and opened', async ({ page, isMobile }) => {
     // Keep the recipient handoff inside the browser test: the native sheet itself belongs to the
     // OS, but its successful completion must produce the same in-page confirmation everywhere.
     await page.addInitScript(() => {
@@ -226,8 +226,12 @@ test.describe('compose → bloom → share → recipient', () => {
     // Nothing else asserts the two-layer Escape or the focus handoff, and both live in the panel.
     const first = GARDEN.flowers[0]!
     const slot = page.getByRole('button', { name: new RegExp(`^${first.name}:`) })
-    await slot.click()
     const peek = page.locator('#flower-peek')
+    if (isMobile) {
+      await slot.hover()
+      await expect(peek).not.toBeVisible()
+    }
+    await slot.click()
     await expect(peek).toBeVisible()
 
     await peek.getByRole('button', { name: /keep in my flower journal/i }).click()

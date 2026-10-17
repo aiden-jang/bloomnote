@@ -272,7 +272,14 @@ export default function GardenScene({
                 ['--depth' as string]: String(p.depth),
               }}
               title={p.spec.name}
-              onMouseEnter={revealed ? () => onFocus?.(i) : undefined}
+              onMouseEnter={
+                revealed
+                  ? () => {
+                      // Touch browsers synthesize mouse entry before a tap; opening here can cover its target.
+                      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) onFocus?.(i)
+                    }
+                  : undefined
+              }
               onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
               onFocus={
                 revealed
