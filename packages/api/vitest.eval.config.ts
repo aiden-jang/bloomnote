@@ -1,15 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
-/**
- * Config for the prompt eval only (`pnpm eval`).
- *
- * Plain Node, not the Workers pool the unit tests use: this makes real outbound calls to Gemini
- * and wants nothing to do with wrangler bindings or an in-memory KV.
- *
- * The include pattern is the reason the file is named `.eval.ts` rather than `.eval.test.ts` —
- * vitest's default include would otherwise sweep it into `pnpm test`, and a suite that spends
- * money and depends on a sampled model has no business running on every commit.
- */
+// Live Gemini evals run separately from offline unit tests and may incur provider charges.
 export default defineConfig({
   test: {
     include: ['test/**/*.eval.ts'],

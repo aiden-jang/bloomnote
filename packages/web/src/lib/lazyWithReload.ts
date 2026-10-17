@@ -1,11 +1,4 @@
-/*
- * A code-split import that survives a deploy.
- *
- * Vite hashes chunk names, so a deploy replaces them and the service worker purges its old cache.
- * Anyone with the page open is then holding chunk names that exist nowhere, and clicking through to
- * a lazy route shows the crash screen for what is really "please refresh". Reloading fetches the
- * current index.html and the names that match it.
- */
+// Reload after a stale hashed chunk fails so the HTML and chunk names agree after deployment.
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
 
 const ATTEMPT_KEY = 'bloomnote:chunk-reload'
@@ -51,5 +44,5 @@ export async function loadWithReload<T>(load: () => Promise<T>): Promise<T> {
 export function lazyWithReload<T extends ComponentType<any>>(
   load: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> {
-  return lazy(() => loadWithReload(load))
+  return lazy(() => (import.meta.env.PROD ? loadWithReload(load) : load()))
 }

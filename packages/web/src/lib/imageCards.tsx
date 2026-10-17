@@ -1,17 +1,11 @@
-/*
- * The four pictures a garden can become: the square keepsake, a single pressed flower, the two-sided
- * reply, and the 1200x630 card a link preview shows.
- *
- * Self-contained SVG with no external assets, or the canvas that rasterizes them is tainted and the
- * export fails. Image preparation must preserve the live user gesture native sharing requires.
- */
+// Export SVGs must contain their own assets to avoid tainting the rasterization canvas.
 import { clipText, graphemes } from './graphemes'
-import type { FlowerSpec, GardenData } from '../garden'
+import type { FlowerSpec } from '../garden'
 import { drawableFlower } from '../garden'
 import FlowerSVG from '../components/FlowerSVG'
 import { W, H, Soil, SoilDefs } from './imageCardPrimitives'
 export { W, H, soilPaths } from './imageCardPrimitives'
-export { GardenDuetImage, duetLabel } from './GardenDuetImage'
+export { GardenDuetImage, duetLabel, type GardenDuetImageOpts } from './GardenDuetImage'
 
 export interface GardenImageOpts {
   flowers: FlowerSpec[]
@@ -20,11 +14,6 @@ export interface GardenImageOpts {
 }
 
 export type GardenImageSaveResult = 'shared' | 'downloaded' | 'dismissed'
-
-export interface GardenDuetImageOpts {
-  previous: GardenData
-  current: GardenData
-}
 
 export function wrapMeaning(value: string, max = 24): string[] {
   const lines: string[] = []

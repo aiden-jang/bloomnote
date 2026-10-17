@@ -27,13 +27,7 @@ export function withViewTransition(updater: () => void): void {
       applied = true
       flushSync(updater)
     })
-    /*
-     * A transition's promises reject when it is superseded by another or the document is hidden,
-     * which the recipient view triggers by opening a garden and replaying its bloom. The DOM update
-     * has already happened by then, so there is nothing to recover: this exists so an ordinary
-     * interaction does not log `InvalidStateError: Transition was aborted` as an unhandled
-     * rejection.
-     */
+    // Superseded/hidden transitions can reject after updating the DOM; consume those presentation errors.
     transition?.ready?.catch(() => {})
     transition?.finished?.catch(() => {})
   } catch {

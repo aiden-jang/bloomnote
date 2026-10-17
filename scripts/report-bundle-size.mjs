@@ -3,13 +3,7 @@ import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { readFileSync } from 'node:fs'
 
-/*
- * Print what the browser actually downloads, so a dependency that doubles the bundle shows up in
- * the diff instead of six months later on someone's phone.
- *
- * Reports rather than fails. A budget invented today would be arbitrary, and a red build nobody
- * agreed to is a build people learn to ignore. Pick a ceiling once the numbers have settled.
- */
+// Report compressed bundle sizes without enforcing an arbitrary threshold.
 const dist = new URL('../packages/web/dist/', import.meta.url).pathname
 
 async function walk(dir) {

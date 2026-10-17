@@ -138,13 +138,7 @@ p {
   text-wrap: pretty;
 }
 
-/*
- * Don't move a module's keyframes up here to share them.
- *
- * CSS Modules scopes animation names, so a module that references a keyframe defined in this file
- * compiles to a name that does not exist, and the animation silently does not run. `fadeUp` is
- * deliberately defined four times over in the modules that use it for exactly this reason.
- */
+/* CSS Modules scope keyframe names; keep module animations in the module that references them. */
 @keyframes sway {
   0%,
   100% {

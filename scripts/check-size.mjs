@@ -1,23 +1,10 @@
-/*
- * Ceilings on file length and component state, run by `pnpm verify`.
- *
- * Nothing else here notices a file growing, and a god-file is never added. It accretes twenty
- * lines at a time and no single diff looks wrong, which is how Composer reached 889 lines and 15
- * pieces of state despite an earlier cleanup having already pulled its draft and hero demo out.
- *
- * Lines are the proxy; the state count is the signal. Ratchet both down after a refactor rather
- * than leaving slack. Splitting the file is almost always the right answer to a failure here.
- */
+// Enforce module and local-state budgets; existing exceptions may only shrink.
 import { globSync, readFileSync } from 'node:fs'
 
 const MAX_LINES = 400
 const MAX_STATE = 12
 
-/*
- * Already over, and being decomposed. Listed at their own size rather than the ceiling being raised
- * for everyone, so nothing else can grow past it meanwhile.
- * An entry sitting above its file fails too, so nobody has to remember to shrink one.
- */
+// Existing exceptions are pinned and must shrink with their files.
 const ALREADY_OVER = {}
 
 const files = globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f))

@@ -1,22 +1,8 @@
-/*
- * Three mechanical checks on comments, run by `pnpm verify`.
- *
- * A budget, because a cleanup pass is a moment and drift is permanent. A duplicate check, because
- * the same fact copied into four files is the failure this repo actually had: each copy reads as
- * reasonable on its own, and only a whole-repo view shows it. And a stranded check, because moving
- * code leaves its comment behind describing something that is no longer underneath it.
- */
+// Check comment budgets, repeated explanations, and comments stranded by moves.
 import { readFileSync } from 'node:fs'
 import { globSync } from 'node:fs'
 
-/*
- * A share of the code, not a line count. An absolute budget charged new modules for their own
- * headers, so it blocked a deploy-time trap and a silent-failure note the same way it blocks
- * padding, and a real doc comment was deleted to fit a bug explanation underneath it.
- *
- * A share still bites on what this repo actually got wrong, which was prose added to code that
- * already existed: 150 comment lines with no new code puts src over 6%.
- */
+// Use a share so a documented new module does not consume an absolute prose budget.
 const MAX_SRC_DENSITY = 0.06
 /*
  * A share here too, at a higher rate than src because a gate's header is mostly the reason it
@@ -81,11 +67,7 @@ for (const file of files) {
   let afterDeclaration = false
   for (let i = 1; i < lines.length - 2; i++) {
     if (/^\}\)?;?$/.test(lines[i])) afterDeclaration = true
-    /*
-     * A doc block with nothing under it but a closing brace. `/**` exists to describe the next
-     * declaration, so one describing a brace documents a prop or a field that has been removed.
-     * Ungated: the first interface in a file is where this happens.
-     */
+    // A doc block followed only by a closing delimiter has lost its subject.
     if (/\*\/\s*$/.test(lines[i])) {
       let open = i
       while (open >= 0 && !lines[open].includes('/*')) open--
@@ -98,11 +80,7 @@ for (const file of files) {
       }
     }
     if (!afterDeclaration) continue
-    /*
-     * A comment, then a blank line, then a declaration. A file header sits above the first one of
-     * those and is fine; a paragraph floating above an export further down is one whose subject
-     * moved without it. Keep a comment on the line above what it describes and this never fires.
-     */
+    // Detect prose separated from the declaration it describes.
     const ends = /^\s*(\/\/|\*\/)/.test(lines[i])
     const next = lines.slice(i + 2, i + 4).find((l) => l.trim()) ?? ''
     if (ends && lines[i + 1].trim() === '' && /^(export |const |function )/.test(next.trim())) {

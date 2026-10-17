@@ -1,12 +1,3 @@
-/*
- * A pure function of the pathname, not a reader of window.location, so the routing table is
- * checkable without a browser.
- *
- *   /g/<id>  recipient view, KV lookup
- *   /r/<id>  composer in remix mode, KV lookup for the seed
- *   /mine    on-device archive, client only
- *   /        composer
- */
 import { isShortId } from '../garden'
 
 export interface ParsedRoute {

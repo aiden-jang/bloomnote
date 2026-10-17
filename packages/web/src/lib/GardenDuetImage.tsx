@@ -2,7 +2,10 @@ import { drawableFlower, type GardenData } from '../garden'
 import { clipText } from './graphemes'
 import FlowerSVG from '../components/FlowerSVG'
 import { W, H, Soil, SoilDefs } from './imageCardPrimitives'
-import type { GardenDuetImageOpts } from './imageCards'
+export interface GardenDuetImageOpts {
+  previous: GardenData
+  current: GardenData
+}
 
 export function duetLabel(garden: GardenData): string {
   const clip = (value: string): string => clipText(value, 16)

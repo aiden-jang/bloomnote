@@ -1,11 +1,4 @@
-/*
- * Every gate in `verify` has to actually run.
- *
- * A bare `pnpm <name>` can resolve to a pnpm or npm command of the same name instead of the
- * script. `pnpm deploy` collides loudly here already, which is why the root alias exists; the
- * dangerous version is silent -- npm's own `docs` exits 0 without running anything, so a gate
- * named that reports green having never executed. `pnpm run <name>` is unambiguous.
- */
+// Check that verification and CI run the same real scripts with unambiguous command names.
 import { readFileSync } from 'node:fs'
 
 const { scripts } = JSON.parse(readFileSync('package.json', 'utf8'))

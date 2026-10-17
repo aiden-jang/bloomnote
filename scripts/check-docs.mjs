@@ -1,10 +1,4 @@
-/*
- * Mechanical checks on the docs, run by `pnpm verify`. Only claims a machine can settle: paths,
- * script names, routes, and symbols. Whether the prose is any good is a reading job.
- *
- * Prose rots with nothing to fail. A rename left the request diagram naming a function that had
- * been gone a phase, and the sentence still read fine.
- */
+// Validate documented paths, scripts, routes, symbols, and local links.
 import { existsSync, globSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 

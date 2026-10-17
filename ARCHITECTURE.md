@@ -22,13 +22,16 @@ shown. Bloom, reveal, pointer, and scroll timers are cancelled when their owner 
 `GardenScene.tsx` coordinates the flowers; `GardenScenery.tsx` draws decorative elements and
 `useSceneMotion.ts` manages pointer and scroll effects. Layout remains in `lib/scene.ts`.
 
+`shelves.ts` operates on the fields each projection needs and preserves the caller's entry type.
+It has no dependency on journal storage.
+
 `MyGardens.tsx` presents account and device collections through shared filtering and row controls.
 `GardenLibraryHighlights.tsx` presents memories and response summaries. A failed account fetch is
 an error with retry, never an empty collection. The account-removal undo window remains separate
 from permanent garden storage: removing a library entry leaves the gift link intact.
 
 `imageCards.tsx` contains the square, pressed-flower, and link-preview layouts. `GardenDuetImage.tsx`
-contains the reply pair; `imageCardPrimitives.tsx` shares dimensions and soil. `gardenImage.tsx`
+contains the reply pair and owns its input contract; `imageCardPrimitives.tsx` shares dimensions and soil. `gardenImage.tsx`
 handles rasterization, prewarming, and saving. All exported images remain self-contained SVG before
 rasterization, so there are no external assets to taint the canvas.
 
@@ -263,10 +266,13 @@ referencing chunk names that exist neither on the origin nor in their cache. Cli
 lazy route failed the dynamic import and reached the error boundary, which said "something wilted"
 about what was really "please refresh".
 
-`lazyWithReload` wraps the three code-split routes: a failed import reloads once, which fetches the
+`lazyWithReload` wraps the three code-split routes in production: a failed import reloads once, which fetches the
 current `index.html` and the chunk names that match it. A ten-second cooldown in `sessionStorage`
 stops that becoming a loop, and it fails closed when storage is unavailable, because reloading with
 no way to record the attempt is the loop.
+
+Development uses normal lazy imports. Cancelling an in-flight development module during navigation
+must not trigger deployment recovery and reload the page being left.
 
 **Rejected:** keeping old chunks on the origin so the stale reference still resolves. It works, and
 it means every deploy leaves litter nobody ever cleans up, to serve a page that is one refresh from

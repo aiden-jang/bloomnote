@@ -1,16 +1,4 @@
-/*
- * Find `styles.foo` where the CSS module has no `.foo`.
- *
- * The gap no other check covers: TypeScript does not read CSS modules (they are typed as a loose
- * record), eslint does not read CSS, and `styles.typo` is `undefined`, which React puts in the DOM
- * as no class at all. The element renders, unstyled, and nothing anywhere errors. It is the same
- * silent-failure shape as `var(--undeclared)`, which is why check-css-vars.mjs exists.
- *
- * Only the referenced-but-undefined direction is checked. Reporting classes the CSS defines but
- * nothing uses needs to understand `styles[`ghostSproutGrowing${growth}`]` and the tier class
- * composerHelpers builds by hand; a scan that does not produces about fifty false positives, which
- * is worse than no check.
- */
+// Check CSS module references against declared classes; computed class names are handled separately.
 import { readFileSync, globSync } from 'node:fs'
 import { basename } from 'node:path'
 

@@ -1,15 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-/**
- * The whole product in one pass: arrive, write a note, watch it bloom, get a link, open that link
- * as the recipient.
- *
- * Only the Gemini call is faked, and it is faked at the browser's network layer rather than by
- * changing any application code, so the app under test is byte-for-byte the one that ships. That
- * keeps the suite free (no quota), deterministic (no sampled model), and still honest about
- * everything that actually breaks: the SSE parsing, the bloom, the KV write, the short link, the
- * routing, and the recipient render.
- */
+// Only design generation is mocked; SSE parsing, storage, links, and recipient rendering use the real stack.
 
 /** snake_case bouquet_note, because that is what the Worker's `complete` event sends. */
 const GARDEN = {
@@ -85,32 +76,10 @@ async function stubDesignSequence(page: Page, gardens: unknown[]): Promise<void>
 
 const petals = (page: Page) => page.locator('svg path')
 
-/*
- * Every page runs as a reduced-motion visitor.
- *
- * Necessary, not cosmetic: "open the garden" carries an infinite attention pulse, so Playwright's
- * stability check never passes and the click times out after a minute. Forcing the click would
- * paper over exactly the "can a person actually press this" class of problem this suite is for.
- *
- * Done here with an explicit call rather than `reducedMotion` in the config, because that setting
- * did not reach the page: a probe showed `matchMedia('(prefers-reduced-motion: reduce)')` false
- * with it set in `use`, and true immediately after calling this. A config option that silently
- * does nothing is worse than no config option.
- *
- * The app already turns these animations off under prefers-reduced-motion, so this puts the run on
- * a path it deliberately supports. The trade-off is real: the entrance animations themselves (the
- * staged bloom, the typewriter note) are not exercised, only their end state.
- */
-/*
- * A different caller per test, and a different range per run.
- *
- * Sharing one address puts every test in one rate-limit bucket, and a run spends enough of
- * LIMITS.create that the suite starts failing on whichever test comes next. Numbering the tests
- * alone is not enough: the same test draws the same address every run, so the buckets still fill
- * up across reruns, which showed as a create timing out on a different test each time, so each
- * run draws its own range. Only the local worker trusts this header; Cloudflare overwrites it at
- * the edge.
- */
+// Set reduced motion on the page so infinite attention animations do not prevent real, stable clicks.
+// These journeys check the supported reduced-motion state; entrance animation is covered separately.
+// Isolate rate-limit buckets by test and run. Only the local Worker trusts this header;
+// Cloudflare replaces it in production.
 const RUN_RANGE = `10.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`
 let visitor = 0
 /* Also handed to page.request below: setExtraHTTPHeaders covers the browser's own requests and
@@ -124,11 +93,7 @@ test.beforeEach(async ({ page }) => {
   await page.setExtraHTTPHeaders({ 'cf-connecting-ip': callerIp })
 })
 
-/*
- * `react/jsx-no-comment-textnodes` is the real guard for this now. This stays because the lint rule
- * only sees JSX, and it is the whole-page version of the question nothing else here asks: what does
- * the screen say that it should not?
- */
+// Check visible output as well as JSX lint: comments can leak from outside a JSX text node.
 test('no screen leaks comment syntax as visible text', async ({ page }) => {
   for (const path of ['/', '/mine', '/privacy', '/terms', '/g/zzzz99']) {
     await page.goto(path)
@@ -176,13 +141,11 @@ test.describe('compose → bloom → share → recipient', () => {
     await stubDesign(page)
     await page.goto('/')
 
-    // --- Arrive -----------------------------------------------------------------------------
     // The homepage hero grows a real demo garden rather than showing an empty plot. If that
     // regresses, a first-time visitor's first impression is a blank rectangle again.
     await expect(page.getByRole('heading', { name: 'bloomnote' })).toBeVisible()
     await expect(petals(page).first()).toBeVisible()
 
-    // --- Write ------------------------------------------------------------------------------
     await page.getByPlaceholder('your name').fill('Aiden')
     await page.getByPlaceholder('their name').fill('Nadia')
     await page.getByLabel('your note').fill(NOTE)
@@ -192,7 +155,6 @@ test.describe('compose → bloom → share → recipient', () => {
     const scene = page.locator('[class*="scene"]').first()
     await expect(scene).toHaveJSProperty('offsetHeight', page.viewportSize()!.width <= 480 ? 112 : 132)
 
-    // --- Bloom ------------------------------------------------------------------------------
     await page.getByRole('button', { name: /grow .* garden/i }).click()
 
     await expect(page.getByText(NOTE)).toBeVisible()
@@ -203,7 +165,6 @@ test.describe('compose → bloom → share → recipient', () => {
       await expect(page.getByText(f.meaning).first()).toBeVisible()
     }
 
-    // --- Share ------------------------------------------------------------------------------
     const link = page.getByText(/\/g\/[A-Za-z0-9]{6}/).first()
     await expect(link).toBeVisible()
     const shareUrl = (await link.textContent())!.trim()
@@ -523,8 +484,7 @@ async function createGarden(page: Page, extra: Record<string, unknown> = {}): Pr
     },
     data: { from: 'Aiden', to: 'Nadia', message: NOTE, ...GARDEN, ...extra },
   })
-  // Say so here rather than returning an undefined id: a refused create used to surface fifteen
-  // seconds later as an empty list, which reads like a rendering bug.
+  // Fail at fixture creation so API errors are not mistaken for empty-library rendering bugs.
   if (!response.ok()) {
     throw new Error(`could not seed a garden: ${response.status()} ${await response.text()}`)
   }
@@ -532,13 +492,6 @@ async function createGarden(page: Page, extra: Record<string, unknown> = {}): Pr
   return body.id
 }
 
-/*
- * The archive, both halves of it.
- *
- * Every one of these was verified by hand and by nothing else: the signed-out list, its search, its
- * sort and its pinned filter all share one hook and one toolbar with the signed-in list, which is
- * exactly the shape where a change lands on one and silently misses the other.
- */
 test.describe('your gardens', () => {
   test('lists, searches, sorts and filters the on-device archive', async ({ page }) => {
     await page.goto('/')

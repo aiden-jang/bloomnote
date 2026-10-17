@@ -14,8 +14,7 @@ port = 32200
 [vars]
 AUTH_URL = "https://accounts.aidenjang.com"
 
-# Product events, written fire-and-forget from the /api/event route. One dataset across every app,
-# with the app name in index1 and blob1, so a single query can compare them.
+# Shared product-events dataset; the app name is recorded in index1 and blob1.
 [[analytics_engine_datasets]]
 binding = "EVENTS"
 dataset = "aidenjang_events"
@@ -26,14 +25,11 @@ dataset = "aidenjang_events"
 binding = "GARDENS"
 id = "17772866b1ae4b468ee00b07e65c9646"
 
-# Rate limits and the daily AI spend cap. A Durable Object, not KV: KV's read-modify-write is
-# not atomic, so parallel requests all read the same count and every limit was bypassable.
-# Per-IP counters shard across instances (one per IP); the spend cap is a single instance.
+# Durable Objects serialize per-IP limits and the shared daily AI spend cap; KV updates are not atomic.
 [durable_objects]
 bindings = [{ name = "COUNTERS", class_name = "Counters" }]
 
-# sqlite, not the key-value backend: that one needs a paid plan and this app runs on free tiers.
-# A class cannot change backend after it ships, so this had to be right the first time.
+# Use SQLite-backed Durable Objects for free-plan compatibility; deployed classes cannot change backend.
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Counters"]
@@ -50,8 +46,7 @@ run_worker_first = true
 pattern = "bloomnote.aidenjang.com"
 custom_domain = true
 
-# Workers Logs — native, free-tier error/log observability. Tail live with `wrangler tail`;
-# browse + query in the dashboard (Workers & Pages → the worker → Logs).
+# Worker logs are available through `wrangler tail` and the Cloudflare dashboard.
 [observability]
 enabled = true
 head_sampling_rate = 1
