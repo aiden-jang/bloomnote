@@ -16,13 +16,19 @@ describe('event meta is filtered server-side', () => {
     })
   })
 
+  it('retains known occasions and rejects unknown ones', () => {
+    expect(safeMeta({ occasion: 'thank-you' })).toEqual({ occasion: 'thank-you' })
+    expect(safeMeta({ occasion: 'PRIVATE' })).toEqual({})
+  })
+
   it('drops a key nobody asked for', () => {
     expect(safeMeta({ mode: 'fresh', note: 'i love you, meet me at 8' })).toEqual({ mode: 'fresh' })
   })
 
-  it('caps a permitted key so it cannot smuggle a payload', () => {
+  it('rejects free text even under a permitted key', () => {
     const out = safeMeta({ mode: 'x'.repeat(500) })
-    expect((out.mode as string).length).toBe(64)
+    expect(out).toEqual({})
+    expect(safeMeta({ mode: 'private words', mood: 'private words', occasion: 'private words' })).toEqual({})
   })
 
   it('ignores nested objects and arrays, which is how text would sneak through', () => {

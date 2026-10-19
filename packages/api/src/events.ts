@@ -17,15 +17,19 @@ export function writeEvent(env: Env, name: string, rawMeta: unknown): void {
   const meta = safeMeta(rawMeta)
   const str = (k: string): string => (typeof meta[k] === 'string' ? (meta[k] as string) : '')
   const num = (k: string): number => (typeof meta[k] === 'number' ? (meta[k] as number) : 0)
-  env.EVENTS.writeDataPoint({
-    indexes: [APP],
-    blobs: [
-      APP,
-      name,
-      str('mode') || str('occasion') || str('format'),
-      str('mood') || str('errorType'),
-      str('surface') || str('method'),
-    ],
-    doubles: [1, num('durationMs'), num('flowerCount')],
-  })
+  try {
+    env.EVENTS.writeDataPoint({
+      indexes: [APP],
+      blobs: [
+        APP,
+        name,
+        str('mode') || str('occasion') || str('format'),
+        str('mood') || str('errorType'),
+        str('surface') || str('method'),
+      ],
+      doubles: [1, num('durationMs'), num('flowerCount')],
+    })
+  } catch {
+    /* Aggregate counters are best effort and must not fail product actions. */
+  }
 }

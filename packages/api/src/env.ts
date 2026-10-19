@@ -1,6 +1,7 @@
 import type { Counters } from './counters.js'
 
 export interface Env {
+  EVENT_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> }
   GARDENS: KVNamespace
   COUNTERS: DurableObjectNamespace<Counters>
   ASSETS: Fetcher

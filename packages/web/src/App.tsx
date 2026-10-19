@@ -1,3 +1,5 @@
+import { usePageAnalytics } from './usePageAnalytics.js'
+import { pageForPath } from '../../../analytics/schema.js'
 import { AppUpdate } from './AppUpdate'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import RecipientView from './components/RecipientView'
@@ -40,6 +42,21 @@ export default function App() {
     if (parsed.short) return { kind: 'loading' }
     return { kind: 'composer' }
   })
+  const page =
+    route.kind === 'loading'
+      ? pageForPath(window.location.pathname)
+      : route.kind === 'recipient'
+        ? 'garden'
+        : route.kind === 'composer'
+          ? 'composer'
+          : route.kind === 'mine'
+            ? 'mine'
+            : route.kind === 'privacy'
+              ? 'privacy'
+              : route.kind === 'terms'
+                ? 'terms'
+                : 'other'
+  usePageAnalytics(page)
   const [retryNonce, setRetryNonce] = useState(0)
   const retryLoad = useCallback(() => {
     setRoute({ kind: 'loading' })

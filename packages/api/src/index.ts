@@ -1,3 +1,6 @@
+import { PRODUCT_EVENTS } from '../../../analytics/schema.js'
+import { bodyLimit } from 'hono/body-limit'
+import { handleAnalytics } from '../../../analytics/worker.js'
 import { Hono, type Context } from 'hono'
 import { resolveSession, type AuthUser } from '@aidenjang/auth-client'
 import { harden } from './harden.js'
@@ -19,7 +22,6 @@ import {
 } from './gardens.js'
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js'
 import { checkRate, clientIp } from './rateLimit.js'
-import { safeMeta } from './eventMeta.js'
 import { writeEvent } from './events.js'
 
 /* Per-IP ceilings on the endpoints that write. bloomnote is anonymous-first, so most of these
@@ -94,6 +96,8 @@ app.use('*', async (c, next) => {
     c.header('Pragma', 'no-cache')
   }
 })
+
+app.all('/api/analytics', (c) => handleAnalytics(c.req.raw, c.env))
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }))
 
@@ -207,23 +211,11 @@ app.delete('/api/garden/:id', async (c) => {
   return c.json({ ok: true })
 })
 
-// Only whitelisted names are logged, so a spoofed body can't spam arbitrary lines into Workers
-// Logs. Fire-and-forget, so always 204.
-const TRACKED_EVENTS = new Set([
-  'composer_opened',
-  'garden_generated',
-  'garden_error',
-  'garden_canceled',
-  'garden_rerolled',
-  'share_link_copied',
-  'share_link_shared',
-  'card_downloaded',
-  'make_another',
-  'garden_opened',
-  'garden_bloomed',
-  'reply_started',
-])
-app.post('/api/event', async (c) => {
+// Event names and categorical metadata are checked before the shared aggregate dataset.
+// A discarded event does not affect the page.
+const TRACKED_EVENTS = new Set<string>(PRODUCT_EVENTS)
+
+app.post('/api/event', bodyLimit({ maxSize: 2048 }), async (c) => {
   const stop = await limited(c, 'event', LIMITS.event)
   if (stop) return stop
   const raw = await c.req.text().catch(() => '')
@@ -237,7 +229,6 @@ app.post('/api/event', async (c) => {
     // A malformed body is not worth an error; the beacon has nobody to tell.
   }
   if (TRACKED_EVENTS.has(name)) {
-    console.log(`bloomnote_event ${name} ${JSON.stringify(safeMeta(meta))}`)
     writeEvent(c.env, name, meta)
   }
   return c.body(null, 204)

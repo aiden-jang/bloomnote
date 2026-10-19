@@ -1,17 +1,26 @@
+import { canReportAnalytics } from '../../../../analytics/browser.js'
+import { safeMeta } from '../../../../analytics/meta.js'
+import type { PRODUCT_EVENTS } from '../../../../analytics/schema.js'
 /* Event names are a closed set, so a typo is a type error rather than a line nobody ever queries. */
 
 type EventProps = Record<string, string | number | boolean | null>
 
-/** sendBeacon first, because it survives the page unload that usually follows these calls. */
-function emit(name: string, props?: EventProps): void {
-  if (typeof navigator === 'undefined') return
-  const body = JSON.stringify({ name, meta: props ?? {} })
+/** Keepalive survives navigation without attaching a garden URL or account cookie. */
+function emit(name: (typeof PRODUCT_EVENTS)[number], props?: EventProps): void {
+  if (!canReportAnalytics()) return
   try {
-    if (navigator.sendBeacon?.('/api/event', body)) return
+    void fetch('/api/event', {
+      method: 'POST',
+      credentials: 'omit',
+      mode: 'same-origin',
+      referrerPolicy: 'no-referrer',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, meta: safeMeta(props ?? {}) }),
+      keepalive: true,
+    }).catch(() => undefined)
   } catch {
-    // sendBeacon unavailable or threw. Fall through to fetch.
+    /* Best effort only; offline and blocked analytics never break a garden. */
   }
-  void fetch('/api/event', { method: 'POST', body, keepalive: true }).catch(() => undefined)
 }
 
 export function trackComposerOpened(mode: 'fresh' | 'remix'): void {

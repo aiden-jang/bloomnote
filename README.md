@@ -101,3 +101,5 @@ composer without clearing its saved draft. Browser titles identify the composer,
 library, or garden without putting the note or secret in the tab. Current public
 composer screenshots in `packages/web/public/screenshots/` supply phone and desktop
 install previews; capture the running composer again when its layout changes.
+
+Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).

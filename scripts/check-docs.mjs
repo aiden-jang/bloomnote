@@ -24,6 +24,7 @@ const NOT_OURS = new Set([
 ])
 
 const code = [
+  ...globSync('analytics/**/*.ts'),
   ...globSync('packages/*/src/**/*.{ts,tsx}').filter((f) => !/\.test\.tsx?$/.test(f)),
   ...globSync('packages/*/e2e/**/*.ts'),
   ...globSync('packages/*/test/**/*.ts').filter((f) => !/\.(test|eval)\.ts$/.test(f)),
@@ -45,7 +46,7 @@ const scripts = new Set(
 
 const files = new Set(
   [
-    ...globSync('{packages,scripts,.github,docs}/**/*', { withFileTypes: true }),
+    ...globSync('{packages,scripts,.github,docs,analytics}/**/*', { withFileTypes: true }),
     ...globSync('*.mjs', { withFileTypes: true }),
   ]
     .filter((d) => d.isFile())
