@@ -1,7 +1,7 @@
 # Working in bloomnote
 
-How this repo expects to be worked in. Personal working style (commits, planning,
-how to explain things) lives in the global `~/.claude/CLAUDE.md`.
+How this repo expects to be worked in. Use scope-free Conventional Commits; setup and review
+expectations are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The first half is engineering standards that apply to any codebase. The second half is bloomnote
 itself: its checks, its deliberate oddities, and the traps it has actually hit.
@@ -71,7 +71,8 @@ The link is the access control. Ids are six characters from a 57-character alpha
 route that reads a garden is unauthenticated on purpose, because anyone with the link is meant to
 open it. The account routes are the exception and do check. Nothing else guards a garden's
 contents, so never add a route that turns one id into another, and keep ids out of the logs:
-`META_KEYS` in `eventMeta.ts` is an allowlist and no id is on it.
+`analytics/meta.ts` allows only known metadata keys and values; `eventMeta.ts` re-exports
+that boundary for the Worker. IDs and private prose are never event dimensions.
 
 Counters live in the `COUNTERS` durable object, never KV. KV's read-modify-write is not atomic:
 forty parallel requests once passed a limit of five, because every one of them read the same
