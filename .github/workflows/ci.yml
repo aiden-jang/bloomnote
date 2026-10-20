@@ -26,6 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run verify:fast
       - uses: actions/upload-artifact@v6
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: production-assets
           path: packages/web/dist
@@ -46,7 +47,7 @@ jobs:
       - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium webkit
       - run: pnpm --filter @bloomnote/web e2e
       - uses: actions/upload-artifact@v6
-        if: always()
+        if: failure()
         with:
           name: browser-results
           path: packages/web/test-results
