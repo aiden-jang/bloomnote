@@ -28,12 +28,16 @@ or real notes were used.
 
 ## Evidence
 
-The final `pnpm run verify` passed: 269 web tests, 116 API tests, seven repository
+The final `pnpm run verify` passed: 269 web tests, 116 API tests, ten repository
 guard tests and 74 Chromium/WebKit browser checks. Types, lint, formatting, CSS,
 documentation, unused-code checks, security audit, build and bundle reporting
 also passed. The dependency audit reported no known vulnerabilities.
-The mobile scrolling and generation-error checks also passed five consecutive
-WebKit runs before that final suite.
+The scrolling regression observes late native scroll requests with its clock
+paused before typing. It fails in both engines when the focus cleanup is removed.
+The navigation fixture receives real local HTTP requests and pins its proxy to
+the configured loopback frontend. Destination tests reproduced the original
+forwarding issue and now reject foreign origins, malformed targets and nonlocal
+frontend configuration.
 
 Regressions reproduced the original session race, false sign-out, silent removal,
 lost removal on navigation, silent library sharing failures, delayed mobile focus scrolling, unsafe shell caching,

@@ -56,7 +56,7 @@ and interaction choices.
 
 ### Signed out and unreachable are different answers
 
-The account routes resolve the session through `resolveSession`, which separates "no valid
+The protected account routes resolve the session through `resolveSession`, which separates "no valid
 session" from "could not reach the auth service". The first is a 401, the second a 503 with a
 `Retry-After`. Answering 401 for an outage tells a signed-in caller they are signed out, and the
 clients act on that: `claimGardens` used to read any failure as "claimed nothing" while its caller

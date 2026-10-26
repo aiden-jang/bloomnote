@@ -3,17 +3,25 @@ import { expect, test } from '@playwright/test'
 test('leaving the note keeps the next control steady after the keyboard delay', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.clock.install()
+  await page.clock.install({ time: new Date('2026-10-26T12:00:00Z') })
+  await page.addInitScript(() => {
+    const scrollIntoView = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = function (options) {
+      if (this.id === 'note' && document.activeElement !== this)
+        document.documentElement.dataset.lateNoteScroll = 'true'
+      scrollIntoView.call(this, options)
+    }
+  })
   await page.route('**/api/me', (route) => route.fulfill({ json: { user: null } }))
   await page.goto('/')
+  await page.evaluate(() => document.fonts.ready)
+  await page.clock.pauseAt(new Date('2026-10-26T12:01:00Z'))
   await page.getByLabel('your note', { exact: true }).fill('Thanks for the soup and company.')
   await page.getByLabel('to', { exact: true }).fill('Sam')
   const grow = page.getByRole('button', { name: 'grow their garden', exact: true })
   await grow.scrollIntoViewIfNeeded()
-  const before = (await grow.boundingBox())!
   await page.clock.runFor(1000)
-  const after = (await grow.boundingBox())!
-  expect(Math.abs(after.y - before.y), 'leaving the note must cancel its delayed scrolling').toBeLessThan(2)
+  await expect(page.locator('html')).not.toHaveAttribute('data-late-note-scroll', 'true')
 })
 
 test('update discovery keeps the note intact and can be dismissed', async ({ page }) => {
