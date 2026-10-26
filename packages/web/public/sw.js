@@ -2,9 +2,8 @@
 // bloomnote's API lives under /api/*, so that traffic always goes to the
 // network and is never cached (garden reads/writes must stay fresh).
 
-// Bump this on any sw.js change: the activate handler deletes every cache that isn't the current
-// one, so a version bump purges stale entries on update.
-const CACHE = 'bloomnote-v2';
+// A new cache also clears private navigation metadata saved by older shells.
+const CACHE = 'bloomnote-v3';
 const SHELL = '/';
 
 self.addEventListener('install', (event) => {
@@ -24,18 +23,19 @@ self.addEventListener('fetch', (event) => {
   if (request.cache === 'no-store') return;
   const url = new URL(request.url);
 
-  // Never cache API traffic.
-  if (url.pathname.startsWith('/api')) return;
+  if (url.origin !== self.location.origin) return;
+  if (/^\/(?:api|og)(?:\/|$)/.test(url.pathname)) return;
   if (request.method !== 'GET') return;
 
-  // Navigations: network first, and refresh the cached shell so an offline return visit gets the
-  // most recent shell instead of the one frozen at first install.
+  // Only the public homepage can replace the offline shell; gift HTML carries private metadata.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(SHELL, copy));
+          if (url.pathname === SHELL && res.ok && res.headers.get('content-type')?.includes('text/html')) {
+            const copy = res.clone();
+            event.waitUntil(caches.open(CACHE).then((c) => c.put(SHELL, copy)));
+          }
           return res;
         })
         .catch(() => caches.match(SHELL)),
@@ -43,16 +43,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache first, fill the cache on miss.
-  event.respondWith(
-    caches.match(request).then(
-      (hit) =>
-        hit ||
-        fetch(request).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(request, copy));
-          return res;
-        }),
-    ),
-  );
+  const immutable = url.pathname.startsWith('/assets/') && /-[\w-]{8,}\./.test(url.pathname);
+  const fromNetwork = () => fetch(request, immutable ? undefined : { cache: 'no-cache' }).then((res) => {
+    if (res.ok) {
+      const copy = res.clone();
+      event.waitUntil(caches.open(CACHE).then((c) => c.put(request, copy)));
+    }
+    return res;
+  });
+  event.respondWith(immutable
+    ? caches.match(request).then((hit) => hit || fromNetwork())
+    : fromNetwork().catch(() => caches.match(request)));
 });

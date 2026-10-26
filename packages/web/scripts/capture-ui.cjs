@@ -2,6 +2,7 @@ const { chromium } = require(process.env.BLOOMNOTE_PLAYWRIGHT_MODULE || '../node
 const path = require('node:path')
 const fs = require('node:fs/promises')
 const assert = require('node:assert/strict')
+const baseUrl = process.env.BLOOMNOTE_UI_URL ?? 'http://localhost:32100'
 const flowers = ['Dahlia', 'Cosmos', 'Sunflower'].map((name, i) => ({
   name,
   meaning: ['For showing up, every time.', 'For the very specific jokes.', 'For the brighter days.'][i],
@@ -52,6 +53,9 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
       'recipient-open',
       'scheduled',
       'library',
+      'session-error',
+      'removal-error',
+      'library-share-error',
       'empty',
       'privacy',
     ]) {
@@ -65,15 +69,27 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
         })
         const errors = []
         const page = await context.newPage()
+        if (name === 'removal-error') await page.clock.install()
+        if (name === 'library-share-error')
+          await page.addInitScript(() => {
+            Object.defineProperty(navigator, 'share', { value: undefined, configurable: true })
+            Object.defineProperty(navigator, 'clipboard', {
+              value: { writeText: () => Promise.reject(new Error('Blocked')) },
+              configurable: true,
+            })
+          })
         page.on('pageerror', (e) => errors.push(e.message))
         await page.route('**/api/**', (route) => {
           const p = new URL(route.request().url()).pathname
+          if (p === '/api/me' && name === 'session-error') return route.fulfill({ status: 503 })
+          if (p === '/api/garden/AbCdEf' && route.request().method() === 'DELETE')
+            return route.fulfill({ status: 503 })
           if (!p.startsWith('/api/')) return route.continue()
           if (p === '/api/me')
             return route.fulfill({
               json: {
                 user:
-                  name === 'library'
+                  name.startsWith('library') || name === 'removal-error'
                     ? { id: 'preview', displayName: 'Alex', email: 'preview@example.test' }
                     : null,
               },
@@ -101,14 +117,17 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
           })
         })
         const url =
-          name === 'library' || name === 'empty'
+          name.startsWith('library') ||
+          name === 'empty' ||
+          name === 'session-error' ||
+          name === 'removal-error'
             ? '/mine'
             : name.startsWith('recipient') || name === 'scheduled'
               ? '/g/AbCdEf'
               : name === 'privacy'
                 ? '/privacy'
                 : '/'
-        await page.goto('http://127.0.0.1:32112' + url)
+        await page.goto(new URL(url, baseUrl).href)
         if (name === 'composer' || name === 'draft' || name === 'generated' || name === 'growing') {
           await page.getByLabel('your note', { exact: true }).waitFor()
           if (name === 'draft' || name === 'generated' || name === 'growing') {
@@ -136,7 +155,20 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
             return text && Number(getComputedStyle(text.parentElement).opacity) > 0.99
           }, garden.message)
         }
-        if (name === 'library') await page.getByRole('link', { name: /Sam/ }).first().waitFor()
+        if (name.startsWith('library') || name === 'removal-error')
+          await page.getByRole('link', { name: /^for Sam/ }).waitFor()
+        if (name === 'removal-error') {
+          await page
+            .getByRole('button', { name: 'remove garden for Sam from your gardens', exact: true })
+            .click()
+          await page.clock.fastForward(6001)
+          await page.getByRole('alert').waitFor()
+        }
+        if (name === 'library-share-error') {
+          await page.getByRole('button', { name: 'Share garden for Sam', exact: true }).click()
+          await page.getByRole('alert').waitFor()
+        }
+        if (name === 'session-error') await page.getByRole('alert').waitFor()
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(1600)
         await page.evaluate(() => window.scrollTo(0, 0))

@@ -13,7 +13,7 @@ export interface GardenSummary {
 }
 
 export async function fetchMine(): Promise<{ sent: GardenSummary[]; received: GardenSummary[] }> {
-  const r = await fetch('/api/mine', { credentials: 'include' })
+  const r = await fetch('/api/mine', { credentials: 'include', signal: AbortSignal.timeout(10_000) })
   if (!r.ok) throw new Error('Could not load your gardens.')
   return (await r.json()) as { sent: GardenSummary[]; received: GardenSummary[] }
 }
@@ -26,6 +26,7 @@ export async function claimGardens(ids: string[]): Promise<number | null> {
     const r = await fetch('/api/mine/claim', {
       method: 'POST',
       credentials: 'include',
+      signal: AbortSignal.timeout(10_000),
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ ids }),
     })
@@ -47,5 +48,11 @@ export async function recordReceived(id: string): Promise<boolean> {
 }
 
 export async function removeFromAccount(id: string): Promise<void> {
-  await fetch(`/api/garden/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => undefined)
+  const response = await fetch(`/api/garden/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    keepalive: true,
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (!response.ok) throw new Error('Could not remove the garden.')
 }

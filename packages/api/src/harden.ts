@@ -17,9 +17,9 @@ export const DEFAULT_CSP = [
   'upgrade-insecure-requests',
 ].join('; ')
 
-/** Disable device APIs no app uses. wherever overrides this to allow geolocation. */
+/** Optional voice keepsakes need a same-origin microphone; other device APIs stay disabled. */
 export const DEFAULT_PERMISSIONS_POLICY =
-  'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()'
+  'camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()'
 
 export interface SecurityHeaderOptions {
   csp?: string

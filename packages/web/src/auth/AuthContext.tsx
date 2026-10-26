@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { loginUrl, logoutUrl } from '@aidenjang/auth-client'
 
 // Identity comes from the same-origin /api/me, never a cross-origin fetch. In dev the auth
@@ -17,6 +26,8 @@ export interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
+  sessionError: boolean
+  retrySession: () => Promise<void>
   login: (returnTo?: string) => void
   logout: (returnTo?: string) => void
   accountUrl: string
@@ -27,19 +38,43 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sessionError, setSessionError] = useState(false)
+  const request = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    fetch('/api/me', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d: { user: AuthUser | null }) => setUser(d.user))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
+  const retrySession = useCallback(async () => {
+    request.current?.abort()
+    const controller = new AbortController()
+    request.current = controller
+    setLoading(true)
+    setSessionError(false)
+    try {
+      const response = await fetch('/api/me', {
+        credentials: 'include',
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]),
+      })
+      if (!response.ok) throw new Error('Session unavailable')
+      const data = (await response.json()) as { user: AuthUser | null }
+      if (request.current === controller) setUser(data.user)
+    } catch {
+      if (request.current === controller && !controller.signal.aborted) setSessionError(true)
+    } finally {
+      if (request.current === controller) setLoading(false)
+    }
   }, [])
+  useEffect(() => {
+    void retrySession()
+    return () => {
+      request.current?.abort()
+      request.current = null
+    }
+  }, [retrySession])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       loading,
+      sessionError,
+      retrySession,
       login: (returnTo?: string) => {
         window.location.assign(loginUrl(AUTH_ORIGIN, returnTo ?? window.location.href))
       },
@@ -48,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
       },
       accountUrl: new URL('/account', AUTH_ORIGIN).toString(),
     }),
-    [user, loading],
+    [user, loading, sessionError, retrySession],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

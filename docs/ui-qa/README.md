@@ -1,5 +1,8 @@
 # Bloomnote UI verification
 
+The [October 26 review](october-26/README.md) covers account recovery, library actions,
+offline privacy, voice-resource cleanup and repository maintenance.
+
 The [October 16 Safari flow review](flow-audit-oct16/README.md) records the current cross-browser
 journeys and sharing recovery.
 
@@ -10,7 +13,8 @@ paper card; the library becomes a two-column directory on desktop.
 `packages/web/scripts/capture-ui.cjs` uses intercepted responses in isolated browser contexts.
 It captures the fresh composer, a draft, a generated garden and sharing controls, growth feedback, the recipient
 before and after opening, a scheduled garden, the signed-in library, an empty library and privacy.
-No fixture enters production storage. The preview runs on port 32112. Optional
+No fixture enters production storage. The preview defaults to the web app on port 32100;
+`BLOOMNOTE_UI_URL` selects another running preview. Optional
 `BLOOMNOTE_BROWSER_PATH` and `BLOOMNOTE_PLAYWRIGHT_MODULE` select a local browser and runtime.
 
 Desktop evidence uses 1440 × 1000 and phone evidence uses 390 × 844. Additional overflow checks

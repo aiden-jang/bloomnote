@@ -13,7 +13,8 @@ each with a meaning, and gives you a link that blooms when they open it.
 - Send its short link, save an image, or choose different flowers.
 - The recipient opens the garden, reads your words, explores the flowers, and can grow one back.
 - Add a little secret or schedule the reveal for a later moment.
-- Keep gardens on this device, or sign in to sync your sent and received collections.
+- Keep gardens on this device, or sign in to sync your sent and received collections. Failed
+  account removals restore the entry; sharing failures keep a selectable link available.
 
 An account is optional. Shared sign-in comes from the [platform auth service](https://github.com/aiden-jang/auth).
 The UI uses React and SVG; a Hono Worker serves the API and built web app together. Gemini designs
@@ -92,6 +93,7 @@ empty, and sharing failures leave the garden and its link available.
 - [Deployment and recovery](DEPLOY.md)
 - [UI design](DESIGN.md) and [visual verification](docs/ui-qa/README.md)
 - [Engineering conventions](CONVENTIONS.md)
+- [Visitor walkthrough](docs/visitor-review.md)
 - [Security reporting](.github/SECURITY.md)
 
 Released under the [MIT license](LICENSE).

@@ -42,9 +42,12 @@ async function withStore<T>(
     try {
       const tx = db.transaction(STORE, mode)
       const request = run(tx.objectStore(STORE))
-      // A `get` on a missing key succeeds with undefined, and the cast below would pass that off as a
-      // VoiceMemory. The declared type says null.
-      request.onsuccess = () => resolve((request.result ?? null) as T | null)
+      let value: T | null = null
+      // A successful request can still be rolled back by its transaction.
+      request.onsuccess = () => {
+        value = (request.result ?? null) as T | null
+      }
+      tx.oncomplete = () => resolve(value)
       request.onerror = () => resolve(null)
       tx.onabort = () => resolve(null)
     } catch {
@@ -94,27 +97,39 @@ export interface Recording {
   stream: MediaStream
 }
 
-/** Throws only for a refused microphone, which is a normal outcome, not an error worth showing. */
+/** Request microphone access and start a capped recording; callers handle denial or startup failure. */
 export async function startRecording(maxSeconds = MAX_SECONDS): Promise<Recording> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  const mimeType = bestMimeType()
-  const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
-  const chunks: Blob[] = []
-  const startedAt = Date.now()
-  recorder.ondataavailable = (event) => {
-    if (event.data.size > 0) chunks.push(event.data)
-  }
-  recorder.start()
-
-  // Enforced here rather than trusted to the UI, so a forgotten tab cannot record forever.
-  const cap = window.setTimeout(() => {
-    if (recorder.state === 'recording') recorder.stop()
-  }, maxSeconds * 1000)
-
+  let cap: ReturnType<typeof setTimeout> | null = null
+  let released = false
   const release = (): void => {
-    window.clearTimeout(cap)
+    if (released) return
+    released = true
+    if (cap !== null) window.clearTimeout(cap)
     for (const track of stream.getTracks()) track.stop()
   }
+  let recorder: MediaRecorder
+  const chunks: Blob[] = []
+  const startedAt = Date.now()
+  let mimeType: string | undefined
+  try {
+    mimeType = bestMimeType()
+    recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data)
+    }
+    recorder.addEventListener('stop', release, { once: true })
+    recorder.addEventListener('error', release, { once: true })
+    recorder.start()
+  } catch (error) {
+    release()
+    throw error
+  }
+
+  // Enforced here rather than trusted to the UI, so a forgotten tab cannot record forever.
+  cap = window.setTimeout(() => {
+    if (recorder.state === 'recording') recorder.stop()
+  }, maxSeconds * 1000)
 
   return {
     stream,

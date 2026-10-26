@@ -6,7 +6,7 @@ interface Section {
   body: string
 }
 
-const UPDATED = 'September 7, 2026'
+const UPDATED = 'October 26, 2026'
 
 const PRIVACY: Section[] = [
   {
@@ -15,15 +15,15 @@ const PRIVACY: Section[] = [
   },
   {
     heading: 'where it goes',
-    body: 'Your note is processed by Google (Gemini) to generate the flowers; send only what you are comfortable sharing with that service. The garden is stored by Cloudflare (KV) under an unguessable short id, so anyone with the link can open it. We do not sell your data, and there are no advertising trackers. We count aggregate usage events (a garden generated, a card downloaded, a link shared) along with the occasion, mood and number of flowers, never your note text, and no cookies are involved.',
+    body: 'Your note is processed by Google (Gemini) to generate the flowers; send only what you are comfortable sharing with that service. The garden is stored by Cloudflare (KV) under a random short id, so anyone with the link can open it. We do not sell your data, and there are no advertising trackers. Aggregate traffic and feature events use fixed labels such as the page type, occasion, mood and number of flowers. Notes, names, garden links and garden IDs are excluded from these analytics.',
   },
   {
     heading: 'accounts are optional',
-    body: 'bloomnote works fully signed out. Signing in (through the shared aidenjang sign-in) only adds a synced archive of the gardens you have sent and received, tied to your account so you can find them again across devices.',
+    body: 'bloomnote works fully signed out. Optional sign-in through Accounts uses a session cookie and adds a synced archive of sent and received gardens. Anonymous library entries, pinned gardens and flower memories stay on this device; working drafts use tab storage. Optional voice memories require microphone permission and stay in this browser’s local database, separate from the shared garden.',
   },
   {
     heading: 'keeping and deleting',
-    body: 'A garden stays until it is removed. To delete a garden, or your account and everything attached to it, email privacy@aidenjang.com and it is done. You can also ask for a copy of what we hold.',
+    body: 'Garden links do not expire. Removing an entry from your library removes that listing, while its shared garden link keeps working. Deleting an Accounts identity does not automatically delete Bloomnote’s stored gardens or data on this device. You can clear this browser’s local data, or contact privacy@aidenjang.com to request a copy or removal of stored garden data.',
   },
   {
     heading: 'the usual',

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { claimGardens } from './account'
+import { claimGardens, removeFromAccount } from './account'
 
 /*
  * The caller deletes its on-device copy of every id it hands over, so "claimed nothing" and
@@ -40,5 +40,26 @@ describe('claimGardens', () => {
     vi.stubGlobal('fetch', fetchSpy)
     expect(await claimGardens([])).toBe(0)
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('removing an account garden', () => {
+  it('confirms a successful removal', async () => {
+    respond({ status: 200 }, { ok: true })
+    await expect(removeFromAccount('AbCdEf')).resolves.toBeUndefined()
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/garden/AbCdEf',
+      expect.objectContaining({ method: 'DELETE', credentials: 'include' }),
+    )
+  })
+
+  it.each([401, 429, 503])('reports a refused removal (%i)', async (status) => {
+    respond({ status })
+    await expect(removeFromAccount('AbCdEf')).rejects.toThrow('Could not remove the garden.')
+  })
+
+  it('reports a request that never reached the account', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Offline')))
+    await expect(removeFromAccount('AbCdEf')).rejects.toThrow()
   })
 })

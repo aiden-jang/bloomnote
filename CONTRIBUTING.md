@@ -6,7 +6,8 @@ project’s engineering rules and boundaries.
 
 ## Changes and verification
 
-Use a branch and a pull request. Commit messages follow Conventional Commits without a scope:
+The owner may commit verified changes directly to `main`. Contributions can use a branch and a
+pull request. Commit messages follow Conventional Commits without a scope:
 `fix: keep the note after a failed save`, `refactor: separate garden layouts`, or `docs: clarify local setup`.
 Run `pnpm run verify` before publishing the change. Local browser journeys own their servers,
 so stop manually running development servers first.
@@ -34,6 +35,6 @@ Garden links are access tokens. Do not expose one garden’s ID through another,
 names, garden IDs, or raw model output in product analytics. Account mutations require a valid
 session. Keep atomic limits in the Durable Object and preserve the write-once link-preview image.
 
-The repository automatically deploys a verified merge to `main`. See [DEPLOY.md](DEPLOY.md) for
+The repository automatically deploys verified updates to `main`. See [DEPLOY.md](DEPLOY.md) for
 rollback and incident recovery. Report sensitive vulnerabilities privately through the
 [security policy](.github/SECURITY.md), rather than a public issue.

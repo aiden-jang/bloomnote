@@ -32,6 +32,7 @@ export default function GardenRow({
   const { id, from, to, occasion, createdAt, unlockAt, receivedAt, swatches } = record
   const [imageStatus, setImageStatus] = useState<'saving' | 'shared' | 'downloaded' | null>(null)
   const [shareStatus, setShareStatus] = useState<'sharing' | 'shared' | 'copied' | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   // The list summary only has colour swatches, not full flower specs, so the garden must be fetched
   // before its share image can be built. Prefetch on interaction-intent and cache the promise, so
@@ -47,6 +48,7 @@ export default function GardenRow({
   }
   const handleSaveImage = async (): Promise<void> => {
     if (imageStatus) return
+    setActionError(null)
     setImageStatus('saving')
     try {
       const data = await (gardenRef.current ?? (gardenRef.current = fetchGarden(id)))
@@ -60,17 +62,20 @@ export default function GardenRow({
         if (result === 'downloaded') trackCardDownloaded('mine', 'square')
         window.setTimeout(() => setImageStatus(null), 2500)
       } else {
+        setActionError('couldn’t load this garden. Open its link and try again.')
         setImageStatus(null)
       }
     } catch {
       // Drop the cached fetch so the next tap retries rather than re-awaiting a rejected promise.
       gardenRef.current = null
+      setActionError('couldn’t save the image. Try again, or use the garden link below.')
       setImageStatus(null)
     }
   }
 
   const handleShare = async (): Promise<void> => {
     if (shareStatus) return
+    setActionError(null)
     setShareStatus('sharing')
     const url = buildShareUrl(id)
     const shareData: ShareData = {
@@ -97,6 +102,7 @@ export default function GardenRow({
     } catch (err) {
       setShareStatus(null)
       if (err instanceof Error && err.name === 'AbortError') return
+      setActionError('couldn’t share. Select and copy the garden link below, or try again.')
     }
   }
 
@@ -198,6 +204,17 @@ export default function GardenRow({
           </button>
         )}
       </div>
+      {actionError && (
+        <div className={styles.cardError} role="alert">
+          <p>{actionError}</p>
+          <input
+            readOnly
+            value={buildShareUrl(id)}
+            aria-label={`Garden link ${cardLabel}`}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </div>
+      )}
     </li>
   )
 }

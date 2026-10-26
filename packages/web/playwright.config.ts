@@ -28,11 +28,11 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // The Worker. AUTH_URL points at the local auth service, which is not running here; the
-      // app is anonymous-first, so /api/me simply resolves to a signed-out user and every flow
-      // this suite covers works signed out.
+      // Accounts is not running here. Garden creation preserves its anonymous fallback;
+      // account recovery journeys intercept session responses explicitly.
       // Wrangler validates its static assets directory even though Vite serves these journeys.
-      command: 'pnpm --filter @bloomnote/web build && pnpm --filter @bloomnote/api dev',
+      command:
+        'pnpm --filter @bloomnote/web build && pnpm --filter @bloomnote/api exec wrangler dev --var AUTH_URL:http://localhost:34100 --persist-to .wrangler/e2e-state',
       url: 'http://localhost:32200/health',
       reuseExistingServer: false,
       timeout: 120_000,

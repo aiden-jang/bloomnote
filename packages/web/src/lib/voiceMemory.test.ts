@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canRecord, MAX_SECONDS, saveVoiceMemory, loadVoiceMemory, voiceMemoryIds } from './voiceMemory'
+import {
+  canRecord,
+  MAX_SECONDS,
+  saveVoiceMemory,
+  loadVoiceMemory,
+  voiceMemoryIds,
+  startRecording,
+} from './voiceMemory'
 
 /*
  * The storage layer has no browser here, which is exactly the case worth testing.
@@ -10,6 +17,7 @@ import { canRecord, MAX_SECONDS, saveVoiceMemory, loadVoiceMemory, voiceMemoryId
  */
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -92,4 +100,106 @@ describe('the recording cap', () => {
     expect(MAX_SECONDS).toBeGreaterThan(15)
     expect(MAX_SECONDS).toBeLessThanOrEqual(120)
   })
+
+  it('releases the microphone when the cap stops recording without another user action', async () => {
+    vi.useFakeTimers()
+    const stop = vi.fn()
+    vi.stubGlobal('window', { setTimeout, clearTimeout })
+    vi.stubGlobal('navigator', {
+      mediaDevices: { getUserMedia: async () => ({ getTracks: () => [{ stop }] }) },
+    })
+    vi.stubGlobal(
+      'MediaRecorder',
+      class extends EventTarget {
+        state = 'inactive'
+        static isTypeSupported() {
+          return true
+        }
+        start() {
+          this.state = 'recording'
+        }
+        stop() {
+          this.state = 'inactive'
+          this.dispatchEvent(new Event('stop'))
+        }
+      },
+    )
+    const recording = await startRecording(2)
+    vi.advanceTimersByTime(2000)
+    expect(stop).toHaveBeenCalledOnce()
+    await recording.stop()
+    expect(stop).toHaveBeenCalledOnce()
+  })
+
+  it('releases the microphone if the recorder cannot start', async () => {
+    const stop = vi.fn()
+    vi.stubGlobal('navigator', {
+      mediaDevices: { getUserMedia: async () => ({ getTracks: () => [{ stop }] }) },
+    })
+    vi.stubGlobal(
+      'MediaRecorder',
+      class extends EventTarget {
+        static isTypeSupported() {
+          return true
+        }
+        start() {
+          throw new Error('Recorder unavailable')
+        }
+      },
+    )
+    await expect(startRecording()).rejects.toThrow('Recorder unavailable')
+    expect(stop).toHaveBeenCalledOnce()
+  })
+})
+
+it('does not report a voice memory saved when its transaction aborts after the write', async () => {
+  const request: Record<string, unknown> = { result: 'e1' }
+  const tx: Record<string, unknown> = { objectStore: () => ({ put: () => request }) }
+  const opening: Record<string, unknown> = { result: { transaction: () => tx, close: () => {} } }
+  vi.stubGlobal('indexedDB', {
+    open: () => {
+      queueMicrotask(() => (opening.onsuccess as () => void)())
+      return opening
+    },
+  })
+  const saving = saveVoiceMemory({
+    entryId: 'e1',
+    blob: new Blob(['x']),
+    seconds: 1,
+    savedAt: new Date().toISOString(),
+  })
+  await Promise.resolve()
+  await Promise.resolve()
+  ;(request.onsuccess as () => void)()
+  ;(tx.onabort as () => void)()
+  await expect(saving).resolves.toBe(false)
+})
+
+it('confirms a voice memory only after its transaction commits', async () => {
+  const request: Record<string, unknown> = { result: 'e1' }
+  const tx: Record<string, unknown> = { objectStore: () => ({ put: () => request }) }
+  const opening: Record<string, unknown> = { result: { transaction: () => tx, close: () => {} } }
+  vi.stubGlobal('indexedDB', {
+    open: () => {
+      queueMicrotask(() => (opening.onsuccess as () => void)())
+      return opening
+    },
+  })
+  let completed = false
+  const saving = saveVoiceMemory({
+    entryId: 'e1',
+    blob: new Blob(['x']),
+    seconds: 1,
+    savedAt: new Date().toISOString(),
+  }).then((saved) => {
+    completed = true
+    return saved
+  })
+  await Promise.resolve()
+  await Promise.resolve()
+  ;(request.onsuccess as () => void)()
+  await Promise.resolve()
+  expect(completed).toBe(false)
+  ;(tx.oncomplete as () => void)()
+  await expect(saving).resolves.toBe(true)
 })

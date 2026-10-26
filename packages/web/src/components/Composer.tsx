@@ -22,6 +22,7 @@ import { MOODS } from '../lib/moods'
 import { OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
 import { ritual } from '../lib/rituals'
+import { prefersReducedMotion } from '../lib/motion'
 import styles from './Composer.module.css'
 import { disabledReasonFor, scheduleErrorFor } from '../lib/composerHelpers'
 import { useComposerDraft } from '../lib/useComposerDraft'
@@ -77,13 +78,22 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   useEffect(() => {
     const ta = messageRef.current
     if (!ta) return
+    let timer: number | undefined
+    const cancel = () => window.clearTimeout(timer)
     const onFocus = () => {
-      window.setTimeout(() => {
-        ta.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      cancel()
+      timer = window.setTimeout(() => {
+        if (document.activeElement !== ta) return
+        ta.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
       }, 300)
     }
     ta.addEventListener('focus', onFocus)
-    return () => ta.removeEventListener('focus', onFocus)
+    ta.addEventListener('blur', cancel)
+    return () => {
+      cancel()
+      ta.removeEventListener('focus', onFocus)
+      ta.removeEventListener('blur', cancel)
+    }
   }, [])
 
   useEffect(() => {

@@ -79,9 +79,8 @@ forty parallel requests once passed a limit of five, because every one of them r
 count. Sequential callers were limited correctly, which is why no test caught it.
 
 The two guards fail in opposite directions and that is deliberate. Per-IP limits fail open to preserve anonymous access during a counter outage. The daily spend cap fails closed, since it is the
-only bound on what Gemini costs. `PER_IP_PER_MINUTE` is 5 and `DAILY_CAP` is 15 because the free
-tier for this key allows 5 requests a minute and 20 a day, both per project rather than per
-caller.
+only bound on what Gemini costs. `PER_IP_PER_MINUTE` is 5 and `DAILY_CAP` is 15. These are local
+budgets; check the provider console's current project quotas before changing them.
 
 ## Deliberate oddities
 

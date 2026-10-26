@@ -48,14 +48,14 @@ const nameLink: CSSProperties = {
 }
 
 export function AuthNav(): ReactNode {
-  const { user, loading, login, logout, accountUrl } = useAuth()
+  const { user, loading, sessionError, retrySession, login, logout, accountUrl } = useAuth()
   if (loading) return null
 
   if (!user) {
     return (
       <div style={wrap} data-screen-chrome="">
-        <button type="button" style={link} onClick={() => login()}>
-          sign in
+        <button type="button" style={link} onClick={() => (sessionError ? void retrySession() : login())}>
+          {sessionError ? 'retry sign-in check' : 'sign in'}
         </button>
       </div>
     )

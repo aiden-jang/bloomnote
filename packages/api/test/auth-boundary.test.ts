@@ -52,3 +52,21 @@ describe('the authenticated routes', () => {
     expect(await res.json()).toEqual({ sent: [], received: [] })
   })
 })
+
+describe('checking the session', () => {
+  it.each([500, 503])('reports an Accounts %i as retryable, rather than signed out', async (status) => {
+    authReplies(status, { error: 'down' })
+    const res = await authed('/api/me')
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({ error: 'AUTH_UNAVAILABLE' })
+    expect(res.headers.get('retry-after')).toBe('30')
+    expect(res.headers.get('cache-control')).toContain('no-store')
+  })
+
+  it('still recognizes an invalid session as signed out', async () => {
+    authReplies(401, {})
+    const res = await authed('/api/me')
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ user: null })
+  })
+})

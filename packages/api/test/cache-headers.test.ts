@@ -21,6 +21,14 @@ const GARDEN = {
   createdAt: '2026-07-01T00:00:00.000Z',
 }
 
+it('permits optional voice recording on this origin while keeping other device APIs disabled', async () => {
+  const response = await SELF.fetch('https://x/health')
+  const policy = response.headers.get('permissions-policy')
+  expect(policy).toContain('microphone=(self)')
+  expect(policy).toContain('camera=()')
+  expect(policy).toContain('geolocation=()')
+})
+
 /**
  * Two things at once, and the second is the reason this file exists.
  *

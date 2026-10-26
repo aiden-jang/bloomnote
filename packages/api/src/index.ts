@@ -102,9 +102,8 @@ app.all('/api/analytics', (c) => handleAnalytics(c.req.raw, c.env))
 app.get('/health', (c) => c.json({ status: 'ok', service: 'bloomnote' }))
 
 app.get('/api/me', async (c) => {
-  // An unreachable auth service reads as signed out here on purpose: rendering the anonymous app
-  // is the honest degraded state. The routes that write to an account tell the two apart.
   const session = await resolveSession(c.req.raw, c.env.AUTH_URL)
+  if (session.state === 'unavailable') return refuse(c, session)
   const user = session.state === 'signed-in' ? session.user : null
   return c.json({ user: user ? { id: user.id, email: user.email, displayName: user.displayName } : null })
 })

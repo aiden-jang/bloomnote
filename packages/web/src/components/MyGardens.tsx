@@ -3,48 +3,26 @@ import Shell from './GardenLibraryShell'
 import GardenRow from './GardenRow'
 import LibraryTabs from './LibraryTabs'
 import { GardenImpactCard, MemoryLane } from './GardenLibraryHighlights'
-import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { loadSentGardens, removeSentGarden, type MineRecord } from '../lib/mine'
-import { claimGardens, fetchMine, removeFromAccount, type GardenSummary } from '../lib/account'
+import { useAccountGardens } from '../lib/useAccountGardens'
 import { useGardenLibrary, type GardenLibrary } from '../lib/useGardenLibrary'
 import { useGardenResponses } from '../lib/useGardenResponses'
 import styles from './MyGardens.module.css'
 import type { CardData, GardenSort, Tab } from '../lib/gardenList'
 
-const undoToastStyle: CSSProperties = {
-  position: 'fixed',
-  bottom: 20,
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 60,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 12,
-  padding: '9px 10px 9px 16px',
-  borderRadius: 999,
-  background: 'rgba(250, 246, 238, 0.95)',
-  border: '1px solid var(--green-pale, #e2e8dc)',
-  backdropFilter: 'blur(6px)',
-  WebkitBackdropFilter: 'blur(6px)',
-  color: 'var(--color-ink-muted, #6b6963)',
-  fontSize: '0.85rem',
-  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)',
-}
-const undoButtonStyle: CSSProperties = {
-  border: 'none',
-  background: 'none',
-  cursor: 'pointer',
-  font: 'inherit',
-  fontWeight: 600,
-  padding: '2px 8px',
-  color: 'var(--color-accent, #4a7c3f)',
-}
-
 export default function MyGardens() {
   const { user, loading } = useAuth()
 
-  if (loading) return <Shell subtitle="">{null}</Shell>
+  if (loading)
+    return (
+      <Shell subtitle="">
+        <p className={styles.emptyText} role="status">
+          checking your sign-in…
+        </p>
+      </Shell>
+    )
   return user ? <AccountGardens /> : <LocalGardens />
 }
 
@@ -98,109 +76,27 @@ function LibraryTools({
 }
 
 function AccountGardens() {
-  const [sent, setSent] = useState<GardenSummary[]>([])
-  const [received, setReceived] = useState<GardenSummary[]>([])
+  const {
+    sent,
+    received,
+    busy,
+    loadError,
+    pending,
+    removalError,
+    remove,
+    undo,
+    retryLoad,
+    dismissRemovalError,
+  } = useAccountGardens()
   const [tab, setTab] = useState<Tab>(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'received'
       ? 'received'
       : 'sent',
   )
-  const [busy, setBusy] = useState(true)
-  const [loadError, setLoadError] = useState(false)
-  const [retry, setRetry] = useState(0)
-
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      setBusy(true)
-      setLoadError(false)
-      const localIds = loadSentGardens().map((r) => r.id)
-      if (localIds.length > 0) {
-        const claimed = await claimGardens(localIds)
-        if (claimed !== null) localIds.forEach(removeSentGarden)
-      }
-      try {
-        const mine = await fetchMine()
-        if (cancelled) return
-        setSent(mine.sent)
-        setReceived(mine.received)
-      } catch {
-        if (!cancelled) setLoadError(true)
-      } finally {
-        if (!cancelled) setBusy(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [retry])
-
-  // Delayed commit so a removal can be undone: drop the row now, fire the server DELETE after a
-  // grace window. Undo cancels the pending delete, so nothing was ever deleted.
-  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingCommit = useRef<(() => void) | null>(null)
   const list = tab === 'sent' ? sent : received
   const { waters, feelings } = useGardenResponses(list.map((g) => g.id))
   const library = useGardenLibrary(list, waters)
   const { query, setQuery, pinnedOnly, setPinnedOnly, pinned, togglePinned, filtered } = library
-
-  const [pending, setPending] = useState<{ item: GardenSummary; list: Tab; index: number } | null>(null)
-
-  const flushPending = () => {
-    if (undoTimer.current) {
-      clearTimeout(undoTimer.current)
-      undoTimer.current = null
-    }
-    if (pendingCommit.current) {
-      pendingCommit.current()
-      pendingCommit.current = null
-    }
-  }
-
-  const handleRemove = (id: string) => {
-    flushPending()
-    const si = sent.findIndex((g) => g.id === id)
-    const ri = si < 0 ? received.findIndex((g) => g.id === id) : -1
-    if (si >= 0) {
-      const item = sent[si]!
-      setSent((s) => s.filter((g) => g.id !== id))
-      setPending({ item, list: 'sent', index: si })
-    } else if (ri >= 0) {
-      const item = received[ri]!
-      setReceived((s) => s.filter((g) => g.id !== id))
-      setPending({ item, list: 'received', index: ri })
-    } else {
-      return
-    }
-    pendingCommit.current = () => void removeFromAccount(id)
-    undoTimer.current = setTimeout(() => {
-      pendingCommit.current?.()
-      pendingCommit.current = null
-      undoTimer.current = null
-      setPending(null)
-    }, 6000)
-  }
-
-  const handleUndo = () => {
-    if (undoTimer.current) {
-      clearTimeout(undoTimer.current)
-      undoTimer.current = null
-    }
-    pendingCommit.current = null
-    if (!pending) return
-    const { item, list, index } = pending
-    const reinsert = (arr: GardenSummary[]) => {
-      const next = [...arr]
-      next.splice(Math.min(index, next.length), 0, item)
-      return next
-    }
-    if (list === 'sent') setSent(reinsert)
-    else setReceived(reinsert)
-    setPending(null)
-  }
-
-  // Commit a still-pending removal if the view unmounts, honouring the user's intent.
-  useEffect(() => () => flushPending(), [])
 
   const switchTab = (nextTab: Tab) => {
     setTab(nextTab)
@@ -215,10 +111,18 @@ function AccountGardens() {
   return (
     <Shell subtitle="the gardens you've grown and kept, on every device.">
       {pending && (
-        <div style={undoToastStyle} role="status">
+        <div className={styles.undoToast} role="status">
           <span>removed</span>
-          <button type="button" onClick={handleUndo} style={undoButtonStyle}>
+          <button type="button" onClick={undo} className={styles.undoButton}>
             undo
+          </button>
+        </div>
+      )}
+      {removalError && (
+        <div className={styles.notice} role="alert">
+          <p>couldn’t remove that garden. It’s back in your library. Try removing it again.</p>
+          <button type="button" className={styles.emptyLink} onClick={dismissRemovalError}>
+            dismiss
           </button>
         </div>
       )}
@@ -243,7 +147,7 @@ function AccountGardens() {
         ) : loadError ? (
           <div className={styles.empty} role="alert">
             <p className={styles.emptyText}>couldn’t load your gardens. Your saved links are still there.</p>
-            <button type="button" className={styles.emptyLink} onClick={() => setRetry((n) => n + 1)}>
+            <button type="button" className={styles.emptyLink} onClick={retryLoad}>
               try again
             </button>
           </div>
@@ -285,7 +189,7 @@ function AccountGardens() {
                 feelings={feelings[r.id] ?? {}}
                 pinned={pinned.includes(r.id)}
                 onPin={() => togglePinned(r.id)}
-                onRemove={() => handleRemove(r.id)}
+                onRemove={() => remove(r.id)}
               />
             ))}
           </ul>
@@ -296,7 +200,7 @@ function AccountGardens() {
 }
 
 function LocalGardens() {
-  const { login } = useAuth()
+  const { login, sessionError, retrySession } = useAuth()
   const [records, setRecords] = useState<MineRecord[]>(() => loadSentGardens())
   const { waters, feelings } = useGardenResponses(records.map((r) => r.id))
   const library = useGardenLibrary(records, waters)
@@ -309,7 +213,15 @@ function LocalGardens() {
 
   return (
     <Shell subtitle="the gardens you've grown, saved on this device." hideBackLink={records.length === 0}>
-      {records.length > 0 && (
+      {sessionError && (
+        <div className={styles.notice} role="alert">
+          <p>couldn’t check your sign-in. Only the gardens saved on this device are shown.</p>
+          <button type="button" className={styles.emptyLink} onClick={() => void retrySession()}>
+            try again
+          </button>
+        </div>
+      )}
+      {!sessionError && records.length > 0 && (
         <p className={styles.emptyText}>
           <button type="button" className={styles.emptyLink} onClick={() => login()}>
             sign in

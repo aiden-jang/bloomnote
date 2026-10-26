@@ -25,3 +25,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+    groups:
+      actions:
+        patterns:
+          - '*'

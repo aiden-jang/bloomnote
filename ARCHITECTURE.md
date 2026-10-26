@@ -26,6 +26,12 @@ shown. Bloom, reveal, pointer, and scroll timers are cancelled when their owner 
 It has no dependency on journal storage.
 
 `MyGardens.tsx` presents account and device collections through shared filtering and row controls.
+`useAccountGardens.ts` owns loading, the removal Undo window and server confirmation. Failed
+removals restore their rows and explain recovery. A removal affects both account indexes if the
+same garden is in both collections; Undo restores both. Library share and image failures leave
+selectable links and retry controls.
+Pending removals flush on page navigation as well as component cleanup. The small DELETE uses
+keepalive so leaving during the Undo window does not silently cancel the request.
 `GardenLibraryHighlights.tsx` presents memories and response summaries. A failed account fetch is
 an error with retry, never an empty collection. The account-removal undo window remains separate
 from permanent garden storage: removing a library entry leaves the gift link intact.
@@ -57,9 +63,11 @@ clients act on that: `claimGardens` used to read any failure as "claimed nothing
 deleted the on-device copy of every id it had handed over, so one failed request emptied somebody's
 archive for good.
 
-Creating a garden and reading `/api/me` still fall back to anonymous when auth is unreachable,
-because refusing to send a garden is worse than sending it unowned. That is only safe because the
-sender keeps an on-device record and `/api/mine/claim` adopts it on their next visit.
+Creating a garden can fall back to anonymous when Accounts is unreachable. Session checks instead
+return a retryable failure, so the library does not mistake an outage for a sign-out.
+`AuthContext` cancels superseded checks and preserves the current identity on failure. The device
+library remains available with an explicit recovery notice. Anonymous garden records can be
+claimed after sign-in when browser storage is available.
 
 ---
 
@@ -76,17 +84,13 @@ way for either side to tell the difference between "expired" and "never existed"
 written to say gardens never expire, and there is an end-to-end test asserting the page never uses
 the word "expired" about a garden, precisely because that copy would be a lie.
 
-The counterweight is that storage only grows. The free tier holds 1 GB and a garden is about 2 KB,
-so the ceiling is roughly half a million gardens, which is far more than this will ever hold.
-Re-rolls make it worse: regenerating writes a new record and abandons the old one, so a session
-where somebody re-rolls five times leaves five orphans. At this scale that is fine. If it ever
-stopped being fine, the fix is to overwrite in place on a re-roll rather than to expire anything,
-because the orphans are the waste and the sent links are not.
+Storage grows as new gardens and rerolls are saved. A reroll creates a separate record, so a
+previously copied link keeps its original content. Any future retention or cleanup policy must
+preserve that boundary rather than expiring gifts silently.
 
 Users can prune their own lists through `removeFromAccount`, which deletes the index entries under
 `sent:` and `recv:` but deliberately leaves `g:<id>` alone. Removing a garden from your archive is
-tidying your own view. It is not a promise to the person you sent it to that their copy will keep
-working, and quietly breaking their link would be the worse outcome.
+tidying your own view. The underlying gift remains available to anyone who already has its link.
 
 **Rejected:** a 1-year TTL with a "renew" button. It moves the failure from "never" to "eventually,
 unless somebody does chores", which is worse for a gift.
@@ -175,30 +179,15 @@ costs nothing, whereas a per-request nonce would make the prompt unreproducible.
 None of this is a guarantee about the model. A note can still steer the prose, which it is supposed
 to: it is the design brief. What it can no longer do is impersonate the request wrapped around it.
 
-### A daily cap sized to the real quota
+### Configured generation budgets
 
-Generation is metered in a durable object: 5 per IP per minute, and a global ceiling of 15 per day.
+The Durable Object meters five generation requests per caller per minute and fifteen attempts
+per day across the project. Retries count toward the daily cap. Provider quotas depend on the
+account and model; check the provider console before a prompt evaluation or budget change.
 
-Fifteen looks arbitrarily small until you check what it guards. The Gemini free tier for this key allows 5
-`generateContent` requests per minute and 20 per day, both per project rather than per caller, so
-no per-IP number can bound them on its own. The cap was originally 800, a number
-chosen without looking anything up, so the guard could never fire. Past the real quota, every
-visitor
-got "the garden service is busy, please try again" about something that could not succeed until
-midnight Pacific, while the app's own honest "at capacity for today" message was unreachable code. A
-cap that never fires is not a conservative cap, it is a decorative one.
-
-It sits below 20 rather than at it because one generation can spend more than one request: a
-transient failure is retried up to three attempts in total, and every attempt counts. And because a
-429 means two
-different things, the client reads the error body to tell a per-day quota exhaustion from a
-per-minute burst, retrying the second and never the first, since retrying the first only spends two
-more seconds to fail identically.
-
-The per-IP burst limit fails **open** and the daily cap fails **closed**. Blocking a real gift is
-worse than allowing one extra generation, so an unreachable counter lets a single request through.
-The daily cap is the opposite call: it is the only thing bounding what the Gemini calls cost, so a
-counter it cannot read has to mean no.
+Transient model failures can retry up to three attempts. Per-day exhaustion does not retry,
+since another request cannot restore the day's budget. Per-IP counter failures remain open to
+preserve anonymous access, while an unavailable daily counter fails closed to bound model use.
 
 ---
 
@@ -331,62 +320,28 @@ there yet. Anyone can POST to a known id, so allowing overwrites would let a str
 picture on somebody's gift. Gardens made before this shipped have no card and unfurl with the
 homepage image.
 
-**The counters are atomic, and were not always.** Both the per-IP ceilings and the daily cap live
-in a Durable Object. They counted in KV until a test fired forty parallel requests at a limit of
-five and all forty passed: KV's read-modify-write let every one of them read the same count, so
-every limit in the app was bypassable by sending requests in parallel instead of in sequence.
-Sequential callers were limited correctly, which is why no existing test caught it. Per-IP counts
-shard across one durable object instance per caller; the daily cap is a single instance, so its
-count is global rather than per-colo.
+**Model output still needs review.** Structural validation bounds what can be drawn, but cannot
+ensure the generated meanings suit the sender's note. Senders should review the result before
+sharing it. Provider calls live in `designGarden.ts` and the schema and instructions in `prompt.ts`.
 
-**The prose is the weakest part of the output.** Flash gets most of the way there and costs nothing
-on the free tier, which is what makes a public demo possible at all. A frontier model reaches for
-the note's specifics more reliably and needs less prompting not to drift into greeting-card filler.
-Swapping the provider is `designGarden.ts` plus `prompt.ts`, roughly thirty lines. The reason it has
-not been swapped is the free tier, not the code.
-
-**The gate is one command, and it was not always.** `pnpm verify` runs typecheck, lint, format,
-`css-vars`, `css-classes`, `comments`, `knip`, build, unit tests and the browser suite, and
-`pnpm run deploy` will not ship without it. Before that the list lived in CI and in whoever's head
-was running it, which is how a lint failure survived three rounds of changes with every other check
-green. Four of those checks exist for one shared reason: the mistakes they catch render as nothing
-and error nowhere.
-
-**The end-to-end suite runs entirely under reduced motion.** "Open the garden" carries an infinite
-attention pulse, so Playwright's stability check never passes and the click times out. Forcing the
-click would paper over exactly the "can a person actually press this" class of bug the suite exists
-for. So every test runs as a reduced-motion visitor, which is a path the app deliberately supports,
-but it means the entrance animations themselves are never exercised, only their end states.
+**Browser coverage has device limits.** Journeys cover reduced motion and animated reveals,
+including controls remaining unreachable until they appear. Desktop Chromium and iPhone-sized
+WebKit cannot establish real phone keyboards, native share sheets, microphone behavior or spoken
+screen-reader output.
 
 **Everything is one region's worth of consistency.** KV is eventually consistent. A garden written
 and immediately read from a different edge location can miss. In practice the sender reads back what
 they just wrote through the same connection and it has not been a problem, but there is no read-
 after-write guarantee here and the code does not pretend otherwise.
 
-# Decisions, moved out of the README
+## Offline storage and voice memories
 
-_Moved out of the README, which is the front door and was carrying the whole house._
+The service worker caches only successful same-origin static responses. Fingerprinted assets
+use immutable caching; stable resources revalidate online. Only the public homepage refreshes
+the offline shell, so private garden metadata cannot replace it. APIs and private preview images
+stay on the network. Offline app-shell access does not imply that a garden's data is available.
 
-## Decisions worth explaining
-
-The full decision log, with the alternatives that were rejected and the limitations that are still
-open, is in [ARCHITECTURE.md](ARCHITECTURE.md). The four that shape everything else:
-
-**The model designs the flowers; it doesn't pick from a list.** This started as a "choose from 8
-presets" toy. Letting the model invent the palette, petal shape, and count for each flower is the
-whole product. `FlowerSVG.tsx` takes a flower spec directly and draws whatever comes back, so a new
-petal shape is one switch arm.
-
-**Function calling instead of "please return JSON."** Gemini is forced to call `design_garden` with
-a typed schema, which removes the "what if it answered in prose" failure mode rather than handling
-it. Its schema can't express regex or array bounds, so those rules live in the field descriptions
-and in a `validateGarden()` pass that rejects bad output with a real error.
-
-**Short links on our own domain, in KV, with no expiry.** A garden is a keepsake, so a link that was
-already sent has to keep working. Gardens are written under a 6-character id and read back with a
-one-year immutable cache header, since a garden never changes once written.
-
-**Anonymous first; accounts are additive.** Writing, sending and opening a garden all work with no
-account. Signing in adds a synced archive and nothing else. That bet costs attribution, durability
-for anyone who never signs in, and any moderation lever beyond a rate limit, all of which
-[ARCHITECTURE.md](ARCHITECTURE.md) goes into.
+Optional voice memories stay in IndexedDB and are separate from shared gardens. Same-origin
+microphone permission is enabled by the production header; the browser still requires the
+visitor's permission. Recording releases the input stream on stop, error, startup failure or the
+recording cap. Storage reports success only after its transaction commits.

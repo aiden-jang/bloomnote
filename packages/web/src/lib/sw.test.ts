@@ -14,7 +14,7 @@ import SW_SOURCE from '../../public/sw.js?raw'
 type Handler = (event: Record<string, unknown>) => void
 
 /** A fake worker scope, with the caches it opened and the handlers the file registered. */
-function runWorker() {
+function runWorker(options: { ok?: boolean } = {}) {
   const handlers = new Map<string, Handler>()
   const stores = new Map<string, Map<string, unknown>>()
   const deleted: string[] = []
@@ -48,6 +48,7 @@ function runWorker() {
   }
 
   const self = {
+    location: { origin: 'https://bloomnote.test' },
     addEventListener: (type: string, fn: Handler) => handlers.set(type, fn),
     skipWaiting: () => {},
     clients: { claim: () => {} },
@@ -61,7 +62,13 @@ function runWorker() {
   const fetched: string[] = []
   const fetchImpl = (req: { url: string }) => {
     fetched.push(req.url)
-    const response = { url: req.url, fromNetwork: true, clone: () => ({ ...response }) }
+    const response = {
+      url: req.url,
+      fromNetwork: true,
+      ok: options.ok ?? true,
+      headers: new Headers({ 'content-type': 'text/html' }),
+      clone: () => ({ ...response }),
+    }
     return Promise.resolve(response)
   }
 
@@ -78,8 +85,15 @@ function request(url: string, init: { method?: string; mode?: string } = {}) {
 /** Whatever the fetch handler chose to respond with, or undefined when it passed. */
 async function respondTo(handlers: Map<string, Handler>, req: object): Promise<unknown> {
   let responded: unknown
-  handlers.get('fetch')!({ request: req, respondWith: (r: unknown) => (responded = r) })
-  return responded === undefined ? undefined : await responded
+  const work: Promise<unknown>[] = []
+  handlers.get('fetch')!({
+    request: req,
+    respondWith: (r: unknown) => (responded = r),
+    waitUntil: (p: Promise<unknown>) => work.push(p),
+  })
+  const response = responded === undefined ? undefined : await responded
+  await Promise.all(work)
+  return response
 }
 
 describe('service worker', () => {
@@ -118,13 +132,33 @@ describe('service worker', () => {
     const store = [...stores.values()].find((s) => s.has('/'))!
     expect(store.get('/')).toEqual({ added: true })
 
-    const navigate = request('https://bloomnote.test/g/kWzDsL', { mode: 'navigate' })
-    handlers.get('fetch')!({ request: navigate, respondWith: () => {} })
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    const navigate = request('https://bloomnote.test/', { mode: 'navigate' })
+    await respondTo(handlers, navigate)
 
     // It went to the network, and what came back replaced the stored shell.
-    expect(fetched).toContain('https://bloomnote.test/g/kWzDsL')
+    expect(fetched).toContain('https://bloomnote.test/')
     expect(store.get('/')).toMatchObject({ fromNetwork: true })
+  })
+
+  it('never substitutes a private garden document for the public offline shell', async () => {
+    const { handlers, stores } = runWorker()
+    await handlers.get('install')!({ waitUntil: (p: Promise<unknown>) => p })
+    const shell = [...stores.values()].find((store) => store.has('/'))!
+    await respondTo(handlers, request('https://bloomnote.test/g/kWzDsL', { mode: 'navigate' }))
+    expect(shell.get('/')).toEqual({ added: true })
+  })
+
+  it('does not cache private preview images or cross-origin resources', async () => {
+    const { handlers } = runWorker()
+    expect(await respondTo(handlers, request('https://bloomnote.test/og/kWzDsL.png'))).toBeUndefined()
+    expect(await respondTo(handlers, request('https://elsewhere.test/asset.js'))).toBeUndefined()
+  })
+
+  it('keeps a successful shell when a navigation returns a server error', async () => {
+    const { handlers, stores } = runWorker({ ok: false })
+    await handlers.get('install')!({ waitUntil: (p: Promise<unknown>) => p })
+    await respondTo(handlers, request('https://bloomnote.test/', { mode: 'navigate' }))
+    expect([...stores.values()].find((store) => store.has('/'))!.get('/')).toEqual({ added: true })
   })
 
   /* A version bump has to purge the old cache, or a stale asset outlives the deploy that replaced it. */
