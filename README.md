@@ -5,7 +5,7 @@ each with a meaning, and gives you a link that blooms when they open it.
 
 [Open Bloomnote](https://bloomnote.aidenjang.com)
 
-![Bloomnote’s writing desk](docs/ui-qa/composer-1440.png)
+![Bloomnote’s writing desk](docs/screenshots/composer-desktop.png)
 
 ## The experience
 
@@ -91,7 +91,7 @@ empty, and sharing failures leave the garden and its link available.
 - [Architecture and decisions](ARCHITECTURE.md)
 - [Contributing and checks](CONTRIBUTING.md)
 - [Deployment and recovery](DEPLOY.md)
-- [UI design](DESIGN.md) and [visual verification](docs/ui-qa/README.md)
+- [UI design](DESIGN.md) and [visual verification](docs/quality.md)
 - [Engineering conventions](CONVENTIONS.md)
 - [Visitor walkthrough](docs/visitor-review.md)
 - [Security reporting](.github/SECURITY.md)

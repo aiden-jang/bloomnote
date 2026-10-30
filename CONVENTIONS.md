@@ -142,3 +142,5 @@ Two things follow, and both used to be handled by the pool itself:
   test happens to run second.
 
 Bindings are typed by widening the global `Cloudflare.Env`, not `ProvidedEnv`.
+
+Keep generated review output out of Git; follow the [artifact policy](docs/quality.md#review-artifacts).
