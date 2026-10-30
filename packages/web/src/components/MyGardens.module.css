@@ -140,6 +140,13 @@
   gap: 8px;
 }
 
+.wrap > [role='tabpanel'] {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
 .sort {
   border: 1px solid var(--green-pale);
   border-radius: 999px;
@@ -651,7 +658,7 @@
 .tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 .tab,
 .tabActive {
