@@ -19,3 +19,5 @@ Keep generated screenshot sets, videos, traces and run reports in ignored
 Commit authored design references and a small curated set of README images only;
 keep runtime and installation assets separate. Earlier audit records remain in Git
 history. Use synthetic data and remove private information from shared evidence.
+
+The accessibility linter has a recorded compatibility patch for the named export in patched minimatch. Its label rules remain enabled; dependency installation applies the patch from `patches/`.
