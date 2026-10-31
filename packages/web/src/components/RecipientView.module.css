@@ -319,6 +319,9 @@
 }
 
 .keepsake summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: fit-content;
   margin: 0 auto;
   color: var(--text-light);

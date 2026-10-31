@@ -1,3 +1,4 @@
+import StationeryArt from './StationeryArt'
 import ReadingSize from './ReadingSize'
 import RecipientHeader from './RecipientHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -324,7 +325,10 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                     : 'share this garden'}
             </button>
             <details className={styles.keepsake}>
-              <summary>keep this garden</summary>
+              <summary>
+                <StationeryArt kind="bookmark" />
+                <span>keep this garden</span>
+              </summary>
               <div className={styles.keepsakeActions}>
                 {previous && (
                   <button

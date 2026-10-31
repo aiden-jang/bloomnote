@@ -1,0 +1,20 @@
+.art {
+  display: block;
+  float: right;
+  width: 112px;
+  height: 75px;
+  margin: 0 0 8px 16px;
+}
+.mini {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  vertical-align: middle;
+}
+@media (max-width: 520px) {
+  .art {
+    width: 72px;
+    height: 48px;
+    margin-left: 8px;
+  }
+}

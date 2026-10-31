@@ -1,3 +1,4 @@
+import StationeryArt from './StationeryArt'
 import BloomBrand from './BloomBrand'
 import styles from './MyGardens.module.css'
 
@@ -14,6 +15,7 @@ export default function GardenLibraryShell({
     <div className={styles.wrap}>
       <header className={styles.header}>
         <BloomBrand />
+        <StationeryArt kind="envelope" />
         <h1 className={styles.title}>your gardens</h1>
         {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       </header>
