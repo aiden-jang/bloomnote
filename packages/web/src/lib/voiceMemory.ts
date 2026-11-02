@@ -35,10 +35,17 @@ function openDb(): Promise<IDBDatabase | null> {
 async function withStore<T>(
   mode: IDBTransactionMode,
   run: (store: IDBObjectStore) => IDBRequest,
+  strict = false,
 ): Promise<T | null> {
   const db = await openDb()
-  if (!db) return null
-  return new Promise((resolve) => {
+  if (!db) {
+    if (strict)
+      throw new Error(
+        'Could not read voice storage. Allow site storage, or leave device voices out of this backup.',
+      )
+    return null
+  }
+  return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(STORE, mode)
       const request = run(tx.objectStore(STORE))
@@ -48,10 +55,15 @@ async function withStore<T>(
         value = (request.result ?? null) as T | null
       }
       tx.oncomplete = () => resolve(value)
-      request.onerror = () => resolve(null)
-      tx.onabort = () => resolve(null)
+      const failed = () =>
+        strict
+          ? reject(new Error('Could not read every voice memory. Try again before continuing.'))
+          : resolve(null)
+      request.onerror = failed
+      tx.onabort = failed
     } catch {
-      resolve(null)
+      if (strict) reject(new Error('Could not read voice storage. Allow site storage before continuing.'))
+      else resolve(null)
     } finally {
       // Safe to schedule immediately: the transaction keeps its own reference.
       db.close()
@@ -59,13 +71,51 @@ async function withStore<T>(
   })
 }
 
+type StoredVoice = Omit<VoiceMemory, 'blob'> & { bytes?: ArrayBuffer; type?: string; blob?: Blob }
+
 export async function saveVoiceMemory(memory: VoiceMemory): Promise<boolean> {
-  const result = await withStore<IDBValidKey>('readwrite', (store) => store.put(memory))
-  return result !== null
+  try {
+    // WebKit can reject Blob persistence even when IndexedDB itself is available. Store the
+    // identical bytes, not a re-encoded recording; older Blob records remain readable below.
+    const { blob, ...fields } = memory
+    const bytes = await blob.arrayBuffer()
+    const result = await withStore<IDBValidKey>('readwrite', (store) =>
+      store.put({ ...fields, bytes, type: blob.type }),
+    )
+    return result !== null
+  } catch {
+    return false
+  }
+}
+
+async function readVoice(entryId: string, strict = false): Promise<VoiceMemory | null> {
+  const stored = await withStore<StoredVoice>('readonly', (store) => store.get(entryId), strict)
+  if (!stored) return null
+  const blob =
+    stored.blob instanceof Blob
+      ? stored.blob
+      : stored.bytes instanceof ArrayBuffer && typeof stored.type === 'string'
+        ? new Blob([stored.bytes], { type: stored.type })
+        : null
+  if (
+    !blob ||
+    stored.entryId !== entryId ||
+    typeof stored.seconds !== 'number' ||
+    typeof stored.savedAt !== 'string'
+  ) {
+    if (strict)
+      throw new Error('A voice memory could not be read. Keep the original device data and try again.')
+    return null
+  }
+  return { entryId, blob, seconds: stored.seconds, savedAt: stored.savedAt }
 }
 
 export async function loadVoiceMemory(entryId: string): Promise<VoiceMemory | null> {
-  return withStore<VoiceMemory>('readonly', (store) => store.get(entryId))
+  return readVoice(entryId)
+}
+
+export async function loadVoiceForBackup(entryId: string): Promise<VoiceMemory | null> {
+  return readVoice(entryId, true)
 }
 
 export async function deleteVoiceMemory(entryId: string): Promise<void> {
@@ -100,7 +150,7 @@ export interface Recording {
 /** Request microphone access and start a capped recording; callers handle denial or startup failure. */
 export async function startRecording(maxSeconds = MAX_SECONDS): Promise<Recording> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  let cap: ReturnType<typeof setTimeout> | null = null
+  let cap: number | null = null
   let released = false
   const release = (): void => {
     if (released) return

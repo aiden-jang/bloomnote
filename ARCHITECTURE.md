@@ -334,6 +334,35 @@ and immediately read from a different edge location can miss. In practice the se
 they just wrote through the same connection and it has not been a problem, but there is no read-
 after-write guarantee here and the code does not pretend otherwise.
 
+## Library backups
+
+`shared/backup.ts` validates the versioned JSON format and whitelists renderable content.
+`backupRoutes.ts` resolves the session and verifies the browser’s expected account on every
+request. `backup.ts` exports bounded ten-entry KV pages, including legacy index entries; missing
+content fails the export instead of silently producing a partial file. Device-only exports read
+the local sent list and fetch its complete gardens. The library chunk owns these tools, so gift
+recipients do not download them.
+
+`gardenBackup.ts` validates the entire file before any restore request. `backupVoices.ts` adds
+optional IndexedDB audio and device preferences only for exported gardens. Restores never upload
+voice bytes; a failed device write explains which already-created copy needs retrying. Source
+files contain no account credentials, owner IDs or internal restore receipts. They do contain
+secret notes and optional audio, so the UI asks the visitor to keep them private.
+
+Restoration creates new twelve-character bearer-link IDs, labelled copies and account indexes;
+it does not overwrite original gifts or claim their ownership. A hash of the target account,
+exact file bytes and normalized entry produces a stable copy ID and private receipt. Repeating
+the same file in the same account repairs missing indexes without duplicating gardens. Existing
+response counts and voice recordings are preserved. KV writes are not a whole-file transaction:
+a stopped restore can leave completed copies, and the UI offers continuation using the same file.
+KV is still eventually consistent, so a fresh list can briefly lag completed writes.
+
+The format caps files at 32 MB and 200 entries, garden content at 16 KB and voice clips at 2 MB.
+A fail-closed Counters permit caps new restored gardens at 200 per service day; per-IP request
+limits also apply. Export and restore do not use Gemini. Derived preview PNGs are regenerated,
+not included. Only current library entries are exported; removed historical gifts and provider
+recovery remain separate concerns.
+
 ## Offline storage and voice memories
 
 The service worker caches only successful same-origin static responses. Fingerprinted assets
@@ -341,7 +370,9 @@ use immutable caching; stable resources revalidate online. Only the public homep
 the offline shell, so private garden metadata cannot replace it. APIs and private preview images
 stay on the network. Offline app-shell access does not imply that a garden's data is available.
 
-Optional voice memories stay in IndexedDB and are separate from shared gardens. Same-origin
+Optional voice memories stay in IndexedDB and are separate from shared gardens. New recordings
+store their original audio bytes and MIME type rather than a Blob, which WebKit may reject.
+Reads accept both formats without deleting or upgrading existing recordings. Same-origin
 microphone permission is enabled by the production header; the browser still requires the
 visitor's permission. Recording releases the input stream on stop, error, startup failure or the
 recording cap. Storage reports success only after its transaction commits.

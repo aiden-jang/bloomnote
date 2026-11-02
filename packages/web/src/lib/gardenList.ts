@@ -7,6 +7,7 @@ export interface CardData {
   unlockAt?: string | undefined
   receivedAt?: string | undefined
   swatches: string[]
+  restored?: boolean | undefined
 }
 
 export type GardenSort = 'newest' | 'oldest' | 'watered'

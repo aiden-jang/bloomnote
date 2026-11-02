@@ -1,0 +1,126 @@
+.wrap {
+  border: 1px solid var(--green-pale);
+  border-radius: 16px;
+  color: var(--text-mid);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.wrap summary {
+  cursor: pointer;
+  padding: 0.9rem 1rem;
+  min-height: 44px;
+  color: var(--green-deep);
+  font-weight: 600;
+}
+.content {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0 1rem 1rem;
+}
+.content p {
+  margin: 0;
+}
+.content button:not(.link) {
+  min-height: 44px;
+  border: 1px solid var(--green-mid);
+  border-radius: 12px;
+  padding: 0.55rem 0.9rem;
+  background: transparent;
+  color: var(--green-deep);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.content button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.content button:focus-visible,
+.wrap summary:focus-visible,
+.file input:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 3px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+}
+.check input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--green-deep);
+}
+.hint {
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+.restore {
+  display: grid;
+  gap: 0.75rem;
+  border-top: 1px solid var(--green-pale);
+  padding-top: 1rem;
+}
+.restore h2,
+.preview h3 {
+  font: inherit;
+  font-weight: 600;
+  color: var(--green-deep);
+  margin: 0;
+}
+.file {
+  display: grid;
+  gap: 0.5rem;
+}
+.file input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  font: inherit;
+}
+.file input::file-selector-button {
+  min-height: 44px;
+  margin-right: 0.6rem;
+  border: 1px solid var(--green-mid);
+  border-radius: 10px;
+  padding: 0.45rem 0.8rem;
+  background: transparent;
+  color: var(--green-deep);
+  font: inherit;
+  cursor: pointer;
+}
+.preview {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+}
+.preview ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.link {
+  border: none;
+  background: none;
+  color: var(--green-mid);
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0;
+}
+.notice {
+  color: var(--green-deep);
+}
+.error {
+  color: var(--error);
+}

@@ -27,6 +27,7 @@ export interface GardenSummary {
   unlockAt?: string
   swatches: string[]
   receivedAt?: string
+  restored?: boolean
 }
 
 function generateId(): string {
@@ -297,7 +298,12 @@ export async function createGarden(env: Env, garden: unknown, ownerId?: string):
 export async function readGarden(env: Env, id: string): Promise<unknown | null> {
   if (!ID_RE.test(id)) return null
   const raw = await env.GARDENS.get(`g:${id}`)
-  return raw === null ? null : repairGarden(JSON.parse(raw) as unknown)
+  if (raw === null) return null
+  const garden = repairGarden(JSON.parse(raw) as unknown)
+  if (garden && typeof garden === 'object') {
+    delete (garden as Record<string, unknown>).restoreFingerprint
+  }
+  return garden
 }
 
 export async function recordReceived(env: Env, userId: string, id: string): Promise<boolean> {

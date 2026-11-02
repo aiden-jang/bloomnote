@@ -131,6 +131,7 @@ export default function GardenRow({
         <span className={styles.cardText}>
           <span className={styles.recipient}>{cardLabel}</span>
           <span className={styles.meta}>
+            {record.restored && <span>restored copy</span>}
             {occasion && <span>{occasionLabel(occasion)}</span>}
             {sealedUntil ? (
               <span className={styles.sealed}>opens {sealedUntil}</span>

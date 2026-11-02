@@ -62,7 +62,7 @@ export function drawableGarden(g: GardenData): GardenData {
   return out
 }
 
-// Gardens live in Workers KV under a 6-character id. `/g/<id>` and `/r/<id>` are two views of
+// Gardens use six-character ids; restored copies use twelve. `/g/<id>` and `/r/<id>` are two views of
 // one record, and nothing is URL-encoded, so a link can't be pulled apart or forged.
 
 /** Origin root. Path routing (/g/, /r/) rules out deploying under a subdirectory. */
@@ -71,7 +71,7 @@ function buildAppUrl(): string {
 }
 
 /** 57 characters: base62 minus 0/O and 1/l/I. Mirrors gardens.ts on the server, change both. */
-const SHORT_ID_PATTERN = /^[A-HJ-NP-Za-km-z2-9]{6}$/
+const SHORT_ID_PATTERN = /^[A-HJ-NP-Za-km-z2-9]{6}(?:[A-HJ-NP-Za-km-z2-9]{6})?$/
 
 export function isShortId(value: string): boolean {
   return SHORT_ID_PATTERN.test(value)

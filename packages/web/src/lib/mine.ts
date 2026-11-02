@@ -17,13 +17,21 @@ export interface MineRecord {
   swatches: string[]
 }
 
-function read(): MineRecord[] {
-  if (typeof window === 'undefined') return []
+function read(strict = false): MineRecord[] {
+  if (typeof window === 'undefined') {
+    if (strict) throw new Error('Could not read this device’s library. Allow site storage before backing up.')
+    return []
+  }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_KEY)
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
+    if (!Array.isArray(parsed)) {
+      if (strict) throw new Error('Unreadable library')
+      return []
+    }
+    if (strict && parsed.some((r) => !r || typeof r !== 'object' || typeof r.id !== 'string'))
+      throw new Error('Unreadable entry')
     // Preserve usable links while repairing fields the library reads as strings and arrays.
     return parsed
       .filter(
@@ -37,6 +45,10 @@ function read(): MineRecord[] {
         swatches: Array.isArray(r.swatches) ? r.swatches.filter((color) => typeof color === 'string') : [],
       }))
   } catch {
+    if (strict)
+      throw new Error(
+        'Could not read this device’s library. Allow site storage, or keep the original device data and try again before backing up.',
+      )
     return []
   }
 }
@@ -50,9 +62,9 @@ function write(records: MineRecord[]): void {
   }
 }
 
-export function loadSentGardens(): MineRecord[] {
+export function loadSentGardens(strict = false): MineRecord[] {
   // Saves append, so the stored order is oldest-first. Reverse for display without mutating read().
-  return read().slice().reverse()
+  return read(strict).slice().reverse()
 }
 
 export function countSentGardens(): number {

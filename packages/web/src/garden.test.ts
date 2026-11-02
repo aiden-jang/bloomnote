@@ -30,7 +30,12 @@ describe('isShortId', () => {
     }
   })
 
-  it('rejects anything that is not exactly six characters', () => {
+  it('accepts restored copy links with twelve curated characters', () => {
+    expect(isShortId('abcdefABCDEF')).toBe(true)
+    expect(isShortId('abcdefABCDE0')).toBe(false)
+  })
+
+  it('rejects unsupported link lengths', () => {
     expect(isShortId('abcde')).toBe(false)
     expect(isShortId('abcdefg')).toBe(false)
     expect(isShortId('')).toBe(false)

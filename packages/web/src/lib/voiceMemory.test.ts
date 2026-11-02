@@ -168,8 +168,7 @@ it('does not report a voice memory saved when its transaction aborts after the w
     seconds: 1,
     savedAt: new Date().toISOString(),
   })
-  await Promise.resolve()
-  await Promise.resolve()
+  await vi.waitFor(() => expect(request.onsuccess).toBeTypeOf('function'))
   ;(request.onsuccess as () => void)()
   ;(tx.onabort as () => void)()
   await expect(saving).resolves.toBe(false)
@@ -195,11 +194,43 @@ it('confirms a voice memory only after its transaction commits', async () => {
     completed = true
     return saved
   })
-  await Promise.resolve()
-  await Promise.resolve()
+  await vi.waitFor(() => expect(request.onsuccess).toBeTypeOf('function'))
   ;(request.onsuccess as () => void)()
   await Promise.resolve()
   expect(completed).toBe(false)
   ;(tx.oncomplete as () => void)()
   await expect(saving).resolves.toBe(true)
 })
+
+// Read existing on-device records without needing a destructive database upgrade.
+it.each(['legacy blob', 'portable bytes'])(
+  'reads %s voice records without changing audio bytes',
+  async (kind) => {
+    const bytes = new Uint8Array([0, 1, 2, 3, 255])
+    const voice = {
+      entryId: 'memory',
+      seconds: 2,
+      savedAt: '2026-10-11T12:00:00Z',
+      ...(kind === 'legacy blob'
+        ? { blob: new Blob([bytes], { type: 'audio/wav' }) }
+        : { bytes: bytes.buffer, type: 'audio/wav' }),
+    }
+    const request: Record<string, unknown> = { result: voice }
+    const tx: Record<string, unknown> = { objectStore: () => ({ get: () => request }) }
+    const opening: Record<string, unknown> = { result: { transaction: () => tx, close: () => {} } }
+    vi.stubGlobal('indexedDB', {
+      open: () => {
+        queueMicrotask(() => (opening.onsuccess as () => void)())
+        return opening
+      },
+    })
+    const reading = loadVoiceMemory('memory')
+    await vi.waitFor(() => expect(request.onsuccess).toBeTypeOf('function'))
+    ;(request.onsuccess as () => void)()
+    ;(tx.oncomplete as () => void)()
+    const loaded = await reading
+    expect(loaded?.seconds).toBe(2)
+    expect(loaded?.blob.type).toBe('audio/wav')
+    expect([...new Uint8Array(await loaded!.blob.arrayBuffer())]).toEqual([...bytes])
+  },
+)

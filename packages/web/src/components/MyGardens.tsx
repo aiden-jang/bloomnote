@@ -10,6 +10,7 @@ import { useAccountGardens } from '../lib/useAccountGardens'
 import { useGardenLibrary, type GardenLibrary } from '../lib/useGardenLibrary'
 import { useGardenResponses } from '../lib/useGardenResponses'
 import styles from './MyGardens.module.css'
+import BackupRestore from './BackupRestore'
 import type { CardData, GardenSort, Tab } from '../lib/gardenList'
 
 export default function MyGardens() {
@@ -23,7 +24,7 @@ export default function MyGardens() {
         </p>
       </Shell>
     )
-  return user ? <AccountGardens /> : <LocalGardens />
+  return user ? <AccountGardens key={user.id} /> : <LocalGardens />
 }
 
 // Both archives share filtering, ordering, and pin controls.
@@ -196,6 +197,7 @@ function AccountGardens() {
           </ul>
         )}
       </section>
+      <BackupRestore blocked={busy || pending !== null} onRestored={retryLoad} />
     </Shell>
   )
 }
@@ -279,6 +281,7 @@ function LocalGardens() {
           )}
         </>
       )}
+      <BackupRestore />
     </Shell>
   )
 }

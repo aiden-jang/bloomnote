@@ -10,6 +10,7 @@ export interface GardenSummary {
   unlockAt?: string
   swatches: string[]
   receivedAt?: string
+  restored?: boolean
 }
 
 export async function fetchMine(): Promise<{ sent: GardenSummary[]; received: GardenSummary[] }> {

@@ -6,7 +6,7 @@ interface Section {
   body: string
 }
 
-const UPDATED = 'October 26, 2026'
+const UPDATED = 'November 2, 2026'
 
 const PRIVACY: Section[] = [
   {
@@ -24,6 +24,10 @@ const PRIVACY: Section[] = [
   {
     heading: 'keeping and deleting',
     body: 'Garden links do not expire. Removing an entry from your library removes that listing, while its shared garden link keeps working. Deleting an Accounts identity does not automatically delete Bloomnote’s stored gardens or data on this device. You can clear this browser’s local data, or contact privacy@aidenjang.com to request a copy or removal of stored garden data.',
+  },
+  {
+    heading: 'your backup file',
+    body: 'Your gardens has a JSON backup and restore tool for the gardens currently in your library. A backup can include replies, secret notes, response counts and device preferences. If you choose to include voice memories, recordings from this device are copied into the downloaded file. Keep that file private. Restoring while signed in saves labelled garden copies to that account with new shareable links; it does not overwrite original gifts. Voice recordings restore only into this browser, without being uploaded.',
   },
   {
     heading: 'the usual',

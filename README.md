@@ -13,6 +13,8 @@ each with a meaning, and gives you a link that blooms when they open it.
 - Send its short link, save an image, or choose different flowers.
 - The recipient opens the garden, reads your words, explores the flowers, and can grow one back.
 - Add a little secret or schedule the reveal for a later moment.
+- Download a JSON backup of your library, with optional voice memories from this device. Preview
+  and restore it as labelled copies with fresh links after signing in.
 - Keep gardens on this device, or sign in to sync your sent and received collections. Failed
   account removals restore the entry; sharing failures keep a selectable link available.
 
@@ -76,6 +78,22 @@ Generation depends on Gemini availability and the configured daily budget. A fai
 keeps your note. A failed account-library load offers retry rather than pretending the library is
 empty, and sharing failures leave the garden and its link available.
 
+## Backup and restore
+
+Open **your gardens → backup & restore**. The JSON keeps the full content of gardens currently
+in your account library (or this device’s sent list when signed out), including replies, secrets,
+response counts, pins and personal response choices. Optional voice memories are read only from
+this device and are never uploaded during restore. Keep the file private. Derived preview images
+can be made again from the garden content.
+
+Restore requires sign-in and previews the whole file before creating anything. It creates labelled
+copies in that account with fresh links, preserving sent/received classifications. Original gifts
+and their ownership stay intact. Interrupted restores may leave completed copies; retry the same
+file in the same account to continue without duplicating them. Limits are 200 gardens and 32 MB
+per file, 16 KB per garden and 2 MB per voice memory. New copies share a 200-per-day service budget.
+No AI calls are needed. A library backup is not a snapshot of all historical shared links or
+Cloudflare storage.
+
 ## Repository guide
 
 | Area                           | Responsibility                                                         |
@@ -85,6 +103,7 @@ empty, and sharing failures leave the garden and its link available.
 | `packages/api/src/`            | Routes, garden storage, auth boundary, model design, and atomic limits |
 | `packages/api/test/`           | Tests in the actual Workers runtime                                    |
 | `packages/web/e2e/`            | Browser journeys and recovery regressions                              |
+| `shared/backup.ts`             | Versioned backup content validation used by browser and API            |
 | `scripts/`                     | Repository guards and bundle reporting                                 |
 | `.github/`                     | CI, dependency updates, contribution templates, and security policy    |
 

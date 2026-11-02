@@ -23,6 +23,7 @@ import {
 import { buildPrompt, checkBudget, generateGarden, validateBody } from './designGarden.js'
 import { checkRate, clientIp } from './rateLimit.js'
 import { writeEvent } from './events.js'
+import { backupRoutes } from './backupRoutes.js'
 
 /* Per-IP ceilings on the endpoints that write. bloomnote is anonymous-first, so most of these
    cannot ask who is calling. */
@@ -232,6 +233,8 @@ app.post('/api/event', bodyLimit({ maxSize: 2048 }), async (c) => {
   }
   return c.body(null, 204)
 })
+
+app.route('/', backupRoutes)
 
 app.get('/api/mine', async (c) => {
   const caller = await callerOf(c)

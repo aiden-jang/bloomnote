@@ -123,3 +123,19 @@ describe('the on-device archive', () => {
     expect(loadSentGardens()).toEqual([])
   })
 })
+
+// The ordinary library can tolerate inaccessible storage; a purported backup must report it.
+it('refuses to back up a device library that storage permissions hide', () => {
+  stubStorage({
+    getItem: () => {
+      throw new Error('Storage denied')
+    },
+  })
+  expect(loadSentGardens()).toEqual([])
+  expect(() => loadSentGardens(true)).toThrow('Could not read this device’s library')
+})
+it.each(['{broken', '{}', '[null]'])('does not present damaged device data as an empty backup: %s', (raw) => {
+  store.set('bloomnote:mine', raw)
+  expect(() => loadSentGardens(true)).toThrow('Could not read this device’s library')
+  expect(store.get('bloomnote:mine')).toBe(raw)
+})
