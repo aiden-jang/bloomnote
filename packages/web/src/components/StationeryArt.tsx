@@ -1,12 +1,13 @@
 import styles from './StationeryArt.module.css'
 
-export default function StationeryArt({ kind }: { kind: 'envelope' | 'bookmark' }) {
+export default function StationeryArt({ kind }: { kind: 'envelope' | 'bookmark' | 'seedling' }) {
   return (
     <svg
-      className={kind === 'bookmark' ? styles.mini : styles.art}
+      className={kind === 'bookmark' ? styles.mini : kind === 'seedling' ? styles.seedling : styles.art}
       viewBox={kind === 'bookmark' ? '0 0 64 64' : '0 0 180 120'}
       fill="none"
       aria-hidden="true"
+      focusable="false"
     >
       <g stroke="#315443" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         {kind === 'envelope' ? (
@@ -28,6 +29,22 @@ export default function StationeryArt({ kind }: { kind: 'envelope' | 'bookmark' 
               <ellipse cx="126" cy="27" rx="7" ry="10" />
             </g>
             <circle cx="126" cy="21" r="4" fill="#ead7aa" />
+          </>
+        ) : kind === 'seedling' ? (
+          <>
+            <g transform="rotate(9 128 77)">
+              <rect x="111" y="49" width="35" height="57" rx="4" fill="#fffdf8" />
+              <path d="M111 60h35M120 94h16" stroke="#a1b396" />
+              <path d="M128 84V68m0 9c-10 0-10-8-10-8 9-1 10 8 10 8" fill="#b6c9ad" />
+            </g>
+            <path d="M82 77V31" />
+            <path d="M82 58C59 61 52 48 55 41c20-3 27 17 27 17Z" fill="#b6c9ad" />
+            <path d="M82 45c22 1 31-11 27-19-19-2-27 19-27 19Z" fill="#e5eadb" />
+            <path d="m56 42 26 16m1-13 25-18" stroke="#789674" strokeWidth="1.3" />
+            <path d="m52 77 7 30q1 5 7 5h34q6 0 7-5l7-30" fill="#dfb6c1" />
+            <rect x="48" y="68" width="69" height="13" rx="4" fill="#ead7aa" />
+            <path d="M66 91h33" stroke="#b88998" strokeWidth="1.3" />
+            <path d="M36 113h99" stroke="#a1b396" strokeWidth="1.3" />
           </>
         ) : (
           <>

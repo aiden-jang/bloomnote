@@ -1,4 +1,4 @@
-import GardenScene from './GardenScene'
+import StationeryArt from './StationeryArt'
 import Shell from './GardenLibraryShell'
 import GardenRow from './GardenRow'
 import LibraryTabs from './LibraryTabs'
@@ -153,6 +153,7 @@ function AccountGardens() {
           </div>
         ) : list.length === 0 ? (
           <div className={styles.empty}>
+            <StationeryArt kind="seedling" />
             <p className={styles.emptyText}>
               {tab === 'sent' ? 'you haven’t grown any yet.' : 'gardens people grow you will show up here.'}
             </p>
@@ -231,9 +232,7 @@ function LocalGardens() {
       )}
       {records.length === 0 ? (
         <div className={styles.empty}>
-          <div className={styles.emptyPlot}>
-            <GardenScene flowers={[]} autoBloom={false} silent draftGrowth={2} />
-          </div>
+          <StationeryArt kind="seedling" />
           <p className={styles.emptyText}>Nothing growing yet. Very low maintenance.</p>
           <a href="/" className={styles.emptyLink}>
             grow one

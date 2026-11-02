@@ -692,11 +692,6 @@
   font-weight: 500;
 }
 
-.emptyPlot {
-  width: min(100%, 320px);
-  margin-bottom: 0.5rem;
-}
-
 .wrap {
   max-width: 880px;
   padding: 32px 28px 48px;

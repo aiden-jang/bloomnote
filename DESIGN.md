@@ -27,4 +27,4 @@ libraries keep one clear creation action and a small sprout.
 
 The finished composer leads with sending and copying before the recipient preview. Preview notes and flower meanings use quieter, flatter surfaces so the garden and sharing controls carry the hierarchy.
 
-The garden library header carries a small botanical envelope. A pressed-flower bookmark accompanies the recipient’s keepsake disclosure. Both are static decorative vectors, separate from the person’s words and garden state; empty libraries retain their sprout and one creation action.
+The garden library header carries a small botanical envelope. A pressed-flower bookmark accompanies the recipient’s keepsake disclosure. Empty sent, received and device-only libraries share a compact potted-seedling vector; their copy and available actions remain distinct. These static illustrations share the stationery palette and stay separate from the person’s words and garden state. An empty library does not mount a garden scene.

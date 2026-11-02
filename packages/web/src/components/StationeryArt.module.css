@@ -11,10 +11,20 @@
   flex: none;
   vertical-align: middle;
 }
+.seedling {
+  display: block;
+  width: 144px;
+  height: 96px;
+  flex: none;
+}
 @media (max-width: 520px) {
   .art {
     width: 72px;
     height: 48px;
     margin-left: 8px;
+  }
+  .seedling {
+    width: 112px;
+    height: 75px;
   }
 }
