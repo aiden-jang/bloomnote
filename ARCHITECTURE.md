@@ -26,6 +26,10 @@ shown. Bloom, reveal, pointer, and scroll timers are cancelled when their owner 
 It has no dependency on journal storage.
 
 `MyGardens.tsx` presents account and device collections through shared filtering and row controls.
+`GardenRows.tsx` mounts 24 cards at a time; search, sorting, memories, backups and response summaries
+still use the complete collection. Response lookups respect the API's 40-id limit and stop when
+their library view is left. A failed batch preserves previously known counts rather than publishing
+partial refresh totals.
 `useAccountGardens.ts` owns loading, the removal Undo window and server confirmation. Failed
 removals restore their rows and explain recovery. A removal affects both account indexes if the
 same garden is in both collections; Undo restores both. Library share and image failures leave

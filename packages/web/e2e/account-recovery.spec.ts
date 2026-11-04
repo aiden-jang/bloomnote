@@ -117,17 +117,24 @@ test('an unavailable session keeps the device library and offers sign-in recover
 
 test('a late session response cannot replace the current account with a device library', async ({ page }) => {
   await account(page)
+  await page.clock.install()
+  let phase: 'unavailable' | 'old' | 'current' = 'unavailable'
   let release!: () => void
   const old = new Promise<void>((resolve) => {
     release = resolve
+  })
+  let started!: () => void
+  const oldStarted = new Promise<void>((resolve) => {
+    started = resolve
   })
   let finished!: () => void
   const oldFinished = new Promise<void>((resolve) => {
     finished = resolve
   })
-  let calls = 0
   await page.route('**/api/me', async (route) => {
-    if (++calls === 1) {
+    if (phase === 'unavailable') return route.fulfill({ status: 503 })
+    if (phase === 'old') {
+      started()
       await old
       await route.fulfill({ json: { user: null } })
       finished()
@@ -135,13 +142,18 @@ test('a late session response cannot replace the current account with a device l
   })
   try {
     await page.goto('/mine')
+    await expect(page.getByRole('alert')).toContainText(/couldn.t check your sign-in/i)
+    phase = 'old'
+    await page.getByRole('button', { name: 'try again', exact: true }).click()
+    await oldStarted
+    await page.clock.fastForward(10_001)
+    await expect(page.getByRole('alert')).toContainText(/couldn.t check your sign-in/i)
+    phase = 'current'
+    await page.getByRole('button', { name: 'try again', exact: true }).click()
     await expect(page.getByRole('link', { name: /^for Sam/ })).toBeVisible()
     release()
     await oldFinished
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
-    )
+    await page.clock.runFor(32)
     await expect(page.getByText("the gardens you've grown, saved on this device.")).toHaveCount(0)
     await expect(page.getByRole('link', { name: /^for Sam/ })).toBeVisible()
   } finally {

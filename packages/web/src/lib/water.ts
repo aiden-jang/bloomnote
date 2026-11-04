@@ -91,12 +91,27 @@ export async function sendFeeling(id: string, feeling: Feeling): Promise<GardenR
   }
 }
 
-export async function fetchResponsesBatch(ids: string[]): Promise<Record<string, GardenResponse>> {
-  if (ids.length === 0) return {}
+export async function fetchResponsesBatch(
+  ids: string[],
+  signal?: AbortSignal,
+): Promise<Record<string, GardenResponse>> {
+  const unique = [...new Set(ids)]
+  const responses: Record<string, GardenResponse> = {}
   try {
-    const response = await fetch(`/api/responses?ids=${encodeURIComponent(ids.join(','))}`)
-    if (!response.ok) return {}
-    return ((await response.json()) as { responses?: Record<string, GardenResponse> }).responses ?? {}
+    // The API accepts 40 ids per lookup. Keep the entire library, including older gifts.
+    for (let offset = 0; offset < unique.length; offset += 40) {
+      if (signal?.aborted) return {}
+      const batch = unique.slice(offset, offset + 40)
+      const response = await fetch(`/api/responses?ids=${encodeURIComponent(batch.join(','))}`, {
+        signal: signal ?? null,
+      })
+      if (!response.ok) return {}
+      Object.assign(
+        responses,
+        ((await response.json()) as { responses?: Record<string, GardenResponse> }).responses ?? {},
+      )
+    }
+    return signal?.aborted ? {} : responses
   } catch {
     return {}
   }

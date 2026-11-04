@@ -1,6 +1,6 @@
 import StationeryArt from './StationeryArt'
 import Shell from './GardenLibraryShell'
-import GardenRow from './GardenRow'
+import GardenRows from './GardenRows'
 import LibraryTabs from './LibraryTabs'
 import { GardenImpactCard, MemoryLane } from './GardenLibraryHighlights'
 import { useState } from 'react'
@@ -181,20 +181,16 @@ function AccountGardens() {
             </button>
           </div>
         ) : (
-          <ul className={styles.list}>
-            {filtered.map((r) => (
-              <GardenRow
-                key={r.id}
-                record={r}
-                kind={tab}
-                waters={waters[r.id] ?? 0}
-                feelings={feelings[r.id] ?? {}}
-                pinned={pinned.includes(r.id)}
-                onPin={() => togglePinned(r.id)}
-                onRemove={() => remove(r.id)}
-              />
-            ))}
-          </ul>
+          <GardenRows
+            key={`${tab}:${query}:${library.sort}:${pinnedOnly}`}
+            records={filtered}
+            kind={tab}
+            waters={waters}
+            feelings={feelings}
+            pinned={pinned}
+            onPin={togglePinned}
+            onRemove={remove}
+          />
         )}
       </section>
       <BackupRestore blocked={busy || pending !== null} onRestored={retryLoad} />
@@ -264,20 +260,16 @@ function LocalGardens() {
               </button>
             </div>
           ) : (
-            <ul className={styles.list}>
-              {filtered.map((r) => (
-                <GardenRow
-                  key={r.id}
-                  record={r}
-                  kind="sent"
-                  waters={waters[r.id] ?? 0}
-                  feelings={feelings[r.id] ?? {}}
-                  pinned={pinned.includes(r.id)}
-                  onPin={() => togglePinned(r.id)}
-                  onRemove={() => handleRemove(r.id)}
-                />
-              ))}
-            </ul>
+            <GardenRows
+              key={`${query}:${library.sort}:${pinnedOnly}`}
+              records={filtered}
+              kind="sent"
+              waters={waters}
+              feelings={feelings}
+              pinned={pinned}
+              onPin={togglePinned}
+              onRemove={handleRemove}
+            />
           )}
         </>
       )}
