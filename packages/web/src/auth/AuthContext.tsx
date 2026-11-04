@@ -47,17 +47,28 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
     request.current = controller
     setLoading(true)
     setSessionError(false)
+    // Settle the screen even if a browser's aborted fetch never rejects.
+    const timeout = window.setTimeout(() => {
+      if (request.current !== controller) return
+      setSessionError(true)
+      setLoading(false)
+      controller.abort()
+    }, 10_000)
+    const stopTimeout = () => window.clearTimeout(timeout)
+    controller.signal.addEventListener('abort', stopTimeout, { once: true })
     try {
       const response = await fetch('/api/me', {
         credentials: 'include',
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]),
+        signal: controller.signal,
       })
       if (!response.ok) throw new Error('Session unavailable')
       const data = (await response.json()) as { user: AuthUser | null }
-      if (request.current === controller) setUser(data.user)
+      if (request.current === controller && !controller.signal.aborted) setUser(data.user)
     } catch {
       if (request.current === controller && !controller.signal.aborted) setSessionError(true)
     } finally {
+      stopTimeout()
+      controller.signal.removeEventListener('abort', stopTimeout)
       if (request.current === controller) setLoading(false)
     }
   }, [])
