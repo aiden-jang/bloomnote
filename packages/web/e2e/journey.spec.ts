@@ -466,13 +466,13 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(page.getByRole('button', { name: /image shared|download started/ })).toBeVisible()
   })
 
-  test('a dead link says the garden is still there', async ({ page }) => {
+  test('a dead link explains how to recover the full address', async ({ page }) => {
     // Recipients arrive by pasted link, so a truncated one is a normal event, not an edge case.
     // Gardens have no TTL, so this page must never claim the gift expired.
     await page.goto('/g/zzzz99')
     // `.` for the apostrophe: the copy uses a typographic one (&rsquo;), not U+0027.
     await expect(page.getByText(/didn.t lead anywhere/i)).toBeVisible()
-    await expect(page.getByText(/gardens never expire/i)).toBeVisible()
+    await expect(page.getByText(/check the full link/i)).toBeVisible()
     // The assertion that matters, stated as the rule rather than as a count: this page must
     // never tell someone the gift they were sent is gone, because it isn't.
     await expect(page.locator('body')).not.toContainText(/(link|garden).{0,20}expired/i)

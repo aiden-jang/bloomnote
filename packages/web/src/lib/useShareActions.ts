@@ -28,14 +28,19 @@ export function useShareActions(
   const [shareError, setShareError] = useState<string | null>(null)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const currentUrl = useRef(shareUrl)
+  const savingImageRef = useRef(false)
+  const imageRevision = useRef(0)
   useEffect(() => {
     currentUrl.current = shareUrl
+    savingImageRef.current = false
+    imageRevision.current += 1
     setCopied(false)
     setShareStatus(null)
     setImageStatus(null)
     setShareError(null)
     return () => {
       currentUrl.current = null
+      imageRevision.current += 1
       timers.current.forEach(clearTimeout)
       timers.current = []
     }
@@ -47,8 +52,6 @@ export function useShareActions(
   useEffect(() => {
     setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
   }, [])
-
-  const savingImageRef = useRef(false)
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return
@@ -90,12 +93,15 @@ export function useShareActions(
   }, [shareUrl, recipient])
 
   const handleSaveImage = useCallback(async () => {
-    if (!flowers.length || savingImageRef.current) return
+    if (!shareUrl || !flowers.length || savingImageRef.current) return
+    const revision = imageRevision.current
+    const isCurrent = () => imageRevision.current === revision && currentUrl.current === shareUrl
     savingImageRef.current = true
     setShareError(null)
     setImageStatus('saving')
     try {
       const result = await saveGardenImage({ flowers, from: from.trim(), to: recipient.trim() })
+      if (!isCurrent()) return
       if (result === 'dismissed') {
         setImageStatus(null)
         return
@@ -104,12 +110,13 @@ export function useShareActions(
       if (result === 'downloaded') trackCardDownloaded('composer', 'square')
       timers.current.push(setTimeout(() => setImageStatus(null), FLASH_MS))
     } catch {
+      if (!isCurrent()) return
       setImageStatus(null)
       setShareError('Couldn’t save the image. Try again, or send the link.')
     } finally {
-      savingImageRef.current = false
+      if (isCurrent()) savingImageRef.current = false
     }
-  }, [flowers, from, recipient])
+  }, [flowers, from, recipient, shareUrl])
 
   return { copied, shareStatus, imageStatus, canShare, shareError, handleCopy, handleShare, handleSaveImage }
 }

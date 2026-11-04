@@ -30,8 +30,11 @@
 
 .action {
   margin-top: 1.25rem;
-  display: inline-block;
-  padding: 5px 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 12px;
   border: none;
   background: none;
   font: inherit;
@@ -54,4 +57,23 @@
   color: var(--text-mid);
   font-size: 0.95rem;
   letter-spacing: 0.02em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1.25rem;
+}
+
+.actions .action {
+  margin-top: 0;
+}
+
+.actions button {
+  border-radius: 10px;
+  background: var(--green-deep);
+  color: white;
+  text-decoration: none;
 }

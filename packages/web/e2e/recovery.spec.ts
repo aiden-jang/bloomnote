@@ -395,3 +395,83 @@ test('note animation keeps whole emoji and printing includes the complete note',
     })
   }
 })
+
+test('reply links explain failed loads and retry without losing the original sender', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockApp(page)
+  let available = false
+  await page.route('**/api/garden?*', (route) =>
+    available
+      ? route.fulfill({ json: { garden } })
+      : route.fulfill({ status: 503, json: { error: 'UNAVAILABLE' } }),
+  )
+  await page.goto('/r/AbCdEf')
+  await expect(page.getByRole('heading', { name: 'couldn’t load that garden.' })).toBeVisible()
+  await expect(page.getByLabel('your note', { exact: true })).toHaveCount(0)
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: test.info().outputPath(`reply-retry-${width}.png`) })
+  }
+  available = true
+  await page.getByRole('button', { name: 'try again', exact: true }).click()
+  await expect(page.getByLabel('to', { exact: true })).toHaveValue('Alex')
+  await expect(page.getByLabel('your note', { exact: true })).toBeFocused()
+  await page.route('**/api/garden?*', (route) => route.fulfill({ status: 404, json: {} }))
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'that link didn’t lead anywhere.' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'or grow one for someone' })).toHaveAttribute('href', '/')
+})
+
+test('clearing and restoring a draft keeps keyboard focus in the writing flow', async ({ page }) => {
+  await mockApp(page)
+  await page.goto('/')
+  const note = page.getByLabel('your note', { exact: true })
+  await note.fill('A thought worth keeping.')
+  const clear = page.getByRole('button', { name: 'clear draft', exact: true })
+  await clear.focus()
+  await page.keyboard.press('Enter')
+  const undo = page.getByRole('button', { name: 'undo', exact: true })
+  await expect(undo).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(note).toHaveValue('A thought worth keeping.')
+  await expect(note).toBeFocused()
+})
+
+test('an earlier image share cannot finish the next garden’s export feedback', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockApp(page)
+  await page.addInitScript(() => {
+    const pending: Array<() => void> = []
+    Object.defineProperty(window, 'imageShareCount', { get: () => pending.length })
+    Object.defineProperty(window, 'finishImageShare', { value: (index: number) => pending[index]?.() })
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true })
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: () => new Promise<void>((resolve) => pending.push(resolve)),
+    })
+  })
+  await grow(page)
+  await page.getByRole('button', { name: 'save as image', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'making image…', exact: true })).toBeDisabled()
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { imageShareCount: number }).imageShareCount))
+    .toBe(1)
+  await page.getByRole('button', { name: 'make another', exact: true }).click()
+  await page.getByLabel('your note', { exact: true }).fill('For another lovely afternoon.')
+  await page.getByLabel('to', { exact: true }).fill('Jo')
+  await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+  await page.getByRole('button', { name: 'save as image', exact: true }).click()
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { imageShareCount: number }).imageShareCount))
+    .toBe(2)
+  await page.evaluate(() => {
+    ;(window as unknown as { finishImageShare: (index: number) => void }).finishImageShare(0)
+  })
+  await expect(page.getByRole('button', { name: 'making image…', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'image shared', exact: true })).toHaveCount(0)
+  await page.evaluate(() => {
+    ;(window as unknown as { finishImageShare: (index: number) => void }).finishImageShare(1)
+  })
+  await expect(page.getByRole('button', { name: 'image shared', exact: true })).toBeVisible()
+})

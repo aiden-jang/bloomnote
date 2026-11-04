@@ -72,9 +72,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
     }
   }, [remixSeed])
 
-  // iOS Safari slides the keyboard over the field the user just tapped, and its own
-  // scroll-on-focus is unreliable. Wait out the slide animation before scrolling, or the
-  // browser measures the old viewport height.
+  // Wait for the iOS keyboard before scrolling; earlier measurements use the covered viewport.
   useEffect(() => {
     const ta = messageRef.current
     if (!ta) return
@@ -161,7 +159,14 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   )
 
   const handleClear = draft.clear
-  const handleUndoClear = draft.undoClear
+  const undoRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (undoDraft && document.activeElement === document.body) undoRef.current?.focus()
+  }, [undoDraft])
+  const handleUndoClear = () => {
+    draft.undoClear()
+    requestAnimationFrame(() => messageRef.current?.focus())
+  }
   const handleDismissUndo = draft.dismissUndo
 
   const { copied, shareStatus, imageStatus, canShare, shareError, handleCopy, handleShare, handleSaveImage } =
@@ -331,7 +336,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       {undoDraft && (
         <div className={styles.undoToast} role="status" aria-live="polite">
           <span>draft cleared</span>
-          <button type="button" className={styles.undoBtn} onClick={handleUndoClear}>
+          <button type="button" ref={undoRef} className={styles.undoBtn} onClick={handleUndoClear}>
             undo
           </button>
           <button

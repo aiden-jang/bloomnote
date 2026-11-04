@@ -73,7 +73,7 @@ export default function App() {
         const garden = await fetchGarden(parsed.short!, ctrl.signal)
         if (ctrl.signal.aborted) return
         if (!garden) {
-          setRoute(parsed.view === 'recipient' ? { kind: 'notfound' } : { kind: 'composer' })
+          setRoute({ kind: 'notfound' })
           return
         }
         setRoute(
@@ -84,7 +84,7 @@ export default function App() {
       } catch (err) {
         // Aborted is not a failure. Let the superseding run win.
         if (ctrl.signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return
-        setRoute(parsed.view === 'recipient' ? { kind: 'loaderror' } : { kind: 'composer' })
+        setRoute({ kind: 'loaderror' })
       }
     })()
     return () => ctrl.abort()
@@ -179,8 +179,8 @@ function NotFoundShell() {
       <div className={notice.card}>
         <h1 className={notice.title}>that link didn&rsquo;t lead anywhere.</h1>
         <p className={notice.body}>
-          gardens never expire, so if someone grew you one, it&rsquo;s still there. links get cut short in
-          messages more often than you&rsquo;d think. worth asking them to send it again.
+          we couldn&rsquo;t find a garden at this address. check the full link, or ask the sender to share it
+          again.
         </p>
         <a className={notice.action} href="/">
           or grow one for someone
@@ -198,9 +198,14 @@ function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
       <div className={notice.card}>
         <h1 className={notice.title}>couldn&rsquo;t load that garden.</h1>
         <p className={notice.body}>looks like a connection hiccup, not a bad link.</p>
-        <button type="button" className={notice.action} onClick={onRetry}>
-          try again
-        </button>
+        <div className={notice.actions}>
+          <button type="button" className={notice.action} onClick={onRetry}>
+            try again
+          </button>
+          <a className={notice.action} href="/">
+            write a new note
+          </a>
+        </div>
       </div>
     </div>
   )
