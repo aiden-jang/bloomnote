@@ -4,15 +4,19 @@ import BloomBrand from './BloomBrand'
 import styles from './ComposerFrame.module.css'
 
 export default function ComposerFrame({
-  subtitle,
+  intro,
   scene,
+  preview,
   demo,
   children,
+  footer,
 }: {
-  subtitle: string
+  intro: string | undefined
   scene: ReactNode
+  preview: ReactNode
   demo: boolean
   children: ReactNode
+  footer: ReactNode
 }) {
   return (
     <div className={styles.wrap}>
@@ -22,29 +26,29 @@ export default function ComposerFrame({
           <BloomBrand />
         </h1>
       </header>
-      <div className={styles.studio}>
+      <div className={`${styles.studio} ${preview ? styles.finished : ''}`}>
         <div className={styles.workspace}>
-          <p className={styles.kicker}>A NOTE FOR SOMEONE</p>
-          <h2 className={styles.headline}>
-            What do you want
-            <br />
-            <em>to tell them?</em>
-          </h2>
-          <p className={styles.subtitle}>{subtitle}</p>
+          {intro && (
+            <div className={styles.intro}>
+              <h2 className={styles.headline}>What do you want to tell them?</h2>
+              <p className={styles.subtitle}>{intro}</p>
+            </div>
+          )}
           {children}
         </div>
         <aside className={styles.garden} aria-label="Garden preview">
-          <div className={`${styles.specimen} ${demo ? styles.demoSpecimen : ''}`}>
+          <div className={demo ? styles.demoSpecimen : undefined}>
             <div className={styles.specimenLabel}>
               <span>{demo ? 'example garden' : 'your garden'}</span>
               <span aria-hidden>✳</span>
             </div>
             {scene}
-            <p className={styles.caption}>No watering required. Emotionally, anyway.</p>
+            {demo && <p className={styles.caption}>No watering required. Emotionally, anyway.</p>}
           </div>
-          <p className={styles.how}>Your words decide what grows here.</p>
         </aside>
+        {preview && <div className={styles.preview}>{preview}</div>}
       </div>
+      {footer}
     </div>
   )
 }

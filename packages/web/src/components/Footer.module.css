@@ -1,0 +1,22 @@
+.footer,
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 16px;
+}
+
+.footer {
+  padding: 20px var(--folio-gutter) 28px;
+  font-size: 13px;
+  color: var(--text-mid);
+}
+
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  text-underline-offset: 3px;
+}

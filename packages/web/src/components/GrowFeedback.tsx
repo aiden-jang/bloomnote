@@ -4,6 +4,7 @@ import styles from './Composer.module.css'
 export default function GrowFeedback({ statusText, onCancel }: { statusText: string; onCancel: () => void }) {
   return (
     <div className={styles.designingPanel}>
+      <h2 className={styles.shareTitle}>Growing their garden.</h2>
       <div className={styles.designingRow} role="status" aria-live="polite">
         <Spinner />
         <span>{statusText || 'growing…'}</span>

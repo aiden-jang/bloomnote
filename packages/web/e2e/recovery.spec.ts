@@ -94,6 +94,14 @@ test('copy failures explain how to send the visible link and allow retry', async
   }
   await page.getByRole('button', { name: 'copy link', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText(/select.*link/i)
+  const manualLink = page.getByRole('textbox', { name: 'Garden link', exact: true })
+  await manualLink.focus()
+  await expect(manualLink).toHaveAttribute('readonly', '')
+  expect(
+    await manualLink.evaluate((input: HTMLInputElement) =>
+      input.value.slice(input.selectionStart ?? 0, input.selectionEnd ?? 0),
+    ),
+  ).toBe(await manualLink.inputValue())
   await expect(page.getByRole('button', { name: 'copied', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'copy link', exact: true }).click()
   await expect(page.getByRole('button', { name: 'copied', exact: true })).toBeVisible()

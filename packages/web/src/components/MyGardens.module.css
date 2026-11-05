@@ -866,3 +866,46 @@
     gap: 8px;
   }
 }
+
+.wrap {
+  max-width: 1040px;
+  padding-inline: var(--folio-gutter);
+  gap: 18px;
+}
+
+.title {
+  font-size: var(--folio-display);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.card,
+.empty,
+.notice {
+  border-radius: var(--folio-radius);
+  background: var(--folio-paper);
+}
+
+.search,
+.sort,
+.tab,
+.tabActive,
+.pinnedFilter,
+.pinBtn,
+.actionBtn,
+.removeBtn {
+  min-height: 44px;
+}
+
+.recipient {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.tab,
+.tabActive {
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    transform 0.15s;
+}

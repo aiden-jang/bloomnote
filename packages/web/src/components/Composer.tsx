@@ -9,6 +9,7 @@ import RemixContext from './RemixContext'
 import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import ComposerFrame from './ComposerFrame'
+import ComposerSecret from './ComposerSecret'
 import { type ExampleGarden } from '../data/exampleGardens'
 import { type GardenData } from '../garden'
 import { trackComposerOpened } from '../lib/analytics'
@@ -174,12 +175,34 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   return (
     <ComposerFrame
-      subtitle={
-        phase === 'designed'
-          ? "it's theirs now. send it when you're ready."
-          : remixSeed
+      footer={
+        mineCount > 0 && (
+          <footer className={styles.footer}>
+            <p className={styles.footerNav}>
+              <a href="/mine">your gardens</a>
+            </p>
+          </footer>
+        )
+      }
+      intro={
+        phase === 'idle'
+          ? remixSeed
             ? `write ${remixSeed.from || 'them'} back.`
             : 'Write someone a note. We turn the details into flowers, ready to send.'
+          : undefined
+      }
+      preview={
+        phase === 'designed' && garden && shareUrl ? (
+          <ComposerPreview
+            key={gardenId}
+            garden={garden}
+            shareUrl={shareUrl}
+            recipient={recipient}
+            from={from}
+            message={message}
+            secret={secret}
+          />
+        ) : null
       }
       demo={showDemo}
       scene={
@@ -211,15 +234,96 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'idle' && (
         <>
-          <NoteField
-            ritual={todaysRitual}
-            value={message}
-            onChange={setMessage}
-            inputRef={messageRef}
-            prompt={writingPrompt}
-            hasAnotherPrompt={promptOptions.length > 1}
-            onAnotherPrompt={() => setPromptIndex((index) => index + 1)}
-          />
+          <div className={styles.writingPaper}>
+            <NoteField
+              ritual={todaysRitual}
+              value={message}
+              onChange={setMessage}
+              inputRef={messageRef}
+              prompt={writingPrompt}
+              hasAnotherPrompt={promptOptions.length > 1}
+              onAnotherPrompt={() => setPromptIndex((index) => index + 1)}
+            />
+
+            <div className={styles.nameRow}>
+              <section className={styles.section}>
+                <label className={styles.label} htmlFor="garden-from">
+                  from
+                </label>
+                <input
+                  id="garden-from"
+                  className={styles.input}
+                  placeholder="your name"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  maxLength={60}
+                />
+              </section>
+              <section className={styles.section}>
+                <label className={styles.label} htmlFor="garden-to">
+                  to
+                </label>
+                <input
+                  id="garden-to"
+                  className={styles.input}
+                  placeholder="their name"
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                  maxLength={60}
+                />
+              </section>
+            </div>
+
+            <details className={styles.noteOptions}>
+              <summary>occasion and mood</summary>
+              <ChipPicker
+                label="occasion"
+                name="occasion"
+                options={OCCASIONS}
+                value={occasion}
+                onChange={setOccasion}
+              />
+              <ChipPicker label="mood" name="mood" options={MOODS} value={mood} onChange={setMood} />
+            </details>
+            <ComposerSecret value={secret} onChange={setSecret} />
+
+            {message.trim().length >= 4 && <GardenForecastPanel forecast={forecast} />}
+            <ScheduleInput
+              open={scheduleOpen}
+              value={unlockLocal}
+              error={scheduleError}
+              onOpen={() => setScheduleOpen(true)}
+              onChange={setUnlockLocal}
+              onCancel={() => {
+                setScheduleOpen(false)
+                setUnlockLocal('')
+              }}
+            />
+
+            {errorText && (
+              <div className={styles.error} role="alert">
+                {errorText}
+              </div>
+            )}
+
+            <div className={styles.actions}>
+              <button className={styles.generateBtn} onClick={runDesign} disabled={!canSubmit}>
+                {remixSeed ? 'grow one back' : 'grow their garden'}
+              </button>
+            </div>
+
+            {disabledReason && (
+              <p className={styles.actionHint} aria-live="polite">
+                {disabledReason}
+              </p>
+            )}
+
+            {remixSeed && (
+              <p className={styles.escape}>
+                <a href="/">or start fresh</a>
+              </p>
+            )}
+          </div>
 
           {!remixSeed && (
             <ExampleCarousel
@@ -228,97 +332,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               activeId={hero.activeId}
               onPreview={hero.preview}
             />
-          )}
-
-          <div className={styles.nameRow}>
-            <section className={styles.section}>
-              <label className={styles.label} htmlFor="garden-from">
-                from
-              </label>
-              <input
-                id="garden-from"
-                className={styles.input}
-                placeholder="your name"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                maxLength={60}
-              />
-            </section>
-            <section className={styles.section}>
-              <label className={styles.label} htmlFor="garden-to">
-                to
-              </label>
-              <input
-                id="garden-to"
-                className={styles.input}
-                placeholder="their name"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                maxLength={60}
-              />
-            </section>
-          </div>
-
-          <details className={styles.secretNote} open={secret.length > 0 ? true : undefined}>
-            <summary>add a tiny secret</summary>
-            <div className={styles.secretNoteField}>
-              <label htmlFor="secret-note">a little aside they can tap to reveal</label>
-              <textarea
-                id="secret-note"
-                value={secret}
-                onChange={(e) => setSecret(e.target.value)}
-                placeholder="p.s. I still have that ridiculous photo of us."
-                rows={2}
-                maxLength={140}
-              />
-              <span>{secret.length}/140</span>
-            </div>
-          </details>
-
-          <ChipPicker
-            label="occasion"
-            name="occasion"
-            options={OCCASIONS}
-            value={occasion}
-            onChange={setOccasion}
-          />
-          <ChipPicker label="mood" name="mood" options={MOODS} value={mood} onChange={setMood} />
-
-          {message.trim().length >= 4 && <GardenForecastPanel forecast={forecast} />}
-          <ScheduleInput
-            open={scheduleOpen}
-            value={unlockLocal}
-            error={scheduleError}
-            onOpen={() => setScheduleOpen(true)}
-            onChange={setUnlockLocal}
-            onCancel={() => {
-              setScheduleOpen(false)
-              setUnlockLocal('')
-            }}
-          />
-
-          {errorText && (
-            <div className={styles.error} role="alert">
-              {errorText}
-            </div>
-          )}
-
-          <div className={styles.actions}>
-            <button className={styles.generateBtn} onClick={runDesign} disabled={!canSubmit}>
-              {remixSeed ? 'grow one back' : 'grow their garden'}
-            </button>
-          </div>
-
-          {disabledReason && (
-            <p className={styles.actionHint} aria-live="polite">
-              {disabledReason}
-            </p>
-          )}
-
-          {remixSeed && (
-            <p className={styles.escape}>
-              <a href="/">or start fresh</a>
-            </p>
           )}
 
           {!remixSeed && hasDraft && (
@@ -353,45 +366,25 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       {phase === 'designed' && garden && <PetalFall key={gardenId ?? 'fall'} flowers={garden.flowers} />}
 
       {phase === 'designed' && garden && shareUrl && (
-        <>
-          <ShareCard
-            shareUrl={shareUrl}
-            recipient={recipient}
-            copied={copied}
-            shareStatus={shareStatus}
-            imageStatus={imageStatus}
-            canShare={canShare}
-            shareError={shareError}
-            isRerolling={isRerolling}
-            errorText={errorText}
-            statusText={statusText}
-            scheduleOpen={!!garden.unlockAt}
-            unlockLocal={garden.unlockAt ?? ''}
-            onShare={handleShare}
-            onCopy={handleCopy}
-            onSaveImage={handleSaveImage}
-            onReroll={() => void design.reroll(draft.fields)}
-            onStartOver={handleStartOver}
-          />
-
-          <ComposerPreview
-            key={gardenId}
-            garden={garden}
-            shareUrl={shareUrl}
-            recipient={recipient}
-            from={from}
-            message={message}
-            secret={secret}
-          />
-        </>
-      )}
-
-      {mineCount > 0 && (
-        <footer className={styles.footer}>
-          <p className={styles.footerNav}>
-            <a href="/mine">your gardens</a>
-          </p>
-        </footer>
+        <ShareCard
+          shareUrl={shareUrl}
+          recipient={recipient}
+          copied={copied}
+          shareStatus={shareStatus}
+          imageStatus={imageStatus}
+          canShare={canShare}
+          shareError={shareError}
+          isRerolling={isRerolling}
+          errorText={errorText}
+          statusText={statusText}
+          scheduleOpen={!!garden.unlockAt}
+          unlockLocal={garden.unlockAt ?? ''}
+          onShare={handleShare}
+          onCopy={handleCopy}
+          onSaveImage={handleSaveImage}
+          onReroll={() => void design.reroll(draft.fields)}
+          onStartOver={handleStartOver}
+        />
       )}
     </ComposerFrame>
   )

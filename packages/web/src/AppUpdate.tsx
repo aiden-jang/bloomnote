@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import styles from './AppUpdate.module.css'
 
 export function AppUpdate({ safe = true }: { safe?: boolean }) {
   const [available, setAvailable] = useState(false)
@@ -49,61 +50,14 @@ export function AppUpdate({ safe = true }: { safe?: boolean }) {
   }, [])
   if (!safe || !available || dismissed) return null
   return (
-    <aside
-      aria-label="App update"
-      role="status"
-      style={{
-        position: 'fixed',
-        bottom: 'max(16px, env(safe-area-inset-bottom))',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        boxSizing: 'border-box',
-        width: 'min(440px, calc(100% - 24px))',
-        padding: 16,
-        borderRadius: 16,
-        background: '#faf6ee',
-        color: '#23472c',
-        boxShadow: '0 6px 32px #0004',
-        fontFamily: 'inherit',
-        fontSize: 14,
-        overflowWrap: 'anywhere',
-      }}
-    >
-      <p style={{ margin: 0, fontWeight: 600 }}>An update is ready.</p>
-      <p style={{ margin: '6px 0 10px' }}>
-        Save your changes before reloading. This page stays open until you choose.
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          style={{
-            minHeight: 44,
-            padding: '8px 16px',
-            borderRadius: 10,
-            border: '1px solid currentColor',
-            color: 'inherit',
-            background: 'transparent',
-            font: 'inherit',
-            cursor: 'pointer',
-          }}
-        >
+    <aside aria-label="App update" role="status" className={styles.notice}>
+      <p className={styles.title}>An update is ready.</p>
+      <p>Save your changes before reloading. This page stays open until you choose.</p>
+      <div className={styles.actions}>
+        <button type="button" className={styles.reload} onClick={() => window.location.reload()}>
           Reload app
         </button>
-        <button
-          type="button"
-          onClick={() => setDismissed(true)}
-          style={{
-            minHeight: 44,
-            padding: '8px 16px',
-            border: 0,
-            color: 'inherit',
-            background: 'transparent',
-            font: 'inherit',
-            cursor: 'pointer',
-          }}
-        >
+        <button type="button" className={styles.later} onClick={() => setDismissed(true)}>
           Later
         </button>
       </div>

@@ -77,3 +77,29 @@
   color: white;
   text-decoration: none;
 }
+
+.page > a:first-child {
+  margin-bottom: 14px;
+}
+
+.card {
+  text-align: left;
+  background: var(--folio-paper);
+  border-radius: var(--folio-radius);
+  padding: clamp(16px, 3vw, 30px);
+}
+
+.title {
+  font-size: clamp(27px, 4.2vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.actions {
+  justify-content: flex-start;
+}
+
+.card > .action {
+  padding-inline: 0;
+}

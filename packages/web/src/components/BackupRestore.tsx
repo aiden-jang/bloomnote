@@ -65,6 +65,7 @@ export default function BackupRestore({
     <details className={styles.wrap}>
       <summary>backup & restore</summary>
       <div className={styles.content}>
+        <h2 className={styles.sectionTitle}>Download a backup</h2>
         <p>
           Keep the full contents of the gardens in your {user ? 'account library' : 'device library'} as a
           JSON file, including replies and secret notes. Keep the file private.
@@ -84,6 +85,7 @@ export default function BackupRestore({
         </p>
         <button
           type="button"
+          className={styles.primary}
           disabled={busy || blocked || sessionError}
           onClick={async () => {
             const controller = start('downloading')
@@ -108,7 +110,7 @@ export default function BackupRestore({
           <p role="alert">Sign-in could not be checked. Retry it before backing up or restoring.</p>
         )}
         <div className={styles.restore}>
-          <h2>bring a backup back</h2>
+          <h2 className={styles.sectionTitle}>Restore from a file</h2>
           {user ? (
             <>
               <p>Read a file first, then confirm the copies to keep in this account.</p>
@@ -172,6 +174,7 @@ export default function BackupRestore({
               <div className={styles.actions}>
                 <button
                   type="button"
+                  className={styles.primary}
                   disabled={busy || blocked || sessionError || preview.backup.entries.length === 0}
                   onClick={async () => {
                     const controller = start('restoring')

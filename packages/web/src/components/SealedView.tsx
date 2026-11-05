@@ -100,15 +100,10 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
     <div className={styles.wrap}>
       <div className={styles.topLabel}>
         <BloomBrand />
-        <h1 className={styles.fromText}>
-          {from ? (
-            <>
-              <span className={styles.fromName}>{from}</span> grew {to ? to : 'you'} a garden
-            </>
-          ) : (
-            <>someone grew {to ? to : 'you'} a garden</>
-          )}
-        </h1>
+        <h1 className={styles.title}>A garden is waiting.</h1>
+        <p className={styles.fromText}>
+          {from || 'Someone'} grew {to || 'you'} a garden.
+        </p>
       </div>
 
       <div className={styles.plot} aria-hidden>

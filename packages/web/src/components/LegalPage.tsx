@@ -1,4 +1,5 @@
-import notice from './Notice.module.css'
+import BloomBrand from './BloomBrand'
+import { AUTH_ORIGIN } from '../auth/AuthContext'
 import styles from './LegalPage.module.css'
 
 interface Section {
@@ -56,25 +57,41 @@ const TERMS: Section[] = [
 
 export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
   const title = kind === 'privacy' ? 'privacy' : 'terms'
-  const sections = kind === 'privacy' ? PRIVACY : TERMS
+  const sections = (kind === 'privacy' ? PRIVACY : TERMS).map((section) => ({
+    ...section,
+    id: section.heading.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+  }))
 
   return (
-    <div className={notice.page}>
-      {/* Colour rather than opacity throughout this page. Dimming a full-strength colour drops legal
-          copy under the contrast threshold. */}
-      <a href="/" className={styles.back}>
-        &larr; bloomnote
-      </a>
-      <div className={notice.card}>
-        <h1 className={styles.title}>{title}</h1>
-        <p className={styles.updated}>Last updated: {UPDATED}</p>
-        {sections.map((s) => (
-          <section key={s.heading} className={styles.section}>
-            <h2 className={styles.heading}>{s.heading}</h2>
-            <p className={styles.body}>{s.body}</p>
+    <div className={styles.document}>
+      <header className={styles.brandRow}>
+        <BloomBrand />
+      </header>
+      <article>
+        <header>
+          <h1 className={styles.title}>{title}</h1>
+          <p className={styles.updated}>Last updated: {UPDATED}</p>
+        </header>
+        <details className={styles.contents}>
+          <summary>On this page</summary>
+          <nav aria-label={`${title} sections`}>
+            {sections.map((section) => (
+              <a key={section.id} href={`#${section.id}`}>
+                {section.heading}
+              </a>
+            ))}
+          </nav>
+        </details>
+        {sections.map((section) => (
+          <section key={section.id} id={section.id} className={styles.section}>
+            <h2 className={styles.heading}>{section.heading}</h2>
+            <p className={styles.body}>{section.body}</p>
           </section>
         ))}
-      </div>
+        <a className={styles.accountPolicy} href={new URL(`/${kind}`, AUTH_ORIGIN).href}>
+          Accounts {title}
+        </a>
+      </article>
     </div>
   )
 }

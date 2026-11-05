@@ -70,6 +70,14 @@
      tenth opacity, which was the only neutral line in the app and only by accident. */
   --line: var(--green-pale);
 
+  --folio-paper: #fffdf8;
+  --folio-control: #778674;
+  --folio-width: 1200px;
+  --folio-gutter: clamp(16px, 4vw, 40px);
+  --folio-gap: clamp(20px, 3.6vw, 44px);
+  --folio-radius: 14px;
+  --folio-display: clamp(34px, 5.1vw, 62px);
+
   --pink-mid: #dfadb6;
   --pink-deep: #995168;
   --serif: 'Fraunces', 'Playfair Display', Georgia, serif;
@@ -86,6 +94,10 @@ body,
 #root {
   height: 100%;
   width: 100%;
+}
+
+html {
+  scroll-padding-top: 56px;
 }
 
 body {

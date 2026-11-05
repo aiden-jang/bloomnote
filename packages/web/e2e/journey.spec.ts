@@ -165,9 +165,9 @@ test.describe('compose → bloom → share → recipient', () => {
       await expect(page.getByText(f.meaning).first()).toBeVisible()
     }
 
-    const link = page.getByText(/\/g\/[A-Za-z0-9]{6}/).first()
+    const link = page.getByRole('textbox', { name: 'Garden link', exact: true })
     await expect(link).toBeVisible()
-    const shareUrl = (await link.textContent())!.trim()
+    const shareUrl = await link.inputValue()
     expect(shareUrl).toMatch(/\/g\/[A-Za-z0-9]{6}$/)
 
     /*
@@ -208,9 +208,9 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.goto(new URL(shareUrl).pathname)
 
     // Not getByText('Aiden'): the footer credit "made by aiden jang" also matches it.
-    await expect(page.getByText(/grew Nadia a garden/i)).toBeVisible()
+    await expect(page.getByText('From Aiden', { exact: true })).toBeVisible()
     // The button removes itself on click, so focus has to be sent somewhere deliberately.
-    const heading = page.getByRole('heading', { level: 1, name: /grew Nadia a garden/i })
+    const heading = page.getByRole('heading', { level: 1, name: /a garden for Nadia/i })
     await expect(heading).toBeVisible()
     await page.getByRole('button', { name: /open the garden/i }).click()
     await expect(heading).toBeFocused()
@@ -358,6 +358,7 @@ test.describe('compose → bloom → share → recipient', () => {
   // journey fills the note and grows a garden on the defaults.
   test('picking an occasion moves the selection to exactly one chip', async ({ page }) => {
     await page.goto('/')
+    await page.getByText('occasion and mood', { exact: true }).click()
     const row = page.getByRole('radiogroup').first()
     const checked = row.getByRole('radio', { checked: true })
     // The count, not a named chip: two checked at once is the failure this is named for.
@@ -374,6 +375,7 @@ test.describe('compose → bloom → share → recipient', () => {
   test('a chip still selects when the row is narrow enough to scroll', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 })
     await page.goto('/')
+    await page.getByText('occasion and mood', { exact: true }).click()
     const row = page.getByRole('radiogroup').first()
     expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)
 
@@ -386,6 +388,7 @@ test.describe('compose → bloom → share → recipient', () => {
   test('dragging the row scrolls it without selecting what it lands on', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 })
     await page.goto('/')
+    await page.getByText('occasion and mood', { exact: true }).click()
     const row = page.getByRole('radiogroup').first()
     await row.scrollIntoViewIfNeeded()
     const box = (await row.boundingBox())!
@@ -573,7 +576,7 @@ test('a scheduled garden counts down instead of opening', async ({ page }) => {
   const id = await createGarden(page, { unlockAt: '2099-06-01T12:00:00.000Z' })
   await page.goto(`/g/${id}`)
 
-  await expect(page.getByRole('heading', { level: 1, name: /grew Nadia a garden/i })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /a garden is waiting/i })).toBeVisible()
   await expect(page.getByText('opens in', { exact: true })).toBeVisible()
   // The flowers must not be reachable before the moment the sender picked.
   await expect(page.getByRole('button', { name: /open the garden/i })).toHaveCount(0)

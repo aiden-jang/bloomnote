@@ -1208,18 +1208,27 @@
 }
 
 .urlBox {
-  background: #f5f9f2;
-  border: 1px solid var(--green-pale);
-  border-radius: 10px;
-  padding: 10px 14px;
-  overflow: hidden;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-mid);
+}
+
+.urlLabel {
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .urlText {
-  font-size: 12px;
-  color: var(--text-mid);
-  font-family: monospace;
-  word-break: break-all;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--folio-control);
+  border-radius: 9px;
+  background: var(--cream);
+  color: var(--text-dark);
+  font: 16px/1.4 var(--sans);
 }
 
 .shareActions {
@@ -1549,15 +1558,11 @@
   }
 }
 
-.readyEyebrow {
-  color: var(--text-mid);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
 .shareTitle {
-  font-size: 26px;
-  letter-spacing: -0.5px;
+  font-size: clamp(29px, 4.2vw, 47px);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  text-wrap: balance;
 }
 .shareActionsPrimary > button {
   min-height: 52px;
@@ -1589,16 +1594,69 @@
   }
 }
 
-.shareCard {
-  padding: 0 0 24px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
+.writingPaper,
+.shareCard,
+.designingPanel {
+  background: var(--folio-paper);
+  border: 1px solid var(--line);
+  border-radius: var(--folio-radius);
+  padding: clamp(14px, 2.3vw, 26px);
+  min-width: 0;
 }
+
+.writingPaper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.noteOptions {
+  border-block: 1px solid var(--line);
+}
+
+.noteOptions summary {
+  display: list-item;
+  min-height: 44px;
+  padding: 11px 2px;
+  color: var(--text-dark);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.noteOptions[open] {
+  padding-bottom: 12px;
+}
+
+.noteOptions[open] > :not(summary) {
+  margin-top: 6px;
+}
+
+.writingPaper .label {
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.writingPaper .textarea {
+  font-size: clamp(19px, 2.3vw, 25px);
+  min-height: 132px;
+  line-height: 1.46;
+}
+
+@media (pointer: coarse) {
+  .noteOptions button {
+    min-height: 44px;
+  }
+}
+
 .previewMessage {
   padding: 18px 12px;
   border: 0;
   border-radius: 12px;
   background: var(--cream);
+}
+
+.writingPaper .textarea,
+.writingPaper .input {
+  border-color: var(--folio-control);
 }

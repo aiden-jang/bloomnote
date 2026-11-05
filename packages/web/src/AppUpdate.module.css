@@ -1,0 +1,51 @@
+.notice {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(440px, calc(100% - 24px));
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--folio-radius);
+  background: var(--folio-paper);
+  color: var(--text-dark);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reload,
+.later {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.reload {
+  background: var(--green-deep);
+  color: var(--folio-paper);
+}
+
+.later {
+  background: none;
+  color: var(--text-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

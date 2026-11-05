@@ -1,47 +1,92 @@
-.back {
-  display: inline-block;
-  margin-bottom: 1.25rem;
-  padding: 5px 2px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--green-mid);
-  text-decoration: none;
+.document {
+  max-width: 790px;
+  margin-inline: auto;
+  padding: 62px var(--folio-gutter) 48px;
 }
 
-.back:hover {
-  color: var(--green-deep);
+.brandRow {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 26px;
 }
 
 .title {
-  margin: 0;
   font-family: var(--serif);
-  font-size: 2.1rem;
+  font-size: var(--folio-display);
   font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
   color: var(--green-deep);
-  letter-spacing: -0.4px;
 }
 
 .updated {
-  margin: 0.35rem 0 0;
-  font-size: 0.85rem;
-  color: var(--text-light);
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-mid);
+}
+
+.contents {
+  margin-top: 22px;
+  border-block: 1px solid var(--line);
+}
+
+.contents summary {
+  min-height: 44px;
+  padding-block: 11px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.contents nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  padding-bottom: 8px;
+}
+
+.contents a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--green-deep);
+  text-underline-offset: 3px;
 }
 
 .section {
-  margin-top: 1.75rem;
-  text-align: left;
+  margin-top: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 24px;
 }
 
 .heading {
-  margin: 0 0 0.4rem;
-  font-size: 1rem;
-  font-weight: 700;
+  margin-bottom: 8px;
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.8vw, 28px);
+  font-weight: 500;
+  line-height: 1.2;
   color: var(--green-deep);
 }
 
 .body {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.65;
+  max-width: 70ch;
+  font-size: 16px;
+  line-height: 1.7;
   color: var(--text-mid);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .contents nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.accountPolicy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 10px;
+  color: var(--green-deep);
+  text-underline-offset: 3px;
 }

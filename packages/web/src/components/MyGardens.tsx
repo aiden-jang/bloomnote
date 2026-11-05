@@ -128,6 +128,7 @@ function AccountGardens() {
         </div>
       )}
       <LibraryTabs tab={tab} sent={sent.length} received={received.length} onChange={switchTab} />
+      <BackupRestore blocked={busy || pending !== null} onRestored={retryLoad} />
       <section role="tabpanel" id="garden-collection" aria-labelledby={`garden-tab-${tab}`}>
         {list.length > 1 && (
           <LibraryTools
@@ -193,7 +194,6 @@ function AccountGardens() {
           />
         )}
       </section>
-      <BackupRestore blocked={busy || pending !== null} onRestored={retryLoad} />
     </Shell>
   )
 }
@@ -212,6 +212,7 @@ function LocalGardens() {
 
   return (
     <Shell subtitle="the gardens you've grown, saved on this device." hideBackLink={records.length === 0}>
+      <BackupRestore />
       {sessionError && (
         <div className={styles.notice} role="alert">
           <p>couldn’t check your sign-in. Only the gardens saved on this device are shown.</p>
@@ -273,7 +274,6 @@ function LocalGardens() {
           )}
         </>
       )}
-      <BackupRestore />
     </Shell>
   )
 }

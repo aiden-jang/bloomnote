@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import Footer from './components/Footer'
+import BloomBrand from './components/BloomBrand'
 import { fetchGarden, type GardenData } from './garden'
 import { lazyWithReload } from './lib/lazyWithReload'
 import { parseRoute } from './lib/route'
@@ -176,6 +177,7 @@ function LoadingShell() {
 function NotFoundShell() {
   return (
     <div className={notice.page}>
+      <BloomBrand />
       <div className={notice.card}>
         <h1 className={notice.title}>that link didn&rsquo;t lead anywhere.</h1>
         <p className={notice.body}>
@@ -195,6 +197,7 @@ function NotFoundShell() {
 function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
   return (
     <div className={notice.page}>
+      <BloomBrand />
       <div className={notice.card}>
         <h1 className={notice.title}>couldn&rsquo;t load that garden.</h1>
         <p className={notice.body}>looks like a connection hiccup, not a bad link.</p>

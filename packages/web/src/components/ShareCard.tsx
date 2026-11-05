@@ -41,8 +41,7 @@ export default function ShareCard({
 }: Props) {
   return (
     <div className={styles.shareCard}>
-      <p className={styles.readyEyebrow}>ready for their inbox</p>
-      <p className={styles.shareTitle}>
+      <h2 className={styles.shareTitle}>
         {scheduleOpen
           ? recipient
             ? `${recipient}'s garden is sealed`
@@ -50,7 +49,7 @@ export default function ShareCard({
           : recipient
             ? `${recipient}'s garden is ready`
             : 'ready to send'}
-      </p>
+      </h2>
       <p className={styles.scheduleConfirm}>
         Nothing has been sent. Share the link with {recipient.trim() || 'your person'} when you’re ready.
       </p>
@@ -74,13 +73,23 @@ export default function ShareCard({
           })}
         </p>
       )}
-      <div className={styles.urlBox}>
-        {isRerolling ? (
-          <span className={styles.urlStatus}>{statusText || 'regrowing…'}</span>
-        ) : (
-          <span className={styles.urlText}>{shareUrl}</span>
-        )}
-      </div>
+      {isRerolling ? (
+        <div className={styles.urlBox}>
+          <span className={styles.urlStatus} role="status">
+            {statusText || 'regrowing…'}
+          </span>
+        </div>
+      ) : (
+        <label className={styles.urlBox}>
+          <span className={styles.urlLabel}>Garden link</span>
+          <input
+            className={styles.urlText}
+            value={shareUrl}
+            readOnly
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </label>
+      )}
       <div className={styles.shareActions}>
         <div className={styles.shareActionsPrimary}>
           {canShare && (

@@ -124,3 +124,34 @@
 .error {
   color: var(--error);
 }
+
+.wrap {
+  border-radius: var(--folio-radius);
+  background: var(--folio-paper);
+}
+
+.content {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 4px clamp(14px, 3vw, 24px) 20px;
+}
+
+.content .sectionTitle {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--green-deep);
+}
+
+.content button.primary {
+  justify-self: start;
+  border-radius: 10px;
+  background: var(--green-deep);
+  color: var(--folio-paper);
+}
+
+.preview {
+  background: var(--cream);
+  border: 1px solid var(--line);
+}

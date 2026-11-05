@@ -37,12 +37,13 @@ export default function NoteField({
       </p>
       <textarea
         id="note"
+        name="note"
         ref={inputRef}
         className={styles.textarea}
         placeholder={prompt}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        rows={6}
+        rows={4}
         maxLength={MAX_NOTE}
         aria-describedby="note-hint note-count"
       />

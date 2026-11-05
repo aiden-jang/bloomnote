@@ -12,17 +12,19 @@
   text-align: center;
 }
 
-/* Keep font-weight: 400. This class sits on an h1, so it is not redundant. */
-.fromText {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--text-mid);
-  letter-spacing: 0.02em;
+.title {
+  font-family: var(--serif);
+  font-size: clamp(34px, 5vw, 53px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
-.fromName {
-  color: var(--text-deep);
-  font-weight: 500;
+.fromText {
+  font-size: 15px;
+  color: var(--text-mid);
+  overflow-wrap: anywhere;
 }
 
 .plot {
@@ -100,14 +102,15 @@
 .reminderMenu summary {
   width: fit-content;
   margin: 0 auto;
-  border: 1px solid var(--green-pale);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--text-mid);
+  border: 1px solid var(--green-deep);
+  border-radius: 10px;
+  background: var(--green-deep);
+  color: var(--folio-paper);
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
-  padding: 7px 12px;
+  font-size: 14px;
+  min-height: 44px;
+  padding: 10px 16px;
   transition:
     border-color 0.15s,
     color 0.15s,
@@ -120,14 +123,14 @@
 }
 .reminderMenu summary::after {
   content: ' +';
-  color: var(--text-light);
+  color: inherit;
 }
 .reminderMenu[open] summary::after {
   content: ' −';
 }
 .reminderMenu summary:hover {
-  border-color: var(--green-light);
-  color: var(--green-deep);
+  background: var(--green-mid);
+  border-color: var(--green-mid);
 }
 .reminderMenu summary:active {
   transform: scale(0.97);
@@ -220,5 +223,5 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
 }

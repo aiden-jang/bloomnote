@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import notice from './Notice.module.css'
+import BloomBrand from './BloomBrand'
 
 interface Props {
   children: ReactNode
@@ -26,6 +27,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       /* The crash screen, on the same card as the other notices. This is what somebody sees
          when everything else has failed, so it should not be built from inline styles. */
       <div className={notice.page}>
+        <BloomBrand />
         <div className={notice.card}>
           <h1 className={notice.title}>something wilted.</h1>
           <p className={notice.body}>a hiccup on our end. refresh, or start a fresh one.</p>
