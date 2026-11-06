@@ -9,7 +9,7 @@ export default function GardenForecastPanel({ forecast }: { forecast: GardenFore
           <span className={styles.forecastEyebrow}>garden forecast</span>
           <strong>{forecast.tone}</strong>
         </span>
-        <span className={styles.forecastSwatches} aria-label={forecast.palette}>
+        <span className={styles.forecastSwatches} aria-hidden="true">
           {forecast.colors.map((color) => (
             <i key={color} style={{ backgroundColor: color }} />
           ))}

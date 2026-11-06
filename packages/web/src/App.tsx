@@ -69,6 +69,10 @@ export default function App() {
   useEffect(() => {
     if (!parsed.short) return
     const ctrl = new AbortController()
+    const timeout = window.setTimeout(() => {
+      ctrl.abort()
+      setRoute({ kind: 'loaderror' })
+    }, 10_000)
     void (async () => {
       try {
         const garden = await fetchGarden(parsed.short!, ctrl.signal)
@@ -82,13 +86,16 @@ export default function App() {
             ? { kind: 'recipient', garden, gardenId: parsed.short! }
             : { kind: 'composer', seed: garden },
         )
-      } catch (err) {
-        // Aborted is not a failure. Let the superseding run win.
-        if (ctrl.signal.aborted || (err instanceof DOMException && err.name === 'AbortError')) return
-        setRoute({ kind: 'loaderror' })
+      } catch {
+        if (!ctrl.signal.aborted) setRoute({ kind: 'loaderror' })
+      } finally {
+        window.clearTimeout(timeout)
       }
     })()
-    return () => ctrl.abort()
+    return () => {
+      window.clearTimeout(timeout)
+      ctrl.abort()
+    }
   }, [parsed, retryNonce])
 
   useEffect(() => {

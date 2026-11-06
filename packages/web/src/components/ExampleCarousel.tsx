@@ -23,6 +23,7 @@ export default function ExampleCarousel({ onSelect, collapsed = false, activeId,
                 key={g.id}
                 garden={g}
                 onSelect={onSelect}
+                disabled={collapsed}
                 active={g.id === activeId}
                 {...(onPreview ? { onPreview } : {})}
               />
@@ -38,11 +39,13 @@ function ExampleCard({
   garden,
   onSelect,
   active = false,
+  disabled,
   onPreview,
 }: {
   garden: ExampleGarden
   onSelect: (g: ExampleGarden) => void
   active?: boolean
+  disabled: boolean
   onPreview?: (id: string | null) => void
 }) {
   const snippet = truncate(garden.message, 120)
@@ -51,6 +54,7 @@ function ExampleCard({
     <li className={styles.cardItem}>
       <button
         type="button"
+        disabled={disabled}
         className={active ? `${styles.card} ${styles.cardActive}` : styles.card}
         onClick={() => onSelect(garden)}
         // Hover and focus both preview, so the link between card and hero exists for the keyboard too.

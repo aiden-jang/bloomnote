@@ -533,6 +533,12 @@
   .secretText {
     animation: none;
   }
+  .messageWrap,
+  .legendWrap,
+  .cta,
+  .threadWrap {
+    transition: none;
+  }
 }
 
 .wrap {

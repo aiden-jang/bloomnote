@@ -2,6 +2,7 @@
 // an OS modal on click. Everything here renders inline in the card.
 
 import { useState } from 'react'
+import ScheduleCalendar, { sameDay } from './ScheduleCalendar'
 import styles from './Composer.module.css'
 
 interface Props {
@@ -43,10 +44,6 @@ function startOfDay(d: Date): Date {
   const n = new Date(d)
   n.setHours(0, 0, 0, 0)
   return n
-}
-
-function sameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
 function nthWeekday(year: number, month0: number, weekday: number, n: number): Date {
@@ -101,8 +98,6 @@ function upcomingOccasions(count: number): { label: string; date: Date }[] {
     .slice(0, count)
 }
 
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-
 export default function ScheduleInput({ open, value, error, onOpen, onChange, onCancel }: Props) {
   const selected = parseLocal(value)
   const today = startOfDay(new Date())
@@ -115,7 +110,6 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
   const [time, setTime] = useState<{ h: number; m: number }>(() =>
     selected ? { h: selected.getHours(), m: selected.getMinutes() } : { h: 9, m: 0 },
   )
-
   if (!open) {
     return (
       <section className={styles.schedule}>
@@ -180,10 +174,6 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
     setTime({ h: date.getHours(), m: date.getMinutes() })
   }
 
-  function pickDay(day: number) {
-    pickDayDate(new Date(view.year, view.month, day))
-  }
-
   function pickTime(h: number, m: number) {
     setTime({ h, m })
     // Anchor the time to the chosen day, or to today when none is picked, so setting a time alone
@@ -201,23 +191,6 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
     const parsed = parseTimeInput(input)
     if (parsed) pickTime(parsed.h, parsed.m)
   }
-
-  function shiftMonth(delta: number) {
-    setView((v) => {
-      const d = new Date(v.year, v.month + delta, 1)
-      return { year: d.getFullYear(), month: d.getMonth() }
-    })
-  }
-
-  // Can't navigate to a month entirely in the past.
-  const atCurrentMonth = view.year === today.getFullYear() && view.month === today.getMonth()
-
-  const firstWeekday = new Date(view.year, view.month, 1).getDay()
-  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate()
-  const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString(undefined, {
-    month: 'long',
-    year: 'numeric',
-  })
 
   return (
     <section className={styles.schedule}>
@@ -244,65 +217,13 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
           ))}
         </div>
 
-        <div className={styles.scheduleCalendar}>
-          <div className={styles.calHeader}>
-            <button
-              type="button"
-              className={styles.calNav}
-              onClick={() => shiftMonth(-1)}
-              disabled={atCurrentMonth}
-              aria-label="previous month"
-            >
-              ‹
-            </button>
-            <span className={styles.calMonthLabel}>{monthLabel}</span>
-            <button
-              type="button"
-              className={styles.calNav}
-              onClick={() => shiftMonth(1)}
-              aria-label="next month"
-            >
-              ›
-            </button>
-          </div>
-
-          <div className={styles.calGrid} role="grid">
-            {WEEKDAYS.map((w, i) => (
-              <span key={`wd-${i}`} className={styles.calWeekday} aria-hidden>
-                {w}
-              </span>
-            ))}
-            {Array.from({ length: firstWeekday }).map((_, i) => (
-              <span key={`pad-${i}`} className={styles.calEmpty} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1
-              const date = new Date(view.year, view.month, day)
-              const disabled = date < today
-              const isSel = selected != null && sameDay(selected, date)
-              const isToday = sameDay(today, date)
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => pickDay(day)}
-                  aria-pressed={isSel}
-                  aria-label={date.toLocaleDateString(undefined, {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                  className={`${styles.calDay} ${isSel ? styles.calDaySelected : ''} ${
-                    isToday ? styles.calToday : ''
-                  }`}
-                >
-                  {day}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        <ScheduleCalendar
+          today={today}
+          selected={selected}
+          view={view}
+          onViewChange={setView}
+          onPick={pickDayDate}
+        />
 
         <div className={styles.scheduleTimeRow}>
           <span className={styles.scheduleAt}>at</span>

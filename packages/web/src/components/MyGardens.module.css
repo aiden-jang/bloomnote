@@ -682,7 +682,7 @@
   appearance: none;
   border: 1px solid var(--green-pale);
   background: transparent;
-  color: var(--text-light);
+  color: var(--text-mid);
   font: inherit;
   font-size: 13px;
   padding: 6px 14px;

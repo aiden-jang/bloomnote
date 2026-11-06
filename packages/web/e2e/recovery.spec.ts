@@ -61,6 +61,36 @@ test('an unavailable archive offers retry instead of claiming it is empty', asyn
   await expect(page.getByRole('alert')).toHaveCount(0)
 })
 
+test('a stalled garden request times out and a fresh retry can open it', async ({ page }) => {
+  await page.clock.install()
+  await mockApp(page)
+  let attempted = false
+  let available = false
+  let release: () => void = () => {}
+  const pending = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/api/garden?**', async (route) => {
+    if (available) return route.fallback()
+    attempted = true
+    await pending
+    await route.abort().catch(() => {})
+  })
+  try {
+    await page.goto('/g/AbCdEf')
+    await expect.poll(() => attempted).toBe(true)
+    await page.clock.fastForward(10_001)
+    const retry = page.getByRole('button', { name: 'try again', exact: true })
+    await expect(retry).toBeVisible()
+    available = true
+    release()
+    await retry.click()
+    await expect(page.getByRole('button', { name: 'open the garden', exact: true })).toBeVisible()
+  } finally {
+    release()
+  }
+})
+
 test('copy failures explain how to send the visible link and allow retry', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await mockApp(page)
@@ -189,6 +219,24 @@ test('a schedule that passes during generation is described as opening now', asy
   expect(stored).not.toBeNull()
   expect(stored).not.toHaveProperty('unlockAt')
   await expect(page.getByRole('alert')).toContainText(/opens now/i)
+})
+
+test('the schedule grid has one tab stop and supports moving and choosing a day', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-10-31T12:00:00'))
+  await mockApp(page)
+  await page.goto('/')
+  await page.getByRole('button', { name: /schedule for later/ }).click()
+  const grid = page.getByRole('grid')
+  const day = grid.locator('button[tabindex="0"]')
+  await expect(day).toHaveCount(1)
+  await expect(day).toHaveAccessibleName(/October 31/)
+  await day.focus()
+  await day.press('ArrowRight')
+  await expect(day).toBeFocused()
+  await expect(day).toHaveAccessibleName(/November 1/)
+  await day.press('Enter')
+  await expect(grid.locator('[aria-selected="true"]')).toContainText('1')
+  await expect(day).toBeFocused()
 })
 
 test('larger note text preserves the message and remembers the reading choice', async ({ page }) => {
