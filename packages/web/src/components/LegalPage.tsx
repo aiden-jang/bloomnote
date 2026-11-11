@@ -7,7 +7,7 @@ interface Section {
   body: string
 }
 
-const UPDATED = 'November 2, 2026'
+const UPDATED = 'November 10, 2026'
 
 const PRIVACY: Section[] = [
   {
@@ -16,7 +16,7 @@ const PRIVACY: Section[] = [
   },
   {
     heading: 'where it goes',
-    body: 'Your note is processed by Google (Gemini) to generate the flowers; send only what you are comfortable sharing with that service. The garden is stored by Cloudflare (KV) under a random short id, so anyone with the link can open it. We do not sell your data, and there are no advertising trackers. Aggregate traffic and feature events use fixed labels such as the page type, occasion, mood and number of flowers. Notes, names, garden links and garden IDs are excluded from these analytics.',
+    body: 'Your note is processed by Google (Gemini) to generate the flowers; send only what you are comfortable sharing with that service. The garden is stored by Cloudflare (KV) under a random short id, so anyone with the link can open it. Messaging apps that preview the link can show the sender’s and recipient’s names and a picture of the garden before anyone opens it. We do not sell your data, and there are no advertising trackers. Aggregate traffic and feature events use fixed labels such as the page type, occasion, mood and number of flowers. Notes, names, garden links and garden IDs are excluded from these analytics.',
   },
   {
     heading: 'accounts are optional',
@@ -47,7 +47,7 @@ const TERMS: Section[] = [
   },
   {
     heading: 'links are public',
-    body: 'A garden is viewable by anyone who has its link. Share the link only with the people you mean to.',
+    body: 'Anyone with a garden link can open it. A preview in a messaging app can show the names and the garden picture before someone opens the link. Share the link only with the people you mean to.',
   },
   {
     heading: 'contact',
