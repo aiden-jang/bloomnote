@@ -9,6 +9,13 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: 'reduce' })
     const entry = sampleEntry()
+    const kept = {
+      flowerIndex: 0,
+      memory: 'The rainy afternoon.',
+      mine: 'A fresh start.',
+      shelves: ['remember'],
+      savedAt: '2026-11-02T12:00:00Z',
+    }
     const summary = {
       id: entry.id,
       from: entry.garden.from,
@@ -76,6 +83,36 @@ for (const width of [390, 1440]) {
       },
       { id: entry.id, voice: entry.voice! },
     )
+    await page.evaluate(
+      async ({ id, voice, kept }) => {
+        const module = '/src/lib/voiceMemory.ts'
+        const { saveVoiceMemory } = await import(module)
+        const bytes = Uint8Array.from(atob(voice.base64), (c) => c.charCodeAt(0))
+        if (
+          !(await saveVoiceMemory({
+            entryId: `${id}:0`,
+            blob: new Blob([bytes], { type: voice.type }),
+            seconds: voice.seconds,
+            savedAt: voice.savedAt,
+          }))
+        )
+          throw new Error('The journal voice fixture could not be saved')
+        localStorage.setItem(
+          'bloomnote.flower-journal.v1',
+          JSON.stringify([
+            {
+              ...kept,
+              id: `${id}:0`,
+              gardenId: id,
+              flowerName: 'Dahlia',
+              meaning: 'A little joy',
+              colors: ['#d1477a'],
+            },
+          ]),
+        )
+      },
+      { id: entry.id, voice: entry.voice!, kept },
+    )
     await page.getByText('backup & restore', { exact: true }).click()
     const downloaded = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download JSON backup', exact: true }).click()
@@ -87,6 +124,7 @@ for (const width of [390, 1440]) {
     expect(file.entries).toHaveLength(1)
     expect(file.entries[0].garden).toEqual(entry.garden)
     expect(file.entries[0].voice).toEqual(entry.voice)
+    expect(file.entries[0].journal).toEqual([{ ...kept, voice: entry.voice }])
     expect(file.entries[0].libraries).toEqual(['sent', 'received'])
     expect(file.entries[0].pinned).toBe(true)
     expect(bytes.toString()).not.toMatch(/ownerId|restoreFingerprint|backup-check/)
@@ -119,6 +157,7 @@ for (const width of [390, 1440]) {
     expect(writes).toBe(2)
     expect(payloads[0]).toEqual(payloads[1])
     expect(payloads[0]).not.toHaveProperty('entry.voice')
+    expect(payloads[0]).not.toHaveProperty('entry.journal')
     await expect(page.getByText('restored copy', { exact: true })).toBeVisible()
     const memory = await page.evaluate(async (id) => {
       const module = '/src/lib/voiceMemory.ts'
@@ -137,10 +176,37 @@ for (const width of [390, 1440]) {
       savedAt: entry.voice!.savedAt,
       pinned: true,
     })
+    const journalCopy = await page.evaluate(async (id) => {
+      const module = '/src/lib/voiceMemory.ts'
+      const { loadVoiceMemory } = await import(module)
+      const voice = await loadVoiceMemory(`${id}:0`)
+      const journal = JSON.parse(localStorage.getItem('bloomnote.flower-journal.v1') || '[]').find(
+        (item: { id: string }) => item.id === `${id}:0`,
+      )
+      return { journal, bytes: voice ? [...new Uint8Array(await voice.blob.arrayBuffer())] : null }
+    }, newId)
+    expect(journalCopy).toMatchObject({
+      journal: { ...kept, id: `${newId}:0`, gardenId: newId },
+      bytes: [0, 1, 2, 3, 255],
+    })
     await page.locator(`a[href="/g/${newId}"]`).first().click()
     await page.getByRole('button', { name: 'open the garden', exact: true }).click()
     // The reply trail repeats the current note; check its main reveal as well as the new link.
     await expect(page.getByText(entry.garden.message, { exact: true }).first()).toBeVisible()
+    await page.getByText('keep this garden', { exact: true }).click()
+    const restoredFlower = page
+      .getByRole('region', { name: 'my flower journal', exact: true })
+      .locator('li')
+      .filter({ has: page.locator(`a[href="/g/${newId}"]`) })
+    await expect(restoredFlower).toContainText(kept.memory)
+    await expect(restoredFlower.getByRole('button', { name: kept.mine, exact: true })).toBeVisible()
+    await restoredFlower.getByRole('button', { name: 'a voice memory is kept here', exact: true }).click()
+    await expect(restoredFlower.locator('audio')).toHaveAttribute('src', /^blob:/)
+    if (process.env.BLOOMNOTE_BACKUP_QA)
+      await page.screenshot({
+        path: `${process.env.BLOOMNOTE_BACKUP_QA}/journal-restore-${width}-${testInfo.project.name}.png`,
+        fullPage: true,
+      })
   })
 }
 

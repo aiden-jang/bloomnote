@@ -1662,3 +1662,16 @@
 .writingPaper .input {
   border-color: var(--folio-control);
 }
+
+.optional {
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.promptLink,
+.scheduleToggle,
+.scheduleClear,
+.presetChip,
+.cancelBtn {
+  min-height: 44px;
+}

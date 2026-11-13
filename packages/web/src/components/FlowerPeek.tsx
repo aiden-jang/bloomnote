@@ -17,22 +17,14 @@ type Props = {
   journalGardenId?: string | undefined
   journalFrom?: string | undefined
   onClose: () => void
-  onHover: () => void
-  onHoverEnd: () => void
 }
 
-export default function FlowerPeek({
-  flower,
-  index,
-  journalGardenId,
-  journalFrom,
-  onClose,
-  onHover,
-  onHoverEnd,
-}: Props) {
+export default function FlowerPeek({ flower, index, journalGardenId, journalFrom, onClose }: Props) {
   const [shareStatus, setShareStatus] = useState<ShareStatus>(null)
   const [imageStatus, setImageStatus] = useState<ImageStatus>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [journalOpen, setJournalOpen] = useState(false)
+  const [journalError, setJournalError] = useState<string | null>(null)
   const [journal, setJournal] = useState(() => {
     const existing = journalGardenId ? flowerJournalEntry(journalGardenId, index) : null
     return { memory: existing?.memory ?? '', saved: existing !== null }
@@ -56,6 +48,7 @@ export default function FlowerPeek({
 
   const share = async (): Promise<void> => {
     if (shareStatus) return
+    setActionError(null)
     const text = `${flower.name}: ${meaning}`
     const finish = (status: 'shared' | 'copied'): void => {
       setShareStatus(status)
@@ -79,11 +72,13 @@ export default function FlowerPeek({
       finish('copied')
     } catch {
       setShareStatus(null)
+      setActionError('couldn’t share. Select and copy the flower meaning below, or try again.')
     }
   }
 
   const saveImage = async (): Promise<void> => {
     if (imageStatus) return
+    setActionError(null)
     setImageStatus('saving')
     try {
       const result = await saveFlowerImage(flower, meaning)
@@ -95,18 +90,26 @@ export default function FlowerPeek({
       window.setTimeout(() => setImageStatus(null), FLASH_MS)
     } catch {
       setImageStatus(null)
+      setActionError('couldn’t make the card. Try again, or share this garden’s link.')
     }
   }
 
   const keep = (): void => {
     if (!journalGardenId) return
-    saveFlowerJournalEntry({
+    const saved = saveFlowerJournalEntry({
       gardenId: journalGardenId,
       flowerIndex: index,
       flower,
       memory: journal.memory,
       from: journalFrom,
     })
+    if (!saved) {
+      setJournalError(
+        'could not save on this device. Your words are still here. Try again after freeing storage.',
+      )
+      return
+    }
+    setJournalError(null)
     setJournal((current) => ({ ...current, saved: true }))
     setJournalOpen(false)
   }
@@ -115,10 +118,9 @@ export default function FlowerPeek({
     <aside
       id="flower-peek"
       className={styles.flowerPeek}
+      aria-label={`${flower.name} meaning and journal`}
       aria-live="polite"
       data-flower-peek=""
-      onMouseEnter={onHover}
-      onMouseLeave={onHoverEnd}
     >
       <span className={styles.flowerPeekSwatches} aria-hidden>
         <FlowerHead flower={flower} size={30} />
@@ -154,6 +156,18 @@ export default function FlowerPeek({
                 ? 'download started'
                 : 'save a pressed-flower card'}
         </button>
+        {actionError && (
+          <div className={styles.flowerPeekError}>
+            <p role="alert">{actionError}</p>
+            <textarea
+              aria-label="Flower meaning to copy"
+              readOnly
+              rows={2}
+              value={`${flower.name}: ${meaning}`}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+          </div>
+        )}
         {journalGardenId && (
           <>
             <button
@@ -179,6 +193,7 @@ export default function FlowerPeek({
                   // eslint-disable-next-line jsx-a11y/no-autofocus
                   autoFocus
                 />
+                {journalError && <p role="alert">{journalError}</p>}
                 <div>
                   <span>{journal.memory.length}/240</span>
                   <button type="button" onClick={keep}>

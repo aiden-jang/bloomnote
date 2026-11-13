@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   canRecord,
+  deleteVoiceMemory,
   MAX_SECONDS,
   saveVoiceMemory,
   loadVoiceMemory,
@@ -34,6 +35,10 @@ describe('when there is no IndexedDB at all', () => {
     const missing = await loadVoiceMemory('never-recorded')
     expect(missing).toBeNull()
     expect(missing).not.toBeUndefined()
+  })
+
+  it('reports a failed removal rather than hiding the kept voice', async () => {
+    await expect(deleteVoiceMemory('e1')).resolves.toBe(false)
   })
 
   it('reports a failed save rather than pretending it worked', async () => {

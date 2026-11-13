@@ -37,6 +37,34 @@ async function grow(page: Page) {
   await expect(page.getByRole('button', { name: 'copy link', exact: true })).toBeVisible()
 }
 
+test('flower tools and the journal remain reachable below the garden on a narrow phone', async ({
+  page,
+  browserName,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 320, height: 740 })
+  await mockApp(page)
+  await page.goto('/g/AbCdEf')
+  await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+  await expect(page.getByText(garden.message, { exact: true })).toBeVisible()
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab')
+  await page.getByRole('button', { name: /^Dahlia:/ }).focus()
+  const panel = page.locator('#flower-peek')
+  await expect(panel).toBeVisible()
+  const plot = (await page.locator('[class*="scene"]').first().boundingBox())!
+  const tools = (await panel.boundingBox())!
+  expect(tools.y).toBeGreaterThanOrEqual(plot.y + plot.height)
+  for (const button of await panel.getByRole('button').all()) {
+    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+  }
+  await panel.getByRole('button', { name: 'keep in my flower journal', exact: true }).click()
+  await panel.getByLabel('what do you want to remember?', { exact: true }).fill('The soup and the company.')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  await page.screenshot({ path: test.info().outputPath('flower-journal-phone.png'), fullPage: true })
+  await panel.getByRole('button', { name: 'press into journal', exact: true }).click()
+  await expect(panel.getByRole('button', { name: 'edit journal memory', exact: true })).toBeVisible()
+})
+
 test('an unavailable archive offers retry instead of claiming it is empty', async ({ page }) => {
   let available = false
   await page.route('**/api/me', (route) =>

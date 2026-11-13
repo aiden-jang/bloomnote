@@ -1,5 +1,5 @@
 // Turning those pictures into a PNG somebody can keep: rasterize, prewarm, save, upload.
-import { renderToStaticMarkup } from 'react-dom/server'
+import type { ReactElement } from 'react'
 import { keepsakeFilename } from './keepsakeFilename'
 import type { FlowerSpec } from '../garden'
 import {
@@ -18,7 +18,9 @@ import {
 
 export type { GardenDuetImageOpts, GardenImageOpts, GardenImageSaveResult }
 
-async function rasterize(svg: string, w: number, h: number, dpr = 2): Promise<Blob> {
+async function rasterize(content: ReactElement, w: number, h: number, dpr = 2): Promise<Blob> {
+  const { renderToStaticMarkup } = await import('react-dom/server')
+  const svg = renderToStaticMarkup(content)
   const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
   try {
     return await new Promise<Blob>((resolve, reject) => {
@@ -42,7 +44,7 @@ async function rasterize(svg: string, w: number, h: number, dpr = 2): Promise<Bl
 }
 
 async function renderGardenPng(opts: GardenImageOpts): Promise<Blob> {
-  return rasterize(renderToStaticMarkup(<ShareImage {...opts} />), W, H)
+  return rasterize(<ShareImage {...opts} />, W, H)
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
@@ -53,7 +55,7 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(href)
+  window.setTimeout(() => URL.revokeObjectURL(href), 1000)
 }
 
 /* Render before it is asked for. `navigator.share` needs a live user gesture, and a 2160px
@@ -61,11 +63,7 @@ function downloadBlob(blob: Blob, filename: string): void {
 let warmed: { key: string; png: Promise<Blob> } | null = null
 
 export function warmKey(opts: GardenImageOpts): string {
-  return JSON.stringify([
-    opts.from,
-    opts.to,
-    opts.flowers.map((f) => `${f.name}:${f.stemHeight}:${f.petalColors[0]}`),
-  ])
+  return JSON.stringify([opts.from, opts.to, opts.flowers])
 }
 
 export function prewarmGardenImage(opts: GardenImageOpts): void {
@@ -113,7 +111,7 @@ export async function saveGardenImage(opts: GardenImageOpts): Promise<GardenImag
 }
 
 export async function saveGardenDuetImage(opts: GardenDuetImageOpts): Promise<GardenImageSaveResult> {
-  const blob = await rasterize(renderToStaticMarkup(<GardenDuetImage {...opts} />), W, H)
+  const blob = await rasterize(<GardenDuetImage {...opts} />, W, H)
   const participant = opts.current.to || opts.current.from || 'garden-duet'
   const filename = keepsakeFilename(`duet-${participant}`, 'png')
   const file = new File([blob], filename, { type: 'image/png' })
@@ -132,11 +130,7 @@ export async function saveGardenDuetImage(opts: GardenDuetImageOpts): Promise<Ga
 }
 
 export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Promise<GardenImageSaveResult> {
-  const blob = await rasterize(
-    renderToStaticMarkup(<PressedFlowerImage flower={flower} meaning={meaning} />),
-    W,
-    H,
-  )
+  const blob = await rasterize(<PressedFlowerImage flower={flower} meaning={meaning} />, W, H)
   const filename = keepsakeFilename(flower.name || 'flower', 'png')
   const file = new File([blob], filename, { type: 'image/png' })
   const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
@@ -160,10 +154,9 @@ export async function saveFlowerImage(flower: FlowerSpec, meaning: string): Prom
 // future tweak to the download card silently changes what strangers see in a chat preview.
 export async function uploadOgImage(id: string, opts: GardenImageOpts): Promise<void> {
   try {
-    const svg = renderToStaticMarkup(<OgCard {...opts} />)
     // 1x for the card. 1200x630 is already the declared size, and a 2x PNG is around a megabyte,
     // over the Worker's cap and slower to unfurl than it is prettier.
-    const png = await rasterize(svg, OG_W, OG_H, 1)
+    const png = await rasterize(<OgCard {...opts} />, OG_W, OG_H, 1)
     await fetch(`/api/garden/${id}/og`, {
       method: 'POST',
       headers: { 'content-type': 'image/png' },

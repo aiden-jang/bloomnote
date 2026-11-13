@@ -72,7 +72,7 @@ export function disabledReasonFor(input: {
   if (noMessage) return startedWriting ? 'a few more words and it\u2019s ready' : 'write them a note first'
   if (input.scheduleError) return 'fix the scheduled time above'
   if (input.scheduleOpen && input.unlockLocal === '') {
-    return 'pick a date & time above to schedule, or hit cancel to send now'
+    return 'pick a date & time above to schedule, or cancel to leave it open now'
   }
   return null
 }

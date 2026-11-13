@@ -102,21 +102,30 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
 
   const [focused, setFocused] = useState<number | null>(null)
 
+  const panelPinned = useRef(false)
   const releaseTimer = useRef<number | null>(null)
   const focusFlower = useCallback((index: number | null) => {
+    panelPinned.current = false
     if (releaseTimer.current !== null) {
       window.clearTimeout(releaseTimer.current)
       releaseTimer.current = null
     }
     setFocused(index)
   }, [])
+  const previewFlower = useCallback(
+    (index: number | null) => {
+      if (!panelPinned.current) focusFlower(index)
+    },
+    [focusFlower],
+  )
   const releaseFlower = useCallback(() => {
+    if (panelPinned.current) return
     if (releaseTimer.current !== null) window.clearTimeout(releaseTimer.current)
     releaseTimer.current = window.setTimeout(() => {
       releaseTimer.current = null
       /* A panel holding focus stays open. Someone typing a memory has their hands off the mouse, and
          a drifting pointer must not close what they are writing in. */
-      if (document.activeElement?.closest('[data-flower-peek]')) return
+      if (panelPinned.current || document.activeElement?.closest('[data-flower-peek]')) return
       setFocused(null)
     }, FLOWER_PANEL_GRACE_MS)
   }, [])
@@ -158,7 +167,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const remixHref = buildRemixUrl(gardenId)
 
   return (
-    <div className={`${styles.wrap} ${phase === 'blooming' ? styles.opened : ''}`}>
+    <div
+      className={`${styles.wrap} ${phase === 'blooming' ? styles.opened : ''}`}
+      onPointerDownCapture={({ target }) => {
+        if (target instanceof Element && target.closest('[data-flower-peek]')) panelPinned.current = true
+      }}
+      onFocusCapture={({ target }) => {
+        if (target instanceof Element && target.closest('[data-flower-peek]')) panelPinned.current = true
+      }}
+    >
       <SoundToggle />
       <RecipientHeader
         from={from}
@@ -175,7 +192,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             onAllBloomed={handleAllBloomed}
             focused={focused}
             onFocus={focusFlower}
-            onFocusRelease={releaseFlower}
+            onPreview={previewFlower}
             wateredAt={wateredAt}
             journalGardenId={gardenId}
             journalFrom={from}
@@ -350,6 +367,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 flowers={flowers}
                 focused={focused}
                 onFocus={focusFlower}
+                onPreview={previewFlower}
                 onFocusRelease={releaseFlower}
               />
             </div>

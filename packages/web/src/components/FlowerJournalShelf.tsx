@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   FLOWER_JOURNAL_EVENT,
   loadFlowerJournal,
@@ -13,16 +13,8 @@ import { Constellations } from './Constellations'
 import { gardenRecap } from '../lib/gardenRecap'
 import { isQuiet, QUIET_MODE_EVENT, toggleQuiet } from '../lib/quietMode'
 import { VoiceRing } from './VoiceRing'
-import {
-  canRecord,
-  deleteVoiceMemory,
-  loadVoiceMemory,
-  saveVoiceMemory,
-  startRecording,
-  voiceMemoryIds,
-  type Recording,
-  type VoiceMemory,
-} from '../lib/voiceMemory'
+import { canRecord } from '../lib/voiceMemory'
+import { useJournalVoice } from '../lib/useJournalVoice'
 import { FlowerHead } from './FlowerSVG'
 import { cardBloom } from '../lib/cardBloom'
 
@@ -32,19 +24,11 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   const [entries, setEntries] = useState<FlowerJournalEntry[]>(() => loadFlowerJournal())
   const [showAll, setShowAll] = useState(false)
   const [quiet, setQuietState] = useState(isQuiet)
-  const [withVoice, setWithVoice] = useState<Set<string>>(new Set())
-  const [loaded, setLoaded] = useState<Record<string, VoiceMemory>>({})
-  const [recordingFor, setRecordingFor] = useState<string | null>(null)
-  const recording = useRef<Recording | null>(null)
-  const [voiceError, setVoiceError] = useState<{ id: string; text: string } | null>(null)
+  const voice = useJournalVoice(entries.map((entry) => entry.id))
+  const [journalError, setJournalError] = useState<string | null>(null)
   const [shelf, setShelf] = useState<ShelfId | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
-
-  // One key scan on mount rather than a blob read per row: audio is only fetched when somebody plays it.
-  useEffect(() => {
-    void voiceMemoryIds().then(setWithVoice)
-  }, [])
 
   useEffect(() => {
     const refresh = (): void => setEntries(loadFlowerJournal())
@@ -63,59 +47,17 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
 
   if (entries.length === 0) return null
 
-  async function beginRecording(entryId: string): Promise<void> {
-    setVoiceError(null)
-    try {
-      recording.current = await startRecording()
-      setRecordingFor(entryId)
-    } catch {
-      // A dismissed permission prompt is an ordinary choice, not a failure to report loudly.
-      setVoiceError({ id: entryId, text: 'no microphone, or permission was declined.' })
-    }
-  }
-
-  async function finishRecording(entryId: string): Promise<void> {
-    const active = recording.current
-    recording.current = null
-    setRecordingFor(null)
-    if (!active) return
-    const result = await active.stop()
-    if (!result) return
-    const memory: VoiceMemory = { entryId, ...result, savedAt: new Date().toISOString() }
-    if (await saveVoiceMemory(memory)) {
-      setLoaded((current) => ({ ...current, [entryId]: memory }))
-      setWithVoice((current) => new Set(current).add(entryId))
-    } else {
-      // Out of disk, or private browsing with no store. Losing the audio is bad enough without silence.
-      setVoiceError({ id: entryId, text: 'could not keep that recording on this device.' })
-    }
-  }
-
-  async function playVoice(entryId: string): Promise<void> {
-    if (loaded[entryId]) return
-    const memory = await loadVoiceMemory(entryId)
-    if (memory) setLoaded((current) => ({ ...current, [entryId]: memory }))
-  }
-
-  async function removeVoice(entryId: string): Promise<void> {
-    await deleteVoiceMemory(entryId)
-    setLoaded((current) => {
-      const next = { ...current }
-      delete next[entryId]
-      return next
-    })
-    setWithVoice((current) => {
-      const next = new Set(current)
-      next.delete(entryId)
-      return next
-    })
-  }
-
   // Describes subjects, never cadence, which is why quiet mode leaves it alone. See gardenRecap.ts.
   const recapLine = gardenRecap(entries).line
 
   function saveMeaning(id: string): void {
-    setEntryMeaning(id, draft)
+    if (!setEntryMeaning(id, draft)) {
+      setJournalError(
+        'could not save on this device. Your words are still here. Try again after freeing storage.',
+      )
+      return
+    }
+    setJournalError(null)
     setEditing(null)
     setEntries(loadFlowerJournal())
   }
@@ -125,7 +67,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
   const emptyShelf = shelf ? SHELVES.find((option) => option.id === shelf)?.empty : null
 
   return (
-    <section className={styles.shelf} aria-labelledby="flower-journal-heading">
+    <section ref={voice.root} className={styles.shelf} aria-labelledby="flower-journal-heading">
       <div className={styles.heading}>
         <span>
           <strong id="flower-journal-heading">my flower journal</strong>
@@ -133,6 +75,11 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
         </span>
         {!quiet && <span className={styles.count}>{entries.length}</span>}
       </div>
+      {journalError && (
+        <p className={styles.voiceNote} role="alert">
+          {journalError}
+        </p>
+      )}
       {recapLine && <p className={styles.recap}>{recapLine}</p>}
       <div className={styles.shelfRow} role="group" aria-label="Shelves">
         <button type="button" aria-pressed={shelf === null} onClick={() => setShelf(null)}>
@@ -208,7 +155,11 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                     type="button"
                     aria-pressed={isOn(entry, option.id)}
                     onClick={() => {
-                      setEntryShelves(entry.id, toggled(entry, option.id))
+                      setJournalError(
+                        setEntryShelves(entry.id, toggled(entry, option.id))
+                          ? null
+                          : 'could not save this shelf on this device. Try again.',
+                      )
                       setEntries(loadFlowerJournal())
                     }}
                   >
@@ -216,48 +167,53 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                   </button>
                 ))}
               </span>
-              {recordingFor === entry.id ? (
+              {voice.recordingFor === entry.id ? (
                 <span className={styles.voiceRow}>
-                  <VoiceRing seconds={0} liveStream={recording.current?.stream} />
-                  <button type="button" onClick={() => void finishRecording(entry.id)}>
+                  <VoiceRing seconds={0} liveStream={voice.recording.current?.stream} />
+                  <button type="button" onClick={() => void voice.finish(entry.id)}>
                     stop
                   </button>
                 </span>
-              ) : loaded[entry.id] ? (
+              ) : voice.loaded[entry.id] ? (
                 <span className={styles.voiceRow}>
                   <VoiceRing
-                    blob={loaded[entry.id]!.blob}
-                    seconds={loaded[entry.id]!.seconds}
-                    onDelete={() => void removeVoice(entry.id)}
+                    blob={voice.loaded[entry.id]!.blob}
+                    seconds={voice.loaded[entry.id]!.seconds}
+                    onDelete={() => void voice.remove(entry.id)}
                   />
                 </span>
-              ) : withVoice.has(entry.id) ? (
-                <button type="button" className={styles.voiceLink} onClick={() => void playVoice(entry.id)}>
+              ) : voice.withVoice.has(entry.id) ? (
+                <button type="button" className={styles.voiceLink} onClick={() => void voice.play(entry.id)}>
                   a voice memory is kept here
                 </button>
               ) : (
                 canRecord() && (
-                  <>
-                    <button
-                      type="button"
-                      className={styles.voiceLink}
-                      onClick={() => void beginRecording(entry.id)}
-                    >
-                      say it out loud instead
-                    </button>
-                    {voiceError?.id === entry.id && (
-                      <small className={styles.voiceNote} role="status">
-                        {voiceError.text}
-                      </small>
-                    )}
-                  </>
+                  <button
+                    type="button"
+                    className={styles.voiceLink}
+                    disabled={voice.pending || voice.recordingFor !== null}
+                    onClick={() => void voice.begin(entry.id)}
+                  >
+                    {voice.pending ? 'waiting for microphone…' : 'say it out loud instead'}
+                  </button>
                 )
+              )}
+              {voice.error?.id === entry.id && (
+                <small className={styles.voiceNote} role="status">
+                  {voice.error.text}
+                </small>
               )}
             </span>
             <button
               type="button"
               className={styles.remove}
-              onClick={() => removeFlowerJournalEntry(entry.id)}
+              onClick={() =>
+                setJournalError(
+                  removeFlowerJournalEntry(entry.id)
+                    ? null
+                    : 'could not remove this flower on this device. Try again.',
+                )
+              }
               aria-label={`Remove ${entry.flowerName} from flower journal`}
             >
               ×

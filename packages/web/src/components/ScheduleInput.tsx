@@ -202,6 +202,9 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
           </button>
         </div>
 
+        <p className={styles.scheduleSummary}>
+          Share the link yourself. The garden stays sealed until the time you choose.
+        </p>
         <div className={styles.schedulePresets}>
           {presetChips.map((chip) => (
             <button

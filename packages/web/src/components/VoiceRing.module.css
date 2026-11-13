@@ -58,6 +58,7 @@
 }
 
 .remove {
+  min-height: 44px;
   font: inherit;
   font-size: 11px;
   padding: 0;

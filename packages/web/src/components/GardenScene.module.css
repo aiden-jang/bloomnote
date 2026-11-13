@@ -1,5 +1,13 @@
 /* Height comes from --garden-h, set in GardenScene.tsx from the tallest flower, plus the soil
    band and headroom for sway. */
+.plot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
 .scene {
   --soil-h: 52px;
   --sway-headroom: 24px;
@@ -168,26 +176,15 @@
   }
 }
 
-/* Anchored to the foot of the plot. Any higher and the panel opens over the flower heads, so
-   tapping a flower to read about it hides the flower. */
 .flowerPeek {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  z-index: 8;
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  max-width: 430px;
-  margin: 0 auto;
-  padding: 10px 34px 10px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 14px;
-  background: rgba(255, 252, 245, 0.82);
-  box-shadow: 0 8px 24px rgba(58, 80, 46, 0.12);
-  backdrop-filter: blur(9px);
-  -webkit-backdrop-filter: blur(9px);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--folio-radius);
+  background: var(--folio-paper);
   animation: flowerPeekIn 180ms ease-out both;
 }
 
@@ -203,27 +200,34 @@
 
 .flowerPeekCopy {
   display: flex;
+  flex: 1;
   min-width: 0;
   flex-direction: column;
   gap: 1px;
   color: var(--text-mid);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.flowerPeekCopy > strong,
+.flowerPeekCopy > span {
+  padding-right: 32px;
+  overflow-wrap: anywhere;
 }
 
 .flowerPeekCopy strong {
   color: var(--green-deep);
   font-family: var(--serif);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .flowerPeekClose {
   position: absolute;
-  top: 5px;
-  right: 7px;
-  width: 25px;
-  height: 25px;
+  top: 4px;
+  right: 4px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 50%;
   background: transparent;
@@ -241,15 +245,16 @@
 
 .flowerPeekShare {
   align-self: flex-start;
-  margin-top: 4px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: var(--green-mid);
   cursor: pointer;
   font: inherit;
-  font-size: 11px;
-  font-weight: 650;
-  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 0;
+  text-align: left;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--green-mid), transparent 55%);
   text-underline-offset: 2px;
@@ -265,19 +270,18 @@
 }
 
 .journalEditor {
-  width: min(310px, calc(100vw - 100px));
-  margin-top: 6px;
-  padding: 9px;
-  border: 1px solid rgba(95, 125, 79, 0.18);
-  border-radius: 10px;
-  background: rgba(255, 252, 245, 0.72);
+  width: 100%;
+  min-width: 0;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .journalEditor label {
   display: block;
   margin-bottom: 5px;
   color: var(--green-deep);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -290,8 +294,8 @@
   background: rgba(255, 255, 255, 0.72);
   color: var(--text-dark);
   font: inherit;
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 16px;
+  line-height: 1.5;
   outline: none;
   padding: 7px 8px;
 }
@@ -311,18 +315,20 @@
 
 .journalEditor span {
   color: var(--text-light);
-  font-size: 9px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .journalEditor button {
+  min-height: 44px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--folio-radius);
   background: var(--green-deep);
   color: white;
   cursor: pointer;
   font: inherit;
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 500;
   padding: 6px 10px;
 }
 
@@ -520,6 +526,10 @@
 }
 
 @media print {
+  .flowerPeek {
+    display: none !important;
+  }
+
   .scene {
     break-inside: avoid;
   }
@@ -977,4 +987,23 @@
   .seed::before {
     opacity: 0.7;
   }
+}
+
+.flowerPeekError {
+  display: grid;
+  gap: 8px;
+  margin-block: 8px;
+  color: var(--text-mid);
+}
+.flowerPeekError textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--folio-control);
+  border-radius: 8px;
+  background: var(--cream);
+  color: var(--text-dark);
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
 }

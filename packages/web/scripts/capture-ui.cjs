@@ -132,7 +132,7 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
           await page.getByLabel('your note', { exact: true }).waitFor()
           if (name === 'draft' || name === 'generated' || name === 'growing') {
             await page.getByLabel('your note', { exact: true }).fill(garden.message)
-            await page.getByLabel('from', { exact: true }).fill('Alex')
+            await page.getByLabel('from (optional)', { exact: true }).fill('Alex')
             await page.getByLabel('to', { exact: true }).fill('Sam')
             await page.getByRole('button', { name: 'grow their garden', exact: true }).waitFor()
           }

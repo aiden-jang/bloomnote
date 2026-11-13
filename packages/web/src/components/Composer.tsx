@@ -248,7 +248,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
             <div className={styles.nameRow}>
               <section className={styles.section}>
                 <label className={styles.label} htmlFor="garden-from">
-                  from
+                  from <span className={styles.optional}>(optional)</span>
                 </label>
                 <input
                   id="garden-from"
@@ -257,6 +257,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
                   value={from}
                   onChange={(e) => setFrom(e.target.value)}
                   maxLength={60}
+                  autoComplete="given-name"
                 />
               </section>
               <section className={styles.section}>

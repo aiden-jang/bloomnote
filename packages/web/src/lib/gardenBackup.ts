@@ -119,7 +119,7 @@ export async function restoreGardenBackup(
   for (const entry of checked.entries) {
     signal.throwIfAborted()
     // Voice bytes stay on this device. Only the garden content and its response counts go to KV.
-    const { voice: _voice, ...serverEntry } = entry
+    const { voice: _voice, journal: _journal, ...serverEntry } = entry
     const response = await request('/api/backup/restore', signal, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'X-Bloomnote-Account': userId },

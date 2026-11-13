@@ -118,8 +118,13 @@ export async function loadVoiceForBackup(entryId: string): Promise<VoiceMemory |
   return readVoice(entryId, true)
 }
 
-export async function deleteVoiceMemory(entryId: string): Promise<void> {
-  await withStore('readwrite', (store) => store.delete(entryId))
+export async function deleteVoiceMemory(entryId: string): Promise<boolean> {
+  try {
+    await withStore('readwrite', (store) => store.delete(entryId), true)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export async function voiceMemoryIds(): Promise<Set<string>> {

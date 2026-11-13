@@ -99,8 +99,7 @@
   transform: translateX(3px);
 }
 
-.itemOff .bloom,
-.itemOff .text {
+.itemOff .bloom {
   opacity: 0.42;
 }
 

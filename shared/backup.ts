@@ -37,6 +37,14 @@ export interface BackupVoice {
   seconds: number
   savedAt: string
 }
+export interface BackupJournalEntry {
+  flowerIndex: number
+  memory: string
+  savedAt: string
+  mine?: string
+  shelves?: string[]
+  voice?: BackupVoice
+}
 export interface BackupEntry {
   id: string
   libraries: ('sent' | 'received')[]
@@ -48,6 +56,7 @@ export interface BackupEntry {
   wateredByMe?: boolean
   myFeeling?: 'love' | 'comfort' | 'joy' | 'hug'
   voice?: BackupVoice
+  journal?: BackupJournalEntry[]
 }
 export interface GardenBackup {
   format: 'bloomnote-backup'
@@ -153,6 +162,40 @@ export function backupVoice(value: unknown): BackupVoice {
   return { type, base64, seconds: integer(v.seconds, 1, 86400), savedAt }
 }
 
+function backupJournal(value: unknown, flowerCount: number): BackupJournalEntry[] {
+  if (!Array.isArray(value) || value.length > flowerCount) return fail('A flower journal could not be read.')
+  const journal = value.map((value): BackupJournalEntry => {
+    const j = object(value)
+    const memory = text(j.memory)
+    const savedAt = text(j.savedAt)
+    if (memory.length > 240 || savedAt.length > 64 || !Number.isFinite(Date.parse(savedAt)))
+      return fail('A flower journal memory could not be read.')
+    const entry: BackupJournalEntry = {
+      flowerIndex: integer(j.flowerIndex, 0, flowerCount - 1),
+      memory,
+      savedAt,
+    }
+    if (j.mine !== undefined) {
+      entry.mine = text(j.mine)
+      if (entry.mine.length > 240) return fail('A personal flower meaning is too long.')
+    }
+    if (j.shelves !== undefined) {
+      if (
+        !Array.isArray(j.shelves) ||
+        j.shelves.length > 2 ||
+        j.shelves.some((s) => !['survived', 'remember'].includes(s))
+      )
+        return fail('A flower journal shelf could not be read.')
+      entry.shelves = [...new Set(j.shelves)] as string[]
+    }
+    if (j.voice !== undefined) entry.voice = backupVoice(j.voice)
+    return entry
+  })
+  if (new Set(journal.map((j) => j.flowerIndex)).size !== journal.length)
+    return fail('A flower journal repeats a flower.')
+  return journal
+}
+
 export function backupEntry(value: unknown, withVoice = true): BackupEntry {
   const e = object(value)
   const id = text(e.id)
@@ -189,6 +232,8 @@ export function backupEntry(value: unknown, withVoice = true): BackupEntry {
     entry.myFeeling = e.myFeeling as NonNullable<BackupEntry['myFeeling']>
   }
   if (withVoice && e.voice !== undefined) entry.voice = backupVoice(e.voice)
+  if (withVoice && e.journal !== undefined)
+    entry.journal = backupJournal(e.journal, entry.garden.flowers.length)
   return entry
 }
 
@@ -205,7 +250,7 @@ export function readBackup(value: unknown): GardenBackup {
   const entries = b.entries.map((e) => backupEntry(e))
   if (new Set(entries.map((e) => e.id)).size !== entries.length)
     return fail('This backup repeats a garden identifier.')
-  if (!b.deviceVoicesIncluded && entries.some((e) => e.voice))
+  if (!b.deviceVoicesIncluded && entries.some((e) => e.voice || e.journal?.some((j) => j.voice)))
     return fail('This backup has inconsistent voice contents.')
   const exportedAt = text(b.exportedAt)
   if (exportedAt.length > 64 || !Number.isFinite(Date.parse(exportedAt)))

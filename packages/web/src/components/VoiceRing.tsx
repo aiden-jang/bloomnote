@@ -37,7 +37,8 @@ export function VoiceRing({
   const [phase, setPhase] = useState(0)
   const [playing, setPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const url = useRef<string | null>(null)
+  const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined)
+  const stopAnalysis = useRef<(() => void) | null>(null)
   const still = prefersReducedMotion()
 
   // Torn down completely: an open AudioContext keeps the browser's mic indicator lit, which looks
@@ -79,11 +80,23 @@ export function VoiceRing({
         setPhase((p) => p + 0.15)
         raf = requestAnimationFrame(tick)
       }
-      raf = requestAnimationFrame(tick)
+      const audio = source instanceof MediaStream ? null : source
+      const pause = (): void => cancelAnimationFrame(raf)
+      const start = (): void => {
+        pause()
+        raf = requestAnimationFrame(tick)
+      }
+      audio?.addEventListener('play', start)
+      audio?.addEventListener('pause', pause)
+      audio?.addEventListener('ended', pause)
+      if (!audio || !audio.paused) start()
 
       return () => {
         alive = false
-        cancelAnimationFrame(raf)
+        pause()
+        audio?.removeEventListener('play', start)
+        audio?.removeEventListener('pause', pause)
+        audio?.removeEventListener('ended', pause)
         void ctx.close()
       }
     },
@@ -98,10 +111,13 @@ export function VoiceRing({
   useEffect(() => {
     if (!blob) return
     const objectUrl = URL.createObjectURL(blob)
-    url.current = objectUrl
+    const audio = audioRef.current
+    setAudioUrl(objectUrl)
     return () => {
       URL.revokeObjectURL(objectUrl)
-      url.current = null
+      stopAnalysis.current?.()
+      stopAnalysis.current = null
+      if (audio) delete audio.dataset.wired
     }
   }, [blob])
 
@@ -116,7 +132,7 @@ export function VoiceRing({
     // break the player. Teardown waits for unmount for the same reason.
     if (!audio.dataset.wired) {
       audio.dataset.wired = 'yes'
-      analyse(audio)
+      stopAnalysis.current = analyse(audio)
     }
     try {
       await audio.play()
@@ -170,7 +186,7 @@ export function VoiceRing({
         // eslint-disable-next-line jsx-a11y/media-has-caption
         <audio
           ref={audioRef}
-          src={url.current ?? undefined}
+          src={audioUrl}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onEnded={() => setPlaying(false)}

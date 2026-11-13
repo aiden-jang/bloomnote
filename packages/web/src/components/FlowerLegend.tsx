@@ -8,10 +8,11 @@ interface Props {
   flowers: FlowerSpec[]
   focused?: number | null
   onFocus?: (index: number | null) => void
+  onPreview?: (index: number | null) => void
   onFocusRelease?: () => void
 }
 
-export default function FlowerLegend({ flowers, focused = null, onFocus, onFocusRelease }: Props) {
+export default function FlowerLegend({ flowers, focused = null, onFocus, onPreview, onFocusRelease }: Props) {
   return (
     <section className={styles.list} aria-label="What each flower means">
       <p className={styles.heading}>what they mean</p>
@@ -33,7 +34,7 @@ export default function FlowerLegend({ flowers, focused = null, onFocus, onFocus
                   ? `${styles.item} ${styles.itemOff}`
                   : styles.item
             }
-            onMouseEnter={() => onFocus?.(i)}
+            onMouseEnter={() => (onPreview ?? onFocus)?.(i)}
             onMouseLeave={() => onFocusRelease?.()}
             onClick={() => onFocus?.(focused === i ? null : i)}
             // Per-row stagger matches GardenScene's per-flower bloom timing, so a row fades in as its

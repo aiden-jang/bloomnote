@@ -44,11 +44,19 @@ export function decodeFlowerJournal(raw: string | null): FlowerJournalEntry[] {
   }
 }
 
-export function loadFlowerJournal(): FlowerJournalEntry[] {
+export function loadFlowerJournal(strict = false): FlowerJournalEntry[] {
   if (typeof window === 'undefined') return []
   try {
-    return decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).slice().reverse()
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const entries = decodeFlowerJournal(raw)
+    if (strict && raw !== null) {
+      const parsed: unknown = JSON.parse(raw)
+      if (!Array.isArray(parsed) || parsed.length !== entries.length) throw new Error('Unreadable journal')
+    }
+    return entries.slice().reverse()
   } catch {
+    if (strict)
+      throw new Error('Could not read every flower journal memory. Keep the device data and try again.')
     return []
   }
 }
@@ -63,7 +71,7 @@ export function saveFlowerJournalEntry(input: {
   flower: FlowerSpec
   memory: string
   from?: string | undefined
-}): FlowerJournalEntry {
+}): FlowerJournalEntry | null {
   const entry: FlowerJournalEntry = {
     id: `${input.gardenId}:${input.flowerIndex}`,
     gardenId: input.gardenId,
@@ -75,17 +83,18 @@ export function saveFlowerJournalEntry(input: {
     ...(input.from?.trim() ? { from: input.from.trim() } : {}),
     savedAt: new Date().toISOString(),
   }
-  if (typeof window === 'undefined') return entry
+  if (typeof window === 'undefined') return null
   try {
-    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).filter(
-      (item) => item.id !== entry.id,
-    )
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...current, entry].slice(-MAX_ENTRIES)))
+    const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY))
+    const previous = current.find((item) => item.id === entry.id)
+    const updated = { ...previous, ...entry }
+    const others = current.filter((item) => item.id !== entry.id)
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...others, updated].slice(-MAX_ENTRIES)))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
+    return updated
   } catch {
-    // An optional on-device keepsake: a storage failure must never block the garden.
+    return null
   }
-  return entry
 }
 
 function updateEntry(id: string, change: (entry: FlowerJournalEntry) => FlowerJournalEntry): boolean {
@@ -116,15 +125,31 @@ export function setEntryMeaning(id: string, mine: string): boolean {
   })
 }
 
-export function removeFlowerJournalEntry(id: string): void {
-  if (typeof window === 'undefined') return
+export function removeFlowerJournalEntry(id: string): boolean {
+  if (typeof window === 'undefined') return false
   try {
     const current = decodeFlowerJournal(window.localStorage.getItem(STORAGE_KEY)).filter(
       (entry) => entry.id !== id,
     )
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
     window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
+    return true
   } catch {
-    // Storage disabled or full. The journal is optional, so a failed write is not worth reporting.
+    return false
+  }
+}
+
+export function mergeFlowerJournalEntries(entries: FlowerJournalEntry[]): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    const current = loadFlowerJournal(true).reverse()
+    const existing = new Set(current.map((entry) => entry.id))
+    const merged = [...current, ...entries.filter((entry) => !existing.has(entry.id))]
+    if (merged.length > MAX_ENTRIES) return false
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+    window.dispatchEvent(new Event(FLOWER_JOURNAL_EVENT))
+    return true
+  } catch {
+    return false
   }
 }

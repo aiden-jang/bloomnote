@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { backupGarden, readBackup, MAX_VOICE_BYTES } from '../../../../shared/backup'
+import { backupEntry, backupGarden, readBackup, MAX_VOICE_BYTES } from '../../../../shared/backup'
 import { sampleBackup, sampleEntry } from '../../../../shared/backup.fixture'
 import { readGardenBackup } from './gardenBackup'
 
@@ -14,6 +14,58 @@ describe('portable garden files', () => {
     expect(fileHash).toMatch(/^[a-f0-9]{64}$/)
     expect((await readGardenBackup(new File([JSON.stringify(source)], 'again.json'))).fileHash).toBe(fileHash)
   })
+  it('round trips per-flower journal memories and their separate recordings', () => {
+    const source = sampleBackup()
+    const journal = [
+      {
+        flowerIndex: 0,
+        memory: 'The rainy afternoon.',
+        mine: 'A fresh start.',
+        shelves: ['remember'],
+        savedAt: '2026-11-02T12:00:00Z',
+        voice: source.entries[0]!.voice,
+      },
+    ]
+    Object.assign(source.entries[0]!, { journal })
+    expect(readBackup(source).entries[0]).toHaveProperty('journal', journal)
+  })
+
+  it.each([
+    { flowerIndex: 3 },
+    { memory: 'a'.repeat(241) },
+    { mine: 'a'.repeat(241) },
+    { savedAt: 'not a date' },
+    { shelves: ['unknown'] },
+    { voice: { type: 'text/plain', base64: 'eA==', seconds: 1, savedAt: '2026-11-02T12:00:00Z' } },
+  ])('rejects unreadable per-flower keepsakes: %j', (change) => {
+    const source = sampleBackup()
+    Object.assign(source.entries[0]!, {
+      journal: [{ flowerIndex: 0, memory: 'Kept.', savedAt: source.exportedAt, ...change }],
+    })
+    expect(() => readBackup(source)).toThrow()
+  })
+
+  it('rejects repeated flower positions and inconsistent journal audio', () => {
+    const source = sampleBackup()
+    const entry = source.entries[0]!
+    entry.garden.flowers.push({ ...entry.garden.flowers[0]! })
+    const memory = { flowerIndex: 0, memory: 'Kept.', savedAt: source.exportedAt }
+    Object.assign(entry, { journal: [memory, memory] })
+    expect(() => readBackup(source)).toThrow(/repeats a flower/)
+    delete entry.voice
+    Object.assign(entry, { journal: [{ ...memory, voice: sampleEntry().voice }] })
+    source.deviceVoicesIncluded = false
+    expect(() => readBackup(source)).toThrow(/inconsistent voice/)
+  })
+
+  it('keeps private flower memories out of server entries', () => {
+    const entry = sampleEntry()
+    Object.assign(entry, {
+      journal: [{ flowerIndex: 0, memory: 'Private.', savedAt: entry.createdAt, voice: entry.voice }],
+    })
+    expect(backupEntry(entry, false)).not.toHaveProperty('journal')
+  })
+
   it('strips internal ownership and receipts from both garden levels', () => {
     const garden = sampleEntry().garden
     const content = backupGarden({

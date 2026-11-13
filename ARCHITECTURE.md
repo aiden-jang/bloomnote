@@ -348,8 +348,11 @@ the local sent list and fetch its complete gardens. The library chunk owns these
 recipients do not download them.
 
 `gardenBackup.ts` validates the entire file before any restore request. `backupVoices.ts` adds
-optional IndexedDB audio and device preferences only for exported gardens. Restores never upload
-voice bytes; a failed device write explains which already-created copy needs retrying. Source
+optional IndexedDB audio, per-flower journal memories and device preferences only for exported
+gardens. Journal entries retain their shelves and personal meanings, and recordings use each
+flower’s journal key. Restores remap these to the copied garden on the device and preserve
+existing memories on retry. Journal contents and voice bytes never enter restore requests. A
+failed device write explains which already-created copy needs retrying. Source
 files contain no account credentials, owner IDs or internal restore receipts. They do contain
 secret notes and optional audio, so the UI asks the visitor to keep them private.
 
@@ -379,4 +382,5 @@ store their original audio bytes and MIME type rather than a Blob, which WebKit 
 Reads accept both formats without deleting or upgrading existing recordings. Same-origin
 microphone permission is enabled by the production header; the browser still requires the
 visitor's permission. Recording releases the input stream on stop, error, startup failure or the
-recording cap. Storage reports success only after its transaction commits.
+recording cap. Closing the keepsake cancels recording or a pending microphone request and
+pauses playback. Storage reports success only after its transaction commits.

@@ -32,7 +32,6 @@ interface Props {
   autoBloom: boolean
   onAllBloomed?: () => void
   occasion?: string | undefined
-  onFocusRelease?: () => void
   mood?: string | undefined
   sprouting?: boolean
   sealed?: boolean
@@ -40,6 +39,7 @@ interface Props {
   compact?: boolean
   draftGrowth?: 0 | 1 | 2 | 3
   focused?: number | null
+  onPreview?: (index: number | null) => void
   onFocus?: (index: number | null) => void
   wateredAt?: number
   journalGardenId?: string | undefined
@@ -60,7 +60,7 @@ export default function GardenScene({
   draftGrowth = 0,
   focused = null,
   onFocus,
-  onFocusRelease,
+  onPreview,
   wateredAt = 0,
   journalGardenId,
   journalFrom,
@@ -86,7 +86,6 @@ export default function GardenScene({
   const slotRefs = useRef<Array<HTMLButtonElement | null>>([])
   /* A click focuses the button too, so a plain onFocus would set `focused` before onClick's toggle
      runs and the click would close what it just opened. `:focus-visible` excludes mouse clicks. */
-  const previewedByKeyboard = useRef(false)
   const suppressNextPreview = useRef(false)
   const closeAndRestoreFocus = useCallback(() => {
     const previous = focused
@@ -163,154 +162,186 @@ export default function GardenScene({
   useSceneMotion(sceneRef)
 
   return (
-    <div
-      // Compact only ever applies to an empty plot, so a stale flag can never crop a real garden.
-      className={compact && flowers.length === 0 ? `${styles.scene} ${styles.sceneCompact}` : styles.scene}
-      ref={sceneRef}
-      style={sceneStyle}
-    >
-      <div className={styles.sky} />
-      {isNight && (
-        <div className={styles.stars} aria-hidden>
-          {STARS.map(([left, top, delay]) => (
-            <span
-              key={`${left}-${top}`}
-              className={styles.star}
-              style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }}
-            />
-          ))}
-        </div>
-      )}
-      {aura && autoBloom && flowers.length > 0 && (
-        <div className={`${styles.aura} ${aura.className}`} aria-hidden>
-          {aura.marks.map((mark, index) => (
-            <span key={`${mood}-${index}`} style={{ animationDelay: `${index * 430}ms` }}>
-              {mark}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className={styles.garden}>
-        {sealed && placed.length > 0 && <SeedBed placements={placed} />}
-        {showGhostSprout &&
-          (sprouting ? (
-            <div className={styles.sproutRow} aria-hidden>
-              {WAIT_SPROUTS.map(([left, scale, delay], i) => (
-                <span
-                  key={i}
-                  className={styles.sproutSlot}
-                  style={{
-                    ['--left' as string]: `${left}%`,
-                    ['--scale' as string]: String(scale),
-                    ['--sprout-delay' as string]: `${delay}s`,
-                  }}
-                >
-                  <GhostSprout growth={3} />
-                </span>
-              ))}
-            </div>
-          ) : (
-            <GhostSprout growth={draftGrowth} />
-          ))}
-        {beeFlying &&
-          (() => {
-            const target = placed[beeAt % placed.length]!
-            /* Height comes from the flower, not a constant. A fixed `bottom: 62%` fits whichever garden you
-               happen to be testing and clips the rest. */
-            const headUp = flowerHeadOffset(target.spec) - 8
-            return (
-              <div
-                className={styles.bee}
-                style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
-                aria-hidden
-              >
-                <Bee />
-              </div>
-            )
-          })()}
-        {perking && (
-          <div className={styles.dropLayer} key={wateredAt} aria-hidden>
-            {placed.map((p, i) => (
+    <div className={styles.plot}>
+      <div
+        // Compact only ever applies to an empty plot, so a stale flag can never crop a real garden.
+        className={compact && flowers.length === 0 ? `${styles.scene} ${styles.sceneCompact}` : styles.scene}
+        ref={sceneRef}
+        style={sceneStyle}
+      >
+        <div className={styles.sky} />
+        {isNight && (
+          <div className={styles.stars} aria-hidden>
+            {STARS.map(([left, top, delay]) => (
               <span
-                key={i}
-                className={styles.drop}
-                style={{ left: `${p.left}%`, animationDelay: `${i * 90}ms` }}
+                key={`${left}-${top}`}
+                className={styles.star}
+                style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }}
               />
             ))}
           </div>
         )}
-        {placed.map((p, i) => {
-          /* A flower is only a control once it has bloomed. The slots are in the DOM from the start so
+        {aura && autoBloom && flowers.length > 0 && (
+          <div className={`${styles.aura} ${aura.className}`} aria-hidden>
+            {aura.marks.map((mark, index) => (
+              <span key={`${mood}-${index}`} style={{ animationDelay: `${index * 430}ms` }}>
+                {mark}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className={styles.garden}>
+          {sealed && placed.length > 0 && <SeedBed placements={placed} />}
+          {showGhostSprout &&
+            (sprouting ? (
+              <div className={styles.sproutRow} aria-hidden>
+                {WAIT_SPROUTS.map(([left, scale, delay], i) => (
+                  <span
+                    key={i}
+                    className={styles.sproutSlot}
+                    style={{
+                      ['--left' as string]: `${left}%`,
+                      ['--scale' as string]: String(scale),
+                      ['--sprout-delay' as string]: `${delay}s`,
+                    }}
+                  >
+                    <GhostSprout growth={3} />
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <GhostSprout growth={draftGrowth} />
+            ))}
+          {beeFlying &&
+            (() => {
+              const target = placed[beeAt % placed.length]!
+              /* Height comes from the flower, not a constant. A fixed `bottom: 62%` fits whichever garden you
+               happen to be testing and clips the rest. */
+              const headUp = flowerHeadOffset(target.spec) - 8
+              return (
+                <div
+                  className={styles.bee}
+                  style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
+                  aria-hidden
+                >
+                  <Bee />
+                </div>
+              )
+            })()}
+          {perking && (
+            <div className={styles.dropLayer} key={wateredAt} aria-hidden>
+              {placed.map((p, i) => (
+                <span
+                  key={i}
+                  className={styles.drop}
+                  style={{ left: `${p.left}%`, animationDelay: `${i * 90}ms` }}
+                />
+              ))}
+            </div>
+          )}
+          {placed.map((p, i) => {
+            /* A flower is only a control once it has bloomed. The slots are in the DOM from the start so
              the bloom has something to animate, so they stay disabled and aria-hidden until then. */
-          const revealed = i < bloomedCount
-          return (
-            <button
-              type="button"
-              disabled={!revealed}
-              aria-hidden={revealed ? undefined : true}
-              aria-label={`${p.spec.name}: ${p.spec.meaning}`}
-              aria-expanded={focused === i}
-              aria-controls="flower-peek"
-              ref={(element) => {
-                slotRefs.current[i] = element
-              }}
-              key={placementKey(p.spec, i)}
-              className={
-                (focused === i
-                  ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
-                  : focused !== null
-                    ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
-                    : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
-              }
-              // Focused flowers come forward, so a lifted flower is never behind its neighbour. The perk
-              // waits out its own drop's fall, so each flower answers the water that hit it.
-              style={{
-                left: `${p.left}%`,
-                // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
-                zIndex: focused === i ? 20 : p.zIndex,
-                animationDelay: `${i * 90 + 460}ms`,
-                ['--depth' as string]: String(p.depth),
-              }}
-              title={p.spec.name}
-              onMouseEnter={
-                revealed
-                  ? () => {
-                      // Touch browsers synthesize mouse entry before a tap; opening here can cover its target.
-                      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) onFocus?.(i)
-                    }
-                  : undefined
-              }
-              onMouseLeave={revealed ? () => onFocusRelease?.() : undefined}
-              onFocus={
-                revealed
-                  ? (event) => {
-                      if (suppressNextPreview.current) {
-                        suppressNextPreview.current = false
-                        return
+            const revealed = i < bloomedCount
+            return (
+              <button
+                type="button"
+                disabled={!revealed}
+                aria-hidden={revealed ? undefined : true}
+                aria-label={`${p.spec.name}: ${p.spec.meaning}`}
+                aria-expanded={focused === i}
+                aria-controls="flower-peek"
+                ref={(element) => {
+                  slotRefs.current[i] = element
+                }}
+                key={placementKey(p.spec, i)}
+                className={
+                  (focused === i
+                    ? `${styles.flowerSlot} ${styles.flowerSlotOn}`
+                    : focused !== null
+                      ? `${styles.flowerSlot} ${styles.flowerSlotOff}`
+                      : styles.flowerSlot) + (perking ? ` ${styles.flowerSlotPerk}` : '')
+                }
+                // Focused flowers come forward, so a lifted flower is never behind its neighbour. The perk
+                // waits out its own drop's fall, so each flower answers the water that hit it.
+                style={{
+                  left: `${p.left}%`,
+                  // Focus lifts a flower clear of the whole depth stack, not just its neighbour.
+                  zIndex: focused === i ? 20 : p.zIndex,
+                  animationDelay: `${i * 90 + 460}ms`,
+                  ['--depth' as string]: String(p.depth),
+                }}
+                title={p.spec.name}
+                onMouseEnter={
+                  revealed
+                    ? () => {
+                        // Touch browsers synthesize mouse entry before a tap; opening here can cover its target.
+                        if (window.matchMedia('(hover: hover) and (pointer: fine)').matches)
+                          (onPreview ?? onFocus)?.(i)
                       }
-                      if (!event.currentTarget.matches(':focus-visible')) return
-                      previewedByKeyboard.current = true
-                      onFocus?.(i)
-                    }
-                  : undefined
-              }
-              onBlur={
-                revealed
-                  ? () => {
-                      if (!previewedByKeyboard.current) return
-                      previewedByKeyboard.current = false
-                      onFocusRelease?.()
-                    }
-                  : undefined
-              }
-              // Touch has no hover and this is mostly opened on a phone: tap to pick, tap again to let go,
-              // so the link is reachable without a mouse.
-              onClick={revealed ? () => onFocus?.(focused === i ? null : i) : undefined}
-            >
-              <FlowerSVG flower={p.spec} index={i} bloomed={revealed} swayDelay={i} />
-            </button>
-          )
-        })}
+                    : undefined
+                }
+                onFocus={
+                  revealed
+                    ? (event) => {
+                        if (suppressNextPreview.current) {
+                          suppressNextPreview.current = false
+                          return
+                        }
+                        if (!event.currentTarget.matches(':focus-visible')) return
+                        onFocus?.(i)
+                      }
+                    : undefined
+                }
+                onClick={
+                  revealed
+                    ? (event) => {
+                        const hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+                        onFocus?.(hover || event.detail === 0 || focused !== i ? i : null)
+                      }
+                    : undefined
+                }
+              >
+                <FlowerSVG flower={p.spec} index={i} bloomed={revealed} swayDelay={i} />
+              </button>
+            )
+          })}
+        </div>
+        {sealed && (
+          <div className={styles.moteLayer} aria-hidden>
+            {MOTES.map(([left, top, delay], i) => (
+              <span
+                key={i}
+                className={styles.mote}
+                style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }}
+              />
+            ))}
+          </div>
+        )}
+        <div className={styles.ground}>
+          <div className={styles.groundTop} />
+          <SoilLine />
+          <div className={styles.groundBase} />
+        </div>
+        {drifters.length > 0 && (
+          <div className={styles.petalLayer} aria-hidden>
+            {drifters.map((p) => (
+              <span
+                key={p.key}
+                className={styles.driftPetal}
+                style={{
+                  ['--start-x' as string]: `${p.startX}%`,
+                  ['--drift-x' as string]: `${p.driftX}%`,
+                  ['--size' as string]: `${p.size}px`,
+                  ['--color' as string]: p.color,
+                  ['--delay' as string]: `${p.delay}ms`,
+                  ['--duration' as string]: `${p.duration}ms`,
+                  ['--rotate' as string]: `${p.rotate}deg`,
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
       {focused !== null && flowers[focused] && (
         <FlowerPeek
@@ -320,44 +351,7 @@ export default function GardenScene({
           journalGardenId={journalGardenId}
           journalFrom={journalFrom}
           onClose={closeAndRestoreFocus}
-          onHover={() => onFocus?.(focused)}
-          onHoverEnd={() => onFocusRelease?.()}
         />
-      )}
-      {sealed && (
-        <div className={styles.moteLayer} aria-hidden>
-          {MOTES.map(([left, top, delay], i) => (
-            <span
-              key={i}
-              className={styles.mote}
-              style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }}
-            />
-          ))}
-        </div>
-      )}
-      <div className={styles.ground}>
-        <div className={styles.groundTop} />
-        <SoilLine />
-        <div className={styles.groundBase} />
-      </div>
-      {drifters.length > 0 && (
-        <div className={styles.petalLayer} aria-hidden>
-          {drifters.map((p) => (
-            <span
-              key={p.key}
-              className={styles.driftPetal}
-              style={{
-                ['--start-x' as string]: `${p.startX}%`,
-                ['--drift-x' as string]: `${p.driftX}%`,
-                ['--size' as string]: `${p.size}px`,
-                ['--color' as string]: p.color,
-                ['--delay' as string]: `${p.delay}ms`,
-                ['--duration' as string]: `${p.duration}ms`,
-                ['--rotate' as string]: `${p.rotate}deg`,
-              }}
-            />
-          ))}
-        </div>
       )}
     </div>
   )

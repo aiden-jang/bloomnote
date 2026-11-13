@@ -68,6 +68,19 @@ describe('duetLabel', () => {
 })
 
 describe('warmKey', () => {
+  it('changes when a flower changes shape, petal count or any accent color', () => {
+    const base = { flowers: [flower()], from: 'Aiden', to: 'Nadia' }
+    for (const change of [
+      { petalShape: 'star' as const },
+      { petalCount: 12 },
+      { centerColor: '#ffffff' },
+      { stemColor: '#112233' },
+      { petalColors: ['#6f8fd0', '#ffffff', '#b3c4ea'] as [string, string, string] },
+    ]) {
+      expect(warmKey(base)).not.toBe(warmKey({ ...base, flowers: [flower(change)] }))
+    }
+  })
+
   /*
    * The key decides whether a pre-rendered PNG is reused. Too loose and somebody shares the
    * previous garden's picture; too tight and the prewarm never hits and `navigator.share` loses

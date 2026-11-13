@@ -85,7 +85,7 @@
   /* The sound toggle and the account pill sit side by side but are drawn by different components,
      one in a CSS module and one in inline styles. Keep the geometry here or they drift apart. */
   --chip-edge: 14px;
-  --chip-size: 38px;
+  --chip-size: 44px;
   --chip-gap: 12px;
 }
 
@@ -263,7 +263,6 @@ p {
 @media (max-width: 480px) {
   :root {
     --chip-edge: 10px;
-    --chip-size: 34px;
   }
 }
 

@@ -80,8 +80,8 @@ export default function BackupRestore({
           Include voice memories from this device
         </label>
         <p className={styles.hint}>
-          Voices stay on the device where you recorded them. Preview images can be made again from the garden
-          content.
+          Journal memories for included gardens come from this device. Voices stay on the device where you
+          recorded them. Preview images can be made again.
         </p>
         <button
           type="button"
@@ -155,7 +155,10 @@ export default function BackupRestore({
                 {preview.backup.entries.filter((e) => e.libraries.includes('sent')).length} sent ·{' '}
                 {preview.backup.entries.filter((e) => e.libraries.includes('received')).length} received ·{' '}
                 {count(
-                  preview.backup.entries.filter((e) => e.voice).length,
+                  preview.backup.entries.reduce(
+                    (total, e) => total + (e.voice ? 1 : 0) + (e.journal?.filter((j) => j.voice).length ?? 0),
+                    0,
+                  ),
                   'voice memory',
                   'voice memories',
                 )}
