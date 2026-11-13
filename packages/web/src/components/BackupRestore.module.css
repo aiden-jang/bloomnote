@@ -1,6 +1,7 @@
 .wrap {
-  border: 1px solid var(--green-pale);
-  border-radius: 16px;
+  border: 0;
+  border-top: 1px solid var(--letter-line);
+  border-radius: 0;
   color: var(--text-mid);
   font-size: 0.875rem;
   line-height: 1.6;
@@ -8,10 +9,10 @@
 }
 .wrap summary {
   cursor: pointer;
-  padding: 0.9rem 1rem;
+  padding: 14px 0;
   min-height: 44px;
   color: var(--green-deep);
-  font-weight: 600;
+  font-weight: 400;
 }
 .content {
   display: grid;
@@ -126,13 +127,12 @@
 }
 
 .wrap {
-  border-radius: var(--folio-radius);
-  background: var(--folio-paper);
+  background: transparent;
 }
 
 .content {
   grid-template-columns: minmax(0, 1fr);
-  padding: 4px clamp(14px, 3vw, 24px) 20px;
+  padding: 4px 0 20px;
 }
 
 .content .sectionTitle {

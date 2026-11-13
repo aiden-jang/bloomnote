@@ -15,7 +15,7 @@ import { isQuiet, QUIET_MODE_EVENT, toggleQuiet } from '../lib/quietMode'
 import { VoiceRing } from './VoiceRing'
 import { canRecord } from '../lib/voiceMemory'
 import { useJournalVoice } from '../lib/useJournalVoice'
-import { FlowerHead } from './FlowerSVG'
+import FlowerSVG from './FlowerSVG'
 import { cardBloom } from '../lib/cardBloom'
 
 const JOURNAL_PREVIEW = 8
@@ -106,9 +106,11 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
             {/* Keyed on the garden and the flower's place in it, so a re-rolled garden never inherits the
                 kept flower from the one it replaced. */}
             <span className={styles.swatches} aria-hidden>
-              <FlowerHead
+              <FlowerSVG
                 flower={cardBloom(entry.colors[0] ?? '#cbd6c2', entry.gardenId, entry.flowerIndex)}
-                size={30}
+                index={entry.flowerIndex}
+                bloomed
+                staticRender
               />
             </span>
             <span className={styles.copy}>

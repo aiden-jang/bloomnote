@@ -63,7 +63,6 @@ function ExampleCard({
         onMouseLeave={() => onPreview?.(null)}
         onFocus={() => onPreview?.(garden.id)}
         onBlur={() => onPreview?.(null)}
-        aria-label={`try the ${garden.mood} example: from ${garden.from} to ${garden.to}`}
       >
         <div className={styles.miniGarden} aria-hidden>
           {garden.flowers.slice(0, 3).map((f, i) => (

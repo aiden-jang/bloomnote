@@ -33,7 +33,7 @@ async function grow(page: Page) {
   await page.goto('/')
   await page.getByLabel('your note', { exact: true }).fill(garden.message)
   await page.getByLabel('to', { exact: true }).fill('Sam')
-  await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+  await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
   await expect(page.getByRole('button', { name: 'copy link', exact: true })).toBeVisible()
 }
 
@@ -242,7 +242,7 @@ test('a schedule that passes during generation is described as opening now', asy
   await page.getByLabel('to', { exact: true }).fill('Sam')
   await page.getByRole('button', { name: /schedule for later/ }).click()
   await page.getByRole('button', { name: 'tomorrow', exact: true }).click()
-  await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+  await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
   await expect(page.getByText("Sam's garden is ready", { exact: true })).toBeVisible()
   expect(stored).not.toBeNull()
   expect(stored).not.toHaveProperty('unlockAt')
@@ -405,7 +405,7 @@ test('a sealed garden opens immediately after returning from sleep', async ({ pa
     }),
   )
   await page.goto('/g/AbCdEf')
-  await expect(page.getByText('3d 0h', { exact: true })).toBeVisible()
+  await expect(page.getByRole('timer', { name: 'Time until garden opens' })).toHaveText('3days0hours')
   await page.getByText('add a reminder', { exact: false }).click()
   await expect(page.getByRole('link', { name: 'Google Calendar', exact: true })).toHaveAccessibleDescription(
     'Opens in a new tab',
@@ -503,8 +503,8 @@ test('reply links explain failed loads and retry without losing the original sen
   await expect(page.getByLabel('your note', { exact: true })).toBeFocused()
   await page.route('**/api/garden?*', (route) => route.fulfill({ status: 404, json: {} }))
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'that link didn’t lead anywhere.' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'or grow one for someone' })).toHaveAttribute('href', '/')
+  await expect(page.getByRole('heading', { name: 'This garden couldn’t be found.' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'write a new note' })).toHaveAttribute('href', '/')
 })
 
 test('clearing and restoring a draft keeps keyboard focus in the writing flow', async ({ page }) => {
@@ -544,7 +544,7 @@ test('an earlier image share cannot finish the next garden’s export feedback',
   await page.getByRole('button', { name: 'make another', exact: true }).click()
   await page.getByLabel('your note', { exact: true }).fill('For another lovely afternoon.')
   await page.getByLabel('to', { exact: true }).fill('Jo')
-  await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+  await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
   await page.getByRole('button', { name: 'save as image', exact: true }).click()
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { imageShareCount: number }).imageShareCount))

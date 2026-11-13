@@ -8,7 +8,7 @@ import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import MemoryTrail from './MemoryTrail'
 import FlowerJournalShelf from './FlowerJournalShelf'
-import SoundToggle from './SoundToggle'
+import LetterHeader from './LetterHeader'
 import Watering from './Watering'
 import { buildRemixUrl, type GardenData } from '../garden'
 import { prewarmGardenImage } from '../lib/gardenImage'
@@ -168,7 +168,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
 
   return (
     <div
-      className={`${styles.wrap} ${phase === 'blooming' ? styles.opened : ''}`}
+      data-letter-page="recipient"
+      className={styles.wrap}
       onPointerDownCapture={({ target }) => {
         if (target instanceof Element && target.closest('[data-flower-peek]')) panelPinned.current = true
       }}
@@ -176,7 +177,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         if (target instanceof Element && target.closest('[data-flower-peek]')) panelPinned.current = true
       }}
     >
-      <SoundToggle />
+      <LetterHeader />
       <RecipientHeader
         from={from}
         to={to}
@@ -187,6 +188,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
       <div className={styles.folio}>
         <div className={styles.gardenPlot}>
           <GardenScene
+            variant="meadow"
             flowers={flowers}
             autoBloom={phase === 'blooming'}
             onAllBloomed={handleAllBloomed}

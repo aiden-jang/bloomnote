@@ -26,16 +26,20 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       /* The crash screen, on the same card as the other notices. This is what somebody sees
          when everything else has failed, so it should not be built from inline styles. */
-      <div className={notice.page}>
-        <BloomBrand />
-        <div className={notice.card}>
+      <main className={notice.page} data-letter-page="system">
+        <header className={notice.fallbackHeader}>
+          <BloomBrand />
+        </header>
+        <div className={notice.content}>
           <h1 className={notice.title}>something wilted.</h1>
-          <p className={notice.body}>a hiccup on our end. refresh, or start a fresh one.</p>
-          <a className={notice.action} href="/">
-            grow a new one
-          </a>
+          <div className={notice.card}>
+            <p className={notice.body}>a hiccup on our end. refresh, or start a fresh one.</p>
+            <a className={notice.action} href="/">
+              grow a new one
+            </a>
+          </div>
         </div>
-      </div>
+      </main>
     )
   }
 }

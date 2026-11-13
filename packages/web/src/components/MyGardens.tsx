@@ -110,7 +110,10 @@ function AccountGardens() {
   }
 
   return (
-    <Shell subtitle="the gardens you've grown and kept, on every device.">
+    <Shell
+      subtitle="the gardens you've grown and kept, on every device."
+      hideWriteLink={!busy && !loadError && list.length === 0}
+    >
       {pending && (
         <div className={styles.undoToast} role="status">
           <span>removed</span>
@@ -211,7 +214,7 @@ function LocalGardens() {
   }
 
   return (
-    <Shell subtitle="the gardens you've grown, saved on this device." hideBackLink={records.length === 0}>
+    <Shell subtitle="the gardens you've grown, saved on this device." hideWriteLink={records.length === 0}>
       <BackupRestore />
       {sessionError && (
         <div className={styles.notice} role="alert">

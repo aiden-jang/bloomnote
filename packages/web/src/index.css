@@ -70,6 +70,11 @@
      tenth opacity, which was the only neutral line in the app and only by accident. */
   --line: var(--green-pale);
 
+  --letter-paper: #fffdf7;
+  --letter-desk: #eef0e7;
+  --letter-ground: #f5f4ea;
+  --letter-line: #ced5c5;
+  --letter-width: 1040px;
   --folio-paper: #fffdf8;
   --folio-control: #778674;
   --folio-width: 1200px;

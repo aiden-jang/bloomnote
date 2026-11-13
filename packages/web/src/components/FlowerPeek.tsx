@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { FlowerHead } from './FlowerSVG'
+import FlowerSVG from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { withoutLeadingFlowerName } from '../lib/flowerMeaning'
 import { saveFlowerImage } from '../lib/gardenImage'
 import { flowerJournalEntry, saveFlowerJournalEntry } from '../lib/flowerJournal'
-import styles from './GardenScene.module.css'
+import styles from './FlowerPeek.module.css'
 
 const FLASH_MS = 2200
 
@@ -123,39 +123,51 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
       data-flower-peek=""
     >
       <span className={styles.flowerPeekSwatches} aria-hidden>
-        <FlowerHead flower={flower} size={30} />
+        <FlowerSVG flower={flower} index={index} bloomed staticRender />
       </span>
-      <span className={styles.flowerPeekCopy}>
-        <strong>{flower.name}</strong>
-        <span>{meaning}</span>
-        <button
-          type="button"
-          className={styles.flowerPeekShare}
-          onClick={() => void share()}
-          disabled={shareStatus !== null}
-        >
-          {shareStatus === 'sharing'
-            ? 'opening…'
-            : shareStatus === 'shared'
-              ? 'shared'
-              : shareStatus === 'copied'
-                ? 'meaning copied'
-                : 'share this flower'}
-        </button>
-        <button
-          type="button"
-          className={styles.flowerPeekShare}
-          onClick={() => void saveImage()}
-          disabled={imageStatus !== null}
-        >
-          {imageStatus === 'saving'
-            ? 'pressing flower…'
-            : imageStatus === 'shared'
-              ? 'keepsake shared'
-              : imageStatus === 'downloaded'
-                ? 'download started'
-                : 'save a pressed-flower card'}
-        </button>
+      <div className={styles.flowerPeekCopy}>
+        <h2>{flower.name}</h2>
+        <p className={styles.flowerMeaning}>{meaning}</p>
+        {journalGardenId && (
+          <button
+            type="button"
+            className={styles.flowerPeekKeep}
+            onClick={() => setJournalOpen((open) => !open)}
+            aria-expanded={journalOpen}
+          >
+            {journal.saved ? 'edit journal memory' : 'keep in my flower journal'}
+          </button>
+        )}
+        <div className={styles.flowerPeekActions}>
+          <button
+            type="button"
+            className={styles.flowerPeekShare}
+            onClick={() => void share()}
+            disabled={shareStatus !== null}
+          >
+            {shareStatus === 'sharing'
+              ? 'opening…'
+              : shareStatus === 'shared'
+                ? 'shared'
+                : shareStatus === 'copied'
+                  ? 'meaning copied'
+                  : 'share this flower'}
+          </button>
+          <button
+            type="button"
+            className={styles.flowerPeekShare}
+            onClick={() => void saveImage()}
+            disabled={imageStatus !== null}
+          >
+            {imageStatus === 'saving'
+              ? 'pressing flower…'
+              : imageStatus === 'shared'
+                ? 'keepsake shared'
+                : imageStatus === 'downloaded'
+                  ? 'download started'
+                  : 'save a pressed-flower card'}
+          </button>
+        </div>
         {actionError && (
           <div className={styles.flowerPeekError}>
             <p role="alert">{actionError}</p>
@@ -170,14 +182,6 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
         )}
         {journalGardenId && (
           <>
-            <button
-              type="button"
-              className={styles.flowerPeekShare}
-              onClick={() => setJournalOpen((open) => !open)}
-              aria-expanded={journalOpen}
-            >
-              {journal.saved ? 'edit journal memory' : 'keep in my flower journal'}
-            </button>
             {journalOpen && (
               <div className={styles.journalEditor}>
                 <label htmlFor={`flower-memory-${index}`}>what do you want to remember?</label>
@@ -204,7 +208,7 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
             )}
           </>
         )}
-      </span>
+      </div>
       <button
         type="button"
         className={styles.flowerPeekClose}

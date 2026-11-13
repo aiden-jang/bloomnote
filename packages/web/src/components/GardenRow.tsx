@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { FlowerHead } from './FlowerSVG'
+import FlowerSVG from './FlowerSVG'
 import { cardBloom } from '../lib/cardBloom'
 import { buildShareUrl, fetchGarden, type GardenData } from '../garden'
 import { saveGardenImage } from '../lib/gardenImage'
@@ -124,7 +124,7 @@ export default function GardenRow({
         <span className={styles.swatches} aria-hidden>
           {(swatches.length > 0 ? swatches : ['#cbd6c2']).map((c, i) => (
             <span key={i} className={styles.swatch}>
-              <FlowerHead flower={cardBloom(c, id, i)} size={44} />
+              <FlowerSVG flower={cardBloom(c, id, i)} index={i} bloomed staticRender />
             </span>
           ))}
         </span>

@@ -28,6 +28,7 @@ export const BLOOM_STAGGER_MS = 500
 const BLOOM_HOLD_MS = 1000
 
 interface Props {
+  variant?: 'plot' | 'meadow'
   flowers: FlowerSpec[]
   autoBloom: boolean
   onAllBloomed?: () => void
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export default function GardenScene({
+  variant = 'plot',
   flowers,
   autoBloom,
   onAllBloomed,
@@ -165,7 +167,13 @@ export default function GardenScene({
     <div className={styles.plot}>
       <div
         // Compact only ever applies to an empty plot, so a stale flag can never crop a real garden.
-        className={compact && flowers.length === 0 ? `${styles.scene} ${styles.sceneCompact}` : styles.scene}
+        className={[
+          styles.scene,
+          compact && flowers.length === 0 && styles.sceneCompact,
+          variant === 'meadow' && styles.sceneMeadow,
+        ]
+          .filter(Boolean)
+          .join(' ')}
         ref={sceneRef}
         style={sceneStyle}
       >

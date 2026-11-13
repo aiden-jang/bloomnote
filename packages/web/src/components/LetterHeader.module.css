@@ -1,0 +1,26 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  min-height: 84px;
+  padding-block: 20px;
+}
+.brand {
+  font: inherit;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
+}
+@media print {
+  .header {
+    display: none;
+  }
+}

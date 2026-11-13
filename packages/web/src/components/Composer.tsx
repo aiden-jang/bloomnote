@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ChipPicker from './ChipPicker'
 import ComposerPreview from './ComposerPreview'
 import NoteField from './NoteField'
-import GardenForecastPanel from './GardenForecastPanel'
 import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
 import RemixContext from './RemixContext'
-import ScheduleInput from './ScheduleInput'
 import ShareCard from './ShareCard'
 import ComposerFrame from './ComposerFrame'
-import ComposerSecret from './ComposerSecret'
+import ComposerLetter from './ComposerLetter'
+import ComposerOptions from './ComposerOptions'
 import { type ExampleGarden } from '../data/exampleGardens'
 import { type GardenData } from '../garden'
 import { trackComposerOpened } from '../lib/analytics'
@@ -19,12 +17,11 @@ import { PetalFall } from './ComposerBloom'
 import GrowFeedback from './GrowFeedback'
 import { prewarmGardenImage } from '../lib/gardenImage'
 import { gardenForecast } from '../lib/gardenForecast'
-import { MOODS } from '../lib/moods'
-import { OCCASIONS } from '../lib/occasions'
 import { placeholderFor, placeholderOptions } from '../lib/placeholders'
 import { ritual } from '../lib/rituals'
 import { prefersReducedMotion } from '../lib/motion'
 import styles from './Composer.module.css'
+import letter from './ComposerLetter.module.css'
 import { disabledReasonFor, scheduleErrorFor } from '../lib/composerHelpers'
 import { useComposerDraft } from '../lib/useComposerDraft'
 import { useHeroDemo } from '../lib/useHeroDemo'
@@ -41,16 +38,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const [mineCount, setMineCount] = useState(() => countSentGardens())
   const draft = useComposerDraft({ remixSeed, idle: phase === 'idle' })
   const { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
-  const {
-    from: setFrom,
-    recipient: setRecipient,
-    message: setMessage,
-    secret: setSecret,
-    occasion: setOccasion,
-    mood: setMood,
-    scheduleOpen: setScheduleOpen,
-    unlockLocal: setUnlockLocal,
-  } = draft.set
   const { hasDraft, undoDraft } = draft
 
   // Keyed on occasion only. Re-reading the clock every render would change the copy under
@@ -173,6 +160,21 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
   const { copied, shareStatus, imageStatus, canShare, shareError, handleCopy, handleShare, handleSaveImage } =
     useShareActions(shareUrl, recipient, from, flowers)
 
+  const scene = (
+    <GardenScene
+      variant="meadow"
+      flowers={hero.flowers}
+      autoBloom
+      occasion={hero.occasion}
+      mood={hero.mood}
+      silent={showDemo}
+      sprouting={phase === 'designing'}
+      compact={hasDraft}
+      draftGrowth={hero.draftGrowth}
+      key={hero.sceneKey}
+    />
+  )
+
   return (
     <ComposerFrame
       footer={
@@ -188,7 +190,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         phase === 'idle'
           ? remixSeed
             ? `write ${remixSeed.from || 'them'} back.`
-            : 'Write someone a note. We turn the details into flowers, ready to send.'
+            : 'Write the thing only you would say.'
           : undefined
       }
       preview={
@@ -204,20 +206,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           />
         ) : null
       }
+      writing={phase === 'idle'}
       demo={showDemo}
-      scene={
-        <GardenScene
-          flowers={hero.flowers}
-          autoBloom
-          occasion={hero.occasion}
-          mood={hero.mood}
-          silent={showDemo}
-          sprouting={phase === 'designing'}
-          compact={hasDraft}
-          draftGrowth={hero.draftGrowth}
-          key={hero.sceneKey}
-        />
-      }
+      scene={scene}
     >
       {draft.showRecovered && (
         <p className={styles.recoveredDraft} role="status">
@@ -234,83 +225,43 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'idle' && (
         <>
-          <div className={styles.writingPaper}>
-            <NoteField
-              ritual={todaysRitual}
-              value={message}
-              onChange={setMessage}
-              inputRef={messageRef}
-              prompt={writingPrompt}
-              hasAnotherPrompt={promptOptions.length > 1}
-              onAnotherPrompt={() => setPromptIndex((index) => index + 1)}
-            />
-
-            <div className={styles.nameRow}>
-              <section className={styles.section}>
-                <label className={styles.label} htmlFor="garden-from">
-                  from <span className={styles.optional}>(optional)</span>
-                </label>
-                <input
-                  id="garden-from"
-                  className={styles.input}
-                  placeholder="your name"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  maxLength={60}
-                  autoComplete="given-name"
-                />
-              </section>
-              <section className={styles.section}>
-                <label className={styles.label} htmlFor="garden-to">
-                  to
-                </label>
-                <input
-                  id="garden-to"
-                  className={styles.input}
-                  placeholder="their name"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                  maxLength={60}
-                />
-              </section>
-            </div>
-
-            <details className={styles.noteOptions}>
-              <summary>occasion and mood</summary>
-              <ChipPicker
-                label="occasion"
-                name="occasion"
-                options={OCCASIONS}
-                value={occasion}
-                onChange={setOccasion}
+          <div>
+            <ComposerLetter fields={draft.fields} set={draft.set}>
+              <NoteField
+                ritual={todaysRitual}
+                value={message}
+                onChange={draft.set.message}
+                inputRef={messageRef}
+                prompt={writingPrompt}
+                hasAnotherPrompt={promptOptions.length > 1}
+                onAnotherPrompt={() => setPromptIndex((index) => index + 1)}
               />
-              <ChipPicker label="mood" name="mood" options={MOODS} value={mood} onChange={setMood} />
-            </details>
-            <ComposerSecret value={secret} onChange={setSecret} />
-
-            {message.trim().length >= 4 && <GardenForecastPanel forecast={forecast} />}
-            <ScheduleInput
-              open={scheduleOpen}
-              value={unlockLocal}
-              error={scheduleError}
-              onOpen={() => setScheduleOpen(true)}
-              onChange={setUnlockLocal}
-              onCancel={() => {
-                setScheduleOpen(false)
-                setUnlockLocal('')
-              }}
+            </ComposerLetter>
+            <ComposerOptions
+              fields={draft.fields}
+              set={draft.set}
+              forecast={forecast}
+              scheduleError={scheduleError}
             />
-
             {errorText && (
               <div className={styles.error} role="alert">
                 {errorText}
               </div>
             )}
 
-            <div className={styles.actions}>
-              <button className={styles.generateBtn} onClick={runDesign} disabled={!canSubmit}>
-                {remixSeed ? 'grow one back' : 'grow their garden'}
-              </button>
+            <div className={letter.send}>
+              <p>
+                Your words become the flowers.
+                <br />
+                You choose when to share the link.
+              </p>
+              <div className={styles.actions}>
+                <button className={styles.generateBtn} onClick={runDesign} disabled={!canSubmit}>
+                  {remixSeed
+                    ? 'grow one back'
+                    : `grow ${recipient.trim() ? `${recipient.trim()}’s` : 'their'} garden`}
+                </button>
+              </div>
             </div>
 
             {disabledReason && (
@@ -345,7 +296,9 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
         </>
       )}
 
-      {phase === 'designing' && <GrowFeedback statusText={statusText} onCancel={design.cancel} />}
+      {phase === 'designing' && (
+        <GrowFeedback statusText={statusText} onCancel={design.cancel} scene={scene} message={message} />
+      )}
 
       {undoDraft && (
         <div className={styles.undoToast} role="status" aria-live="polite">
@@ -368,6 +321,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'designed' && garden && shareUrl && (
         <ShareCard
+          scene={scene}
           shareUrl={shareUrl}
           recipient={recipient}
           copied={copied}

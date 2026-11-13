@@ -1,148 +1,112 @@
+:global(body:has([data-letter-page='writing'])) {
+  background: var(--letter-desk);
+}
 .wrap {
-  max-width: var(--folio-width);
-  padding: 28px var(--folio-gutter) 48px;
+  max-width: var(--letter-width);
+  padding: 0 var(--folio-gutter) 32px;
   margin: 0 auto;
 }
-
-.header {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: var(--folio-gap);
-}
-
-.wordmark {
-  font: inherit;
-}
-
 .studio {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: var(--folio-gap);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 720px;
+  margin-inline: auto;
 }
-
 .workspace {
   min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
-
-.headline {
-  font-family: var(--serif);
-  font-size: var(--folio-display);
-  font-weight: 500;
-  line-height: 1.04;
-  letter-spacing: -0.037em;
-  text-wrap: balance;
+.intro {
+  padding: 24px 0 10px;
 }
-
+.headline {
+  font: 400 clamp(40px, 5.1vw, 54px)/1.08 var(--serif);
+  letter-spacing: -0.035em;
+}
+.headline em {
+  color: var(--pink-deep);
+  font-weight: 400;
+}
 .subtitle {
   max-width: 42ch;
-  margin-top: 12px;
+  margin-top: 16px;
   color: var(--text-mid);
   font-size: 15px;
   line-height: 1.6;
 }
-
 .garden {
-  position: sticky;
-  top: 80px;
+  width: 100%;
   min-width: 0;
 }
-
 .specimenLabel {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 14px;
-  font-size: 13px;
+  padding-block: 10px;
   color: var(--text-mid);
+  font-size: 13px;
 }
-
 .specimenLabel span:last-child {
   font-size: 18px;
   color: var(--pink-deep);
 }
-
 .caption {
   margin-top: 10px;
+  text-align: center;
   color: var(--text-mid);
   font-size: 13px;
 }
-
-@media (max-width: 899px) {
-  .wrap {
-    max-width: 650px;
-    padding-top: 56px;
-  }
-  .studio {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .garden {
-    position: static;
-  }
+.demoSpecimen {
+  max-width: 600px;
+  margin: auto;
 }
-
-@media (max-width: 480px) {
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: 586px;
+  margin-inline: auto;
+}
+.preview > a {
+  min-height: 44px;
+}
+.writing {
+  gap: 24px;
+}
+@media (max-width: 600px) {
   .wrap {
+    padding-inline: 18px;
     padding-bottom: 26px;
   }
-  .demoSpecimen {
-    --preview-scale: 0.7;
+  .intro {
+    padding: 20px 7px 8px;
   }
-}
-
-@media print {
-  .garden {
-    position: static;
+  .headline {
+    font-size: 43px;
+  }
+  .subtitle {
+    font-size: 14px;
+    max-width: 30ch;
   }
   .studio {
-    display: block;
+    gap: 20px;
   }
-  .header,
+}
+@media print {
+  .wrap {
+    padding: 0;
+  }
   .intro,
   .caption {
     display: none;
   }
-}
-
-.finished {
-  grid-template-areas:
-    'work garden'
-    'preview garden';
-  row-gap: 22px;
-}
-
-.finished .workspace {
-  grid-area: work;
-}
-
-.finished .garden {
-  grid-area: garden;
-}
-
-.preview {
-  grid-area: preview;
-  min-width: 0;
-}
-
-@media (max-width: 899px) {
-  .finished {
-    grid-template-areas:
-      'work'
-      'garden'
-      'preview';
-  }
-}
-
-@media print {
-  .finished {
+  .studio {
     display: block;
   }
 }

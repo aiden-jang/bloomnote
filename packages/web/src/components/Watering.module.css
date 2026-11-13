@@ -78,6 +78,7 @@
 }
 
 .btn {
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -157,5 +158,11 @@
   }
   .btn:hover .can {
     transform: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .feelings button {
+    min-height: 44px;
   }
 }

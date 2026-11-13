@@ -5,7 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import RecipientView from './components/RecipientView'
 import SealedView from './components/SealedView'
 import Footer from './components/Footer'
-import BloomBrand from './components/BloomBrand'
+import LetterHeader from './components/LetterHeader'
 import { fetchGarden, type GardenData } from './garden'
 import { lazyWithReload } from './lib/lazyWithReload'
 import { parseRoute } from './lib/route'
@@ -142,7 +142,7 @@ export default function App() {
       {/* Every route's content in one landmark, so assistive tech has something to jump to.
           LegalPage's own <main> is a <div> so this stays the only one. */}
       <main>
-        <Suspense fallback={<LoadingShell />}>{view}</Suspense>
+        <Suspense fallback={<LoadingShell title="Opening…" />}>{view}</Suspense>
       </main>
       <AppUpdate />
       <Footer />
@@ -173,27 +173,42 @@ function RecipientGateway({ garden, gardenId }: { garden: GardenData; gardenId: 
   return <RecipientView gardenData={garden} gardenId={gardenId} />
 }
 
-function LoadingShell() {
+function LoadingShell({ title = 'Opening your garden.' }: { title?: string }) {
   return (
-    <div className={notice.loading} role="status">
-      <span>opening…</span>
+    <div className={notice.page} data-letter-page="system">
+      <LetterHeader />
+      <div className={notice.content} role="status">
+        <h1 className={notice.title}>{title}</h1>
+        <p className={notice.body}>One moment.</p>
+        <div className={`${notice.card} ${notice.loading}`} aria-hidden="true">
+          <div className={notice.skeleton} />
+          <div className={notice.skeleton} />
+          <div className={notice.skeleton} />
+        </div>
+      </div>
     </div>
   )
 }
 
 function NotFoundShell() {
   return (
-    <div className={notice.page}>
-      <BloomBrand />
-      <div className={notice.card}>
-        <h1 className={notice.title}>that link didn&rsquo;t lead anywhere.</h1>
-        <p className={notice.body}>
-          we couldn&rsquo;t find a garden at this address. check the full link, or ask the sender to share it
-          again.
-        </p>
-        <a className={notice.action} href="/">
-          or grow one for someone
-        </a>
+    <div className={notice.page} data-letter-page="system">
+      <LetterHeader />
+      <div className={notice.content}>
+        <h1 className={notice.title}>This garden couldn&rsquo;t be found.</h1>
+        <div className={notice.card}>
+          <h2 className={notice.heading}>Check the full link.</h2>
+          <p className={notice.body}>
+            The address may be incomplete. Try opening the original message or asking the sender to share it
+            again.
+          </p>
+          <a className={notice.action} href="/">
+            write a new note
+          </a>
+          <a className={notice.secondaryAction} href="/mine">
+            your gardens
+          </a>
+        </div>
       </div>
     </div>
   )
@@ -203,18 +218,20 @@ function NotFoundShell() {
 // claiming the link is gone.
 function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className={notice.page}>
-      <BloomBrand />
-      <div className={notice.card}>
+    <div className={notice.page} data-letter-page="system">
+      <LetterHeader />
+      <div className={notice.content}>
         <h1 className={notice.title}>couldn&rsquo;t load that garden.</h1>
-        <p className={notice.body}>looks like a connection hiccup, not a bad link.</p>
-        <div className={notice.actions}>
-          <button type="button" className={notice.action} onClick={onRetry}>
-            try again
-          </button>
-          <a className={notice.action} href="/">
-            write a new note
-          </a>
+        <div className={notice.card}>
+          <p className={notice.body}>looks like a connection hiccup, not a bad link.</p>
+          <div className={notice.actions}>
+            <button type="button" className={notice.action} onClick={onRetry}>
+              try again
+            </button>
+            <a className={notice.secondaryAction} href="/">
+              write a new note
+            </a>
+          </div>
         </div>
       </div>
     </div>

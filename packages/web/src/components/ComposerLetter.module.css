@@ -1,0 +1,219 @@
+.letter {
+  position: relative;
+  padding: 36px 44px 30px;
+  background: var(--letter-paper);
+  box-shadow: 0 12px 28px -18px #284d3a59;
+}
+.letter::after {
+  content: '';
+  position: absolute;
+  inset: auto 12px -5px;
+  height: 5px;
+  background: var(--letter-line);
+}
+.greeting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font: 400 28px/1.4 var(--serif);
+}
+.greeting input {
+  min-width: 4ch;
+  width: clamp(4ch, calc(var(--name-length) * 0.85ch), 18ch);
+  max-width: calc(100% - 80px);
+  min-height: 44px;
+  padding: 0 0 3px;
+  border: 0;
+  border-bottom: 1px solid var(--letter-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--green-deep);
+  font: inherit;
+}
+.letter .note {
+  margin: 24px 0 0;
+}
+.letter .note > label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-mid);
+  font: 400 13px/1.5 var(--sans);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.letter .note textarea {
+  width: 100%;
+  min-height: 190px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--green-deep);
+  box-shadow: none;
+  font: 400 28px/1.55 var(--serif);
+  letter-spacing: -0.012em;
+}
+.letter .note textarea:focus-visible,
+.greeting input:focus-visible,
+.signature input:focus-visible {
+  outline: 2px solid var(--green-mid);
+  outline-offset: 6px;
+  box-shadow: none;
+}
+.bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px 20px;
+  margin-top: 22px;
+}
+.signature {
+  min-width: 0;
+}
+.signature label {
+  display: block;
+  color: var(--text-mid);
+  font-size: 13px;
+}
+.signature input {
+  width: 100%;
+  max-width: 180px;
+  min-height: 44px;
+  padding: 5px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--green-deep);
+  font: italic 400 26px/1.3 var(--serif);
+}
+.bottom > details {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.bottom > details > summary {
+  min-height: 44px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 400;
+}
+.bottom > details[open] {
+  grid-column: 1/-1;
+  width: 100%;
+}
+.options {
+  margin-top: 22px;
+}
+.options > details:first-child {
+  border-top: 0;
+}
+.options > section {
+  margin-top: 8px;
+}
+.forecast {
+  border-bottom: 1px solid var(--letter-line);
+}
+.forecast summary {
+  min-height: 44px;
+  padding: 12px 0;
+  color: var(--text-mid);
+  font-size: 13px;
+  cursor: pointer;
+}
+.forecast[open] {
+  padding-bottom: 14px;
+}
+@media (max-width: 600px) {
+  .letter {
+    padding: 27px 25px 26px;
+  }
+  .greeting {
+    font-size: 25px;
+  }
+  .letter .note textarea {
+    min-height: 225px;
+    font-size: 25px;
+    line-height: 1.52;
+  }
+  .bottom {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .bottom > details {
+    justify-self: end;
+  }
+  .bottom > details[open] {
+    justify-self: stretch;
+  }
+}
+@media print {
+  .letter {
+    box-shadow: none;
+  }
+  .letter::after {
+    display: none;
+  }
+}
+
+.send {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--letter-line);
+}
+.send p {
+  color: var(--text-mid);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.send > div {
+  margin: 0;
+  flex: 0 1 auto;
+}
+.send button {
+  border-radius: 10px;
+  padding-inline: 22px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .send {
+    gap: 16px;
+  }
+  .send > div,
+  .send button {
+    width: 100%;
+  }
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+.options > details {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.options > section {
+  flex: 0 1 auto;
+  margin-top: 0;
+}
+.options:has(> details[open]) > details {
+  flex-basis: 100%;
+}
+.scheduled {
+  display: block;
+}
+.letter .note [id='note-count'] {
+  margin-left: auto;
+}

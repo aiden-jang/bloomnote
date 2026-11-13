@@ -1,47 +1,159 @@
+:global(body:has([data-letter-page='scheduled'])) {
+  background: var(--letter-desk);
+}
 .wrap {
-  max-width: 520px;
+  max-width: var(--letter-width);
   margin: 0 auto;
-  padding: 32px 20px 60px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 28px;
+  padding: 0 var(--folio-gutter) 40px;
 }
-
+.body {
+  max-width: 586px;
+  margin: 26px auto 0;
+}
 .topLabel {
-  text-align: center;
+  margin-bottom: 28px;
 }
-
 .title {
-  font-family: var(--serif);
-  font-size: clamp(34px, 5vw, 53px);
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
+  font: 400 46px/1.14 var(--serif);
+  letter-spacing: -0.03em;
 }
-
 .fromText {
-  font-size: 15px;
+  margin-top: 14px;
   color: var(--text-mid);
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
-
+.paper {
+  position: relative;
+  padding: 32px;
+  background: var(--letter-paper);
+  box-shadow: 0 12px 28px -20px #294b3a80;
+  text-align: center;
+}
+.paper::after {
+  content: '';
+  position: absolute;
+  inset: auto 10px -5px;
+  height: 5px;
+  background: var(--letter-line);
+}
 .plot {
   width: 100%;
-  max-width: 380px;
+  max-width: 280px;
   aspect-ratio: 5 / 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 20px auto 28px;
 }
-
 .envelope {
   width: 100%;
   height: 100%;
   animation: breathe 4s ease-in-out infinite;
 }
-
+.greeting {
+  font: 400 29px/1.25 var(--serif);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.greeting em {
+  font-weight: 400;
+}
+.opensExact {
+  margin-top: 20px;
+  color: var(--text-mid);
+  font-size: 14px;
+}
+.countdown {
+  margin: 24px 0 28px;
+}
+.opensLabel {
+  margin-bottom: 10px;
+  color: var(--text-mid);
+  font-size: 12px;
+}
+.opensRelative {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px 26px;
+  color: var(--green-deep);
+}
+.opensRelative > span {
+  display: grid;
+  gap: 4px;
+}
+.opensRelative strong {
+  font: 400 40px/1.2 var(--serif);
+  font-variant-numeric: tabular-nums;
+}
+.opensRelative small,
+.hint {
+  color: var(--text-mid);
+  font-size: 12px;
+}
+.hint {
+  margin-bottom: 22px;
+}
+.reminderMenu summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  width: fit-content;
+  margin: auto;
+  color: var(--text-mid);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.reminderMenu summary::-webkit-details-marker {
+  display: none;
+}
+.reminderMenu summary::after {
+  content: ' +';
+  margin-left: 6px;
+}
+.reminderMenu[open] summary::after {
+  content: ' −';
+}
+.reminderOptions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.reminderOptions a,
+.reminderOptions button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid var(--letter-line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+}
+.reminderOptions a:hover,
+.reminderOptions button:hover {
+  background: var(--green-pale);
+  color: var(--green-deep);
+}
+.reminderOptions button:disabled {
+  opacity: 0.68;
+  cursor: default;
+}
+.calendarHint {
+  display: block;
+  margin-top: 12px;
+  color: var(--text-mid);
+  font-size: 12px;
+}
 @keyframes breathe {
   0%,
   100% {
@@ -51,177 +163,37 @@
     transform: translateY(-4px) rotate(0.4deg);
   }
 }
-
-/* This one runs forever on a screen someone may sit on for a while, so it is gated below. */
+@media (max-width: 600px) {
+  .wrap {
+    padding-inline: 18px;
+  }
+  .body {
+    margin-top: 22px;
+  }
+  .title {
+    font-size: 38px;
+  }
+  .paper {
+    padding: 26px 24px;
+  }
+  .opensRelative strong {
+    font-size: 34px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .envelope {
     animation: none;
   }
 }
-
-.countdown {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.opensLabel {
-  font-size: 12px;
-  color: var(--text-light);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.opensRelative {
-  font-family: 'Fraunces', serif;
-  font-size: 36px;
-  font-weight: 400;
-  font-variation-settings:
-    'opsz' 36,
-    'SOFT' 50,
-    'WONK' 0;
-  color: var(--text-deep);
-  letter-spacing: -0.01em;
-  /* Tabular figures, or the countdown jitters horizontally as digit widths change. */
-  font-variant-numeric: tabular-nums;
-}
-
-.opensExact {
-  font-size: 13px;
-  color: var(--text-mid);
-  letter-spacing: 0.02em;
-}
-
-.reminderMenu {
-  align-self: center;
-  margin-top: 8px;
-  min-width: 230px;
-}
-
-.reminderMenu summary {
-  width: fit-content;
-  margin: 0 auto;
-  border: 1px solid var(--green-deep);
-  border-radius: 10px;
-  background: var(--green-deep);
-  color: var(--folio-paper);
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  min-height: 44px;
-  padding: 10px 16px;
-  transition:
-    border-color 0.15s,
-    color 0.15s,
-    transform 0.1s;
-  list-style: none;
-}
-
-.reminderMenu summary::-webkit-details-marker {
-  display: none;
-}
-.reminderMenu summary::after {
-  content: ' +';
-  color: inherit;
-}
-.reminderMenu[open] summary::after {
-  content: ' −';
-}
-.reminderMenu summary:hover {
-  background: var(--green-mid);
-  border-color: var(--green-mid);
-}
-.reminderMenu summary:active {
-  transform: scale(0.97);
-}
-
-.reminderOptions {
-  display: grid;
-  gap: 6px;
-  margin-top: 9px;
-  padding: 8px;
-  border: 1px solid var(--green-pale);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 10px 28px rgba(74, 53, 32, 0.08);
-}
-
-.reminderOptions a,
-.reminderOptions button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  border: none;
-  border-radius: 9px;
-  background: transparent;
-  padding: 8px 9px;
-  color: var(--text-mid);
-  font: inherit;
-  font-size: 12px;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.reminderOptions a:hover,
-.reminderOptions button:hover {
-  background: var(--green-pale);
-  color: var(--green-deep);
-}
-.reminderOptions button:disabled {
-  cursor: default;
-  opacity: 0.68;
-}
-
-.calendarHint {
-  margin-top: 3px;
-  color: var(--text-light);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.hint {
-  font-size: 13px;
-  color: var(--text-light);
-  font-style: italic;
-  text-align: center;
-}
-
-/* On narrow screens the centred header runs under the fixed sign-in and sound chips. */
-@media (max-width: 560px) {
-  .wrap {
-    padding-top: 4rem;
-  }
-}
-
-@media (min-width: 900px) {
-  .wrap {
-    max-width: 620px;
-  }
-
-  .plot {
-    max-width: 560px;
-  }
-}
-
 @media print {
-  .plot {
+  .paper {
+    box-shadow: none;
+  }
+  .paper::after,
+  .plot,
+  .countdown,
+  .hint,
+  .reminderMenu {
     display: none;
   }
-  .opensRelative {
-    display: none;
-  }
-  .hint {
-    display: none;
-  }
-}
-
-.topLabel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
 }

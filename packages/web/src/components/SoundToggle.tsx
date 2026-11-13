@@ -3,22 +3,22 @@ import { createPortal } from 'react-dom'
 import { isSoundEnabled, toggleSound } from '../sound'
 import styles from './SoundToggle.module.css'
 
-export default function SoundToggle() {
+export default function SoundToggle({ inline = false }: { inline?: boolean }) {
   const [enabled, setEnabled] = useState(() => isSoundEnabled())
 
-  return createPortal(
+  const button = (
     <button
       type="button"
-      className={styles.toggle}
+      className={inline ? `${styles.toggle} ${styles.inline}` : styles.toggle}
       onClick={() => setEnabled(toggleSound())}
       aria-pressed={enabled}
       aria-label={enabled ? 'mute sound' : 'unmute sound'}
       title={enabled ? 'sound on' : 'sound off'}
     >
       {enabled ? <SpeakerOn /> : <SpeakerOff />}
-    </button>,
-    document.body,
+    </button>
   )
+  return inline ? button : createPortal(button, document.body)
 }
 
 function SpeakerBody() {

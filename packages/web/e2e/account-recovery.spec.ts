@@ -64,7 +64,7 @@ test('leaving the library commits a pending removal without waiting for the undo
     await page.clock.install()
     await page.goto(`${server.origin}/mine`)
     await page.getByRole('button', { name: 'remove garden for Sam from your gardens', exact: true }).click()
-    await page.getByRole('link', { name: /grow another/ }).click()
+    await page.getByRole('link', { name: 'grow one', exact: true }).click()
     await expect.poll(() => deletes).toBe(1)
   } finally {
     await server.close()

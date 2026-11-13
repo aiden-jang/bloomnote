@@ -2,6 +2,7 @@ import type { RefObject } from 'react'
 import { charCountTierClass } from '../lib/composerHelpers'
 import type { Ritual } from '../lib/rituals'
 import styles from './Composer.module.css'
+import letter from './ComposerLetter.module.css'
 
 const MAX_NOTE = 400
 
@@ -25,16 +26,18 @@ export default function NoteField({
   onAnotherPrompt,
 }: NoteFieldProps) {
   return (
-    <section className={styles.section}>
+    <section className={`${styles.section} ${letter.note}`}>
       {/* htmlFor and id, not adjacency. Every label on this form sits beside its input rather
           than wrapping it, so without the pairing each field's only name is its placeholder. */}
       <label className={styles.label} htmlFor="note">
         your note
       </label>
-      <p className={styles.ritual}>
-        {ritual.invitation}
-        {ritual.permission && <span>{ritual.permission}</span>}
-      </p>
+      {!value.trim() && (
+        <p className={styles.ritual}>
+          {ritual.invitation}
+          {ritual.permission && <span>{ritual.permission}</span>}
+        </p>
+      )}
       <textarea
         id="note"
         name="note"
@@ -48,7 +51,7 @@ export default function NoteField({
         aria-describedby="note-hint note-count"
       />
       <div className={styles.helperRow}>
-        <span id="note-hint" className={styles.helper}>
+        <span id="note-hint" className={styles.helper} hidden={!!value.trim()}>
           One oddly specific detail goes a long way.
         </span>
         <span id="note-count" className={`${styles.charCount} ${charCountTierClass(value.length, styles)}`}>

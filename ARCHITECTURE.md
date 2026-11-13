@@ -12,8 +12,11 @@ have is a piece that cannot break a link somebody was sent.
 ## Current module boundaries
 
 The browser loads routes through `App.tsx`. The recipient view is in the initial bundle; composition
-and the library are lazy-loaded. `Composer.tsx` coordinates draft and design hooks, while
-`ComposerPreview.tsx` presents the result. `useGardenDesign.ts` owns one cancellable generation
+and the library are lazy-loaded. `LetterHeader.tsx` shares the in-flow route header; the crash
+boundary uses a static brand because it replaces the tree containing `AuthProvider`.
+`Composer.tsx` coordinates draft and design hooks. `GrowFeedback.tsx` presents generation,
+`ShareCard.tsx` presents the live result and sharing controls, and `ComposerPreview.tsx` presents
+the recipient-preview disclosure. `useGardenDesign.ts` owns one cancellable generation
 or reroll at a time, bounds the save request, and records the local garden before clearing the draft.
 
 `RecipientView.tsx` owns opening, flower focus, replay, and note visibility. `useRecipientKeepsakes.ts`

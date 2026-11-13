@@ -176,179 +176,6 @@
   }
 }
 
-.flowerPeek {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--folio-radius);
-  background: var(--folio-paper);
-  animation: flowerPeekIn 180ms ease-out both;
-}
-
-.flowerPeekSwatches {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  margin-top: 2px;
-}
-
-.flowerPeekCopy {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  gap: 1px;
-  color: var(--text-mid);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.flowerPeekCopy > strong,
-.flowerPeekCopy > span {
-  padding-right: 32px;
-  overflow-wrap: anywhere;
-}
-
-.flowerPeekCopy strong {
-  color: var(--green-deep);
-  font-family: var(--serif);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.flowerPeekClose {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text-light);
-  cursor: pointer;
-  font: inherit;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.flowerPeekClose:hover {
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--text-dark);
-}
-
-.flowerPeekShare {
-  align-self: flex-start;
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  color: var(--green-mid);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 0;
-  text-align: left;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--green-mid), transparent 55%);
-  text-underline-offset: 2px;
-}
-
-.flowerPeekShare:hover {
-  text-decoration-color: var(--green-mid);
-}
-
-.flowerPeekShare:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
-
-.journalEditor {
-  width: 100%;
-  min-width: 0;
-  margin-top: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-
-.journalEditor label {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--green-deep);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.journalEditor textarea {
-  box-sizing: border-box;
-  width: 100%;
-  resize: vertical;
-  border: 1px solid rgba(95, 125, 79, 0.22);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--text-dark);
-  font: inherit;
-  font-size: 16px;
-  line-height: 1.5;
-  outline: none;
-  padding: 7px 8px;
-}
-
-.journalEditor textarea:focus {
-  border-color: var(--green-mid);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green-mid), transparent 82%);
-}
-
-.journalEditor > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.journalEditor span {
-  color: var(--text-light);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-}
-
-.journalEditor button {
-  min-height: 44px;
-  border: 0;
-  border-radius: var(--folio-radius);
-  background: var(--green-deep);
-  color: white;
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 10px;
-}
-
-@keyframes flowerPeekIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px) scale(0.99);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .flowerPeek {
-    animation: none;
-  }
-}
-
 .garden {
   position: absolute;
   bottom: var(--soil-h);
@@ -989,21 +816,26 @@
   }
 }
 
-.flowerPeekError {
-  display: grid;
-  gap: 8px;
-  margin-block: 8px;
-  color: var(--text-mid);
+.sceneMeadow {
+  --soil-h: 1px;
+  --preview-scale: 1;
+  border: 0;
+  border-radius: 0;
 }
-.flowerPeekError textarea {
-  width: 100%;
-  min-width: 0;
-  padding: 8px;
-  border: 1px solid var(--folio-control);
-  border-radius: 8px;
-  background: var(--cream);
-  color: var(--text-dark);
-  font-size: 16px;
-  line-height: 1.5;
-  resize: vertical;
+.sceneMeadow .sky {
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, var(--sky-bottom) 0%, transparent 72%);
+  opacity: 0.65;
+}
+.sceneMeadow .ground {
+  left: 4%;
+  right: 4%;
+  bottom: 0;
+  height: 1px;
+  background: var(--letter-line);
+}
+.sceneMeadow .groundTop,
+.sceneMeadow .groundBase,
+.sceneMeadow .soilLine {
+  display: none;
 }

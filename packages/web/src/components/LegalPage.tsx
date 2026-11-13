@@ -1,4 +1,4 @@
-import BloomBrand from './BloomBrand'
+import LetterHeader from './LetterHeader'
 import { AUTH_ORIGIN } from '../auth/AuthContext'
 import styles from './LegalPage.module.css'
 
@@ -63,34 +63,44 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
   }))
 
   return (
-    <div className={styles.document}>
-      <header className={styles.brandRow}>
-        <BloomBrand />
-      </header>
-      <article>
+    <div className={styles.document} data-letter-page="legal">
+      <LetterHeader />
+      <article className={styles.article}>
         <header>
-          <h1 className={styles.title}>{title}</h1>
+          <h1 className={styles.title}>{kind === 'privacy' ? 'Privacy.' : 'Terms.'}</h1>
           <p className={styles.updated}>Last updated: {UPDATED}</p>
-        </header>
-        <details className={styles.contents}>
-          <summary>On this page</summary>
-          <nav aria-label={`${title} sections`}>
-            {sections.map((section) => (
-              <a key={section.id} href={`#${section.id}`}>
-                {section.heading}
-              </a>
-            ))}
+          <nav className={styles.legalNav} aria-label="Legal pages">
+            <a href="/privacy" aria-current={kind === 'privacy' ? 'page' : undefined}>
+              privacy
+            </a>
+            <a href="/terms" aria-current={kind === 'terms' ? 'page' : undefined}>
+              terms
+            </a>
           </nav>
-        </details>
-        {sections.map((section) => (
-          <section key={section.id} id={section.id} className={styles.section}>
-            <h2 className={styles.heading}>{section.heading}</h2>
-            <p className={styles.body}>{section.body}</p>
-          </section>
-        ))}
-        <a className={styles.accountPolicy} href={new URL(`/${kind}`, AUTH_ORIGIN).href}>
-          Accounts {title}
-        </a>
+        </header>
+        <div className={styles.layout}>
+          <details className={styles.contents} open>
+            <summary>On this page</summary>
+            <nav aria-label={`${title} sections`}>
+              {sections.map((section) => (
+                <a key={section.id} href={`#${section.id}`}>
+                  {section.heading}
+                </a>
+              ))}
+            </nav>
+          </details>
+          <div className={styles.sections}>
+            {sections.map((section) => (
+              <section key={section.id} id={section.id} className={styles.section}>
+                <h2 className={styles.heading}>{section.heading}</h2>
+                <p className={styles.body}>{section.body}</p>
+              </section>
+            ))}
+            <a className={styles.accountPolicy} href={new URL(`/${kind}`, AUTH_ORIGIN).href}>
+              Accounts {title}
+            </a>
+          </div>
+        </div>
       </article>
     </div>
   )

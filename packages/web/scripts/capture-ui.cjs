@@ -134,15 +134,15 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
             await page.getByLabel('your note', { exact: true }).fill(garden.message)
             await page.getByLabel('from (optional)', { exact: true }).fill('Alex')
             await page.getByLabel('to', { exact: true }).fill('Sam')
-            await page.getByRole('button', { name: 'grow their garden', exact: true }).waitFor()
+            await page.getByRole('button', { name: /^grow .+ garden$/i }).waitFor()
           }
         }
         if (name === 'growing') {
-          await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+          await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
           await page.getByText('A small botanical overreaction.', { exact: true }).waitFor()
         }
         if (name === 'generated') {
-          await page.getByRole('button', { name: 'grow their garden', exact: true }).click()
+          await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
           await page.getByRole('link', { name: /preview the full reveal/ }).waitFor()
         }
         if (name.startsWith('recipient'))

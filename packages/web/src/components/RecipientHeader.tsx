@@ -1,5 +1,4 @@
 import type { RefObject } from 'react'
-import BloomBrand from './BloomBrand'
 import styles from './RecipientView.module.css'
 
 export default function RecipientHeader({
@@ -15,14 +14,14 @@ export default function RecipientHeader({
 }) {
   return (
     <div className={styles.topLabel}>
-      <BloomBrand />
       {/* Opening removes its button; this heading keeps keyboard focus inside the garden. */}
       <h1 className={styles.fromText} tabIndex={-1} ref={headingRef}>
-        A garden for {to || 'you'}.
+        Just for you{to ? ',' : '.'}
+        {to && <em className={styles.recipientName}>{to}.</em>}
       </h1>
       {(from || saved) && (
         <div className={styles.headerDetails}>
-          {from && <p className={styles.byline}>From {from}</p>}
+          {from && <p className={styles.byline}>A little garden from {from}.</p>}
           {saved && (
             <a href="/mine?tab=received" className={styles.savedLink}>
               saved to your gardens

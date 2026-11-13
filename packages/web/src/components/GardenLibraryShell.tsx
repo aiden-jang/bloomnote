@@ -1,32 +1,30 @@
-import StationeryArt from './StationeryArt'
-import BloomBrand from './BloomBrand'
+import LetterHeader from './LetterHeader'
 import styles from './MyGardens.module.css'
 
 export default function GardenLibraryShell({
   subtitle,
   children,
-  hideBackLink = false,
+  hideWriteLink = false,
 }: {
   subtitle: string
   children: React.ReactNode
-  hideBackLink?: boolean
+  hideWriteLink?: boolean
 }) {
   return (
-    <div className={styles.wrap}>
-      <header className={styles.header}>
-        <BloomBrand />
-        <StationeryArt kind="envelope" />
-        <h1 className={styles.title}>your gardens</h1>
-        {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
-      </header>
-      {children}
-      {!hideBackLink && (
-        <footer className={styles.footer}>
-          <a href="/" className={styles.backLink}>
-            ← grow another
-          </a>
-        </footer>
-      )}
+    <div className={styles.wrap} data-letter-page="library">
+      <LetterHeader />
+      <div className={styles.body}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>Your gardens.</h1>
+          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+          {!hideWriteLink && (
+            <a href="/" className={styles.writeLink}>
+              write a note
+            </a>
+          )}
+        </header>
+        {children}
+      </div>
     </div>
   )
 }

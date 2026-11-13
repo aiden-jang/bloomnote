@@ -47,14 +47,29 @@ const nameLink: CSSProperties = {
   maxWidth: '8rem',
 }
 
-export function AuthNav(): ReactNode {
+const inlineWrap: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: '0 12px',
+  minWidth: 0,
+  maxWidth: 'calc(100% - 56px)',
+  fontSize: 13,
+}
+const inlineLink: CSSProperties = { ...link, minHeight: 44 }
+
+export function AuthNav({ inline = false }: { inline?: boolean }): ReactNode {
   const { user, loading, sessionError, retrySession, login, logout, accountUrl } = useAuth()
   if (loading) return null
 
   if (!user) {
     return (
-      <div style={wrap} data-screen-chrome="">
-        <button type="button" style={link} onClick={() => (sessionError ? void retrySession() : login())}>
+      <div style={inline ? inlineWrap : wrap} data-screen-chrome="">
+        <button
+          type="button"
+          style={inline ? inlineLink : link}
+          onClick={() => (sessionError ? void retrySession() : login())}
+        >
           {sessionError ? 'retry sign-in check' : 'sign in'}
         </button>
       </div>
@@ -62,14 +77,18 @@ export function AuthNav(): ReactNode {
   }
 
   return (
-    <div style={wrap} data-screen-chrome="">
-      <a style={link} href="/mine">
+    <div style={inline ? inlineWrap : wrap} data-screen-chrome="">
+      <a style={inline ? inlineLink : link} href="/mine">
         your gardens
       </a>
-      <a style={nameLink} href={accountUrl} title={user.displayName}>
+      <a
+        style={inline ? { ...nameLink, minHeight: 44 } : nameLink}
+        href={accountUrl}
+        title={user.displayName}
+      >
         {user.displayName}
       </a>
-      <button type="button" style={link} onClick={() => logout()}>
+      <button type="button" style={inline ? inlineLink : link} onClick={() => logout()}>
         sign out
       </button>
     </div>

@@ -74,7 +74,7 @@ async function stubDesignSequence(page: Page, gardens: unknown[]): Promise<void>
   })
 }
 
-const petals = (page: Page) => page.locator('svg path')
+const petals = (page: Page) => page.locator('svg[viewBox^="0 0 80 "] > g > path')
 
 // Set reduced motion on the page so infinite attention animations do not prevent real, stable clicks.
 // These journeys check the supported reduced-motion state; entrance animation is covered separately.
@@ -141,8 +141,7 @@ test.describe('compose → bloom → share → recipient', () => {
     await stubDesign(page)
     await page.goto('/')
 
-    // The homepage hero grows a real demo garden rather than showing an empty plot. If that
-    // regresses, a first-time visitor's first impression is a blank rectangle again.
+    // Examples show real flowers before a note is written.
     await expect(page.getByRole('heading', { name: 'bloomnote' })).toBeVisible()
     await expect(petals(page).first()).toBeVisible()
 
@@ -150,13 +149,12 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.getByPlaceholder('their name').fill('Nadia')
     await page.getByLabel('your note').fill(NOTE)
 
-    // Starting a draft clears the demo and shrinks the plot to a waiting bed, so the note field
-    // is not pushed below the fold by 260px of empty sky.
-    const scene = page.locator('[class*="scene"]').first()
-    await expect(scene).toHaveJSProperty('offsetHeight', page.viewportSize()!.width <= 480 ? 112 : 132)
+    await expect(page.getByRole('complementary', { name: 'Garden preview' })).toHaveCount(0)
+    await expect(page.getByLabel('your note')).toBeVisible()
 
     await page.getByRole('button', { name: /grow .* garden/i }).click()
 
+    await page.getByText('the note and flower meanings', { exact: true }).click()
     await expect(page.getByText(NOTE)).toBeVisible()
     await expect(page.getByText('for the drive, and for not making it a thing.').first()).toBeVisible()
 
@@ -208,9 +206,9 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.goto(new URL(shareUrl).pathname)
 
     // Not getByText('Aiden'): the footer credit "made by aiden jang" also matches it.
-    await expect(page.getByText('From Aiden', { exact: true })).toBeVisible()
+    await expect(page.getByText('A little garden from Aiden.', { exact: true })).toBeVisible()
     // The button removes itself on click, so focus has to be sent somewhere deliberately.
-    const heading = page.getByRole('heading', { level: 1, name: /a garden for Nadia/i })
+    const heading = page.getByRole('heading', { level: 1, name: /just for you, Nadia/i })
     await expect(heading).toBeVisible()
     await page.getByRole('button', { name: /open the garden/i }).click()
     await expect(heading).toBeFocused()
@@ -327,9 +325,12 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.getByPlaceholder('their name').fill('Nadia')
     await page.getByLabel('your note').fill(NOTE)
     await page.getByRole('button', { name: /grow .* garden/i }).click()
+    await page.getByText('the note and flower meanings', { exact: true }).click()
     await expect(page.getByText(GARDEN.flowers[0]!.name, { exact: true }).first()).toBeVisible()
 
     await page.getByRole('button', { name: /different flowers/i }).click()
+    await expect(page.getByText('Bluebell', { exact: true })).toHaveCount(1)
+    await page.getByText('the note and flower meanings', { exact: true }).click()
     await expect(page.getByText('Bluebell', { exact: true }).first()).toBeVisible()
     await expect(page.getByText(GARDEN.flowers[0]!.name, { exact: true })).toHaveCount(0)
   })
@@ -474,7 +475,7 @@ test.describe('compose → bloom → share → recipient', () => {
     // Gardens have no TTL, so this page must never claim the gift expired.
     await page.goto('/g/zzzz99')
     // `.` for the apostrophe: the copy uses a typographic one (&rsquo;), not U+0027.
-    await expect(page.getByText(/didn.t lead anywhere/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'This garden couldn’t be found.' })).toBeVisible()
     await expect(page.getByText(/check the full link/i)).toBeVisible()
     // The assertion that matters, stated as the rule rather than as a count: this page must
     // never tell someone the gift they were sent is gone, because it isn't.
