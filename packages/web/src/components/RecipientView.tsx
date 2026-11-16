@@ -1,4 +1,5 @@
 import StationeryArt from './StationeryArt'
+import GiftPacket from './GiftPacket'
 import ReadingSize from './ReadingSize'
 import RecipientHeader from './RecipientHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -18,7 +19,7 @@ import { trackGardenBloomed, trackGardenOpened, trackReplyStarted } from '../lib
 import { useRecipientKeepsakes } from '../lib/useRecipientKeepsakes'
 import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
-import { withViewTransition } from '../lib/viewTransition'
+import { prefersReducedMotion } from '../lib/motion'
 import styles from './RecipientView.module.css'
 
 interface Props {
@@ -30,7 +31,7 @@ interface Props {
    like letting go. */
 const FLOWER_PANEL_GRACE_MS = 260
 
-type Phase = 'sealed' | 'blooming'
+type Phase = 'sealed' | 'opening' | 'blooming'
 
 export default function RecipientView({ gardenData, gardenId }: Props) {
   const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion, mood } = gardenData
@@ -78,15 +79,18 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   const handleOpen = (): void => {
-    /* Kept to 220ms (see .module.css). A view transition cross-fades a snapshot, so anything
-       animating underneath is frozen; the first petal opens at 460ms and the bloom must play live. */
-    withViewTransition(() => {
-      setPhase('blooming')
-    })
+    setPhase(prefersReducedMotion() ? 'blooming' : 'opening')
     playChime()
     trackGardenBloomed()
-    headingRef.current?.focus()
   }
+
+  useEffect(() => {
+    if (phase === 'opening') {
+      const timer = setTimeout(() => setPhase('blooming'), 280)
+      return () => clearTimeout(timer)
+    }
+    if (phase === 'blooming') headingRef.current?.focus()
+  }, [phase])
 
   const handleReplayBloom = (): void => {
     if (revealTimer.current) clearTimeout(revealTimer.current)
@@ -151,16 +155,15 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const [wateredAt, setWateredAt] = useState(0)
 
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    if (phase !== 'blooming') return
+    // The sender's words arrive promptly, independently of the number of flowers.
+    revealTimer.current = setTimeout(() => setMsgVisible(true), prefersReducedMotion() ? 0 : 1200)
+    return () => {
       if (revealTimer.current) clearTimeout(revealTimer.current)
-    },
-    [],
-  )
-  // A stable callback preserves the bloom timeline across unrelated state changes.
-  const handleAllBloomed = useCallback((): void => {
-    revealTimer.current = setTimeout(() => setMsgVisible(true), 300)
-  }, [])
+    }
+  }, [phase, bloomVersion])
+  const handleAllBloomed = useCallback(() => setMsgVisible(true), [])
 
   // The reply URL points at the SAME short id: `/g/abc123` and `/r/abc123` are two views of one
   // KV record, not two writes.
@@ -187,22 +190,31 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
 
       <div className={styles.folio}>
         <div className={styles.gardenPlot}>
-          <GardenScene
-            variant="meadow"
-            flowers={flowers}
-            autoBloom={phase === 'blooming'}
-            onAllBloomed={handleAllBloomed}
-            focused={focused}
-            onFocus={focusFlower}
-            onPreview={previewFlower}
-            wateredAt={wateredAt}
-            journalGardenId={gardenId}
-            journalFrom={from}
-            occasion={occasion}
-            mood={mood}
-            sealed={phase === 'sealed'}
-            key={`recipient-${bloomVersion}`}
-          />
+          {phase !== 'blooming' ? (
+            <GiftPacket
+              from={from}
+              to={to}
+              count={flowers.length}
+              opening={phase === 'opening'}
+              onOpen={handleOpen}
+            />
+          ) : (
+            <GardenScene
+              variant="meadow"
+              flowers={flowers}
+              autoBloom={phase === 'blooming'}
+              onAllBloomed={handleAllBloomed}
+              focused={focused}
+              onFocus={focusFlower}
+              onPreview={previewFlower}
+              wateredAt={wateredAt}
+              journalGardenId={gardenId}
+              journalFrom={from}
+              occasion={occasion}
+              mood={mood}
+              key={`recipient-${bloomVersion}`}
+            />
+          )}
           {msgVisible && flowers.length > 0 && !flowerTapped && (
             <p className={styles.tapHint}>tap a flower to see what it means</p>
           )}
@@ -211,17 +223,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             <Watering gardenId={gardenId} onWatered={() => setWateredAt((n) => n + 1)} />
           )}
         </div>
-
-        {phase === 'sealed' && (
-          <>
-            <button type="button" className={styles.openBtn} onClick={handleOpen}>
-              open the garden
-            </button>
-            <p className={styles.waitingLine}>
-              {flowers.length} {flowers.length === 1 ? 'flower' : 'flowers'}, chosen for you.
-            </p>
-          </>
-        )}
 
         {/* Everything below the plot renders only after the garden is opened. While sealed these would
           sit at opacity 0, present and focusable but invisible. */}

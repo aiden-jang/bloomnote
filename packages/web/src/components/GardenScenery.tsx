@@ -51,7 +51,9 @@ export function Bee() {
       <ellipse cx="8.6" cy="6.4" rx="4.4" ry="3" fill="#f0b429" />
       <path d="M7.2 3.9 A4.4 3 0 0 0 7.2 8.9 Z" fill="#4a3b1a" opacity="0.85" />
       <path d="M10.1 4.3 A4.4 3 0 0 0 10.1 8.5 Z" fill="#4a3b1a" opacity="0.85" />
-      <circle cx="4.6" cy="6.4" r="1.5" fill="#4a3b1a" />
+      <circle cx="4.6" cy="6.4" r="2" fill="#4a3b1a" />
+      <circle cx="4" cy="5.8" r=".55" fill="#fffaf0" />
+      <ellipse cx="3.1" cy="7" rx=".7" ry=".4" fill="#e8b0a1" />
       <path
         d="M3.6 4.9 L2.2 3.4 M4.4 4.6 L3.6 2.9"
         stroke="#4a3b1a"

@@ -4,6 +4,8 @@
 export type PetalShape = 'round' | 'elongated' | 'bell' | 'small' | 'star'
 
 export interface FlowerSpec {
+  /** Absent on original gardens; only newly designed flowers use the botanical model. */
+  artVersion?: 2 | undefined
   name: string
   meaning: string
   petalColors: [string, string, string]

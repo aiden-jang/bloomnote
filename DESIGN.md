@@ -72,3 +72,10 @@ During this UI pass, builds, frontend tests, type checking, lint, formatting and
 passed. The browser runtime could not bind to its local port, so layout assertions, fresh captures
 and final visual review remain unverified. Full verification stopped at the audit because registry
 DNS failed. Complete validation still needs a supported Node runtime with network and local-server access.
+
+## Botanical gift refinement
+
+The folded recipient packet opens into distinct botanical flowers and the sender's note.
+New flower art is versioned so original gardens keep their appearance. Scene, specimen and export
+art share geometry; paper edges and drawn feeling marks tie the gift to the composer and keepsakes.
+[The botanical direction](docs/cute-direction.md) records compatibility, interactions and review limits.

@@ -11,6 +11,7 @@ import {
 } from '../lib/water'
 import { playWater } from '../sound'
 import ChipRow from './ChipRow'
+import FeelingMark from './FeelingMark'
 import styles from './Watering.module.css'
 
 interface Props {
@@ -92,7 +93,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
                 <ChipRow labelledBy="felt-like" selectable={false}>
                   {(Object.keys(FEELING_COPY) as Feeling[]).map((kind) => (
                     <button key={kind} type="button" disabled={busy} onClick={() => void respond(kind)}>
-                      <span aria-hidden>{FEELING_COPY[kind].emoji}</span> {FEELING_COPY[kind].label}
+                      <FeelingMark kind={kind} /> {FEELING_COPY[kind].label}
                     </button>
                   ))}
                 </ChipRow>

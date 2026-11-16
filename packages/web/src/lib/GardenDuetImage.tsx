@@ -1,6 +1,6 @@
 import { drawableFlower, type GardenData } from '../garden'
 import { clipText } from './graphemes'
-import FlowerSVG from '../components/FlowerSVG'
+import FlowerSVG, { flowerExportHeight } from '../components/FlowerSVG'
 import { W, H, Soil, SoilDefs } from './imageCardPrimitives'
 export interface GardenDuetImageOpts {
   previous: GardenData
@@ -21,7 +21,7 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
   const panelH = 520
   const groundSurface = 650
   const visibleFlowers = garden.flowers.slice(0, 7).map(drawableFlower)
-  const tallest = Math.max(150, ...visibleFlowers.map((flower) => flower.stemHeight + 80))
+  const tallest = Math.max(150, ...visibleFlowers.map(flowerExportHeight))
   const scale = Math.min(1.65, 350 / tallest)
   const count = Math.max(1, visibleFlowers.length)
 
@@ -35,7 +35,7 @@ function DuetBouquet({ garden, x, indexOffset }: { garden: GardenData; x: number
         <circle cx={x + 72} cy={panelY + 78} r="40" fill="#fff7cf" opacity="0.72" />
         <Soil x={x} w={panelW} surfaceY={groundSurface} bottomY={panelY + panelH} />
         {visibleFlowers.map((flower, index) => {
-          const svgH = flower.stemHeight + 80
+          const svgH = flowerExportHeight(flower)
           const displayWidth = 80 * scale
           const centerX = x + (panelW * (index + 0.5)) / count
           return (

@@ -2,7 +2,7 @@
 import { clipText, graphemes } from './graphemes'
 import type { FlowerSpec } from '../garden'
 import { drawableFlower } from '../garden'
-import FlowerSVG from '../components/FlowerSVG'
+import FlowerSVG, { flowerExportHeight } from '../components/FlowerSVG'
 import { W, H, Soil, SoilDefs } from './imageCardPrimitives'
 export { W, H, soilPaths } from './imageCardPrimitives'
 export { GardenDuetImage, duetLabel, type GardenDuetImageOpts } from './GardenDuetImage'
@@ -40,7 +40,7 @@ export function wrapMeaning(value: string, max = 24): string[] {
 export function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; meaning: string }) {
   const drawable = drawableFlower(flower)
   const lines = wrapMeaning(meaning)
-  const svgH = drawable.stemHeight + 80
+  const svgH = flowerExportHeight(drawable)
   /* The band caps the scale, so every flower's top lands at the same y whatever its stem height. */
   const FLOWER_BAND = 415
   const scale = Math.min(3.5, FLOWER_BAND / svgH)
@@ -177,7 +177,7 @@ export function ShareImage({ flowers, from, to }: GardenImageOpts) {
         <rect x={panelX} y={panelY} width={panelW} height={panelH} fill="url(#bnSky)" />
         <Soil x={panelX} w={panelW} surfaceY={groundSurface} bottomY={panelY + panelH} />
         {drawable.map((f, i) => {
-          const svgH = f.stemHeight + 80
+          const svgH = flowerExportHeight(f)
           const dispW = 80 * scale
           const cx = panelX + (panelW * (i + 0.5)) / n
           const x = cx - dispW / 2
@@ -237,7 +237,7 @@ export function OgCard({ flowers, from, to }: GardenImageOpts) {
   const groundSurface = panelY + panelH - groundH
   const n = Math.max(1, flowers.length)
   /* Fit the tallest flower rather than trusting a constant. Stem heights vary from 70 to 115. */
-  const tallest = Math.max(150, ...drawable.map((f) => f.stemHeight + 80))
+  const tallest = Math.max(150, ...drawable.map((f) => flowerExportHeight(f)))
   const headroom = 18
   const scale = Math.min(1.9, (groundSurface + 5 - (panelY + headroom)) / tallest)
   const clipName = (s: string): string => clipText(s, 18)
@@ -272,7 +272,7 @@ export function OgCard({ flowers, from, to }: GardenImageOpts) {
         <rect x={panelX} y={panelY} width={panelW} height={panelH} fill="url(#ogSky)" />
         <Soil x={panelX} w={panelW} surfaceY={groundSurface} bottomY={groundSurface + groundH} />
         {drawable.map((f, i) => {
-          const svgH = f.stemHeight + 80
+          const svgH = flowerExportHeight(f)
           const dispW = 80 * scale
           const cx = panelX + (panelW * (i + 0.5)) / n
           return (

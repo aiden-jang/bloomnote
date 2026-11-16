@@ -1,8 +1,21 @@
 .letter {
   position: relative;
   padding: 30px 36px 26px;
+  border: 1px solid var(--letter-line);
+  border-radius: 2px 16px 2px 2px;
   background: var(--letter-paper);
   box-shadow: 0 12px 28px -18px #284d3a59;
+}
+.letter::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 16px;
+  height: 16px;
+  border-left: 1px solid var(--letter-line);
+  border-bottom: 1px solid var(--letter-line);
+  border-radius: 0 14px 0 3px;
+  background: var(--letter-ground);
 }
 .letter::after {
   content: '';
@@ -155,6 +168,17 @@
 @media print {
   .letter {
     box-shadow: none;
+  }
+  .letter::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto auto;
+    width: 16px;
+    height: 16px;
+    border-left: 1px solid var(--letter-line);
+    border-bottom: 1px solid var(--letter-line);
+    border-radius: 0 14px 0 3px;
+    background: var(--letter-ground);
   }
   .letter::after {
     display: none;

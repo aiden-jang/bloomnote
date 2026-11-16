@@ -4,6 +4,7 @@ import { type FlowerSpec } from '../garden'
 import { useSceneMotion } from '../lib/useSceneMotion'
 import { prefersReducedMotion } from '../lib/motion'
 import { ritualTime } from '../lib/rituals'
+import { occasionTone } from '../lib/occasions'
 import { playBloom, pulse } from '../sound'
 import FlowerPeek from './FlowerPeek'
 import {
@@ -98,12 +99,14 @@ export default function GardenScene({
     if (previous !== null) slotRefs.current[previous]?.focus()
   }, [focused, onFocus])
 
-  const aura = auraFor(mood)
+  const gentle = occasionTone(occasion) === 'sensitive'
+  const aura = auraFor(gentle ? undefined : mood)
 
   /* A destination index plus a CSS transition, not a keyframe path: the flower count varies from
      three to five, so hand-authored @keyframes would be wrong for most gardens. */
   const [beeAt, setBeeAt] = useState(0)
-  const beeFlying = autoBloom && placed.length > 0 && bloomedCount >= placed.length && !prefersReducedMotion()
+  const beeFlying =
+    !gentle && autoBloom && placed.length > 0 && bloomedCount >= placed.length && !prefersReducedMotion()
   useEffect(() => {
     if (!beeFlying) return
     // Uneven dwell, on prime-ish numbers, so the bee never falls into step with the flowers' sway.
@@ -126,6 +129,11 @@ export default function GardenScene({
   useEffect(() => {
     if (!autoBloom) return
 
+    if (prefersReducedMotion()) {
+      setBloomedCount(placed.length)
+      onAllBloomed?.()
+      return
+    }
     setBloomedCount(0)
     const timers: ReturnType<typeof setTimeout>[] = []
 
@@ -147,7 +155,7 @@ export default function GardenScene({
   }, [autoBloom, flowerSig, placed.length, onAllBloomed, silent])
 
   const drifters =
-    autoBloom && flowers.length > 0
+    !gentle && autoBloom && flowers.length > 0
       ? PETAL_DRIFTERS.map((cfg, i) => {
           const flower = flowers[i % flowers.length]!
           return {

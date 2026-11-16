@@ -66,6 +66,8 @@
 .messageWrap {
   position: relative;
   padding: 24px 42px 28px;
+  border: 1px solid var(--letter-line);
+  border-radius: 2px 16px 2px 2px;
   background: var(--letter-paper);
   box-shadow: 0 12px 28px -18px #284d3a59;
   text-align: left;
@@ -110,8 +112,9 @@
 }
 .secretNote {
   margin-top: 18px;
-  padding-top: 10px;
-  border-top: 1px solid var(--letter-line);
+  padding: 14px 18px;
+  border-left: 2px solid var(--pink-mid);
+  background: var(--letter-ground);
 }
 .secretReveal {
   display: inline-flex;
@@ -173,8 +176,7 @@
 .cta.visible {
   opacity: 1;
 }
-.ctaBtn,
-.openBtn {
+.ctaBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -193,19 +195,12 @@
     transform 0.15s,
     background 0.15s;
 }
-.ctaBtn:hover,
-.openBtn:hover {
+.ctaBtn:hover {
   background: var(--green-mid);
   transform: translateY(-1px);
 }
-.ctaBtn:active,
-.openBtn:active {
+.ctaBtn:active {
   transform: translateY(1px);
-}
-.openBtn {
-  justify-self: center;
-  min-width: 180px;
-  margin-top: 4px;
 }
 .ctaShareBtn {
   min-height: 44px;
@@ -309,15 +304,6 @@
 .ctaSubLink:hover {
   color: var(--green-deep);
 }
-.waitingLine {
-  max-width: 28ch;
-  margin-inline: auto;
-  color: var(--text-mid);
-  text-align: center;
-  font-size: 14px;
-  line-height: 1.55;
-  animation: waitingIn 0.7s ease 0.42s both;
-}
 .tapHint {
   margin: 10px 0 0;
   color: var(--text-mid);
@@ -415,7 +401,6 @@
 @media (prefers-reduced-motion: reduce) {
   .wrap,
   .secretText,
-  .waitingLine,
   .tapHint {
     animation: none;
   }

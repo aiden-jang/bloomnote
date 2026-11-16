@@ -24,6 +24,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     mood: 'playful',
     flowers: [
       {
+        artVersion: 2,
         name: 'Marigold',
         meaning: 'for laughing at your own jokes. someone has to.',
         petalColors: ['#FFD93D', '#FFC53D', '#FFB845'],
@@ -34,6 +35,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 92,
       },
       {
+        artVersion: 2,
         name: 'Rose',
         meaning: 'for a friend who’s very easy to keep around.',
         petalColors: ['#FF8FA3', '#FFA8C0', '#FFB8C8'],
@@ -44,6 +46,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 85,
       },
       {
+        artVersion: 2,
         name: 'Sunflower',
         meaning: 'for the tide journal and all the attention it takes.',
         petalColors: ['#FFE66D', '#FFC53D', '#FFB845'],
@@ -54,6 +57,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 105,
       },
       {
+        artVersion: 2,
         name: 'Cosmos',
         meaning: 'for noticing the small things the water keeps doing.',
         petalColors: ['#F472B6', '#FB7185', '#F9A8D4'],
@@ -75,6 +79,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     mood: 'wistful',
     flowers: [
       {
+        artVersion: 2,
         name: 'Bluebell',
         meaning: 'for that windy afternoon in half moon bay.',
         petalColors: ['#94A3B8', '#A8B5C5', '#B8C5D3'],
@@ -85,6 +90,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 95,
       },
       {
+        artVersion: 2,
         name: 'Iris',
         meaning: 'for the kite that brought the afternoon back.',
         petalColors: ['#A78BFA', '#B8A4D8', '#C9BDE2'],
@@ -95,6 +101,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 90,
       },
       {
+        artVersion: 2,
         name: 'Hellebore',
         meaning: 'for a memory that still comes to mind.',
         petalColors: ['#9CA38C', '#B0B7A2', '#C2C9B7'],
@@ -116,6 +123,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     mood: 'steady',
     flowers: [
       {
+        artVersion: 2,
         name: 'Rose',
         meaning: 'for the extra hour after class.',
         petalColors: ['#C2825D', '#D4956F', '#E0A883'],
@@ -126,6 +134,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 92,
       },
       {
+        artVersion: 2,
         name: 'Carnation',
         meaning: 'for sticking with the explanation.',
         petalColors: ['#7C9A6E', '#8DAD7D', '#9EBE8C'],
@@ -136,6 +145,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 96,
       },
       {
+        artVersion: 2,
         name: 'Peony',
         meaning: 'for the moment gradient descent finally made sense.',
         petalColors: ['#F0E4D0', '#F5EAD8', '#FAF1E3'],

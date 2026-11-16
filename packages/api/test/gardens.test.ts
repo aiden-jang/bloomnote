@@ -41,6 +41,16 @@ describe('gardens (KV)', () => {
     expect(g?.message).toBe('hi')
   })
 
+  test('keeps new botanical art and original reply flowers through a real KV round trip', async () => {
+    const source = { ...GARDEN, flowers: [{ ...FLOWER, artVersion: 2 }], previous: GARDEN }
+    const result = await createGarden(testEnv, source)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const saved = await readGarden(testEnv, result.id)
+    expect(saved).toMatchObject(source)
+    expect((saved as typeof source).previous.flowers[0]).not.toHaveProperty('artVersion')
+  })
+
   test('rejects non-gardens and unknown ids', async () => {
     expect((await createGarden(testEnv, { nope: 1 })).ok).toBe(false)
     expect(await readGarden(testEnv, 'zzzzzz')).toBeNull()

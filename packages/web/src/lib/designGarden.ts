@@ -171,6 +171,7 @@ function normalize(server: ServerPayload): DesignResult {
   return {
     bouquetNote: server.bouquet_note,
     flowers: server.flowers.map((f) => ({
+      artVersion: 2,
       name: f.name,
       meaning: f.meaning,
       petalColors: f.petalColors,

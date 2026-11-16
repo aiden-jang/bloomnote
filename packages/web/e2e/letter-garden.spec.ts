@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const flowers = ['Dahlia', 'Cosmos', 'Sunflower'].map((name, i) => ({
   name,
+  artVersion: 2,
   meaning: ['For showing up, every time.', 'For the very specific jokes.', 'For the brighter days.'][i],
   petalColors: [
     ['#d993aa', '#e6b7c5', '#f3d5de'],
@@ -45,7 +46,13 @@ for (const width of [320, 1440]) {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockApp(page)
     await page.goto('/g/AbCdEf')
-    await page.getByRole('button', { name: 'open the garden', exact: true }).click()
+    const packet = page.getByRole('button', { name: 'open the garden', exact: true })
+    await expect(packet).toContainText('for Sam')
+    await expect(packet).toContainText('from Alex')
+    await packet.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('heading', { name: /Just for you/ })).toBeFocused()
+    await expect(page.locator('[class*="gardenPlot"] [data-botanical]')).toHaveCount(3)
     const note = page.getByText(garden.message, { exact: true })
     await expect(note).toBeVisible()
     const scene = page.locator('[class*="scene"]').first()
