@@ -19,13 +19,13 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Maya',
     to: 'Sarah',
     message:
-      "happy bday sarah!! you're the only person alive who keeps a tide journal AND laughs too hard at her own jokes. no notes, so glad you exist.",
+      'happy birthday, sarah. hope the tides are interesting and your own jokes continue to entertain you. glad you’re here.',
     occasion: 'birthday',
     mood: 'playful',
     flowers: [
       {
         name: 'Marigold',
-        meaning: 'for the friend who keeps laughing at her own jokes.',
+        meaning: 'for laughing at your own jokes. someone has to.',
         petalColors: ['#FFD93D', '#FFC53D', '#FFB845'],
         centerColor: '#D97706',
         stemColor: '#65A30D',
@@ -34,8 +34,8 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 92,
       },
       {
-        name: 'Coral Rose',
-        meaning: 'soft warmth, the way old friendship feels at the kitchen table.',
+        name: 'Rose',
+        meaning: 'for a friend who’s very easy to keep around.',
         petalColors: ['#FF8FA3', '#FFA8C0', '#FFB8C8'],
         centerColor: '#FFD700',
         stemColor: '#3D6B32',
@@ -45,7 +45,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Sunflower',
-        meaning: 'someone who turns toward you, like these turn toward light.',
+        meaning: 'for the tide journal and all the attention it takes.',
         petalColors: ['#FFE66D', '#FFC53D', '#FFB845'],
         centerColor: '#92400E',
         stemColor: '#3D6B32',
@@ -55,7 +55,7 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
       },
       {
         name: 'Cosmos',
-        meaning: 'for the tide journal. for noticing small things that repeat.',
+        meaning: 'for noticing the small things the water keeps doing.',
         petalColors: ['#F472B6', '#FB7185', '#F9A8D4'],
         centerColor: '#FBBF24',
         stemColor: '#5A8C4E',
@@ -70,13 +70,13 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Casey',
     to: 'Jamie',
     message:
-      "saw a kite on the beach today and immediately thought of that windy afternoon in half moon bay. anyway. hope LA's being nice to you.",
+      'saw a kite on the beach today. thought of that windy afternoon in half moon bay. hope LA’s being nice to you.',
     occasion: 'just-because',
     mood: 'wistful',
     flowers: [
       {
         name: 'Bluebell',
-        meaning: 'the color of the sky that windy afternoon.',
+        meaning: 'for that windy afternoon in half moon bay.',
         petalColors: ['#94A3B8', '#A8B5C5', '#B8C5D3'],
         centerColor: '#475569',
         stemColor: '#5B7C52',
@@ -85,8 +85,8 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 95,
       },
       {
-        name: 'Dusty Mauve',
-        meaning: 'for the memory you keep returning to without meaning to.',
+        name: 'Iris',
+        meaning: 'for the kite that brought the afternoon back.',
         petalColors: ['#A78BFA', '#B8A4D8', '#C9BDE2'],
         centerColor: '#6D5BA8',
         stemColor: '#5B7C52',
@@ -95,8 +95,8 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 90,
       },
       {
-        name: 'Sage Bloom',
-        meaning: 'for the long distance between people who used to be close.',
+        name: 'Hellebore',
+        meaning: 'for a memory that still comes to mind.',
         petalColors: ['#9CA38C', '#B0B7A2', '#C2C9B7'],
         centerColor: '#5B6F4F',
         stemColor: '#3D6B32',
@@ -111,13 +111,13 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
     from: 'Theo',
     to: 'Dr. Park',
     message:
-      'dr. park you stayed an extra hour after class and gradient descent finally clicked. lowkey changed my whole semester. ty for real.',
+      'dr. park, you stayed an extra hour after class and gradient descent finally clicked. thank you for making it make sense.',
     occasion: 'thank-you',
     mood: 'steady',
     flowers: [
       {
-        name: 'Terracotta Rose',
-        meaning: 'for teaching that makes a hard thing solid.',
+        name: 'Rose',
+        meaning: 'for the extra hour after class.',
         petalColors: ['#C2825D', '#D4956F', '#E0A883'],
         centerColor: '#92400E',
         stemColor: '#3D6B32',
@@ -126,8 +126,8 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 92,
       },
       {
-        name: 'Forest Bloom',
-        meaning: 'steady the way a good mentor is steady.',
+        name: 'Carnation',
+        meaning: 'for sticking with the explanation.',
         petalColors: ['#7C9A6E', '#8DAD7D', '#9EBE8C'],
         centerColor: '#4A5E40',
         stemColor: '#3D6B32',
@@ -136,8 +136,8 @@ export const EXAMPLE_GARDENS: ExampleGarden[] = [
         stemHeight: 96,
       },
       {
-        name: 'Cream Peony',
-        meaning: 'for the click. when something hard finally fits.',
+        name: 'Peony',
+        meaning: 'for the moment gradient descent finally made sense.',
         petalColors: ['#F0E4D0', '#F5EAD8', '#FAF1E3'],
         centerColor: '#92400E',
         stemColor: '#5A8C4E',

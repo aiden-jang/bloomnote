@@ -24,6 +24,7 @@ export default function GardenLibraryShell({
           )}
         </header>
         {children}
+        <p className={styles.subtitle}>Removing a garden from your library leaves its shared link working.</p>
       </div>
     </div>
   )

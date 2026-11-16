@@ -52,7 +52,7 @@ export interface GardenDesign {
  */
 export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign {
   const [phase, setPhase] = useState<Phase>('idle')
-  const { statusText, say, think } = useStatusLine(phase === 'designing')
+  const { statusText, say, think } = useStatusLine()
   const [errorText, setErrorText] = useState<string | null>(null)
   const [rerollAttempt, setRerollAttempt] = useState(0)
   const [isRerolling, setIsRerolling] = useState(false)
@@ -107,7 +107,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
       withViewTransition(() => {
         setPhase('designing')
         setErrorText(null)
-        say('reading the room…')
+        say('choosing flowers…')
       })
 
       const ctrl = new AbortController()
@@ -127,14 +127,14 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
 
         // Don't fall back to a self-contained URL here. It costs the user the garden they waited
         // five seconds for, but a share link that silently half-works is worse.
-        say('wrapping it up…')
+        say('saving the garden…')
 
         const shortId = await createShortGarden(
           data,
           AbortSignal.any([ctrl.signal, AbortSignal.timeout(SHORTEN_TIMEOUT_MS)]),
         )
         ctrl.signal.throwIfAborted()
-        if (!shortId) throw new Error("couldn't save your garden. try again?")
+        if (!shortId) throw new Error('Couldn’t save the garden link. Your note is still here. Try again.')
 
         // Only once it is saved. Clearing on the way out would take the note with it when
         // generation fails, which is the one thing this screen must not do.
@@ -175,7 +175,11 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
           return
         }
         withViewTransition(() => {
-          setErrorText(err instanceof Error ? err.message : 'something went wrong.')
+          setErrorText(
+            err instanceof Error
+              ? err.message
+              : 'Couldn’t grow the garden right now. Your note is still here. Try again.',
+          )
           setPhase('idle')
         })
         // Bucket by error shape. Raw model error text can carry pieces of the user's note.
@@ -204,7 +208,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
       }
 
       setIsRerolling(true)
-      say('regrowing…')
+      say('choosing different flowers…')
       setErrorText(null)
 
       const ctrl = new AbortController()
@@ -244,7 +248,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
       } catch (err) {
         restore()
         if (ctrl.signal.aborted) return
-        setErrorText(err instanceof Error ? err.message : 'something went wrong.')
+        setErrorText('Couldn’t grow different flowers. Your previous garden is still available.')
         trackGardenError(classifyError(err))
       } finally {
         abortRef.current = null

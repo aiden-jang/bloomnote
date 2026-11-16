@@ -17,7 +17,7 @@ export default function ComposerOptions({
   return (
     <div className={fields.scheduleOpen ? `${styles.options} ${styles.scheduled}` : styles.options}>
       <details className={composer.noteOptions}>
-        <summary>occasion and mood</summary>
+        <summary>occasion &amp; mood</summary>
         <ChipPicker
           label="occasion"
           name="occasion"

@@ -31,11 +31,11 @@ export default class ErrorBoundary extends Component<Props, State> {
           <BloomBrand />
         </header>
         <div className={notice.content}>
-          <h1 className={notice.title}>something wilted.</h1>
+          <h1 className={notice.title}>Couldn’t open Bloomnote.</h1>
           <div className={notice.card}>
-            <p className={notice.body}>a hiccup on our end. refresh, or start a fresh one.</p>
+            <p className={notice.body}>Refresh the page, or open Bloomnote again.</p>
             <a className={notice.action} href="/">
-              grow a new one
+              open Bloomnote
             </a>
           </div>
         </div>

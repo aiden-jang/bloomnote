@@ -64,7 +64,7 @@ export function useShareActions(
       trackShareLinkCopied()
     } catch {
       if (currentUrl.current === shareUrl)
-        setShareError('Couldn’t copy. Select the link above and copy it, or try again.')
+        setShareError('Couldn’t copy the link. Select it above to copy it yourself, or try again.')
     }
   }, [shareUrl])
 
@@ -112,7 +112,7 @@ export function useShareActions(
     } catch {
       if (!isCurrent()) return
       setImageStatus(null)
-      setShareError('Couldn’t save the image. Try again, or send the link.')
+      setShareError('Couldn’t save the image. Try again, or use the garden link.')
     } finally {
       if (isCurrent()) savingImageRef.current = false
     }

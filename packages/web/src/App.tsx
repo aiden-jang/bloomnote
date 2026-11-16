@@ -105,7 +105,7 @@ export default function App() {
         : route.kind === 'mine'
           ? 'Your gardens'
           : route.kind === 'composer'
-            ? 'Write a note'
+            ? 'A note. With flowers.'
             : route.kind === 'privacy'
               ? 'Privacy'
               : route.kind === 'terms'
@@ -115,7 +115,7 @@ export default function App() {
                   : route.kind === 'loaderror'
                     ? 'Couldn’t open garden'
                     : 'Opening garden'
-    document.title = `${title} · bloomnote`
+    document.title = route.kind === 'composer' ? `Bloomnote · ${title}` : `${title} · Bloomnote`
   }, [route])
 
   const view =
@@ -223,7 +223,7 @@ function LoadErrorShell({ onRetry }: { onRetry: () => void }) {
       <div className={notice.content}>
         <h1 className={notice.title}>couldn&rsquo;t load that garden.</h1>
         <div className={notice.card}>
-          <p className={notice.body}>looks like a connection hiccup, not a bad link.</p>
+          <p className={notice.body}>Couldn’t load this garden. Check your connection or try again.</p>
           <div className={notice.actions}>
             <button type="button" className={notice.action} onClick={onRetry}>
               try again

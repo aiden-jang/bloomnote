@@ -1,3 +1,4 @@
+import { occasionTone } from '../lib/occasions'
 import type { RefObject } from 'react'
 import { charCountTierClass } from '../lib/composerHelpers'
 import type { Ritual } from '../lib/rituals'
@@ -7,6 +8,7 @@ import letter from './ComposerLetter.module.css'
 const MAX_NOTE = 400
 
 interface NoteFieldProps {
+  occasion: string
   ritual: Ritual
   value: string
   onChange: (value: string) => void
@@ -17,6 +19,7 @@ interface NoteFieldProps {
 }
 
 export default function NoteField({
+  occasion,
   ritual,
   value,
   onChange,
@@ -52,7 +55,9 @@ export default function NoteField({
       />
       <div className={styles.helperRow}>
         <span id="note-hint" className={styles.helper} hidden={!!value.trim()}>
-          One oddly specific detail goes a long way.
+          {occasionTone(occasion) === 'ordinary'
+            ? 'One specific detail goes a long way.'
+            : 'A short note is enough.'}
         </span>
         <span id="note-count" className={`${styles.charCount} ${charCountTierClass(value.length, styles)}`}>
           {value.length}/{MAX_NOTE}
@@ -72,7 +77,7 @@ export default function NoteField({
           </button>
           {hasAnotherPrompt && (
             <button type="button" className={styles.promptLink} onClick={onAnotherPrompt}>
-              another angle ↻
+              another thought ↻
             </button>
           )}
         </div>

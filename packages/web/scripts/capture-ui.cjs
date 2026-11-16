@@ -158,9 +158,7 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
         if (name.startsWith('library') || name === 'removal-error')
           await page.getByRole('link', { name: /^for Sam/ }).waitFor()
         if (name === 'removal-error') {
-          await page
-            .getByRole('button', { name: 'remove garden for Sam from your gardens', exact: true })
-            .click()
+          await page.getByRole('button', { name: 'remove garden for Sam from library', exact: true }).click()
           await page.clock.fastForward(6001)
           await page.getByRole('alert').waitFor()
         }

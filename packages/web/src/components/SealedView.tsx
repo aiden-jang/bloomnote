@@ -103,7 +103,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
         <div className={styles.topLabel}>
           <h1 className={styles.title}>A garden is waiting.</h1>
           <p className={styles.fromText}>
-            {from || 'Someone'} grew {to || 'you'} a garden.
+            {from || 'Someone'} made {to || 'you'} a garden.
           </p>
         </div>
 
@@ -194,7 +194,7 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
                 })}
             </div>
           </div>
-          <p className={styles.hint}>come back when it&rsquo;s time.</p>
+          <p className={styles.hint}>Come back when it opens.</p>
           <details className={styles.reminderMenu}>
             <summary>add a reminder</summary>
             <div className={styles.reminderOptions}>
@@ -217,14 +217,14 @@ export default function SealedView({ gardenId, from, to, unlockAt, onUnlock }: P
                 <span aria-hidden>↗</span>
               </a>
               <button type="button" onClick={addToCalendar} disabled={calendarSaved}>
-                <span>{calendarSaved ? 'Calendar file ready' : 'Apple Calendar / other'}</span>
+                <span>{calendarSaved ? 'calendar file ready' : 'Apple Calendar / other'}</span>
                 <span aria-hidden>↓</span>
               </button>
             </div>
           </details>
           {calendarSaved && (
             <span className={styles.calendarHint} role="status">
-              open the downloaded file to add its 15-minute reminder
+              Open the downloaded file to add its 15-minute reminder.
             </span>
           )}
         </section>

@@ -59,7 +59,7 @@ export default function ComposerPreview({ garden, shareUrl, recipient, from, mes
                   aria-expanded={previewSecretRevealed}
                 >
                   <SecretEnvelope open={previewSecretRevealed} />
-                  {previewSecretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
+                  {previewSecretRevealed ? 'hide the secret' : 'a secret for you'}
                 </button>
                 {previewSecretRevealed && <p className={styles.previewSecretText}>{secret.trim()}</p>}
               </div>

@@ -111,7 +111,7 @@ function AccountGardens() {
 
   return (
     <Shell
-      subtitle="the gardens you've grown and kept, on every device."
+      subtitle="the gardens you’ve grown and kept, saved to your account."
       hideWriteLink={!busy && !loadError && list.length === 0}
     >
       {pending && (
@@ -124,7 +124,7 @@ function AccountGardens() {
       )}
       {removalError && (
         <div className={styles.notice} role="alert">
-          <p>couldn’t remove that garden. It’s back in your library. Try removing it again.</p>
+          <p>Couldn’t remove that garden. It’s back in your library. Try again.</p>
           <button type="button" className={styles.emptyLink} onClick={dismissRemovalError}>
             dismiss
           </button>
@@ -151,7 +151,9 @@ function AccountGardens() {
           </p>
         ) : loadError ? (
           <div className={styles.empty} role="alert">
-            <p className={styles.emptyText}>couldn’t load your gardens. Your saved links are still there.</p>
+            <p className={styles.emptyText}>
+              Couldn’t load your gardens. Try again. Your saved links are unchanged.
+            </p>
             <button type="button" className={styles.emptyLink} onClick={retryLoad}>
               try again
             </button>
@@ -160,7 +162,9 @@ function AccountGardens() {
           <div className={styles.empty}>
             <StationeryArt kind="seedling" />
             <p className={styles.emptyText}>
-              {tab === 'sent' ? 'you haven’t grown any yet.' : 'gardens people grow you will show up here.'}
+              {tab === 'sent'
+                ? 'Nothing growing yet. Very low maintenance.'
+                : 'Gardens you keep will appear here.'}
             </p>
             {tab === 'sent' && (
               <a href="/" className={styles.emptyLink}>
@@ -214,11 +218,11 @@ function LocalGardens() {
   }
 
   return (
-    <Shell subtitle="the gardens you've grown, saved on this device." hideWriteLink={records.length === 0}>
+    <Shell subtitle="the gardens you’ve grown, saved on this device." hideWriteLink={records.length === 0}>
       <BackupRestore />
       {sessionError && (
         <div className={styles.notice} role="alert">
-          <p>couldn’t check your sign-in. Only the gardens saved on this device are shown.</p>
+          <p>Couldn’t check your sign-in. Only gardens saved on this device are shown.</p>
           <button type="button" className={styles.emptyLink} onClick={() => void retrySession()}>
             try again
           </button>

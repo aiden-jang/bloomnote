@@ -146,9 +146,9 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
             disabled={shareStatus !== null}
           >
             {shareStatus === 'sharing'
-              ? 'opening…'
+              ? 'opening sharing…'
               : shareStatus === 'shared'
-                ? 'shared'
+                ? 'share sheet closed'
                 : shareStatus === 'copied'
                   ? 'meaning copied'
                   : 'share this flower'}
@@ -160,9 +160,9 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
             disabled={imageStatus !== null}
           >
             {imageStatus === 'saving'
-              ? 'pressing flower…'
+              ? 'making image…'
               : imageStatus === 'shared'
-                ? 'keepsake shared'
+                ? 'share sheet closed'
                 : imageStatus === 'downloaded'
                   ? 'download started'
                   : 'save a pressed-flower card'}

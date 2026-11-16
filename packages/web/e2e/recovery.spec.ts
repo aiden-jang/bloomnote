@@ -82,7 +82,7 @@ test('an unavailable archive offers retry instead of claiming it is empty', asyn
   )
   await page.goto('/mine')
   await expect(page.getByRole('alert')).toContainText(/couldn.t load your gardens/i)
-  await expect(page.getByText('you haven’t grown any yet.', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Nothing growing yet. Very low maintenance.', { exact: true })).toHaveCount(0)
   available = true
   await page.getByRole('button', { name: 'try again', exact: true }).click()
   await expect(page.getByRole('listitem')).toContainText('Sam')
@@ -151,7 +151,7 @@ test('copy failures explain how to send the visible link and allow retry', async
     }
   }
   await page.getByRole('button', { name: 'copy link', exact: true }).click()
-  await expect(page.getByRole('alert')).toContainText(/select.*link/i)
+  await expect(page.getByRole('alert')).toContainText(/copy the link.*select it above/i)
   const manualLink = page.getByRole('textbox', { name: 'Garden link', exact: true })
   await manualLink.focus()
   await expect(manualLink).toHaveAttribute('readonly', '')
@@ -160,9 +160,9 @@ test('copy failures explain how to send the visible link and allow retry', async
       input.value.slice(input.selectionStart ?? 0, input.selectionEnd ?? 0),
     ),
   ).toBe(await manualLink.inputValue())
-  await expect(page.getByRole('button', { name: 'copied', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'link copied', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'copy link', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'copied', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'link copied', exact: true })).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -240,10 +240,10 @@ test('a schedule that passes during generation is described as opening now', asy
   await page.goto('/')
   await page.getByLabel('your note', { exact: true }).fill(garden.message)
   await page.getByLabel('to', { exact: true }).fill('Sam')
-  await page.getByRole('button', { name: /schedule for later/ }).click()
+  await page.getByRole('button', { name: /choose when it opens/ }).click()
   await page.getByRole('button', { name: 'tomorrow', exact: true }).click()
   await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
-  await expect(page.getByText("Sam's garden is ready", { exact: true })).toBeVisible()
+  await expect(page.getByText('Sam’s garden is ready', { exact: true })).toBeVisible()
   expect(stored).not.toBeNull()
   expect(stored).not.toHaveProperty('unlockAt')
   await expect(page.getByRole('alert')).toContainText(/opens now/i)
@@ -253,7 +253,7 @@ test('the schedule grid has one tab stop and supports moving and choosing a day'
   await page.clock.setFixedTime(new Date('2026-10-31T12:00:00'))
   await mockApp(page)
   await page.goto('/')
-  await page.getByRole('button', { name: /schedule for later/ }).click()
+  await page.getByRole('button', { name: /choose when it opens/ }).click()
   const grid = page.getByRole('grid')
   const day = grid.locator('button[tabindex="0"]')
   await expect(day).toHaveCount(1)
@@ -428,7 +428,7 @@ test('note animation keeps whole emoji and printing includes the complete note',
   )
   await page.goto('/g/AbCdEf')
   await page.getByRole('button', { name: 'open the garden', exact: true }).click()
-  const label = page.locator('p').filter({ hasText: /why this garden/ })
+  const label = page.locator('p').filter({ hasText: /why these flowers/ })
   await expect(label).toHaveCount(1)
   const stream = label.locator('..').locator('p').last().locator('span[aria-hidden]').first()
   await expect(stream).toBeAttached()
@@ -553,9 +553,9 @@ test('an earlier image share cannot finish the next garden’s export feedback',
     ;(window as unknown as { finishImageShare: (index: number) => void }).finishImageShare(0)
   })
   await expect(page.getByRole('button', { name: 'making image…', exact: true })).toBeDisabled()
-  await expect(page.getByRole('button', { name: 'image shared', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'share sheet closed', exact: true })).toHaveCount(0)
   await page.evaluate(() => {
     ;(window as unknown as { finishImageShare: (index: number) => void }).finishImageShare(1)
   })
-  await expect(page.getByRole('button', { name: 'image shared', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'share sheet closed', exact: true })).toBeVisible()
 })

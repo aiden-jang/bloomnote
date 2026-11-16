@@ -114,7 +114,7 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
     return (
       <section className={styles.schedule}>
         <button type="button" className={styles.scheduleToggle} onClick={onOpen}>
-          or schedule for later →
+          choose when it opens
         </button>
       </section>
     )
@@ -198,7 +198,7 @@ export default function ScheduleInput({ open, value, error, onOpen, onChange, on
         <div className={styles.scheduleHead}>
           <span className={styles.scheduleTitle}>when should it open?</span>
           <button type="button" className={styles.scheduleClear} onClick={onCancel}>
-            cancel
+            cancel schedule
           </button>
         </div>
 

@@ -5,7 +5,7 @@ each with a meaning, and gives you a link that blooms when they open it.
 
 [Open Bloomnote](https://bloomnote.aidenjang.com)
 
-![Bloomnote’s writing desk](docs/screenshots/composer-desktop.png)
+The [copy guide](docs/copy-plan.md) records the interface voice and occasion policy.
 
 ## The experience
 
@@ -119,8 +119,8 @@ Released under the [MIT license](LICENSE).
 
 Installed apps can offer **Write a note**, which opens and focuses the existing
 composer without clearing its saved draft. Browser titles identify the composer,
-library, or garden without putting the note or secret in the tab. Current public
+library, or garden without putting the note or secret in the tab. Existing public
 composer screenshots in `packages/web/public/screenshots/` supply phone and desktop
-install previews; capture the running composer again when its layout changes.
+install previews. They predate the copy refresh and need fresh captures of the running composer.
 
 Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).

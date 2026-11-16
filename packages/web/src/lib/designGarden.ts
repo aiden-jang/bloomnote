@@ -115,62 +115,36 @@ export async function designGarden(
     if (err instanceof Error && err.name === 'AbortError') throw err
 
     const raw = err instanceof Error ? err.message : String(err)
-    console.error('[designGarden] underlying error:', err)
-    throw new Error(friendlyError(raw))
+    throw new Error(friendlyError(raw), { cause: err })
   }
 }
 
 export function friendlyError(raw: string): string {
+  if (/quota.?exceeded|generate.?content.?free.?tier|resource.?exhausted|at capacity for today/i.test(raw))
+    return 'Garden growing has reached its daily limit. Your note is still here. Try again later.'
+  if (/rate.?limit|\b429\b|too.?many.?requests/i.test(raw))
+    return 'Too many requests just now. Wait a little and try again.'
   if (
-    /high.?demand|model.+is.+currently|model.+overloaded|spikes.+in.+demand|googlegenerativeai.+error|generativelanguage\.googleapis/i.test(
+    /high.?demand|model.+is.+currently|model.+overloaded|spikes.+in.+demand|too many people planting at once|(?:googlegenerativeai|generativelanguage\.googleapis).+503/i.test(
       raw,
     )
-  ) {
-    return "gemini's a little overwhelmed right now. give it a sec and try again."
-  }
-
-  if (/rate.?limit|\b429\b|too.?many.?requests/i.test(raw)) {
-    return "bloomnote's rate limit kicked in. give it about a minute and try again."
-  }
-
-  if (/quota.?exceeded|generate.?content.?free.?tier|resource.?exhausted/i.test(raw)) {
-    return 'bloomnote has reached its daily garden limit. Your note is still here; try again tomorrow.'
-  }
-
-  if (/\b404\b|not.?found.?for.?api.?version|model.+not.+found/i.test(raw)) {
-    return "the AI model isn't responding right now. try again shortly."
-  }
-
-  if (/failed.?to.?fetch|networkerror|network.?request.?failed|err_network/i.test(raw)) {
-    return "couldn't reach the server. check your connection and try again."
-  }
-
-  if (/timeout|timed.?out|took.?too.?long|took.?longer/i.test(raw)) {
-    return 'that took longer than expected. give it another try.'
-  }
-
-  if (/gemini_api_key|missing.+api.?key/i.test(raw)) {
-    return 'garden growing is temporarily unavailable. Your note is still here; try again later.'
-  }
-
-  if (/invalid garden|invalid.+payload|content_sha256/i.test(raw)) {
-    return 'the AI got confused on that one. mind trying again, maybe with a slightly different note?'
-  }
-
-  if (/did.?not.?return.?a.?garden|stream.?ended.?without.?a.?garden/i.test(raw)) {
-    return "the AI didn't return a garden. try again, ideally with a slightly longer or more specific note."
-  }
-
-  if (/^request failed \(5\d{2}\)|\b5\d{2}\b|internal.?server.?error|bad.?gateway/i.test(raw)) {
-    return 'something broke on our end. try again in a moment.'
-  }
-
-  // Long or stack-trace-shaped, so definitely not user-readable.
-  if (raw.length > 160 || /\bstack:\s|exception|\bat\s+\w+\s*\(/i.test(raw)) {
-    return 'something went wrong. give it another try in a moment.'
-  }
-
-  return raw
+  )
+    return 'Garden growing is busy right now. Try again in a moment.'
+  if (/failed.?to.?fetch|networkerror|network.?request.?failed|err_network/i.test(raw))
+    return 'Couldn’t reach Bloomnote. Check your connection and try again.'
+  if (/timeout|timed.?out|took.?too.?long|took.?longer/i.test(raw))
+    return 'That took too long. Your note is still here. Try again.'
+  if (/gemini_api_key|missing.+api.?key/i.test(raw))
+    return 'Garden growing is temporarily unavailable. Your note is still here. Try again later.'
+  if (
+    /invalid garden|invalid.+payload|content_sha256|did.?not.?return.?a.?garden|stream.?ended.?without.?a.?garden|came back empty-handed|no response body/i.test(
+      raw,
+    )
+  )
+    return 'Couldn’t finish this garden. Your note is still here. Try again.'
+  // Only known validation messages are safe to pass through; model failures can quote the note.
+  if (['write something first.', 'keep it under 400 chars.', 'who is this for?'].includes(raw)) return raw
+  return 'Couldn’t grow the garden right now. Your note is still here. Try again.'
 }
 
 interface ParsedEvent {

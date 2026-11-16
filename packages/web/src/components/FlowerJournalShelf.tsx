@@ -134,7 +134,10 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                     }}
                   />
                   <button type="button" onClick={() => saveMeaning(entry.id)}>
-                    keep
+                    save
+                  </button>
+                  <button type="button" onClick={() => setEditing(null)}>
+                    cancel
                   </button>
                 </span>
               ) : (
@@ -147,7 +150,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                   }}
                 >
                   {meaningOf(entry).text}
-                  {!meaningOf(entry).mine && <i> · say what it means to you</i>}
+                  {!meaningOf(entry).mine && <i> · what would you like to remember about this flower?</i>}
                 </button>
               )}
               <span className={styles.shelfChips}>
@@ -173,7 +176,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                 <span className={styles.voiceRow}>
                   <VoiceRing seconds={0} liveStream={voice.recording.current?.stream} />
                   <button type="button" onClick={() => void voice.finish(entry.id)}>
-                    stop
+                    stop recording
                   </button>
                 </span>
               ) : voice.loaded[entry.id] ? (
@@ -196,7 +199,7 @@ export default function FlowerJournalShelf({ currentGardenId }: { currentGardenI
                     disabled={voice.pending || voice.recordingFor !== null}
                     onClick={() => void voice.begin(entry.id)}
                   >
-                    {voice.pending ? 'waiting for microphone…' : 'say it out loud instead'}
+                    {voice.pending ? 'waiting for microphone…' : 'record a memory'}
                   </button>
                 )
               )}

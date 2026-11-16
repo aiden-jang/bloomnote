@@ -53,7 +53,7 @@ export default function BouquetNote({ note, start = true }: Props) {
         <span className={styles.sparkle} aria-hidden>
           ✦
         </span>
-        why this garden
+        why these flowers
       </p>
       <p className={styles.text}>
         <span className={styles.stream} aria-hidden>

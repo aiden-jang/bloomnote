@@ -55,3 +55,7 @@ Dry humor belongs in supporting copy, never user-written notes, errors, dates, p
 controls. Errors explain recovery and retain entered words. Reply-link failures offer retry;
 image-export feedback belongs to the garden that started it. Installed-app updates keep the page
 open until the visitor chooses to reload. UI captures use isolated fixtures and synthetic notes.
+
+The composer leads with “A note. With flowers.” Supporting humor stays understated. Sympathy and
+get-well copy stays gentle across moods; unknown occasions use neutral wording. See the
+[copy guide](docs/copy-plan.md).

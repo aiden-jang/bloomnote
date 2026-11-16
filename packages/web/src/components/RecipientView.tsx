@@ -218,9 +218,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               open the garden
             </button>
             <p className={styles.waitingLine}>
-              {flowers.length} {flowers.length === 1 ? 'flower' : 'flowers'}, already grown.
-              <br />
-              they have been waiting under there for you.
+              {flowers.length} {flowers.length === 1 ? 'flower' : 'flowers'}, chosen for you.
             </p>
           </>
         )}
@@ -255,7 +253,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                       aria-expanded={secretRevealed}
                     >
                       <SecretEnvelope open={secretRevealed} />
-                      {secretRevealed ? 'hide the little secret' : 'there’s a little secret in here'}
+                      {secretRevealed ? 'hide the secret' : 'a secret for you'}
                     </button>
                     {secretRevealed && <p className={styles.secretText}>{secret}</p>}
                   </div>
@@ -291,9 +289,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                   disabled={shareStatus !== null}
                 >
                   {shareStatus === 'sharing'
-                    ? 'opening share sheet…'
+                    ? 'opening sharing…'
                     : shareStatus === 'shared'
-                      ? 'garden shared'
+                      ? 'share sheet closed'
                       : shareStatus === 'copied'
                         ? 'link copied'
                         : 'share this garden'}
@@ -312,12 +310,12 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                         disabled={duetStatus !== null}
                       >
                         {duetStatus === 'saving'
-                          ? 'pressing both gardens…'
+                          ? 'making image…'
                           : duetStatus === 'shared'
-                            ? 'garden duet shared'
+                            ? 'share sheet closed'
                             : duetStatus === 'downloaded'
                               ? 'download started'
-                              : 'save both as a garden duet'}
+                              : 'save both gardens as an image'}
                       </button>
                     )}
                     <button
@@ -329,7 +327,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                       {imageStatus === 'saving'
                         ? 'making image…'
                         : imageStatus === 'shared'
-                          ? 'image shared'
+                          ? 'share sheet closed'
                           : imageStatus === 'downloaded'
                             ? 'download started'
                             : 'save it as an image'}
@@ -355,7 +353,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 </details>
                 <p className={styles.ctaSub}>
                   <a href="/" className={styles.ctaSubLink}>
-                    start one for someone new
+                    write one for someone else
                   </a>
                 </p>
               </div>

@@ -5,7 +5,7 @@ import type { MineRecord } from './mine'
     carry pieces of the user's note. */
 export function classifyError(err: unknown): string {
   if (!(err instanceof Error)) return 'unknown'
-  const m = err.message.toLowerCase()
+  const m = (err.cause instanceof Error ? err.cause.message : err.message).toLowerCase()
   if (m.includes('abort')) return 'aborted'
   if (m.includes('rate')) return 'rate_limited'
   if (m.includes('timeout') || m.includes('timed out')) return 'timeout'
@@ -48,8 +48,8 @@ export function scheduleErrorFor(
   // Empty is "not yet decided", not an error. Without this the picker complains the moment it opens.
   if (!unlockLocal) return null
   const at = new Date(unlockLocal).getTime()
-  if (!Number.isFinite(at)) return 'that time looks malformed.'
-  if (at <= now + 30_000) return 'that time has already passed. pick something in the future.'
+  if (!Number.isFinite(at)) return 'Choose a valid opening time.'
+  if (at <= now + 30_000) return 'Choose a later opening time.'
   return null
 }
 
@@ -66,13 +66,13 @@ export function disabledReasonFor(input: {
   const written = input.message.trim().length
   const noMessage = written < MIN_MESSAGE_CHARS
   const startedWriting = written > 0
-  if (noRecipient && noMessage && !startedWriting) return 'add who it\u2019s for and a message to get started'
-  if (noRecipient && noMessage) return 'add who it\u2019s for, and a few more words'
-  if (noRecipient) return 'add who it\u2019s for in the \u201Cto\u201D field'
+  if (noRecipient && noMessage && !startedWriting) return 'add a recipient and a note to get started'
+  if (noRecipient && noMessage) return 'add a recipient and a few more words'
+  if (noRecipient) return 'add a name in the “to” field'
   if (noMessage) return startedWriting ? 'a few more words and it\u2019s ready' : 'write them a note first'
-  if (input.scheduleError) return 'fix the scheduled time above'
+  if (input.scheduleError) return 'check the opening time above'
   if (input.scheduleOpen && input.unlockLocal === '') {
-    return 'pick a date & time above to schedule, or cancel to leave it open now'
+    return 'choose an opening time, or cancel the schedule to open it straight away'
   }
   return null
 }

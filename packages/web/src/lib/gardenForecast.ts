@@ -1,3 +1,5 @@
+import { occasionTone } from './occasions'
+
 interface ForecastProfile {
   tone: string
   palette: string
@@ -87,18 +89,18 @@ function noteDetail(message: string): Pick<GardenForecast, 'detailLevel' | 'deta
   if (detailLevel === 3) {
     return {
       detailLevel,
-      detailCopy: 'rich soil. there is enough specificity here to make it feel like theirs.',
+      detailCopy: 'These details give the garden its direction.',
     }
   }
   if (detailLevel === 2) {
     return {
       detailLevel,
-      detailCopy: 'taking root. one tiny shared detail could make the bouquet more personal.',
+      detailCopy: 'There’s something to work with here. Add more if you want.',
     }
   }
   return {
     detailLevel,
-    detailCopy: 'a small sprout so far. quirks, places, and oddly specific memories help it grow.',
+    detailCopy: 'A memory, place, or habit can help. Short notes work too.',
   }
 }
 
@@ -110,5 +112,6 @@ export function gardenForecast(message: string, mood: string, occasion: string):
     ...profile,
     light: OCCASION_LIGHT[occasion] ?? OCCASION_LIGHT['just-because']!,
     ...noteDetail(message),
+    ...(occasionTone(occasion) !== 'ordinary' ? { detailCopy: 'Your note can stay simple.' } : {}),
   }
 }

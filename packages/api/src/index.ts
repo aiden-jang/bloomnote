@@ -297,13 +297,8 @@ app.get('/g/:id', async (c) => {
   const g = garden as Record<string, unknown>
   const from = typeof g.from === 'string' ? g.from.trim() : ''
   const to = typeof g.to === 'string' ? g.to.trim() : ''
-  const title =
-    from && to
-      ? `${from} grew ${to} a garden`
-      : from
-        ? `${from} grew you a garden`
-        : 'someone grew you a garden'
-  const description = 'a little garden, grown just for you. open it to watch it bloom.'
+  const title = `A garden for ${to || 'you'} · Bloomnote`
+  const description = 'A garden for you. Open it to watch it bloom.'
   const url = new URL(c.req.url).toString()
   // Only point at a card that exists. A broken og:image is worse than none: most unfurlers show a
   // grey placeholder rather than the site default, so the link looks broken rather than plain.

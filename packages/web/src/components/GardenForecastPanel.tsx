@@ -6,7 +6,7 @@ export default function GardenForecastPanel({ forecast }: { forecast: GardenFore
     <section className={styles.forecast} aria-label="Garden forecast" aria-live="polite">
       <div className={styles.forecastHead}>
         <span>
-          <span className={styles.forecastEyebrow}>garden forecast</span>
+          <span className={styles.forecastEyebrow}>garden direction</span>
           <strong>{forecast.tone}</strong>
         </span>
         <span className={styles.forecastSwatches} aria-hidden="true">
@@ -26,7 +26,7 @@ export default function GardenForecastPanel({ forecast }: { forecast: GardenFore
         </span>
         <span>{forecast.detailCopy}</span>
       </div>
-      <small>direction only. the final garden still gets to surprise you.</small>
+      <small>A preview of the direction. The flowers may turn out differently.</small>
     </section>
   )
 }

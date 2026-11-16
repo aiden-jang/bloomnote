@@ -77,7 +77,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
             you watered it
             {others > 0 && (
               <span className={styles.others}>
-                , and {others === 1 ? 'someone else did too' : `${others} others did too`}
+                , with {others} other watering {others === 1 ? 'gesture' : 'gestures'}
               </span>
             )}
           </p>
@@ -86,7 +86,7 @@ export default function Watering({ gardenId, onWatered }: Props) {
           ) : (
             <div className={styles.feelings}>
               <span id="felt-like" className={styles.feelingsLabel}>
-                and it felt like
+                send a feeling back
               </span>
               <div className={styles.feelingsChips}>
                 <ChipRow labelledBy="felt-like" selectable={false}>

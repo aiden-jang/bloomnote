@@ -26,7 +26,7 @@ test('a failed account removal restores the garden and explains how to retry', a
   await page.clock.install()
   await page.route('**/api/garden/AbCdEf', (route) => route.fulfill({ status: 503 }))
   await page.goto('/mine')
-  await page.getByRole('button', { name: 'remove garden for Sam from your gardens', exact: true }).click()
+  await page.getByRole('button', { name: 'remove garden for Sam from library', exact: true }).click()
   await expect(page.getByRole('link', { name: /^for Sam/ })).toHaveCount(0)
   await page.clock.fastForward(6001)
   await expect(page.getByRole('alert')).toContainText(/couldn.t remove/i)
@@ -42,7 +42,7 @@ test('undo keeps an account garden without sending a removal', async ({ page }) 
     return route.fulfill({ json: { ok: true } })
   })
   await page.goto('/mine')
-  await page.getByRole('button', { name: 'remove garden for Sam from your gardens', exact: true }).click()
+  await page.getByRole('button', { name: 'remove garden for Sam from library', exact: true }).click()
   await page.getByRole('button', { name: 'undo', exact: true }).click()
   await page.clock.fastForward(6001)
   await expect(page.getByRole('link', { name: /^for Sam/ })).toBeVisible()
@@ -63,7 +63,7 @@ test('leaving the library commits a pending removal without waiting for the undo
   try {
     await page.clock.install()
     await page.goto(`${server.origin}/mine`)
-    await page.getByRole('button', { name: 'remove garden for Sam from your gardens', exact: true }).click()
+    await page.getByRole('button', { name: 'remove garden for Sam from library', exact: true }).click()
     await page.getByRole('link', { name: 'grow one', exact: true }).click()
     await expect.poll(() => deletes).toBe(1)
   } finally {
@@ -82,7 +82,7 @@ test('a library share failure leaves a selectable link and a retry', async ({ pa
   })
   await page.goto('/mine')
   await page.getByRole('button', { name: 'Share garden for Sam', exact: true }).click()
-  await expect(page.getByRole('alert')).toContainText(/couldn.t share/i)
+  await expect(page.getByRole('alert')).toContainText(/couldn.t open sharing/i)
   await expect(page.getByRole('textbox', { name: 'Garden link for Sam', exact: true })).toHaveValue(
     /\/g\/AbCdEf$/,
   )

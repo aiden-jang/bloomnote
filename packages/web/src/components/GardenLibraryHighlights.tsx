@@ -51,10 +51,10 @@ export function GardenImpactCard({
     if (shareStatus) return
     const feelingLine = strongest
       ? `
-Most felt: ${strongest.emoji} ${strongest.noun}`
+Most sent back: ${strongest.emoji} ${strongest.noun}`
       : ''
-    const text = `My bloomnotes came back to me 🌱
-${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impact.totalFeelings} ${impact.totalFeelings === 1 ? 'feeling' : 'feelings'} across ${impact.respondedGardens} ${impact.respondedGardens === 1 ? 'garden' : 'gardens'}${feelingLine}`
+    const text = `What came back from my gardens
+${impact.totalWaters} ${impact.totalWaters === 1 ? 'watering gesture' : 'watering gestures'} · ${impact.totalFeelings} ${impact.totalFeelings === 1 ? 'feeling' : 'feelings'} sent back across ${impact.respondedGardens} ${impact.respondedGardens === 1 ? 'garden' : 'gardens'}${feelingLine}`
     const finish = (status: 'shared' | 'copied') => {
       setShareStatus(status)
       window.setTimeout(() => setShareStatus(null), 2200)
@@ -89,7 +89,7 @@ ${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impa
       <div className={styles.impactHeading}>
         <span>
           <span className={styles.impactEyebrow}>what came back</span>
-          <strong>your gardens reached people.</strong>
+          <strong>A few things came back from your gardens.</strong>
         </span>
         <span className={styles.impactSprout} aria-hidden>
           ❀
@@ -98,22 +98,22 @@ ${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impa
       <div className={styles.impactStats}>
         <span>
           <strong>{impact.totalWaters}</strong>
-          <small>{impact.totalWaters === 1 ? 'water' : 'waters'}</small>
+          <small>{impact.totalWaters === 1 ? 'watering gesture' : 'watering gestures'}</small>
         </span>
         <span>
           <strong>{impact.totalFeelings}</strong>
-          <small>{impact.totalFeelings === 1 ? 'feeling' : 'feelings'}</small>
+          <small>feelings sent back</small>
         </span>
         <span>
           <strong>{impact.respondedGardens}</strong>
-          <small>reached back</small>
+          <small>gardens with a response</small>
         </span>
       </div>
       {(strongest || favoriteName) && (
         <p className={styles.impactNote}>
           {strongest && (
             <span>
-              most felt: {strongest.emoji} {strongest.noun}
+              most sent back: {strongest.emoji} {strongest.noun}
             </span>
           )}
           {strongest && favoriteName && <span aria-hidden> · </span>}
@@ -127,12 +127,12 @@ ${impact.totalWaters} ${impact.totalWaters === 1 ? 'water' : 'waters'} · ${impa
         disabled={shareStatus !== null}
       >
         {shareStatus === 'sharing'
-          ? 'opening…'
+          ? 'opening sharing…'
           : shareStatus === 'shared'
-            ? 'shared'
+            ? 'share sheet closed'
             : shareStatus === 'copied'
-              ? 'copied'
-              : 'share this little recap'}
+              ? 'recap copied'
+              : 'share this recap'}
       </button>
     </aside>
   )
@@ -165,13 +165,13 @@ export function MemoryLane({ gardens, kind }: { gardens: CardData[]; kind: Tab }
           ))}
         </span>
         <span className={styles.memoryCopy}>
-          <span className={styles.memoryEyebrow}>{age || 'from the garden path'}</span>
+          <span className={styles.memoryEyebrow}>a garden to revisit</span>
           <strong>
             {kind === 'received'
               ? `a garden ${name ? `from ${name}` : 'you kept'}`
               : `the one ${name ? `for ${name}` : 'you grew'}`}
           </strong>
-          {date && <small>{date}</small>}
+          {(age || date) && <small>{[age, date].filter(Boolean).join(' · ')}</small>}
         </span>
         <span className={styles.memoryOpen} aria-hidden>
           open →

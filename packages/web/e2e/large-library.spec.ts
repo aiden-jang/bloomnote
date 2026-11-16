@@ -40,9 +40,7 @@ test('a large library keeps every response and search result without mounting ev
     .locator('ul > li')
     .filter({ has: page.getByRole('button', { name: /^Share garden for/ }) })
   await expect(cards).toHaveCount(24)
-  await expect(page.getByRole('complementary', { name: 'What came back from your gardens' })).toContainText(
-    '99',
-  )
+  await expect(page.getByRole('complementary', { name: 'What came back from library' })).toContainText('99')
   expect(batches.flat()).toHaveLength(180)
   expect(batches.every((batch) => batch.length <= 40)).toBe(true)
   await page.getByRole('button', { name: /show more gardens/ }).click()

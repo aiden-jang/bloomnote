@@ -151,7 +151,7 @@ export function VoiceRing({
         className={styles.ring}
         onClick={() => void play()}
         disabled={!blob}
-        aria-label={blob ? (playing ? 'Pause this voice memory' : 'Play this voice memory') : 'Listening'}
+        aria-label={blob ? (playing ? 'Pause this voice memory' : 'Play this voice memory') : 'Recording'}
       >
         <svg viewBox="0 0 80 80" aria-hidden>
           {points.map((point, i) => {
@@ -168,7 +168,7 @@ export function VoiceRing({
       </button>
 
       <span className={styles.meta}>
-        {liveStream ? 'listening…' : `${seconds}s`}
+        {liveStream ? 'recording…' : `${seconds}s`}
         {onDelete && !liveStream && (
           <button
             type="button"

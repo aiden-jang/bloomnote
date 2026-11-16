@@ -62,13 +62,13 @@ export default function GardenRow({
         if (result === 'downloaded') trackCardDownloaded('mine', 'square')
         window.setTimeout(() => setImageStatus(null), 2500)
       } else {
-        setActionError('couldn’t load this garden. Open its link and try again.')
+        setActionError('Couldn’t load this garden. Check your connection or try again.')
         setImageStatus(null)
       }
     } catch {
       // Drop the cached fetch so the next tap retries rather than re-awaiting a rejected promise.
       gardenRef.current = null
-      setActionError('couldn’t save the image. Try again, or use the garden link below.')
+      setActionError('Couldn’t save the image. Try again, or use the garden link.')
       setImageStatus(null)
     }
   }
@@ -102,7 +102,7 @@ export default function GardenRow({
     } catch (err) {
       setShareStatus(null)
       if (err instanceof Error && err.name === 'AbortError') return
-      setActionError('couldn’t share. Select and copy the garden link below, or try again.')
+      setActionError('Couldn’t open sharing. Copy the link instead.')
     }
   }
 
@@ -143,7 +143,7 @@ export default function GardenRow({
             {waters > 0 && <span className={styles.watered}>{watersLabel(waters)}</span>}
             {strongestFeeling && (
               <span className={styles.watered} title={`${strongestFeeling[1]} felt ${strongestFeeling[0]}`}>
-                {feelingEmoji[strongestFeeling[0]]} felt like {strongestFeeling[0]}
+                {feelingEmoji[strongestFeeling[0]]} sent back {strongestFeeling[0]}
               </span>
             )}
           </span>
@@ -170,11 +170,11 @@ export default function GardenRow({
           aria-label={`Share garden ${cardLabel}`}
         >
           {shareStatus === 'sharing'
-            ? 'opening…'
+            ? 'opening sharing…'
             : shareStatus === 'shared'
-              ? 'shared'
+              ? 'share sheet closed'
               : shareStatus === 'copied'
-                ? 'copied'
+                ? 'link copied'
                 : 'share'}
         </button>
         <button
@@ -189,7 +189,7 @@ export default function GardenRow({
           {imageStatus === 'saving'
             ? 'making image…'
             : imageStatus === 'shared'
-              ? 'image shared'
+              ? 'share sheet closed'
               : imageStatus === 'downloaded'
                 ? 'download started'
                 : 'save image'}
@@ -199,9 +199,10 @@ export default function GardenRow({
             type="button"
             className={styles.removeBtn}
             onClick={onRemove}
-            aria-label={`remove garden ${cardLabel} from your gardens`}
+            aria-label={`remove garden ${cardLabel} from library`}
+            title="This removes it from your library. Its shared link will still work."
           >
-            remove
+            remove from library
           </button>
         )}
       </div>

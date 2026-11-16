@@ -45,8 +45,8 @@ export default function ShareCard({
   return (
     <div className={styles.shareCard}>
       <h2 className={styles.shareTitle}>
-        {recipient ? `${recipient}'s garden` : 'Your garden'}
-        <em> {scheduleOpen ? 'is sealed' : 'is ready'}</em>
+        {recipient ? `${recipient}’s garden` : 'Your garden'}
+        <em> {scheduleOpen ? 'opens later' : 'is ready'}</em>
       </h2>
       <p className={styles.scheduleConfirm}>
         Nothing has been sent. Share the link with {recipient.trim() || 'your person'} when you’re ready.
@@ -61,7 +61,7 @@ export default function ShareCard({
         )}
         {scheduleOpen && unlockLocal && (
           <p className={styles.scheduleConfirm}>
-            it opens on{' '}
+            opens{' '}
             {new Date(unlockLocal).toLocaleString(undefined, {
               weekday: 'long',
               month: 'short',
@@ -76,7 +76,7 @@ export default function ShareCard({
         {isRerolling ? (
           <div className={styles.urlBox}>
             <span className={styles.urlStatus} role="status">
-              {statusText || 'regrowing…'}
+              {statusText || 'choosing different flowers…'}
             </span>
           </div>
         ) : (
@@ -98,7 +98,11 @@ export default function ShareCard({
                 onClick={onShare}
                 disabled={isRerolling || shareStatus !== null}
               >
-                {shareStatus === 'sharing' ? 'opening…' : shareStatus === 'shared' ? 'shared' : 'share'}
+                {shareStatus === 'sharing'
+                  ? 'opening sharing…'
+                  : shareStatus === 'shared'
+                    ? 'share sheet closed'
+                    : 'share'}
               </button>
             )}
             <button
@@ -106,7 +110,7 @@ export default function ShareCard({
               onClick={onCopy}
               disabled={isRerolling}
             >
-              {copied ? 'copied' : 'copy link'}
+              {copied ? 'link copied' : 'copy link'}
             </button>
           </div>
 
@@ -119,7 +123,7 @@ export default function ShareCard({
             {imageStatus === 'saving'
               ? 'making image…'
               : imageStatus === 'shared'
-                ? 'image shared'
+                ? 'share sheet closed'
                 : imageStatus === 'downloaded'
                   ? 'download started'
                   : 'save as image'}
@@ -133,7 +137,7 @@ export default function ShareCard({
               disabled={isRerolling}
               aria-busy={isRerolling}
             >
-              ⟳ different flowers
+              different flowers
             </button>
 
             <button className={styles.resetBtn} onClick={onStartOver} disabled={isRerolling}>

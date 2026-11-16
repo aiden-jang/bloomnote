@@ -38,7 +38,7 @@ export default function ComposerLetter({
             autoComplete="given-name"
           />
         </div>
-        <ComposerSecret value={fields.secret} onChange={set.secret} />
+        <ComposerSecret occasion={fields.occasion} value={fields.secret} onChange={set.secret} />
       </div>
     </div>
   )

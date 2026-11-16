@@ -1,7 +1,7 @@
-import { DEFAULT_OCCASION } from './occasions'
+import { DEFAULT_OCCASION, occasionTone } from './occasions'
 
 //
-// Every occasion needs a `default`, used for "no vibe" and any mood without its own variant.
+// Every occasion needs a `default`, used for "natural" and any mood without its own variant.
 // Voice: lowercase, specific, warm, occasionally dry. No em dashes.
 
 type MoodVariants = { default: string } & Partial<Record<string, string>>
@@ -9,68 +9,70 @@ type MoodVariants = { default: string } & Partial<Record<string, string>>
 const PLACEHOLDERS: Record<string, MoodVariants> = {
   'just-because': {
     default: 'no reason. just thinking about you and figured you should know.',
-    tender: "thinking about you. nothing deep, you're just good to have around.",
-    playful: "you crossed my mind, so now you're getting a whole garden about it. deal with it.",
-    wistful: "drove past our old spot today. anyway. hope you're good.",
-    celebratory: 'no occasion, just felt like making a fuss over you for once.',
-    steady: "no reason. just your periodic reminder that i'm around if you need me.",
+    tender: 'thinking about you. you’re good to have around.',
+    playful: 'you crossed my mind. got flowers involved.',
+    wistful: 'drove past our old spot today. thought of you there.',
+    celebratory: 'no occasion. just felt like making a small fuss over you.',
+    steady: 'nothing particular to say. just glad you’re around.',
   },
   birthday: {
-    default: 'happy birthday. glad you were born, etc etc.',
-    tender: "happy birthday. you're a good one, don't let it go to your head.",
-    playful: "another year, still can't parallel park, still my favorite. happy birthday.",
-    wistful: 'another one of these with you. not mad about it. happy birthday.',
-    celebratory: "happy birthday. we're making it a whole thing this year, sorry in advance.",
-    steady: "happy birthday. same as every year: i've got you. now go eat cake.",
+    default: 'happy birthday. glad you’re here.',
+    tender: 'happy birthday. very glad i get to know you.',
+    playful: 'happy birthday. another excellent excuse to get food.',
+    wistful: 'happy birthday. wish we were getting cake in the same place.',
+    celebratory: 'happy birthday. i made a small fuss. flowers were involved.',
+    steady: 'happy birthday. same team, another year.',
   },
   'thank-you': {
-    default: "thanks for the other day. meant more than i said out loud, which wasn't much.",
-    tender: 'you showed up without me having to ask. noted. thank you, genuinely.',
-    playful: "you're in my will now. it's mostly snacks. thanks for everything.",
-    wistful: 'still think about that thing you did for me. never properly said it: thanks.',
-    celebratory: 'you came through big. consider this garden your parade. thank you.',
-    steady: "thanks. you're the 2am call person, and that's not nothing.",
+    default: 'thanks for the other day. i should have said it properly, so here we are.',
+    tender: 'you made a difficult day easier. just wanted you to know.',
+    playful: 'thanks for coming through. i got flowers involved.',
+    wistful: 'still think about that thing you did. thank you, properly this time.',
+    celebratory: 'you really came through. consider these a small round of applause.',
+    steady: 'thanks for being the person i can ask. it makes a difference.',
   },
   anniversary: {
-    default: 'another year of you leaving every cabinet open. still in. happy anniversary.',
-    tender: "i'd pick this again. obviously. happy anniversary.",
-    playful: 'congrats to us for not losing it. mostly. love you.',
-    wistful: 'remember that terrible first apartment. look at us now. anyway, love you.',
-    celebratory: 'cheers to us. more years, more nonsense. happy anniversary.',
-    steady: 'another year, same deal: not going anywhere. happy anniversary.',
+    default: 'another year of us. still a good arrangement.',
+    tender: 'i’d pick this again. and you, obviously.',
+    playful: 'another year of deciding what to eat together. still in.',
+    wistful: 'thinking about where we started. glad it turned into this.',
+    celebratory: 'happy anniversary. quite like what we’ve got going on.',
+    steady: 'same us. another year. i like that.',
   },
   congrats: {
-    default: "you did the thing. knew you would. don't make it weird.",
-    tender: 'you worked for this and it shows. quietly very proud of you.',
-    playful: 'big w. i want a shout-out in the speech. congrats.',
-    wistful: 'remember when this was just a maybe. look at you now. congrats.',
-    celebratory: 'you DID it. already telling everyone. congrats, seriously.',
-    steady: 'never doubted it for a second. you earned this. proud of you.',
+    default: 'knew you had it. still nice to see it happen.',
+    tender: 'you worked for this. i’m really glad you get to have it.',
+    playful: 'you did the thing. will be mentioning that i know you.',
+    wistful: 'remember when this was just an idea. look at you.',
+    celebratory: 'you did it. flowers felt appropriate.',
+    steady: 'proud of you. you put the work in.',
   },
   'get-well': {
-    default: "rest up, don't rush it. the group chat's boring without you anyway.",
-    tender: 'take it slow. sending good things while you heal.',
-    playful: "doctor's orders (mine): bad tv, zero responsibilities, get better.",
-    wistful: "it's too quiet without you causing problems. heal up, come back.",
-    celebratory: 'planning your comeback tour already. rest first, though.',
-    steady: "whatever you need while you're down, i've got it. just rest.",
+    default: 'thinking of you. hope today feels a little easier.',
+    tender: 'wish i could make this easier. sending you a little company.',
+    playful: 'sending some company for today. reply whenever you feel like it.',
+    wistful: 'miss having you around. thinking of you while you rest.',
+    celebratory: 'rooting for you. taking it one day at a time.',
+    steady: 'i’m around if you need anything. no need to reply.',
   },
   sympathy: {
-    default: "no words feel right, so i'll just say i'm around. whenever.",
-    tender: 'not going to try to fix it. just here, for whatever you need.',
-    playful: "no clever way to say this one. i'm just here, and i mean it.",
-    wistful: 'thinking of you today. and of them. here if you want to talk.',
-    celebratory: "holding you in mind today. no rush, no words needed. i'm here.",
-    steady: "you don't have to do this alone. i'm not going anywhere.",
+    default: 'thinking of you. i’m here if you want company.',
+    tender: 'i don’t have the right words. i’m thinking of you.',
+    playful: 'i’m here. we can talk, or we can just sit.',
+    wistful: 'thinking of you, and of them. here to listen when you want.',
+    celebratory: 'sending you care. there’s no need to find words today.',
+    steady: 'you don’t have to reply. just know i’m here.',
   },
 }
 
 export function placeholderFor(occasion: string, mood: string): string {
+  if (occasionTone(occasion) === 'neutral') return PLACEHOLDERS[DEFAULT_OCCASION]!.default
   const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
   return set[mood] ?? set.default
 }
 
 export function placeholderOptions(occasion: string, mood: string): string[] {
+  if (occasionTone(occasion) === 'neutral') return [PLACEHOLDERS[DEFAULT_OCCASION]!.default]
   const set = PLACEHOLDERS[occasion] ?? PLACEHOLDERS[DEFAULT_OCCASION]!
   return [
     ...new Set(

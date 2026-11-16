@@ -177,6 +177,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   return (
     <ComposerFrame
+      occasion={occasion}
       footer={
         mineCount > 0 && (
           <footer className={styles.footer}>
@@ -189,8 +190,10 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       intro={
         phase === 'idle'
           ? remixSeed
-            ? `write ${remixSeed.from || 'them'} back.`
-            : 'Write the thing only you would say.'
+            ? 'A garden came your way. Leave something back.'
+            : draft.showRecovered
+              ? 'Your note is still here. Pick up wherever you left it.'
+              : 'Write someone a note. We’ll grow a garden from the details.'
           : undefined
       }
       preview={
@@ -228,6 +231,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           <div>
             <ComposerLetter fields={draft.fields} set={draft.set}>
               <NoteField
+                occasion={occasion}
                 ritual={todaysRitual}
                 value={message}
                 onChange={draft.set.message}
@@ -297,12 +301,18 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       )}
 
       {phase === 'designing' && (
-        <GrowFeedback statusText={statusText} onCancel={design.cancel} scene={scene} message={message} />
+        <GrowFeedback
+          occasion={occasion}
+          statusText={statusText}
+          onCancel={design.cancel}
+          scene={scene}
+          message={message}
+        />
       )}
 
       {undoDraft && (
         <div className={styles.undoToast} role="status" aria-live="polite">
-          <span>draft cleared</span>
+          <span>Draft cleared.</span>
           <button type="button" ref={undoRef} className={styles.undoBtn} onClick={handleUndoClear}>
             undo
           </button>

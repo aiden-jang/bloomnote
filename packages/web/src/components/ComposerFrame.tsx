@@ -1,9 +1,11 @@
+import { occasionTone } from '../lib/occasions'
 import type { ReactNode } from 'react'
 import LetterHeader from './LetterHeader'
 import styles from './ComposerFrame.module.css'
 
 export default function ComposerFrame({
   intro,
+  occasion,
   scene,
   preview,
   demo,
@@ -12,6 +14,7 @@ export default function ComposerFrame({
   footer,
 }: {
   intro: string | undefined
+  occasion: string
   scene: ReactNode
   preview: ReactNode
   demo: boolean
@@ -27,9 +30,9 @@ export default function ComposerFrame({
           {intro && (
             <div className={styles.intro}>
               <h2 className={styles.headline}>
-                A few words.
+                A note.
                 <br />
-                <em>A little garden.</em>
+                <em>With flowers.</em>
               </h2>
               <p className={styles.subtitle}>{intro}</p>
             </div>
@@ -44,7 +47,11 @@ export default function ComposerFrame({
                 <span aria-hidden>✳</span>
               </div>
               {scene}
-              {demo && <p className={styles.caption}>No watering required. Emotionally, anyway.</p>}
+              {demo && (
+                <p className={styles.caption}>
+                  {occasionTone(occasion) === 'ordinary' ? 'No vase required.' : 'A garden for your note.'}
+                </p>
+              )}
             </div>
           </aside>
         )}

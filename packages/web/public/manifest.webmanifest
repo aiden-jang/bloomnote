@@ -1,7 +1,7 @@
 {
   "name": "bloomnote",
   "short_name": "bloomnote",
-  "description": "Write someone a note. We grow them a garden you can send.",
+  "description": "Write someone a note. We’ll grow a garden from the details.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

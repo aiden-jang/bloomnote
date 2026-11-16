@@ -46,7 +46,7 @@ describe('a hard note', () => {
     for (const occasion of ['sympathy', 'get-well']) {
       const r = ritual(occasion, at(14))
       expect(r.permission).not.toBeNull()
-      expect(r.invitation).toMatch(/do not have to/)
+      expect(r.invitation).toMatch(/keep this simple/)
     }
   })
 

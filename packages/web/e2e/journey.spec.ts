@@ -279,14 +279,14 @@ test.describe('compose → bloom → share → recipient', () => {
     await expect(shelf.getByRole('button', { name: /hide the tallies/i })).toBeVisible()
     /*
      * Either outcome counts, because which one happens is the platform's choice, not the app's.
-     * A phone has navigator.share and reports "garden shared"; a desktop browser (and this headless
+     * A phone has navigator.share and reports "share sheet closed"; a desktop browser (and this headless
      * one) has no share sheet, falls back to the clipboard, and reports "link copied". Asserting only
      * the native wording meant this could never pass anywhere the fallback runs, which is where it
      * runs in CI.
      */
     const shareButton = page.getByRole('button', { name: 'Share this garden' })
     await shareButton.click()
-    await expect(page.getByRole('button', { name: /garden shared|link copied/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /share sheet closed|link copied/i })).toBeVisible()
 
     // --- Reduced motion ---------------------------------------------------------------------
     /*
@@ -349,23 +349,23 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.getByLabel('your note').fill(NOTE)
     await page.getByRole('button', { name: /grow .* garden/i }).click()
 
-    await expect(page.getByRole('alert')).toContainText('at capacity for today')
+    await expect(page.getByRole('alert')).toContainText('has reached its daily limit')
     // The note has to survive: losing what someone wrote because generation failed is the one
     // outcome this screen cannot have.
     await expect(page.getByLabel('your note')).toHaveValue(NOTE)
   })
 
-  // The occasion and mood rows are one shared picker, and nothing else here clicks a chip: the
+  // The occasion & mood rows are one shared picker, and nothing else here clicks a chip: the
   // journey fills the note and grows a garden on the defaults.
   test('picking an occasion moves the selection to exactly one chip', async ({ page }) => {
     await page.goto('/')
-    await page.getByText('occasion and mood', { exact: true }).click()
+    await page.getByText('occasion & mood', { exact: true }).click()
     const row = page.getByRole('radiogroup').first()
     const checked = row.getByRole('radio', { checked: true })
     // The count, not a named chip: two checked at once is the failure this is named for.
     await expect(checked).toHaveCount(1)
 
-    const chosen = row.getByRole('radio', { name: 'hbd', exact: true })
+    const chosen = row.getByRole('radio', { name: 'birthday', exact: true })
     await chosen.click()
     await expect(chosen).toHaveAttribute('aria-checked', 'true')
     await expect(checked).toHaveCount(1)
@@ -376,12 +376,15 @@ test.describe('compose → bloom → share → recipient', () => {
   test('a chip still selects when the row is narrow enough to scroll', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 })
     await page.goto('/')
-    await page.getByText('occasion and mood', { exact: true }).click()
+    await page.getByText('occasion & mood', { exact: true }).click()
     const row = page.getByRole('radiogroup').first()
     expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)
 
-    await row.getByRole('radio', { name: 'hbd', exact: true }).click()
-    await expect(row.getByRole('radio', { name: 'hbd', exact: true })).toHaveAttribute('aria-checked', 'true')
+    await row.getByRole('radio', { name: 'birthday', exact: true }).click()
+    await expect(row.getByRole('radio', { name: 'birthday', exact: true })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
   })
 
   /* The capture still has to happen once it is a drag, or the row stops scrolling by mouse and a
@@ -389,7 +392,7 @@ test.describe('compose → bloom → share → recipient', () => {
   test('dragging the row scrolls it without selecting what it lands on', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 })
     await page.goto('/')
-    await page.getByText('occasion and mood', { exact: true }).click()
+    await page.getByText('occasion & mood', { exact: true }).click()
     const row = page.getByRole('radiogroup').first()
     await row.scrollIntoViewIfNeeded()
     const box = (await row.boundingBox())!
@@ -401,7 +404,7 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.mouse.up()
 
     expect(await row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0)
-    await expect(row.getByRole('radio', { name: 'just bc', exact: true })).toHaveAttribute(
+    await expect(row.getByRole('radio', { name: 'just because', exact: true })).toHaveAttribute(
       'aria-checked',
       'true',
     )
@@ -467,7 +470,7 @@ test.describe('compose → bloom → share → recipient', () => {
     const save = page.getByRole('button', { name: 'save as image' })
     await expect(save).toBeVisible()
     await save.click()
-    await expect(page.getByRole('button', { name: /image shared|download started/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /share sheet closed|download started/ })).toBeVisible()
   })
 
   test('a dead link explains how to recover the full address', async ({ page }) => {

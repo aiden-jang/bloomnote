@@ -1,3 +1,5 @@
+import { occasionTone } from './occasions'
+
 export type RitualTime = 'morning' | 'afternoon' | 'evening' | 'night'
 
 export interface Ritual {
@@ -13,40 +15,35 @@ export function ritualTime(now = new Date()): RitualTime {
   return 'evening'
 }
 
-/** A list, not inferred from mood: somebody picks a playful mood for a get-well note precisely
-    because the day is not playful. */
-const HARD_OCCASIONS = new Set(['sympathy', 'get-well'])
-
 const BY_TIME: Record<RitualTime, string> = {
-  morning: 'what do you want them to know before the day gets loud?',
-  afternoon: 'what came up today that made you think of them?',
-  evening: 'what is worth saying now that the day is done?',
-  // Not "you should be asleep". Somebody writing at 3am has a reason.
-  night: 'late is a good time to be honest. what is on your mind?',
+  morning: 'what would you like them to know today?',
+  afternoon: 'what made you think of them?',
+  evening: 'anything you’d like to leave with them?',
+  night: 'what’s on your mind?',
 }
 
 const HARD: Record<RitualTime, Ritual> = {
   morning: {
-    invitation: 'you do not have to know what to say yet.',
-    permission: 'a short one still arrives.',
+    invitation: 'thinking of them is enough to start.',
+    permission: 'one honest line is plenty.',
   },
   afternoon: {
-    invitation: 'you do not have to make this a nice note.',
-    permission: 'saying you are thinking of them is the whole message.',
+    invitation: 'you can keep this simple.',
+    permission: 'saying you’re thinking of them is enough.',
   },
   evening: {
-    invitation: 'nothing you write here has to be tidy.',
-    permission: 'one honest line is more than enough.',
+    invitation: 'there’s no set way to write this.',
+    permission: 'use your own words.',
   },
   night: {
-    invitation: 'if you cannot sleep, you can just say that.',
-    permission: 'they will not be grading it.',
+    invitation: 'you can leave a short note.',
+    permission: 'there’s no need for a big message.',
   },
 }
 
 export function ritual(occasion: string | null | undefined, now = new Date()): Ritual {
   const time = ritualTime(now)
-  if (occasion && HARD_OCCASIONS.has(occasion)) return HARD[time]
+  if (occasionTone(occasion) === 'sensitive') return HARD[time]
   return { invitation: BY_TIME[time], permission: null }
 }
 

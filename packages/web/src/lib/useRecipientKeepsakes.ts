@@ -36,7 +36,7 @@ export function useRecipientKeepsakes(gardenData: GardenData) {
       if (result === 'downloaded') trackCardDownloaded('recipient', 'square')
       timers.current.push(setTimeout(() => setImageStatus(null), 2500))
     } catch {
-      setShareError('Couldn’t save the image. Try again, or share the link.')
+      setShareError('Couldn’t save the image. Try again, or use the garden link.')
       setImageStatus(null)
     } finally {
       savingImageRef.current = false
@@ -57,7 +57,7 @@ export function useRecipientKeepsakes(gardenData: GardenData) {
       if (result === 'downloaded') trackCardDownloaded('recipient', 'duet')
       timers.current.push(setTimeout(() => setDuetStatus(null), 2500))
     } catch {
-      setShareError('Couldn’t save both gardens. Try again, or share the link.')
+      setShareError('Couldn’t save both gardens as an image. Try again, or use the garden link.')
       setDuetStatus(null)
     } finally {
       savingDuetRef.current = false
@@ -91,7 +91,7 @@ export function useRecipientKeepsakes(gardenData: GardenData) {
           if (trigger.isConnected) trigger.focus()
         })
         if (err instanceof Error && err.name === 'AbortError') return
-        setShareError('Couldn’t share. Copy the garden link below instead.')
+        setShareError('Couldn’t open sharing. Copy the link instead.')
       }
     },
     [from, shareStatus],
