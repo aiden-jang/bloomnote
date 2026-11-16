@@ -211,7 +211,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
       }
       writing={phase === 'idle'}
       demo={showDemo}
-      scene={scene}
+      flowers={hero.flowers}
     >
       {draft.showRecovered && (
         <p className={styles.recoveredDraft} role="status">

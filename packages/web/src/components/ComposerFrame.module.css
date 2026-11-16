@@ -9,7 +9,7 @@
 .studio {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
   max-width: 720px;
   margin-inline: auto;
 }
@@ -21,7 +21,15 @@
   gap: 18px;
 }
 .intro {
-  padding: 24px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 18px 0 8px;
+}
+.introCopy {
+  flex: 1;
+  min-width: 0;
 }
 .headline {
   font: 400 clamp(40px, 5.1vw, 54px)/1.08 var(--serif);
@@ -32,37 +40,46 @@
   font-weight: 400;
 }
 .subtitle {
-  max-width: 42ch;
-  margin-top: 16px;
+  max-width: 36ch;
+  margin-top: 12px;
   color: var(--text-mid);
   font-size: 15px;
   line-height: 1.6;
 }
-.garden {
-  width: 100%;
+.specimen {
+  flex: 0 0 172px;
   min-width: 0;
+  text-align: center;
+}
+.flowers {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  min-height: 106px;
+  padding-inline: 4px;
+  border-bottom: 1px solid var(--letter-line);
+}
+.flowers > span {
+  flex: 1;
+  min-width: 0;
+  max-width: 48px;
+}
+.flowers svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .specimenLabel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-block: 10px;
-  color: var(--text-mid);
+  margin-top: 8px;
+  color: var(--green-deep);
   font-size: 13px;
-}
-.specimenLabel span:last-child {
-  font-size: 18px;
-  color: var(--pink-deep);
+  line-height: 1.4;
 }
 .caption {
-  margin-top: 10px;
-  text-align: center;
+  margin-top: 3px;
   color: var(--text-mid);
   font-size: 13px;
-}
-.demoSpecimen {
-  max-width: 600px;
-  margin: auto;
+  line-height: 1.4;
 }
 .preview {
   display: flex;
@@ -77,7 +94,7 @@
   min-height: 44px;
 }
 .writing {
-  gap: 24px;
+  gap: 20px;
 }
 @media (max-width: 600px) {
   .wrap {
@@ -85,25 +102,45 @@
     padding-bottom: 26px;
   }
   .intro {
-    padding: 20px 7px 8px;
+    gap: 12px;
+    padding: 14px 0 4px;
   }
   .headline {
-    font-size: 43px;
+    font-size: clamp(30px, 8vw, 40px);
   }
   .subtitle {
     font-size: 14px;
     max-width: 30ch;
   }
-  .studio {
-    gap: 20px;
+  .specimen {
+    flex-basis: 82px;
+  }
+  .flowers {
+    min-height: 62px;
+    padding-inline: 0;
+  }
+  .specimenLabel,
+  .caption {
+    font-size: 12px;
+  }
+  .studio,
+  .workspace {
+    gap: 16px;
+  }
+}
+@media (max-width: 350px) {
+  .intro {
+    gap: 10px;
+  }
+  .specimen {
+    flex-basis: 70px;
   }
 }
 @media print {
   .wrap {
     padding: 0;
   }
-  .intro,
-  .caption {
+  .intro {
     display: none;
   }
   .studio {

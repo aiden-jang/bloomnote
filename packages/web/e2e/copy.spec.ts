@@ -20,6 +20,7 @@ for (const occasion of ['sympathy', 'get well', 'birthday']) {
     await expect(
       page.getByText(ordinary ? 'No vase required.' : 'A garden for your note.', { exact: true }),
     ).toBeVisible()
+    await page.getByLabel('your note', { exact: true }).focus()
     await expect(
       page.getByText(ordinary ? 'One specific detail goes a long way.' : 'A short note is enough.', {
         exact: true,

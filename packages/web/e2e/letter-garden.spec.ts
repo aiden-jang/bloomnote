@@ -58,7 +58,7 @@ for (const width of [320, 1440]) {
       expect(box.x).toBeGreaterThanOrEqual(plot.x - 1)
       expect(box.x + box.width).toBeLessThanOrEqual(plot.x + plot.width + 1)
     }
-    await page.getByRole('button', { name: 'there’s a little secret in here', exact: true }).click()
+    await page.getByRole('button', { name: 'a secret for you', exact: true }).click()
     await expect(page.getByText(garden.secret, { exact: true })).toBeVisible()
     await page.getByText('keep this garden', { exact: true }).click()
     await expect(page.getByRole('button', { name: 'watch it bloom again', exact: true })).toBeVisible()
@@ -90,5 +90,41 @@ for (const width of [320, 1440]) {
     await page.getByRole('button', { name: /grow .* garden/i }).click()
     await expect(page.getByRole('button', { name: 'copy link', exact: true })).toBeVisible()
     await expect(page.getByRole('textbox', { name: 'Garden link', exact: true })).toHaveValue(/\/g\/AbCdEf$/)
+  })
+}
+
+for (const width of [320, 390, 1440]) {
+  test(`the compact desk keeps the example above writing and gives one hint at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await mockApp(page)
+    await page.goto('/')
+    await page.evaluate(() => document.fonts.ready)
+    const preview = page.getByRole('complementary', { name: 'Garden preview' })
+    const recipient = page.getByLabel('to', { exact: true })
+    const note = page.getByLabel('your note', { exact: true })
+    const hint = page.locator('#note-hint')
+    const previewBox = (await preview.boundingBox())!
+    const toBox = (await recipient.boundingBox())!
+    expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(toBox.y)
+    expect((await note.boundingBox())!.height).toBeLessThanOrEqual(width <= 600 ? 160 : 180)
+    await expect(hint).toHaveCount(1)
+    const invitation = await hint.innerText()
+    await note.focus()
+    await expect(hint).toHaveText('One specific detail goes a long way.')
+    await recipient.focus()
+    await expect(hint).toHaveText(invitation)
+    for (const name of ['use this thought', 'another thought ↻']) {
+      expect(
+        (await page.getByRole('button', { name, exact: true }).boundingBox())!.height,
+      ).toBeGreaterThanOrEqual(44)
+    }
+    await note.fill('My note stays exactly as written.')
+    await expect(preview).toHaveCount(0)
+    await expect(hint).toHaveText('One specific detail goes a long way.')
+    await expect(note).toHaveValue('My note stays exactly as written.')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   })
 }

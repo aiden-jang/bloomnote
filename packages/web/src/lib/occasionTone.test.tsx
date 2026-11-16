@@ -66,6 +66,26 @@ describe('occasion-sensitive supporting copy', () => {
     }
   })
 
+  it('gives an empty letter one description instead of stacking writing instructions', () => {
+    const invitation = ritual('just-because', new Date(2026, 10, 15, 9))
+    const field = renderToStaticMarkup(
+      <NoteField
+        occasion="just-because"
+        ritual={invitation}
+        value=""
+        onChange={() => {}}
+        inputRef={{ current: null }}
+        prompt="a thought to start from"
+        hasAnotherPrompt
+        onAnotherPrompt={() => {}}
+      />,
+    )
+    expect(field).toContain(invitation.invitation)
+    expect(field).not.toContain('One specific detail goes a long way.')
+    expect(field.match(/id="note-hint"/g)).toHaveLength(1)
+    expect(field).toContain('aria-describedby="note-hint note-count"')
+  })
+
   it('keeps the ordinary aside available for an ordinary note', () => {
     expect(
       renderToStaticMarkup(

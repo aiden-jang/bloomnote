@@ -7,20 +7,24 @@ controls. Sender-written notes remain distinct from generated flower meanings.
 Letter garden is a single-column writing desk. The greeting puts the recipient above the note;
 the optional sender name sits below it as a signature. A paper sheet holds these fields and the
 secret-note disclosure. Editable fields stay at least 16px on phones, and the note remains inside
-the opening viewport. The writing headline pairs upright text with a blush italic line.
+the opening viewport. The empty letter uses a shorter writing area with compact paper spacing. The writing headline pairs upright text with a blush italic line.
 
 Occasion, mood, scheduling and the garden forecast remain available below the sheet. The forecast
 is a disclosure so it does not compete with writing or sending. The main action explains that
 words become flowers and that sharing the link is a separate step. Draft recovery, Clear and Undo
-retain their existing focus behavior.
+retain their existing focus behavior. Writing has one described hint: an empty, unfocused note shows
+the time-of-day invitation; focus or entered words show the occasion-aware helper. The character
+count stays alongside it, and both suggestion controls retain generous touch targets.
 
-Examples show real flowers on an empty desk. Their labeled demo garden sits below the writing
-area; beginning a draft removes the empty preview. Generation shows the live growing garden and
+Examples show real flowers on an empty desk. A compact, labeled specimen sits beside the introduction
+using static versions of the existing full-plant art; beginning a draft removes it. Generated and recipient
+gardens retain their live meadow. Generation shows the live growing garden and
 Cancel action, followed by the sender's note on paper. The finished composer places the live garden
-above the sharing paper. The recipient note and flower meanings sit in a disclosure below it,
+above the sharing paper, with a wider result area and clear separation between primary sharing
+and secondary image/another-garden actions. The recipient note and flower meanings sit in a disclosure below it,
 alongside a link to the full reveal. A read-only link remains selectable when copying fails.
 
-Recipient pages place an open meadow above a centered letter. The garden has a soft atmospheric
+Recipient pages place a wider open meadow above a centered letter. The garden has a soft atmospheric
 ground and a thin baseline instead of a boxed soil bed. Flower geometry and growth, sway, bee,
 watering, mood and time-of-day behavior remain in the live scene. Reduced motion and keyboard
 focus remain available. Flower tools and their journal editor open in paper panels below the
@@ -29,7 +33,7 @@ memories, keyboard controls and quiet shelves retain their existing behavior.
 
 The recipient heading addresses the recipient directly. The sender's note sits on a paper sheet,
 with its signature, reading-size control, generated explanation and optional secret. Replying and
-sharing follow the letter. The keepsake disclosure retains image saving, copying, printing,
+sharing follow a quiet rule below the letter, with a filled main action and readable secondary tools. The keepsake disclosure retains image saving, copying, printing,
 replaying, the flower journal and voice memories. Flower meanings and reply history remain below.
 
 Normal routes share the in-flow letter header with the wordmark, account controls and sound.
@@ -59,3 +63,12 @@ open until the visitor chooses to reload. UI captures use isolated fixtures and 
 The composer leads with “A note. With flowers.” Supporting humor stays understated. Sympathy and
 get-well copy stays gentle across moods; unknown occasions use neutral wording. See the
 [copy guide](docs/copy-plan.md).
+
+The UI refinement retains flower geometry, live garden behavior, user-entered words, generation and
+sharing mechanics. Browser journeys exercise the compact specimen, single-hint flow and viewport bounds.
+A deliberate guidance regression was rejected by the source-level check, then restored.
+
+During this UI pass, builds, frontend tests, type checking, lint, formatting and repository checks
+passed. The browser runtime could not bind to its local port, so layout assertions, fresh captures
+and final visual review remain unverified. Full verification stopped at the audit because registry
+DNS failed. Complete validation still needs a supported Node runtime with network and local-server access.

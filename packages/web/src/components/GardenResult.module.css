@@ -1,8 +1,8 @@
 .shareCard,
 .designingPanel {
   width: 100%;
-  max-width: 586px;
-  margin: 26px auto 0;
+  max-width: 640px;
+  margin: 18px auto 0;
   min-width: 0;
 }
 .shareTitle {
@@ -22,7 +22,7 @@
   font-size: 14px;
 }
 .garden {
-  margin: 24px 0;
+  margin: 20px 0 26px;
   width: 100%;
   min-width: 0;
 }
@@ -30,7 +30,7 @@
 .growingNote,
 .previewMessage {
   position: relative;
-  padding: 32px;
+  padding: 28px 32px;
   background: var(--letter-paper);
   box-shadow: 0 12px 28px -20px #294b3a80;
 }
@@ -74,10 +74,13 @@
 .shareActionsPrimary {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 .shareActionsPrimary > button {
-  flex: 1 1 auto;
+  flex: 1 1 140px;
+}
+.shareActionsPrimary > .shareBtn {
+  flex-grow: 2;
 }
 .shareBtn,
 .copyBtn,
@@ -100,6 +103,12 @@
   border: 1px solid var(--letter-line);
   background: transparent;
   color: var(--green-deep);
+}
+.shareBtn:focus-visible,
+.copyBtn:focus-visible,
+.copyBtnSecondary:focus-visible {
+  outline: 2px solid var(--green-deep);
+  outline-offset: 3px;
 }
 .shareBtn:hover:not(:disabled),
 .copyBtn:hover:not(:disabled) {
@@ -132,7 +141,7 @@
   background: transparent;
   color: var(--text-mid);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -225,7 +234,7 @@
 @media (max-width: 600px) {
   .shareCard,
   .designingPanel {
-    margin-top: 22px;
+    margin-top: 16px;
   }
   .shareTitle {
     font-size: 38px;

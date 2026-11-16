@@ -1,5 +1,5 @@
 import { occasionTone } from '../lib/occasions'
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import { charCountTierClass } from '../lib/composerHelpers'
 import type { Ritual } from '../lib/rituals'
 import styles from './Composer.module.css'
@@ -28,6 +28,8 @@ export default function NoteField({
   hasAnotherPrompt,
   onAnotherPrompt,
 }: NoteFieldProps) {
+  const [focused, setFocused] = useState(false)
+  const showRitual = !value.trim() && !focused
   return (
     <section className={`${styles.section} ${letter.note}`}>
       {/* htmlFor and id, not adjacency. Every label on this form sits beside its input rather
@@ -35,12 +37,6 @@ export default function NoteField({
       <label className={styles.label} htmlFor="note">
         your note
       </label>
-      {!value.trim() && (
-        <p className={styles.ritual}>
-          {ritual.invitation}
-          {ritual.permission && <span>{ritual.permission}</span>}
-        </p>
-      )}
       <textarea
         id="note"
         name="note"
@@ -49,25 +45,34 @@ export default function NoteField({
         placeholder={prompt}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        rows={4}
+        rows={3}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         maxLength={MAX_NOTE}
         aria-describedby="note-hint note-count"
       />
-      <div className={styles.helperRow}>
-        <span id="note-hint" className={styles.helper} hidden={!!value.trim()}>
-          {occasionTone(occasion) === 'ordinary'
-            ? 'One specific detail goes a long way.'
-            : 'A short note is enough.'}
-        </span>
+      <div className={`${styles.helperRow} ${letter.guidance}`}>
+        <p id="note-hint" className={styles.helper}>
+          {showRitual ? (
+            <>
+              {ritual.invitation}
+              {ritual.permission && <span>{ritual.permission}</span>}
+            </>
+          ) : occasionTone(occasion) === 'ordinary' ? (
+            'One specific detail goes a long way.'
+          ) : (
+            'A short note is enough.'
+          )}
+        </p>
         <span id="note-count" className={`${styles.charCount} ${charCountTierClass(value.length, styles)}`}>
           {value.length}/{MAX_NOTE}
         </span>
       </div>
       {!value.trim() && (
-        <div className={styles.promptRow}>
+        <div className={`${styles.promptRow} ${letter.prompts}`}>
           <button
             type="button"
-            className={styles.promptLink}
+            className={`${styles.promptLink} ${letter.promptAction}`}
             onClick={() => {
               onChange(prompt)
               inputRef.current?.focus()
@@ -76,7 +81,11 @@ export default function NoteField({
             use this thought
           </button>
           {hasAnotherPrompt && (
-            <button type="button" className={styles.promptLink} onClick={onAnotherPrompt}>
+            <button
+              type="button"
+              className={`${styles.promptLink} ${letter.promptAction}`}
+              onClick={onAnotherPrompt}
+            >
               another thought ↻
             </button>
           )}
