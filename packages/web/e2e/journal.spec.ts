@@ -50,17 +50,31 @@ test('a refused journal write keeps the draft and offers a retry', async ({ page
   const journal = await openJournal(page)
   await page.evaluate(() => {
     const original = Storage.prototype.setItem
+    Object.assign(window, {
+      restoreJournalWrites: () => {
+        Storage.prototype.setItem = original
+      },
+    })
     Storage.prototype.setItem = function (key, value) {
       if (key === 'bloomnote.flower-journal.v1') throw new DOMException('Full', 'QuotaExceededError')
       return original.call(this, key, value)
     }
   })
-  await journal.getByRole('button', { name: /say what it means to you/ }).click()
+  await journal.getByRole('button', { name: /what would you like to remember about this flower/ }).click()
   const draft = journal.getByRole('textbox', { name: 'What Cosmos means to you' })
   await draft.fill('The afternoon we stayed in.')
-  await journal.getByRole('button', { name: 'keep', exact: true }).click()
+  await journal.getByRole('button', { name: 'save', exact: true }).click()
   await expect(draft).toHaveValue('The afternoon we stayed in.')
   await expect(journal.getByRole('alert')).toContainText('could not save')
+  await page.evaluate(() =>
+    (window as unknown as { restoreJournalWrites: () => void }).restoreJournalWrites(),
+  )
+  await journal.getByRole('button', { name: 'save', exact: true }).click()
+  await expect(draft).toHaveCount(0)
+  await expect(
+    journal.getByRole('button', { name: 'The afternoon we stayed in.', exact: true }),
+  ).toBeVisible()
+  await expect(journal.getByRole('alert')).toHaveCount(0)
 })
 
 test('closing the keepsake stops a recording even if microphone permission arrives late', async ({
@@ -93,7 +107,7 @@ test('closing the keepsake stops a recording even if microphone permission arriv
     Object.assign(window, { MediaRecorder: Recorder })
   })
   const journal = await openJournal(page)
-  await journal.getByRole('button', { name: 'say it out loud instead', exact: true }).click()
+  await journal.getByRole('button', { name: 'record a memory', exact: true }).click()
   await page.getByText('keep this garden', { exact: true }).click()
   await page.evaluate(() =>
     (window as unknown as { recordingProbe: { release: () => void } }).recordingProbe.release(),

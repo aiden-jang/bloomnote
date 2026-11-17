@@ -108,7 +108,7 @@ test('an unavailable session keeps the device library and offers sign-in recover
   )
   await page.goto('/mine')
   await expect(page.getByRole('alert')).toContainText(/couldn.t check your sign-in/i)
-  await expect(page.getByText("the gardens you've grown, saved on this device.")).toBeVisible()
+  await expect(page.getByText('the gardens you’ve grown, saved on this device.')).toBeVisible()
   available = true
   await page.getByRole('button', { name: 'try again', exact: true }).click()
   await expect(page.getByRole('link', { name: /^for Sam/ })).toBeVisible()
@@ -154,7 +154,7 @@ test('a late session response cannot replace the current account with a device l
     release()
     await oldFinished
     await page.clock.runFor(32)
-    await expect(page.getByText("the gardens you've grown, saved on this device.")).toHaveCount(0)
+    await expect(page.getByText('the gardens you’ve grown, saved on this device.')).toHaveCount(0)
     await expect(page.getByRole('link', { name: /^for Sam/ })).toBeVisible()
   } finally {
     release()

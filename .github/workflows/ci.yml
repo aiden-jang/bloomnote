@@ -34,6 +34,10 @@ jobs:
           retention-days: 7
 
   browser-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -44,12 +48,13 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @bloomnote/web exec playwright install --with-deps chromium webkit
-      - run: pnpm --filter @bloomnote/web e2e
+      - run: pnpm --filter @bloomnote/web exec playwright install --with-deps ${{ matrix.browser }}
+      # Leave time for diagnostics before the job deadline, even if a test gets stuck.
+      - run: pnpm --filter @bloomnote/web e2e --project=${{ matrix.browser }} --global-timeout=480000
       - uses: actions/upload-artifact@v6
-        if: failure()
+        if: always()
         with:
-          name: browser-results
+          name: browser-results-${{ matrix.browser }}
           path: packages/web/test-results
           if-no-files-found: warn
           retention-days: 7
