@@ -28,13 +28,13 @@ import type { ValidatedGarden } from '../src/prompt.js'
 /**
  * Generations per fixture.
  *
- * One by default, which buys the whole run for four requests. That is deliberately stingy: the
+ * One by default, which buys the whole run for six requests. That is deliberately stingy: the
  * Gemini free tier allows **20 generateContent requests per day** for this model, so the first
  * version of this file (three runs each, twelve requests) spent most of a day's budget per
  * invocation and then failed halfway through on the quota it had just eaten.
  *
  * Set EVAL_RUNS=3 when a prompt change is worth confirming properly. That is majority-of-three
- * voting, which is real evidence about a sampled model, and it costs twelve of the twenty. Worth
+ * voting, which is real evidence about a sampled model, and it now costs eighteen of the twenty. Worth
  * it occasionally, not on every edit.
  */
 const RUNS = Number(process.env.EVAL_RUNS ?? 1)
@@ -82,6 +82,7 @@ async function generatePaced(key: string, prompt: string): Promise<ValidatedGard
 
 interface Fixture {
   label: string
+  language?: 'ko'
   body: { message: string; recipient: string; from: string; occasion?: string; mood?: string }
   /**
    * The concrete things in the note. Each entry is one detail, listed with the spellings that
@@ -92,6 +93,36 @@ interface Fixture {
 }
 
 const FIXTURES: Fixture[] = [
+  {
+    label: 'Korean soup memory',
+    language: 'ko',
+    body: {
+      message:
+        '민지야, 비 오는 날 두 시간 운전해서 따뜻한 미역국 가져다줘서 고마워. 같이 앉아서 먹던 저녁이 계속 생각나.',
+      recipient: '민지',
+      from: '지우',
+      occasion: 'thank-you',
+      mood: 'tender',
+    },
+    details: [
+      ['비', 'rain'],
+      ['두 시간', 'two hours'],
+      ['미역국', 'seaweed soup'],
+      ['저녁', 'dinner'],
+    ],
+  },
+  {
+    label: 'specific sympathy memory',
+    body: {
+      message:
+        "I miss your dad's Sunday pancakes and how he always saved the burnt one for himself. No need to reply. I can bring dinner this week.",
+      recipient: 'Sam',
+      from: 'QA Sender',
+      occasion: 'sympathy',
+      mood: 'steady',
+    },
+    details: [['pancake'], ['Sunday', 'sunday'], ['burnt', 'burned'], ['dinner']],
+  },
   {
     label: 'hospital car park',
     body: {
@@ -188,8 +219,7 @@ const KEY = apiKey()
 describe.skipIf(!KEY)('prompt quality', () => {
   if (!KEY) return
 
-  // Say the cost out loud before spending it. The budget is 20 requests a day, so "this run will
-  // use 4 of them" is the difference between a tool you reach for and one that strands you.
+  // Say the cost out loud before spending it, rather than discovering the daily cap halfway through.
   const withDetails = FIXTURES.filter((f) => f.details.length > 0).length
   console.log(
     `[eval] ${FIXTURES.length} fixtures x ${RUNS} run(s) = ${FIXTURES.length * RUNS} Gemini requests ` +
@@ -218,6 +248,14 @@ describe.skipIf(!KEY)('prompt quality', () => {
             passed,
             gardens.map((g) => `[${namesADetail(g, fx.details)} details] ${prose(g).join(' / ')}`).join('\n'),
           ).toBeGreaterThanOrEqual(NEEDED)
+        })
+      }
+
+      if (fx.language === 'ko') {
+        test('keeps every generated line in Korean', () => {
+          expect(scoring((g) => prose(g).every((line) => /[가-힣]/.test(line)))).toBeGreaterThanOrEqual(
+            NEEDED,
+          )
         })
       }
 
