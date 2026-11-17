@@ -187,8 +187,17 @@ for (const mode of ['normal motion', 'no view transitions', 'reduced motion']) {
                   (animation) =>
                     animation instanceof CSSAnimation && animation.animationName.includes('resultArrive'),
                 )
+              const effect = entrance?.effect
+              // A slow frame can arrive after the fade has finished; its duration and keyframes
+              // still prove that it faded instead of swapping instantly.
               Object.assign(window, {
-                resultEntranceProgress: entrance?.effect?.getComputedTiming().progress ?? null,
+                resultEntrance:
+                  effect instanceof KeyframeEffect
+                    ? {
+                        duration: Number(effect.getComputedTiming().activeDuration),
+                        opacities: effect.getKeyframes().map((frame) => Number(frame.opacity)),
+                      }
+                    : null,
               })
             }),
           )
@@ -199,15 +208,19 @@ for (const mode of ['normal motion', 'no view transitions', 'reduced motion']) {
       finish()
       const ready = page.getByRole('heading', { name: 'Alexandria Charlotte’s garden is ready', exact: true })
       await expect(ready).toBeFocused()
-      await expect.poll(() => page.evaluate(() => 'resultEntranceProgress' in window)).toBe(true)
-      const progress = await page.evaluate(
-        () => (window as unknown as { resultEntranceProgress: number | null }).resultEntranceProgress,
+      await expect.poll(() => page.evaluate(() => 'resultEntrance' in window)).toBe(true)
+      const entrance = await page.evaluate(
+        () =>
+          (window as unknown as { resultEntrance: { duration: number; opacities: number[] } | null })
+            .resultEntrance,
       )
-      if (mode === 'reduced motion') expect(progress).toBeNull()
+      if (mode === 'reduced motion') expect(entrance).toBeNull()
       else {
-        expect(progress).not.toBeNull()
-        expect(progress!).toBeGreaterThanOrEqual(0)
-        expect(progress!).toBeLessThan(1)
+        expect(entrance).not.toBeNull()
+        expect(entrance!.duration).toBeGreaterThan(0)
+        expect(entrance!.duration).toBeLessThanOrEqual(600)
+        expect(entrance!.opacities).toContain(0)
+        expect(entrance!.opacities).toContain(1)
       }
       await expect(ready).toBeVisible()
       await expect
