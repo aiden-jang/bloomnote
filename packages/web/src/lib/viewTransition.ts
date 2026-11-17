@@ -14,16 +14,23 @@ type DocumentWithViewTransitions = Document & {
   startViewTransition?: (cb: () => void) => ViewTransitionLike | undefined
 }
 
+export function supportsViewTransition(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    typeof (document as DocumentWithViewTransitions).startViewTransition === 'function'
+  )
+}
+
 export function withViewTransition(updater: () => void): void {
-  const doc = document as DocumentWithViewTransitions
-  if (typeof doc.startViewTransition !== 'function') {
+  if (!supportsViewTransition()) {
     updater()
     return
   }
 
+  const doc = document as DocumentWithViewTransitions
   let applied = false
   try {
-    const transition = doc.startViewTransition(() => {
+    const transition = doc.startViewTransition!(() => {
       applied = true
       flushSync(updater)
     })

@@ -1,5 +1,7 @@
 import { occasionTone } from '../lib/occasions'
 import type { ReactNode } from 'react'
+import { useResultHeading } from '../lib/useResultHeading'
+import { supportsViewTransition } from '../lib/viewTransition'
 import { Spinner } from './ComposerBloom'
 import styles from './GardenResult.module.css'
 
@@ -16,9 +18,12 @@ export default function GrowFeedback({
   scene: ReactNode
   message: string
 }) {
+  const headingRef = useResultHeading()
   return (
-    <div className={styles.designingPanel}>
-      <h2 className={styles.shareTitle}>Growing their garden.</h2>
+    <div className={styles.designingPanel} data-result-entrance={!supportsViewTransition()}>
+      <h2 className={styles.shareTitle} ref={headingRef} tabIndex={-1}>
+        Growing<em> their garden.</em>
+      </h2>
       <div className={styles.designingRow} role="status" aria-live="polite">
         <Spinner />
         <span>{statusText || 'choosing flowers…'}</span>

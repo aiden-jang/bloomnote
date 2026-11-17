@@ -24,7 +24,10 @@ Cancel action, followed by the sender's note on paper. The finished composer pre
 ivory packet with a clay flower sticker and small specimens of the chosen flowers. Its inline preview
 reuses the recipient view: opening reveals the saved garden, original note, optional secret and
 meanings. A rewrap action restores focus to the packet. The ready heading receives focus after
-generation, and primary sharing sits above the selectable garden link. Image saving, different
+generation. The growing and ready headings share a two-line space, and focus changes without
+scrolling an already visible heading. The result panel crossfades in place, with a short entrance
+fade where view transitions are unavailable and an immediate handoff under reduced motion.
+Primary sharing sits above the selectable garden link. Image saving, different
 flowers and another garden remain secondary. The actual recipient link is available separately.
 A failed reroll retains the previous gift.
 

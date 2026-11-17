@@ -80,3 +80,11 @@ The [desktop interaction capture](art/personality-review.jpg) shows the actual r
 The full non-browser verification chain passes, including builds, audit, source checks, frontend
 tests and real Worker tests. Automated browser verification remains blocked by host permissions
 when Chromium starts; those layout assertions have not completed in this environment.
+
+The growing panel and the saved gift use a short, scoped crossfade instead of relying on a page
+swap. Their headings reserve the same two-line space; receiving a result focuses its heading
+without scrolling it when it is already visible. Browsers without view transitions get a short
+entrance fade. Reduced motion removes both. No extra wait is added to generation or saving.
+The 390px phone check kept both headings at the same position, including a longer recipient name.
+The [handoff capture](art/handoff-review.jpg) shows the finished phone layout. Browser regressions
+cover normal motion, the API-unavailable fallback, reduced motion and a single saved gift.

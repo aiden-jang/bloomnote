@@ -1,5 +1,6 @@
 import type { GardenData } from '../garden'
-import { useEffect, useRef } from 'react'
+import { useResultHeading } from '../lib/useResultHeading'
+import { supportsViewTransition } from '../lib/viewTransition'
 import ComposerPreview from './ComposerPreview'
 import styles from './GardenResult.module.css'
 
@@ -42,16 +43,9 @@ export default function ShareCard({
 }: Props) {
   const recipient = garden.to?.trim() || ''
   const unlockAt = garden.unlockAt
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      headingRef.current?.focus({ preventScroll: true })
-      headingRef.current?.scrollIntoView({ block: 'start' })
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [gardenId])
+  const headingRef = useResultHeading(gardenId)
   return (
-    <div className={styles.shareCard}>
+    <div className={styles.shareCard} data-result-entrance={!supportsViewTransition()}>
       <h2 className={styles.shareTitle} ref={headingRef} tabIndex={-1}>
         {recipient ? `${recipient}’s garden` : 'Your garden'}
         <em> {unlockAt ? 'opens later' : 'is ready'}</em>

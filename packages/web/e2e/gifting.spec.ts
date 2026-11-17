@@ -126,3 +126,111 @@ test('a scheduled gift previews now while its real recipient link remains sealed
   await expect(page.getByRole('button', { name: 'open the garden', exact: true })).toHaveCount(0)
   await expect(page.getByText(note, { exact: true })).toHaveCount(0)
 })
+
+for (const mode of ['normal motion', 'no view transitions', 'reduced motion']) {
+  test(`growing hands off in place with ${mode}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.emulateMedia({ reducedMotion: mode === 'reduced motion' ? 'reduce' : 'no-preference' })
+    if (mode === 'no view transitions') {
+      await page.addInitScript(() =>
+        Object.defineProperty(document, 'startViewTransition', { value: undefined }),
+      )
+    }
+    const state = await fixture(page)
+    let finish!: () => void
+    const pending = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    await page.route('**/api/design-garden', async (route) => {
+      state.designs++
+      await pending
+      await route.fulfill({
+        contentType: 'text/event-stream',
+        body: `event: complete\ndata: ${JSON.stringify({ garden: { flowers, bouquet_note: '' } })}\n\n`,
+      })
+    })
+    try {
+      await write(page)
+      await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
+      const growing = page.getByRole('heading', { name: 'Growing their garden.', exact: true })
+      await expect(growing).toBeFocused()
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            document
+              .getAnimations()
+              .some(
+                (animation) =>
+                  animation instanceof CSSAnimation &&
+                  animation.animationName.includes('resultArrive') &&
+                  animation.playState === 'running',
+              ),
+          ),
+        )
+        .toBe(false)
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+      const before = (await growing.boundingBox())!
+      await page.evaluate(() => {
+        const observer = new MutationObserver(() => {
+          if (
+            !Array.from(document.querySelectorAll('[data-result-entrance] > h2')).some((heading) =>
+              heading.textContent?.includes('is ready'),
+            )
+          )
+            return
+          observer.disconnect()
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              const entrance = document
+                .getAnimations()
+                .find(
+                  (animation) =>
+                    animation instanceof CSSAnimation && animation.animationName.includes('resultArrive'),
+                )
+              Object.assign(window, {
+                resultEntranceProgress: entrance?.effect?.getComputedTiming().progress ?? null,
+              })
+            }),
+          )
+        })
+        observer.observe(document.body, { childList: true, subtree: true })
+      })
+      await expect(page.getByRole('button', { name: 'copy link', exact: true })).toHaveCount(0)
+      finish()
+      const ready = page.getByRole('heading', { name: 'Alexandria Charlotte’s garden is ready', exact: true })
+      await expect(ready).toBeFocused()
+      await expect.poll(() => page.evaluate(() => 'resultEntranceProgress' in window)).toBe(true)
+      const progress = await page.evaluate(
+        () => (window as unknown as { resultEntranceProgress: number | null }).resultEntranceProgress,
+      )
+      if (mode === 'reduced motion') expect(progress).toBeNull()
+      else {
+        expect(progress).not.toBeNull()
+        expect(progress!).toBeGreaterThanOrEqual(0)
+        expect(progress!).toBeLessThan(1)
+      }
+      await expect(ready).toBeVisible()
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            document
+              .getAnimations()
+              .some(
+                (animation) =>
+                  animation instanceof CSSAnimation &&
+                  animation.animationName.includes('resultArrive') &&
+                  animation.playState === 'running',
+              ),
+          ),
+        )
+        .toBe(false)
+      expect(Math.abs((await ready.boundingBox())!.y - before.y)).toBeLessThan(2)
+      expect(await page.evaluate(() => window.scrollY)).toBe(0)
+      expect(state.designs).toBe(1)
+      expect(state.saves).toBe(1)
+      expect(state.garden?.message).toBe(note)
+    } finally {
+      finish()
+    }
+  })
+}
