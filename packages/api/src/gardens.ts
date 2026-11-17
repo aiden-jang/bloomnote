@@ -111,6 +111,8 @@ export function repairGarden(value: unknown): unknown {
   const g = value as Record<string, unknown>
   if (!Array.isArray(g.flowers)) return value
   const out: Record<string, unknown> = { ...g, flowers: g.flowers.map(repairFlower) }
+  delete out.ownerId
+  delete out.restoreFingerprint
   if (g.previous && typeof g.previous === 'object') out.previous = repairGarden(g.previous)
   return out
 }
@@ -279,9 +281,12 @@ export async function createGarden(env: Env, garden: unknown, ownerId?: string):
     return { ok: false, status: 400, message: 'Body does not look like a garden.' }
   // Shallow-copy so stamping ownerId never mutates the caller's object.
   const obj = { ...(garden as Record<string, unknown>) }
+  // Ownership and restore markers come from server-side workflows, never from a garden payload.
+  delete obj.ownerId
+  delete obj.restoreFingerprint
   if (ownerId) obj.ownerId = ownerId
   const serialized = JSON.stringify(obj)
-  if (serialized.length > MAX_GARDEN_BYTES) {
+  if (new TextEncoder().encode(serialized).byteLength > MAX_GARDEN_BYTES) {
     return { ok: false, status: 413, message: `Garden exceeds ${MAX_GARDEN_BYTES} bytes.` }
   }
   for (let attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt++) {
@@ -299,11 +304,7 @@ export async function readGarden(env: Env, id: string): Promise<unknown | null> 
   if (!ID_RE.test(id)) return null
   const raw = await env.GARDENS.get(`g:${id}`)
   if (raw === null) return null
-  const garden = repairGarden(JSON.parse(raw) as unknown)
-  if (garden && typeof garden === 'object') {
-    delete (garden as Record<string, unknown>).restoreFingerprint
-  }
-  return garden
+  return repairGarden(JSON.parse(raw) as unknown)
 }
 
 export async function recordReceived(env: Env, userId: string, id: string): Promise<boolean> {

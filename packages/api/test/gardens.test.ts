@@ -69,6 +69,51 @@ describe('gardens (KV)', () => {
     expect(r.status).toBe(413)
   })
 
+  test('does not accept client-supplied ownership or restore metadata', async () => {
+    const result = await createGarden(testEnv, {
+      ...GARDEN,
+      ownerId: 'forged-owner',
+      restoreFingerprint: 'forged-marker',
+    })
+    if (!result.ok) throw new Error('create failed')
+    expect(await claimGardens(testEnv, 'actual-owner', [result.id])).toBe(1)
+    expect((await listMine(testEnv, 'actual-owner')).sent.map((g) => g.id)).toContain(result.id)
+    const stored = JSON.parse((await testEnv.GARDENS.get(`g:${result.id}`))!)
+    expect(stored.ownerId).toBe('actual-owner')
+    expect(stored).not.toHaveProperty('restoreFingerprint')
+  })
+
+  test('public reads omit private metadata from a garden and its reply history', async () => {
+    const result = await createGarden(
+      testEnv,
+      {
+        ...GARDEN,
+        previous: { ...GARDEN, ownerId: 'previous-owner', restoreFingerprint: 'previous-marker' },
+      },
+      'actual-owner',
+    )
+    if (!result.ok) throw new Error('create failed')
+    const publicGarden = (await readGarden(testEnv, result.id)) as Record<string, unknown>
+    expect(publicGarden).not.toHaveProperty('ownerId')
+    expect(publicGarden).not.toHaveProperty('restoreFingerprint')
+    expect(publicGarden.previous).not.toHaveProperty('ownerId')
+    expect(publicGarden.previous).not.toHaveProperty('restoreFingerprint')
+    expect(publicGarden).toMatchObject({ ...GARDEN, previous: GARDEN })
+    expect(await recordReceived(testEnv, 'actual-owner', result.id)).toBe(false)
+  })
+
+  test.each([
+    { count: 6000, accepted: false },
+    { count: 2500, accepted: true },
+  ])('enforces the 16 KiB byte limit for a $count-character Korean note', async ({ count, accepted }) => {
+    const garden = { ...GARDEN, message: '가'.repeat(count) }
+    expect(JSON.stringify(garden).length).toBeLessThan(16 * 1024)
+    const result = await createGarden(testEnv, garden)
+    expect(result.ok).toBe(accepted)
+    if (result.ok) expect(await readGarden(testEnv, result.id)).toMatchObject(garden)
+    else expect(result.status).toBe(413)
+  })
+
   test('signed-in create indexes the Sent list', async () => {
     const r = await createGarden(testEnv, GARDEN, 'user1')
     if (!r.ok) throw new Error('create failed')

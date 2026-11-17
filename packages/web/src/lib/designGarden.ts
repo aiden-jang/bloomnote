@@ -39,82 +39,83 @@ interface DesignRequest {
   mood?: string
 }
 
+// Three bounded provider attempts can take about a minute; the client also needs an outer deadline.
+const DESIGN_TIMEOUT_MS = 75_000
+// CRLF is one line ending, not two; the negative lookahead prevents backtracking into a false blank line.
+const FRAME_BOUNDARY = /(?:\r\n|\n|\r(?!\n)){2}/
+
 export async function designGarden(
   req: DesignRequest,
   callbacks: DesignCallbacks = {},
 ): Promise<DesignResult> {
+  const deadline = AbortSignal.timeout(DESIGN_TIMEOUT_MS)
+  const signal = callbacks.signal ? AbortSignal.any([callbacks.signal, deadline]) : deadline
   try {
     const res = await fetch('/api/design-garden', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
-      signal: callbacks.signal ?? null,
+      signal,
     })
 
     if (!res.ok) {
-      // Non-200s come back as JSON error envelopes. Surface the server's message, not the status.
       let message = `Request failed (${res.status})`
       try {
         const body = await res.json()
         if (body && typeof body.error === 'string') message = body.error
       } catch {
-        // Body wasn't JSON. Keep the default.
+        // A non-JSON failure still has a usable status.
       }
       throw new Error(message)
     }
-
     if (!res.body) throw new Error('No response body.')
 
     const reader = res.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
-    let result: DesignResult | null = null
-    let errorMessage: string | null = null
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-
-      // SSE frames are separated by a blank line.
-      let frameBoundary = buffer.indexOf('\n\n')
-      while (frameBoundary !== -1) {
-        const frame = buffer.slice(0, frameBoundary)
-        buffer = buffer.slice(frameBoundary + 2)
-        frameBoundary = buffer.indexOf('\n\n')
-
-        const event = parseFrame(frame)
-        if (!event) continue
-
-        switch (event.event) {
-          case 'start':
-            callbacks.onStart?.()
-            break
-          case 'thinking':
-            callbacks.onThinking?.()
-            break
-          case 'complete':
-            if (event.data?.garden) {
-              result = normalize(event.data.garden as ServerPayload)
-              callbacks.onComplete?.(result)
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        let boundary = FRAME_BOUNDARY.exec(buffer)
+        while (boundary) {
+          const frame = buffer.slice(0, boundary.index)
+          buffer = buffer.slice(boundary.index + boundary[0].length)
+          boundary = FRAME_BOUNDARY.exec(buffer)
+          const event = parseFrame(frame)
+          if (!event) continue
+          switch (event.event) {
+            case 'start':
+              callbacks.onStart?.()
+              break
+            case 'thinking':
+              callbacks.onThinking?.()
+              break
+            case 'complete':
+              if (event.data?.garden) {
+                const result = normalize(event.data.garden as ServerPayload)
+                callbacks.onComplete?.(result)
+                return result
+              }
+              break
+            case 'error': {
+              const message = typeof event.data?.error === 'string' ? event.data.error : 'Unknown error.'
+              callbacks.onError?.(message)
+              throw new Error(message)
             }
-            break
-          case 'error':
-            errorMessage = typeof event.data?.error === 'string' ? event.data.error : 'Unknown error.'
-            callbacks.onError?.(errorMessage)
-            break
+          }
         }
       }
+      throw new Error('Stream ended without a garden.')
+    } finally {
+      // Terminal events finish the operation. Closing their transport must not delay the saved gift.
+      void reader.cancel().catch(() => {})
+      reader.releaseLock()
     }
-
-    if (errorMessage) throw new Error(errorMessage)
-    if (!result) throw new Error('Stream ended without a garden.')
-    return result
   } catch (err) {
-    // User cancellations propagate as-is; the Composer checks signal.aborted and stays quiet.
-    if (err instanceof Error && err.name === 'AbortError') throw err
-
-    const raw = err instanceof Error ? err.message : String(err)
+    if (callbacks.signal?.aborted) throw err
+    const raw = deadline.aborted ? 'request timed out' : err instanceof Error ? err.message : String(err)
     throw new Error(friendlyError(raw), { cause: err })
   }
 }
@@ -155,7 +156,7 @@ interface ParsedEvent {
 function parseFrame(frame: string): ParsedEvent | null {
   let eventName = 'message'
   const dataLines: string[] = []
-  for (const line of frame.split('\n')) {
+  for (const line of frame.split(/\r\n|\r|\n/)) {
     if (line.startsWith('event:')) eventName = line.slice(6).trim()
     else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
   }
