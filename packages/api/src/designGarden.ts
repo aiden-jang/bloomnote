@@ -130,6 +130,28 @@ const MAX_ATTEMPTS = 3
 // "growing…" forever.
 const REQUEST_TIMEOUT_MS = 20_000
 
+// A real four-petal species must not discard an otherwise good note. Only drawing numbers are
+// constrained here; the strict validator still rejects malformed prose, colors and shapes.
+function constrainModelArt(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw
+  const garden = raw as Record<string, unknown>
+  if (!Array.isArray(garden.flowers)) return raw
+  const bounded = (value: unknown, min: number, max: number): unknown =>
+    typeof value === 'number' && Number.isInteger(value) ? Math.min(max, Math.max(min, value)) : value
+  return {
+    ...garden,
+    flowers: garden.flowers.map((rawFlower: unknown) => {
+      if (!rawFlower || typeof rawFlower !== 'object') return rawFlower
+      const flower = rawFlower as Record<string, unknown>
+      return {
+        ...flower,
+        petalCount: bounded(flower.petalCount, 5, 14),
+        stemHeight: bounded(flower.stemHeight, 70, 115),
+      }
+    }),
+  }
+}
+
 async function isDailyQuotaExhausted(res: Response): Promise<boolean> {
   try {
     const body = (await res.clone().json()) as {
@@ -173,7 +195,7 @@ export async function generateGarden(apiKey: string, userPrompt: string): Promis
       const parts = data.candidates?.[0]?.content?.parts ?? []
       const call = parts.map((p) => p.functionCall).find((fc) => fc?.name === 'design_garden')
       if (!call) throw new Error('that one came back empty-handed. try again?')
-      return validateGarden(call.args)
+      return validateGarden(constrainModelArt(call.args))
     }
     // A 429 comes in two flavours that want opposite handling. A per-minute burst clears in
     // seconds and is worth retrying; the per-day project quota does not clear until midnight

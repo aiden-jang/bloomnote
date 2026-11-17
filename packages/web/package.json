@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run src",
+    "test": "vitest run src --maxWorkers=2",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "gen-icons": "node scripts/gen-icons.mjs",
     "gen-og": "node scripts/gen-og.mjs",
