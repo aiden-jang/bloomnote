@@ -19,6 +19,7 @@ export interface GardenLibrary<T> {
   setPinnedOnly: Dispatch<SetStateAction<boolean>>
   pinned: string[]
   togglePinned: (id: string) => void
+  refreshPinned: () => void
   /** How many of the items in front of the reader are pinned, for the filter's own label. */
   visiblePinned: number
   filtered: T[]
@@ -73,6 +74,7 @@ export function useGardenLibrary<T extends CardData>(
     setPinnedOnly,
     pinned,
     togglePinned,
+    refreshPinned: () => setPinned(readPinnedGardens()),
     visiblePinned,
     filtered,
   }

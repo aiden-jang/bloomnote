@@ -159,6 +159,10 @@ for (const width of [390, 1440]) {
     expect(payloads[0]).not.toHaveProperty('entry.voice')
     expect(payloads[0]).not.toHaveProperty('entry.journal')
     await expect(page.getByText('restored copy', { exact: true })).toBeVisible()
+    const restoredRow = page.locator('li').filter({ has: page.locator(`a[href="/g/${newId}"]`) })
+    await expect(
+      restoredRow.getByRole('button', { name: 'Unpin garden for Sam', exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true')
     const memory = await page.evaluate(async (id) => {
       const module = '/src/lib/voiceMemory.ts'
       const { loadVoiceMemory } = await import(module)

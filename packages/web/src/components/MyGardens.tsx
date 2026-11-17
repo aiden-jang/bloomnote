@@ -131,7 +131,13 @@ function AccountGardens() {
         </div>
       )}
       <LibraryTabs tab={tab} sent={sent.length} received={received.length} onChange={switchTab} />
-      <BackupRestore blocked={busy || pending !== null} onRestored={retryLoad} />
+      <BackupRestore
+        blocked={busy || pending !== null}
+        onRestored={() => {
+          library.refreshPinned()
+          retryLoad()
+        }}
+      />
       <section role="tabpanel" id="garden-collection" aria-labelledby={`garden-tab-${tab}`}>
         {list.length > 1 && (
           <LibraryTools
