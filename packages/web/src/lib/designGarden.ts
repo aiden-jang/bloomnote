@@ -48,14 +48,22 @@ export async function designGarden(
   req: DesignRequest,
   callbacks: DesignCallbacks = {},
 ): Promise<DesignResult> {
-  const deadline = AbortSignal.timeout(DESIGN_TIMEOUT_MS)
-  const signal = callbacks.signal ? AbortSignal.any([callbacks.signal, deadline]) : deadline
+  // Use a concrete controller: WebKit can leave fetch pending when a composite signal aborts.
+  const transport = new AbortController()
+  const cancel = () => transport.abort(callbacks.signal?.reason)
+  callbacks.signal?.addEventListener('abort', cancel, { once: true })
+  if (callbacks.signal?.aborted) cancel()
+  let timedOut = false
+  const timer = setTimeout(() => {
+    timedOut = true
+    transport.abort()
+  }, DESIGN_TIMEOUT_MS)
   try {
     const res = await fetch('/api/design-garden', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
-      signal,
+      signal: transport.signal,
     })
 
     if (!res.ok) {
@@ -115,8 +123,11 @@ export async function designGarden(
     }
   } catch (err) {
     if (callbacks.signal?.aborted) throw err
-    const raw = deadline.aborted ? 'request timed out' : err instanceof Error ? err.message : String(err)
+    const raw = timedOut ? 'request timed out' : err instanceof Error ? err.message : String(err)
     throw new Error(friendlyError(raw), { cause: err })
+  } finally {
+    clearTimeout(timer)
+    callbacks.signal?.removeEventListener('abort', cancel)
   }
 }
 

@@ -85,17 +85,8 @@ it.each(['\n', '\r\n', '\r'])(
   },
 )
 
-function virtualTimeouts() {
-  vi.useFakeTimers()
-  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
-    const controller = new AbortController()
-    setTimeout(() => controller.abort(new DOMException('request timed out', 'TimeoutError')), ms)
-    return controller.signal
-  })
-}
-
 it.each(['headers', 'body'])('recovers when the response stalls before %s finish', async (phase) => {
-  virtualTimeouts()
+  vi.useFakeTimers()
   vi.stubGlobal(
     'fetch',
     vi.fn((_url: string, options: RequestInit) => {
@@ -121,12 +112,17 @@ it.each(['headers', 'body'])('recovers when the response stalls before %s finish
   expect((await result)?.message).toBe('That took too long. Your note is still here. Try again.')
 })
 
-it('preserves user cancellation while a response is streaming', async () => {
+it.each(['headers', 'body'])('preserves user cancellation while waiting for %s', async (phase) => {
   const controller = new AbortController()
   const complete = vi.fn()
   vi.stubGlobal(
     'fetch',
-    vi.fn((_url: string, options: RequestInit) => Promise.resolve(openResponse('', options.signal))),
+    vi.fn((_url: string, options: RequestInit) => {
+      if (phase === 'body') return Promise.resolve(openResponse('', options.signal))
+      return new Promise((_resolve, reject) =>
+        options.signal?.addEventListener('abort', () => reject(options.signal?.reason), { once: true }),
+      )
+    }),
   )
   const result = designGarden(request, { signal: controller.signal, onComplete: complete })
   await Promise.resolve()
