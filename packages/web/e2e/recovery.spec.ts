@@ -135,14 +135,14 @@ test('copy failures explain how to send the visible link and allow retry', async
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await grow(page)
-  await expect(page.getByText('Nothing has been sent.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Share the link with', { exact: false })).toBeVisible()
   {
     for (const [name, width, height] of [
       ['desktop', 1440, 900],
       ['mobile', 390, 844],
     ] as const) {
       await page.setViewportSize({ width, height })
-      await page.getByText('Nothing has been sent.', { exact: false }).scrollIntoViewIfNeeded()
+      await page.getByText('Share the link with', { exact: false }).scrollIntoViewIfNeeded()
       await page.screenshot({
         path: test.info().outputPath(`sharing-${name}.png`),
         fullPage: false,
@@ -208,17 +208,17 @@ test('a failed feeling can be retried without claiming it was sent', async ({ pa
   await page.route('**/api/garden/AbCdEf/feeling', (route) =>
     attempts++ === 0
       ? route.fulfill({ status: 503 })
-      : route.fulfill({ json: { waters: 1, feelings: { love: 1 } } }),
+      : route.fulfill({ json: { waters: 0, feelings: { love: 1 } } }),
   )
   await page.goto('/g/AbCdEf')
   await page.getByRole('button', { name: 'open the garden', exact: true }).click()
-  await page.getByRole('button', { name: 'water it', exact: true }).click()
   await page.getByRole('button', { name: 'love', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText(/couldn.t send/i)
   await expect(page.getByText('sent back a little love', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'love', exact: true }).click()
   await expect(page.getByText('sent back a little love', { exact: true })).toBeVisible()
   await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'water it', exact: true })).toBeVisible()
 })
 
 test('a schedule that passes during generation is described as opening now', async ({ page }) => {

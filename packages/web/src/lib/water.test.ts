@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { fetchResponsesBatch, rememberedFeeling, sendFeeling } from './water'
+import { fetchResponsesBatch, hasWatered, rememberedFeeling, sendFeeling } from './water'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -64,3 +64,36 @@ it('stops remaining lookups when the library is left', async () => {
   ).toEqual({})
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
+
+it('sends a feeling without creating a watering gesture', async () => {
+  const storage = new Map<string, string>()
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+  })
+  const fetcher = vi.fn().mockResolvedValue(Response.json({ waters: 0, feelings: { hug: 1 } }))
+  vi.stubGlobal('fetch', fetcher)
+  expect(await sendFeeling('AbCdEf', 'hug')).toEqual({ waters: 0, feelings: { hug: 1 } })
+  expect(fetcher).toHaveBeenCalledTimes(1)
+  expect(fetcher).toHaveBeenCalledWith(
+    '/api/garden/AbCdEf/feeling',
+    expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ feeling: 'hug' }),
+      signal: expect.any(AbortSignal),
+    }),
+  )
+  expect(rememberedFeeling('AbCdEf')).toBe('hug')
+  expect(hasWatered('AbCdEf')).toBe(false)
+})
+
+it.each([new Response('', { status: 503 }), new Response('invalid json')])(
+  'does not remember a feeling after an unsuccessful response',
+  async (response) => {
+    const setItem = vi.fn()
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+    expect(await sendFeeling('AbCdEf', 'love')).toBeNull()
+    expect(setItem).not.toHaveBeenCalled()
+  },
+)

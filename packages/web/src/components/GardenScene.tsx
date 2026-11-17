@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
-import FlowerSVG, { flowerBoxHeight, flowerHeadOffset } from './FlowerSVG'
+import FlowerSVG, { flowerBoxHeight } from './FlowerSVG'
 import { type FlowerSpec } from '../garden'
 import { useSceneMotion } from '../lib/useSceneMotion'
 import { prefersReducedMotion } from '../lib/motion'
@@ -7,7 +7,7 @@ import { ritualTime } from '../lib/rituals'
 import { occasionTone } from '../lib/occasions'
 import { playBloom, pulse } from '../sound'
 import FlowerPeek from './FlowerPeek'
-import ClayBee from './ClayBee'
+import GardenBee from './GardenBee'
 import {
   auraFor,
   TIME_SKY,
@@ -15,7 +15,6 @@ import {
   PETAL_DRIFTERS,
   WAIT_SPROUTS,
   MOTES,
-  Bee,
   SoilLine,
   SeedBed,
   GhostSprout,
@@ -105,18 +104,6 @@ export default function GardenScene({
 
   const gentle = occasionTone(occasion) === 'sensitive'
   const aura = auraFor(gentle ? undefined : mood)
-
-  /* A destination index plus a CSS transition, not a keyframe path: the flower count varies from
-     three to five, so hand-authored @keyframes would be wrong for most gardens. */
-  const [beeAt, setBeeAt] = useState(0)
-  const beeFlying =
-    !gentle && autoBloom && placed.length > 0 && bloomedCount >= placed.length && !prefersReducedMotion()
-  useEffect(() => {
-    if (!beeFlying) return
-    // Uneven dwell, on prime-ish numbers, so the bee never falls into step with the flowers' sway.
-    const t = setInterval(() => setBeeAt((i) => (i + 1) % placed.length), 3700)
-    return () => clearInterval(t)
-  }, [beeFlying, placed.length])
 
   const [perking, setPerking] = useState(false)
   useEffect(() => {
@@ -233,22 +220,12 @@ export default function GardenScene({
             ) : (
               <GhostSprout growth={draftGrowth} />
             ))}
-          {beeFlying &&
-            (() => {
-              const target = placed[beeAt % placed.length]!
-              /* Height comes from the flower, not a constant. A fixed `bottom: 62%` fits whichever garden you
-               happen to be testing and clips the rest. */
-              const headUp = flowerHeadOffset(target.spec) - 8
-              return (
-                <div
-                  className={styles.bee}
-                  style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
-                  aria-hidden
-                >
-                  {clay ? <ClayBee /> : <Bee />}
-                </div>
-              )
-            })()}
+          <GardenBee
+            placements={placed}
+            active={autoBloom && bloomedCount >= placed.length}
+            occasion={occasion}
+            clay={clay}
+          />
           {perking && (
             <div className={styles.dropLayer} key={wateredAt} aria-hidden>
               {placed.map((p, i) => (

@@ -127,6 +127,15 @@ describe('readResponsesBatch', () => {
 })
 
 describe('garden feelings', () => {
+  test('accepts a feeling on an unwatered garden without incrementing water', async () => {
+    const id = await newGarden()
+    expect((await feelGarden(env as never, id, 'hug')).ok).toBe(true)
+    expect(await readGardenResponse(env as never, id)).toEqual({ waters: 0, feelings: { hug: 1 } })
+    expect(await readResponsesBatch(env as never, [id])).toEqual({
+      [id]: { waters: 0, feelings: { hug: 1 } },
+    })
+  })
+
   test('keeps a tiny anonymous feeling alongside the existing water count', async () => {
     const id = await newGarden()
     await waterGarden(env as never, id)

@@ -532,19 +532,6 @@
   }
 }
 
-.bee {
-  position: absolute;
-  width: 26px;
-  margin-left: -13px;
-  /* `bottom` is set inline, per flower, so it transitions alongside `left` and the bee arcs
-     between heads of different heights. */
-  transition:
-    left 2.6s cubic-bezier(0.45, 0, 0.35, 1),
-    bottom 2.6s cubic-bezier(0.3, 0.1, 0.4, 1);
-  z-index: 3;
-  pointer-events: none;
-}
-
 /* On the inner element so it composes with the parent's horizontal travel instead of fighting
    it for the transform property. */
 .beeBody {
@@ -564,9 +551,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bee {
-    transition: none;
-  }
   .beeBody {
     animation: none;
   }

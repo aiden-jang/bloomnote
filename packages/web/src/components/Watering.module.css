@@ -1,44 +1,49 @@
 .row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 10px auto 0;
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  gap: 10px;
+  margin: 18px auto 0;
   animation: waterFade 0.5s ease both;
 }
 
-.afterWater {
-  display: grid;
-  justify-items: center;
-  gap: 9px;
+.watering {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
 }
 
 .feelings {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  justify-items: center;
+  width: min(100%, 340px);
   gap: 8px;
   color: var(--text-mid);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .feelingsLabel {
-  flex: 0 0 auto;
-  white-space: nowrap;
+  line-height: 1.5;
 }
 
-/* min-width: 0 is what lets the scroller shrink inside the flex row instead of forcing the row wide. */
 .feelingsChips {
-  flex: 1 1 auto;
+  display: grid;
+  gap: 6px;
+  width: 100%;
   min-width: 0;
 }
 
 .feelings button {
-  padding: 5px 9px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 60px;
+  padding: 8px 4px;
   border: 1px solid var(--green-pale);
-  border-radius: 999px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.58);
   color: var(--green-mid);
   font: inherit;
@@ -49,21 +54,36 @@
     transform 0.15s;
 }
 
-.feelings button:hover {
+.feelings button:hover:not(:disabled) {
   border-color: var(--green-light);
   color: var(--green-deep);
   transform: translateY(-1px);
 }
 
+.feelings button:disabled,
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 .feelingDone,
 .feelingEcho {
   color: var(--green-mid);
-  font-size: 11px;
+  font-size: 13px;
 }
-
 .feelingEcho {
   color: var(--text-light);
   letter-spacing: 0.04em;
+}
+.error {
+  color: var(--error);
+  font-size: 13px;
+  text-align: center;
+}
+.row[data-gentle='true'] {
+  animation: none;
+}
+.row[data-gentle='true'] .feelings button:hover {
+  transform: none;
 }
 
 @keyframes waterFade {
@@ -139,7 +159,6 @@
 
 .others {
   color: var(--text-mid, #6b6963);
-  opacity: 0.75;
 }
 
 .count {
@@ -153,16 +172,12 @@
     animation: none;
   }
   .can,
-  .btn {
+  .btn,
+  .feelings button {
     transition: none;
   }
-  .btn:hover .can {
+  .btn:hover .can,
+  .feelings button:hover {
     transform: none;
-  }
-}
-
-@media (pointer: coarse) {
-  .feelings button {
-    min-height: 44px;
   }
 }

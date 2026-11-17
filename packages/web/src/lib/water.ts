@@ -82,10 +82,12 @@ export async function sendFeeling(id: string, feeling: Feeling): Promise<GardenR
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ feeling }),
+      signal: AbortSignal.timeout(10_000),
     })
     if (!response.ok) return null
+    const result = (await response.json()) as GardenResponse
     rememberFeeling(id, feeling)
-    return (await response.json()) as GardenResponse
+    return result
   } catch {
     return null
   }
@@ -119,7 +121,7 @@ export async function fetchResponsesBatch(
 
 export async function sendWater(id: string): Promise<number | null> {
   try {
-    const r = await fetch(`/api/garden/${id}/water`, { method: 'POST' })
+    const r = await fetch(`/api/garden/${id}/water`, { method: 'POST', signal: AbortSignal.timeout(10_000) })
     if (!r.ok) return null
     const n = ((await r.json()) as { waters?: unknown }).waters
     return typeof n === 'number' && Number.isFinite(n) ? n : null

@@ -44,9 +44,17 @@ the actual recipient link is a separate secondary action. Scheduled gifts can be
 the real link keeps its opening time. Preview mode omits recipient analytics, account-receive writes,
 reactions, journals, and recipient sharing tools. Flower meanings and the secret can still be explored.
 
-Blooming, watering, replies, secrets, scheduling and sharing retain their recipient behavior.
-The clay bee appears only on ordinary gardens. Sympathy and get-well gardens
-remain quiet. Reduced motion uses settled flower states without infinite sway.
+Reactions follow the sender's note and are available immediately after opening, without watering
+first. All four choices fit in a phone-width grid. A failed send leaves the choices available and
+never claims success; a delayed initial lookup cannot replace the just-sent response. Watering
+remains a separate optional gesture. Sympathy and get-well gardens omit joy and entrance motion.
+
+On recognized ordinary occasions, tapping the clay bee gives it a petal hat and the brief caption
+“management.” It settles after four seconds, with no persisted status or extra network writes.
+The bee pauses at its current position while hovered, keyboard-focused or wearing the hat. Reduced
+motion retains a static keyboard-accessible bee and removes the hat entrance animation. Sensitive
+occasions omit the bee; unknown occasions and older artwork have no hat action.
+Blooming, replies, secrets, scheduling and sharing retain their recipient behavior.
 
 ## Review
 
@@ -62,6 +70,12 @@ API fixture. Previewing and rewrapping produced no extra generation, received-li
 writes. A real recipient visit still recorded receipt. A scheduled sender preview opened while
 the actual recipient link retained its countdown. The gift flow was inspected at 320px, 390px and
 desktop width, including focus handoff to the ready heading and back to the wrapped packet.
+
+The petal hat was activated by keyboard and cleared itself in the connected browser. Sending a hug
+before watering left the water button available and made no water write. A failed feeling remained
+retryable; retry succeeded without watering. At 320px, all four reaction targets were at least
+60px tall and 62px wide without horizontal overflow. A sympathy garden omitted the bee and joy.
+The [desktop interaction capture](art/personality-review.jpg) shows the actual runtime controls.
 
 The full non-browser verification chain passes, including builds, audit, source checks, frontend
 tests and real Worker tests. Automated browser verification remains blocked by host permissions

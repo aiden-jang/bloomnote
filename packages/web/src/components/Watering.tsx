@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   fetchGardenResponse,
   hasWatered,
@@ -10,27 +10,33 @@ import {
   type Feeling,
 } from '../lib/water'
 import { playWater } from '../sound'
-import ChipRow from './ChipRow'
+import { occasionTone } from '../lib/occasions'
 import FeelingMark from './FeelingMark'
 import styles from './Watering.module.css'
 
 interface Props {
   gardenId: string
   onWatered: () => void
+  occasion?: string | undefined
 }
 
-export default function Watering({ gardenId, onWatered }: Props) {
+export default function Watering({ gardenId, onWatered, occasion }: Props) {
   const [waters, setWaters] = useState(0)
   const [watered, setWatered] = useState(() => hasWatered(gardenId))
   const [busy, setBusy] = useState(false)
   const [feeling, setFeeling] = useState<Feeling | null>(() => rememberedFeeling(gardenId))
   const [feelings, setFeelings] = useState<Partial<Record<Feeling, number>>>({})
   const [error, setError] = useState<string | null>(null)
+  const busyRef = useRef(false)
+  const interacted = useRef(false)
+  const labelId = useId()
+  const gentle = occasionTone(occasion) === 'sensitive'
+  const choices: Feeling[] = gentle ? ['love', 'comfort', 'hug'] : ['love', 'comfort', 'joy', 'hug']
 
   useEffect(() => {
     let cancelled = false
     void fetchGardenResponse(gardenId).then((response) => {
-      if (!cancelled) {
+      if (!cancelled && !interacted.current) {
         setWaters(response.waters)
         setFeelings(response.feelings)
       }
@@ -41,38 +47,75 @@ export default function Watering({ gardenId, onWatered }: Props) {
   }, [gardenId])
 
   const water = async (): Promise<void> => {
-    if (watered || busy) return
+    if (watered || busyRef.current) return
+    busyRef.current = true
+    interacted.current = true
     setBusy(true)
-    // Optimistic: the drops fall on the tap, not on the round trip. A failed write leaves the count
-    // where it was and the button spent, which is the right way round for a gesture.
+    // The gesture and drops happen on tap; a failed count update never asks for another watering.
     setWatered(true)
     playWater()
     rememberWatered(gardenId)
     onWatered()
     const n = await sendWater(gardenId)
     if (n !== null) setWaters(n)
+    busyRef.current = false
     setBusy(false)
   }
 
   const respond = async (next: Feeling): Promise<void> => {
-    if (feeling || busy) return
+    if (feeling || busyRef.current) return
+    busyRef.current = true
+    interacted.current = true
     setBusy(true)
     setError(null)
     const response = await sendFeeling(gardenId, next)
     if (response) {
       setFeeling(next)
       setFeelings(response.feelings)
+      setWaters((current) => Math.max(current, response.waters))
     } else setError('Couldn’t send that feeling. Try again.')
+    busyRef.current = false
     setBusy(false)
   }
 
-  // Your own tap is already reflected in `waters`, so the rest of them is one fewer.
   const others = watered ? Math.max(0, waters - 1) : waters
+  const echoes = Object.entries(feelings).filter(
+    (entry): entry is [Feeling, number] =>
+      Object.hasOwn(FEELING_COPY, entry[0]) && typeof entry[1] === 'number' && entry[1] > 0,
+  )
 
   return (
-    <div className={styles.row}>
-      {watered ? (
-        <div className={styles.afterWater}>
+    <div className={styles.row} data-gentle={gentle}>
+      {feeling ? (
+        <p className={styles.feelingDone} role="status">
+          sent back {FEELING_COPY[feeling].sent}
+        </p>
+      ) : (
+        <div className={styles.feelings}>
+          <span id={labelId} className={styles.feelingsLabel}>
+            send a feeling back
+          </span>
+          <div
+            className={styles.feelingsChips}
+            role="group"
+            aria-labelledby={labelId}
+            style={{ gridTemplateColumns: `repeat(${choices.length}, minmax(0, 1fr))` }}
+          >
+            {choices.map((kind) => (
+              <button key={kind} type="button" disabled={busy} onClick={() => void respond(kind)}>
+                <FeelingMark kind={kind} /> {FEELING_COPY[kind].label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {error && (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
+      <div className={styles.watering}>
+        {watered ? (
           <p className={styles.done}>
             <Can poured />
             you watered it
@@ -82,42 +125,20 @@ export default function Watering({ gardenId, onWatered }: Props) {
               </span>
             )}
           </p>
-          {feeling ? (
-            <p className={styles.feelingDone}>sent back {FEELING_COPY[feeling].sent}</p>
-          ) : (
-            <div className={styles.feelings}>
-              <span id="felt-like" className={styles.feelingsLabel}>
-                send a feeling back
-              </span>
-              <div className={styles.feelingsChips}>
-                <ChipRow labelledBy="felt-like" selectable={false}>
-                  {(Object.keys(FEELING_COPY) as Feeling[]).map((kind) => (
-                    <button key={kind} type="button" disabled={busy} onClick={() => void respond(kind)}>
-                      <FeelingMark kind={kind} /> {FEELING_COPY[kind].label}
-                    </button>
-                  ))}
-                </ChipRow>
-              </div>
-            </div>
-          )}
-          {Object.keys(feelings).length > 0 && (
-            <p className={styles.feelingEcho}>
-              {Object.entries(feelings)
-                .filter((entry): entry is [Feeling, number] => typeof entry[1] === 'number' && entry[1] > 0)
-                .map(([kind, count]) => `${FEELING_COPY[kind].emoji} ${count}`)
-                .join('  ·  ')}
-            </p>
-          )}
-          {error && <p role="alert">{error}</p>}
-        </div>
-      ) : (
-        <>
-          <button type="button" className={styles.btn} onClick={() => void water()}>
-            <Can />
-            water it
-          </button>
-          {waters > 0 && <span className={styles.count}>{watersLabel(waters)} already</span>}
-        </>
+        ) : (
+          <>
+            <button type="button" className={styles.btn} onClick={() => void water()} disabled={busy}>
+              <Can />
+              water it
+            </button>
+            {waters > 0 && <span className={styles.count}>{watersLabel(waters)} already</span>}
+          </>
+        )}
+      </div>
+      {(watered || feeling) && echoes.length > 0 && (
+        <p className={styles.feelingEcho}>
+          {echoes.map(([kind, count]) => `${FEELING_COPY[kind].emoji} ${count}`).join('  ·  ')}
+        </p>
       )}
     </div>
   )

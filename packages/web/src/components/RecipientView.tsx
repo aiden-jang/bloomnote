@@ -227,10 +227,6 @@ export default function RecipientView({ gardenData, gardenId, preview = false }:
           {msgVisible && flowers.length > 0 && !flowerTapped && (
             <p className={styles.tapHint}>tap a flower to see what it means</p>
           )}
-
-          {!preview && msgVisible && gardenId && (
-            <Watering gardenId={gardenId} onWatered={() => setWateredAt((n) => n + 1)} />
-          )}
         </div>
 
         {/* Everything below the plot renders only after the garden is opened. While sealed these would
@@ -274,6 +270,13 @@ export default function RecipientView({ gardenData, gardenId, preview = false }:
                 {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
               </div>
 
+              {!preview && msgVisible && gardenId && (
+                <Watering
+                  gardenId={gardenId}
+                  occasion={occasion}
+                  onWatered={() => setWateredAt((n) => n + 1)}
+                />
+              )}
               {!preview && (
                 <RecipientActions
                   gardenData={gardenData}

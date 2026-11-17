@@ -40,8 +40,10 @@ meadow. Flower details and journal entries use static full-plant art. Device sto
 memories, keyboard controls and quiet shelves retain their existing behavior.
 
 The recipient heading addresses the recipient directly. The sender's note sits on a paper sheet,
-with its signature, reading-size control, generated explanation and optional secret. Replying and
-sharing follow a quiet rule below the letter, with a filled main action and readable secondary tools. The keepsake disclosure retains image saving, copying, printing,
+with its signature, reading-size control, generated explanation and optional secret. Recipients can
+send love, comfort, joy or a hug immediately after reading, independently of watering. These controls follow the note; sending a feeling confirms only after the write succeeds.
+Sympathy and get-well gardens offer love, comfort and a hug without joy or entrance motion.
+Replying and sharing follow a quiet rule below the letter, with a filled main action and readable secondary tools. The keepsake disclosure retains image saving, copying, printing,
 replaying, the flower journal and voice memories. Flower meanings and reply history remain below.
 
 Normal routes share the in-flow letter header with the wordmark, account controls and sound.
@@ -87,3 +89,9 @@ Archive swatch previews share the clay material without claiming to reproduce a 
 
 The [rendered flower sheet](docs/art/clay-study.svg) shows the actual six-family renderer and
 thumbnail heads. [The implementation direction](docs/cute-direction.md) records compatibility and review.
+
+On ordinary clay gardens, the bee is a 44px keyboard-operable control. Tapping gives it a petal hat
+and the aside “management.” for four seconds. It pauses in place while hovered, focused or wearing
+the hat, then resumes its quiet flight. Reduced motion keeps it still and removes the hat entrance
+animation. Sympathy and get-well gardens omit the bee; unrecognized occasions have no hat joke.
+The interaction is local and temporary, with no saved status, upkeep or network write.
