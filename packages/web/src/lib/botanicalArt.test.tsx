@@ -72,7 +72,7 @@ describe('versioned botanical art', () => {
       )
     vi.stubGlobal('fetch', fetcher)
     const result = await designGarden({ message: 'A note.', recipient: 'Sam' })
-    expect(result.flowers[0]).toEqual({ ...flower, artVersion: 2 })
+    expect(result.flowers[0]).toEqual({ ...flower, artVersion: 3 })
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 

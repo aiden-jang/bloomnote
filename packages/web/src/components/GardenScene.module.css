@@ -839,3 +839,26 @@
 .sceneMeadow .soilLine {
   display: none;
 }
+
+/* A little soft ground anchors the clay plants without turning the meadow into a soil box. */
+.sceneClay.sceneMeadow .ground {
+  background: transparent;
+}
+.sceneClay.sceneMeadow .ground::before {
+  content: '';
+  position: absolute;
+  inset: -12px -3% -8px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #bacb9e70, #dce4c34d 48%, transparent 72%);
+}
+.sceneClay.sceneMeadow .soilLine {
+  display: block;
+}
+.sceneClay .crest,
+.sceneClay .pebble {
+  display: none;
+}
+.sceneClay .blade {
+  stroke: #9fb783;
+  stroke-width: 2;
+}

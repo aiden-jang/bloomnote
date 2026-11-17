@@ -1,7 +1,8 @@
 # Bloomnote UI
 
-Bloomnote is botanical stationery: soft sage around ivory paper, deep green ink and restrained
-blush accents. Fraunces carries expressive headings, notes and signatures; DM Sans carries
+Bloomnote pairs soft clay flowers with botanical stationery: warm ivory paper, deep forest-green
+controls and restrained sage surroundings. Flower color carries the blush, lilac and golden accents.
+Fraunces carries expressive headings, notes and signatures; DM Sans carries
 controls. Sender-written notes remain distinct from generated flower meanings.
 
 Letter garden is a single-column writing desk. The greeting puts the recipient above the note;
@@ -64,18 +65,18 @@ The composer leads with “A note. With flowers.” Supporting humor stays under
 get-well copy stays gentle across moods; unknown occasions use neutral wording. See the
 [copy guide](docs/copy-plan.md).
 
-The UI refinement retains flower geometry, live garden behavior, user-entered words, generation and
-sharing mechanics. Browser journeys exercise the compact specimen, single-hint flow and viewport bounds.
-A deliberate guidance regression was rejected by the source-level check, then restored.
+## Soft flowers, green ink
 
-During this UI pass, builds, frontend tests, type checking, lint, formatting and repository checks
-passed. The browser runtime could not bind to its local port, so layout assertions, fresh captures
-and final visual review remain unverified. Full verification stopped at the audit because registry
-DNS failed. Complete validation still needs a supported Node runtime with network and local-server access.
+The letter and meadow layout remains recognizable. New gardens use authored, dimensional SVG flowers:
+layered dahlia, airy cosmos, seeded sunflower, cupped rose, hanging bluebell and clustered hydrangea.
+Soft radial shading, curved stems and a small clay bee carry the material direction. Unknown flowers
+keep their supplied names, meanings and colors, using a drawable fallback silhouette.
 
-## Botanical gift refinement
+New flower art is versioned so original and botanical gifts keep their existing appearance.
+Scene, specimen and export art share geometry and scoped paints. New square keepsakes and link
+previews use the open meadow, while previous gifts retain their export compositions. Ivory letters
+use soft corners, a folded edge and a small flower mark clear of the text-size control.
+Archive swatch previews share the clay material without claiming to reproduce a complete saved garden.
 
-The folded recipient packet opens into distinct botanical flowers and the sender's note.
-New flower art is versioned so original gardens keep their appearance. Scene, specimen and export
-art share geometry; paper edges and drawn feeling marks tie the gift to the composer and keepsakes.
-[The botanical direction](docs/cute-direction.md) records compatibility, interactions and review limits.
+The [rendered flower sheet](docs/art/clay-study.svg) shows the actual six-family renderer and
+thumbnail heads. [The implementation direction](docs/cute-direction.md) records compatibility and review.

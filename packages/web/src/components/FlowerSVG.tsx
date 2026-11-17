@@ -1,5 +1,7 @@
 import { useRef } from 'react'
 import BotanicalFlower, { BotanicalHead, botanicalHeadY } from './BotanicalFlower'
+import ClayFlower from './ClayFlower'
+import ClayHead from './ClayHead'
 import { drawableFlower } from '../garden'
 import { prefersReducedMotion } from '../lib/motion'
 import type { FlowerSpec, PetalShape } from '../garden'
@@ -35,12 +37,13 @@ export function flowerBoxHeight(flower: unknown): number {
 
 /** Original gifts retain their original export framing. */
 export const flowerExportHeight = (flower: FlowerSpec) =>
-  flower.artVersion === 2 ? flowerBoxHeight(flower) : flower.stemHeight + 80
+  flower.artVersion === 2 || flower.artVersion === 3 ? flowerBoxHeight(flower) : flower.stemHeight + 80
 
 export function flowerHeadOffset(flower: unknown): number {
   const { stemHeight, petalShape } = drawableFlower(flower as never)
   const scale = headScale(stemHeight)
-  if ((flower as FlowerSpec).artVersion === 2) return flowerBoxHeight(flower) - botanicalHeadY(scale)
+  if ((flower as FlowerSpec).artVersion === 2 || (flower as FlowerSpec).artVersion === 3)
+    return flowerBoxHeight(flower) - botanicalHeadY(scale)
   return flowerBoxHeight(flower) - (STEM_TOP + petalGeometry(petalShape).centerRadius * scale)
 }
 
@@ -122,6 +125,12 @@ function buildPetalPath(
 }
 
 export function FlowerHead({ flower, size = 34 }: { flower: FlowerSpec; size?: number }) {
+  if (flower.artVersion === 3)
+    return (
+      <svg width={size} height={size} viewBox="-44 -44 88 88" aria-hidden focusable="false">
+        <ClayHead flower={drawableFlower(flower)} />
+      </svg>
+    )
   if (flower.artVersion === 2)
     return (
       <svg width={size} height={size} viewBox="-44 -44 88 88" aria-hidden focusable="false">
@@ -175,6 +184,17 @@ export default function FlowerSVG({ flower, bloomed, swayDelay = 0, staticRender
 
   const scale = headScale(stemHeight)
   const svgH = flowerBoxHeight(flower)
+  if (flower.artVersion === 3)
+    return (
+      <ClayFlower
+        flower={drawableFlower(flower)}
+        bloomed={bloomed}
+        still={still}
+        scale={scale}
+        height={svgH}
+        swayDelay={swayDelay}
+      />
+    )
   if (flower.artVersion === 2)
     return (
       <BotanicalFlower

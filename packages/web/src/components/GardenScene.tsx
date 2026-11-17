@@ -7,6 +7,7 @@ import { ritualTime } from '../lib/rituals'
 import { occasionTone } from '../lib/occasions'
 import { playBloom, pulse } from '../sound'
 import FlowerPeek from './FlowerPeek'
+import ClayBee from './ClayBee'
 import {
   auraFor,
   TIME_SKY,
@@ -72,6 +73,7 @@ export default function GardenScene({
   const sky = gradientFor(occasion)
   /* Size to the tallest flower, never a constant: stems run to 160 and a fixed plot clips the heads. */
   const gardenHeight = Math.max(GARDEN_MIN_HEIGHT, ...flowers.map(flowerBoxHeight))
+  const clay = flowers.some((flower) => flower.artVersion === 3)
   const hour = ritualTime(now)
   const time = TIME_SKY[hour]
   const isNight = hour === 'night'
@@ -179,6 +181,7 @@ export default function GardenScene({
           styles.scene,
           compact && flowers.length === 0 && styles.sceneCompact,
           variant === 'meadow' && styles.sceneMeadow,
+          clay && styles.sceneClay,
         ]
           .filter(Boolean)
           .join(' ')}
@@ -240,7 +243,7 @@ export default function GardenScene({
                   style={{ left: `${target.left}%`, bottom: `${headUp}px` }}
                   aria-hidden
                 >
-                  <Bee />
+                  {clay ? <ClayBee /> : <Bee />}
                 </div>
               )
             })()}

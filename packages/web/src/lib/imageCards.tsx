@@ -4,6 +4,7 @@ import type { FlowerSpec } from '../garden'
 import { drawableFlower } from '../garden'
 import FlowerSVG, { flowerExportHeight } from '../components/FlowerSVG'
 import { W, H, Soil, SoilDefs } from './imageCardPrimitives'
+import MeadowImage from './MeadowImage'
 export { W, H, soilPaths } from './imageCardPrimitives'
 export { GardenDuetImage, duetLabel, type GardenDuetImageOpts } from './GardenDuetImage'
 
@@ -128,6 +129,8 @@ export function PressedFlowerImage({ flower, meaning }: { flower: FlowerSpec; me
 }
 
 export function ShareImage({ flowers, from, to }: GardenImageOpts) {
+  if (flowers.some((flower) => flower.artVersion === 3))
+    return <MeadowImage flowers={flowers} from={from} to={to} />
   /*
    * Repaired here, not just at the fetch boundary. This is the last place before the picture leaves
    * the app for somebody's photo roll or a stranger's link preview, and an unrepaired stemHeight
@@ -228,6 +231,8 @@ export const OG_W = 1200
 export const OG_H = 630
 
 export function OgCard({ flowers, from, to }: GardenImageOpts) {
+  if (flowers.some((flower) => flower.artVersion === 3))
+    return <MeadowImage flowers={flowers} from={from} to={to} wide />
   const drawable = flowers.map(drawableFlower)
   const panelX = 70
   const panelY = 128

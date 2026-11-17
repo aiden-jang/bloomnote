@@ -36,7 +36,7 @@
   letter-spacing: -0.035em;
 }
 .headline em {
-  color: var(--pink-deep);
+  color: var(--green-deep);
   font-weight: 400;
 }
 .subtitle {

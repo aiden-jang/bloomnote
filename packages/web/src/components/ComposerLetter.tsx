@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import ComposerSecret from './ComposerSecret'
+import PaperFlower from './PaperFlower'
 import type { ComposerDraft } from '../lib/useComposerDraft'
 import styles from './ComposerLetter.module.css'
 
@@ -10,6 +11,9 @@ export default function ComposerLetter({
 }: Pick<ComposerDraft, 'fields' | 'set'> & { children: ReactNode }) {
   return (
     <div className={styles.letter}>
+      <span className={styles.paperMark} aria-hidden="true">
+        <PaperFlower />
+      </span>
       <div className={styles.greeting}>
         <label htmlFor="garden-to">Dear</label>
         <input

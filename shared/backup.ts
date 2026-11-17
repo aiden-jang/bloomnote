@@ -5,7 +5,7 @@ export const MAX_VOICE_BYTES = 2 * 1024 * 1024
 export const GARDEN_ID = /^[A-Za-z0-9]{4,12}$/
 
 export interface BackupFlower {
-  artVersion?: 2 | undefined
+  artVersion?: 2 | 3 | undefined
   name: string
   meaning: string
   petalColors: [string, string, string]
@@ -107,7 +107,7 @@ export function backupGarden(value: unknown, depth = 0): BackupGarden {
     if (!['round', 'elongated', 'bell', 'small', 'star'].includes(String(shape)))
       return fail('A flower shape is unsupported.')
     return {
-      ...(f.artVersion === 2 ? { artVersion: 2 as const } : {}),
+      ...(f.artVersion === 2 || f.artVersion === 3 ? { artVersion: f.artVersion } : {}),
       name: text(f.name),
       meaning: text(f.meaning),
       petalColors: f.petalColors.map(color) as [string, string, string],

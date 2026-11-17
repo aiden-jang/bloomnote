@@ -71,9 +71,9 @@
   --line: var(--green-pale);
 
   --letter-paper: #fffdf7;
-  --letter-desk: #eef0e7;
-  --letter-ground: #f5f4ea;
-  --letter-line: #ced5c5;
+  --letter-desk: #f4f4ec;
+  --letter-ground: #f7f6ee;
+  --letter-line: #d7dbcd;
   --letter-width: 1040px;
   --folio-paper: #fffdf8;
   --folio-control: #778674;

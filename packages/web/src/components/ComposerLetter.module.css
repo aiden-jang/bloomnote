@@ -2,23 +2,25 @@
   position: relative;
   padding: 30px 36px 26px;
   border: 1px solid var(--letter-line);
-  border-radius: 2px 16px 2px 2px;
+  border-radius: 8px 24px 8px 8px;
   background: var(--letter-paper);
-  box-shadow: 0 12px 28px -18px #284d3a59;
+  box-shadow:
+    0 3px 5px #4b513210,
+    0 16px 32px -24px #38452a40;
 }
 .letter::before {
   content: '';
   position: absolute;
   inset: 0 0 auto auto;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   border-left: 1px solid var(--letter-line);
   border-bottom: 1px solid var(--letter-line);
-  border-radius: 0 14px 0 3px;
-  background: var(--letter-ground);
+  border-radius: 0 22px 0 4px;
+  background: linear-gradient(45deg, var(--letter-paper), var(--letter-ground));
 }
 .letter::after {
-  content: '';
+  content: none;
   position: absolute;
   inset: auto 12px -5px;
   height: 5px;
@@ -30,6 +32,14 @@
   align-items: baseline;
   gap: 6px;
   font: 400 28px/1.4 var(--serif);
+  padding-right: 34px;
+}
+.paperMark {
+  position: absolute;
+  top: 22px;
+  right: 20px;
+  pointer-events: none;
+  rotate: 12deg;
 }
 .greeting input {
   min-width: 4ch;

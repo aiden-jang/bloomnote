@@ -1,5 +1,6 @@
 import StationeryArt from './StationeryArt'
 import GiftPacket from './GiftPacket'
+import PaperFlower from './PaperFlower'
 import ReadingSize from './ReadingSize'
 import RecipientHeader from './RecipientHeader'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -234,6 +235,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 aria-hidden={!msgVisible}
                 style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
               >
+                <span className={styles.paperMark} aria-hidden="true">
+                  <PaperFlower />
+                </span>
                 {message ? (
                   <ReadingSize>
                     <p className={styles.messageText}>{message}</p>

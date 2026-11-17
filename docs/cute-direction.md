@@ -1,43 +1,52 @@
-# Botanical gift direction
+# Soft flowers, green ink
 
-Bloomnote presents a small paper gift that opens into a garden and the sender's letter.
-The [authored botanical sheet](art/botanical-study.svg) records full plants and small specimens.
-These are runtime SVG models, not a flattened generated background.
+The selected direction pairs soft clay flowers with forest-green controls, warm ivory letters and
+Bloomnote's existing single-column composer and open meadow. Flower colors carry the pink, lilac
+and yellow; the interface stays quiet enough for the sender's words.
 
-## Flowers and compatibility
+The [rendered flower sheet](art/clay-study.svg) is generated from the actual runtime components.
+It shows six full plants and their small specimen heads. The artwork is scalable SVG geometry,
+not a flattened background or a replacement for the interactive garden.
 
-New designs receive an optional per-flower artVersion marker of 2 in designGarden.ts. The model
-request and quota are unchanged. FlowerSVG.tsx keeps the original renderer for flowers without that
-marker. BotanicalFlower.tsx provides layered dahlia, airy cosmos, seeded sunflower, cupped rose,
-hanging bluebell and clustered hydrangea heads, with different stems and leaves. Unknown names keep
-their name and meaning and use a drawable wildflower silhouette. Bell-shaped unknowns get hanging
-bells without relabeling the flower.
+## Flowers and saved gifts
 
-Scene flowers, specimen heads, pressed images and garden exports share the botanical geometry.
-Original gifts retain their legacy renderer and export framing. Portable backups preserve the new
-marker, including replies; restoring a legacy backup does not upgrade its art. The library summary
-still stores color swatches rather than full flower specs, so its small archive flowers remain
-illustrative swatch previews. It does not claim to reproduce an exact saved flower.
+New designs receive artVersion 3 after the design response is normalized. The model request,
+generation quota, saved meanings and supplied colors are unchanged. ClayFlower.tsx and ClayHead.tsx
+provide rounded dahlia, cosmos, sunflower, rose, bluebell and hydrangea families. Unfamiliar names
+retain their names and meanings, with a drawable wildflower or bell-shaped fallback.
 
-## Opening and interaction
+FlowerSVG.tsx retains the original renderer for unmarked gifts and the botanical renderer for
+version 2. Portable backups and nested reply gardens preserve both version markers. Reading or
+restoring an older gift never upgrades its flower artwork.
 
-GiftPacket.tsx addresses the folded packet with the saved recipient and sender names. One button
-opens it by pointer or keyboard. The flap unfolds briefly before the live stems and flowers appear;
-the sender's words appear promptly, independently of flower count. Focus moves to the recipient
-heading after opening. Reduced motion skips the wrapper animation and settles the plants directly.
-Empty flower lists can still reveal a note. Replaying regrows the same garden.
+Scene plants, specimen heads, pressed images and reply-pair exports share the same flower geometry.
+ClayPaint.tsx scopes gradients and shadows to each instance, including multiple gardens in one
+export. Incomplete stored palettes are repaired before paints are built. Version 3 square cards
+and link previews use the open meadow; earlier gifts retain their previous export composition.
+Exports continue to omit the sender's note and secret.
 
-Sympathy and get-well gardens omit the traveling bee, drifting petals and mood aura. Ordinary gardens
-keep the small bee, now with a readable face. Watering and replies remain optional gestures. The
-feeling buttons use drawn botanical marks. Notes, composer paper and library cards share folded
-edges, muted paper colors and a small keepsake treatment. Secrets sit on a tucked paper slip.
-Existing errors, account state, drafts, sharing and access facts retain their direct copy.
+Archive summaries store color swatches rather than complete flowers. Their small clay previews
+are illustrative color summaries; opening or exporting a saved garden uses its actual flower data.
 
-## Review status
+## Paper and interaction
 
-The new cat-and-garden concept shown in the conversation established palette and material direction.
-The committed flower sheet was rendered from the actual SVG components and inspected at plant and
-specimen sizes. Source checks cover legacy rendering, version preservation, SVG export reuse,
-unknown-flower fallback and actual design-response normalization. The real Worker suite, including the KV round-trip regression, passes on the supported Node runtime.
-Keyboard/browser opening checks are included, but the host blocks browser launch in this environment,
-so full phone/desktop visual sign-off remains unverified here.
+Composer and recipient letters share ivory surfaces, a folded corner and a small clay flower mark.
+The decorative mark is hidden from assistive technology and does not cover the reading-size control.
+Headlines and main controls use green ink. The writer's text stays readable and editable.
+
+Gift opening, blooming, flower meanings, watering, replies, secrets, scheduling and sharing retain
+existing behavior. The clay bee appears only on ordinary gardens. Sympathy and get-well gardens
+remain quiet. Reduced motion uses settled flower states without infinite sway.
+
+## Review
+
+The actual composer and recipient reveal were inspected in the connected browser at phone and
+desktop sizes, including a 320px writing view with longer names and a longer note. The flower-meaning
+interaction was checked on a phone. The rendered six-family sheet and square keepsake were also
+inspected. Tests cover portable backups, mixed-version replies, real KV round trips, scoped paint
+references, rasterization and shared live/export geometry. The browser journey checks version 3
+plants and the spacing between the decorative mark and reading-size control.
+
+The full non-browser verification chain passes, including builds, audit, source checks, frontend
+tests and real Worker tests. Automated browser verification remains blocked by host permissions
+when Chromium starts; those layout assertions have not completed in this environment.

@@ -4,8 +4,8 @@
 export type PetalShape = 'round' | 'elongated' | 'bell' | 'small' | 'star'
 
 export interface FlowerSpec {
-  /** Absent on original gardens; only newly designed flowers use the botanical model. */
-  artVersion?: 2 | undefined
+  /** Saved gifts keep their renderer: original, botanical (2), or soft clay (3). */
+  artVersion?: 2 | 3 | undefined
   name: string
   meaning: string
   petalColors: [string, string, string]

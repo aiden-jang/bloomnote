@@ -25,6 +25,7 @@ function lighten(hex: string, amount: number): string {
 export function cardBloom(color: string, gardenId: string, index: number): FlowerSpec {
   const h = hash(`${gardenId}:${index}`)
   return {
+    artVersion: 3,
     name: '',
     meaning: '',
     petalColors: [color, lighten(color, 0.18), lighten(color, 0.36)],
