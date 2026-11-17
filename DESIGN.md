@@ -20,10 +20,17 @@ count stays alongside it, and both suggestion controls retain generous touch tar
 Examples show real flowers on an empty desk. A compact, labeled specimen sits beside the introduction
 using static versions of the existing full-plant art; beginning a draft removes it. Generated and recipient
 gardens retain their live meadow. Generation shows the live growing garden and
-Cancel action, followed by the sender's note on paper. The finished composer places the live garden
-above the sharing paper, with a wider result area and clear separation between primary sharing
-and secondary image/another-garden actions. The recipient note and flower meanings sit in a disclosure below it,
-alongside a link to the full reveal. A read-only link remains selectable when copying fails.
+Cancel action, followed by the sender's note on paper. The finished composer presents an addressed
+ivory packet with a clay flower sticker and small specimens of the chosen flowers. Its inline preview
+reuses the recipient view: opening reveals the saved garden, original note, optional secret and
+meanings. A rewrap action restores focus to the packet. The ready heading receives focus after
+generation, and primary sharing sits above the selectable garden link. Image saving, different
+flowers and another garden remain secondary. The actual recipient link is available separately.
+A failed reroll retains the previous gift.
+
+The sender preview does not record recipient visits, received-library entries, reactions or flower
+journal edits. The sender's scheduled-gift screen displays its saved opening time with year and timezone;
+the sender can preview the future opening without changing when the actual recipient link opens.
 
 Recipient pages place a wider open meadow above a centered letter. The garden has a soft atmospheric
 ground and a thin baseline instead of a boxed soil bed. Flower geometry and growth, sway, bee,

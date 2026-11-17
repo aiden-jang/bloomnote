@@ -12,7 +12,7 @@
 }
 .shareTitle em {
   display: block;
-  color: var(--pink-deep);
+  color: var(--green-deep);
   font-weight: 400;
 }
 .scheduleConfirm {
@@ -20,39 +20,40 @@
   max-width: 52ch;
   color: var(--text-mid);
   font-size: 14px;
+  line-height: 1.6;
 }
 .garden {
   margin: 20px 0 26px;
   width: 100%;
   min-width: 0;
 }
-.paper,
-.growingNote,
-.previewMessage {
-  position: relative;
-  padding: 28px 32px;
-  background: var(--letter-paper);
-  box-shadow: 0 12px 28px -20px #294b3a80;
+.recipientPreview {
+  min-width: 0;
+  margin: 18px 0 24px;
+  padding: 12px;
+  border: 1px solid var(--letter-line);
+  border-radius: 18px;
+  background: var(--letter-ground);
 }
-.paper::after,
-.growingNote::after,
-.previewMessage::after {
-  content: '';
-  position: absolute;
-  inset: auto 10px -5px;
-  height: 5px;
-  background: var(--letter-line);
+.paper,
+.growingNote {
+  position: relative;
+  padding: 24px 28px;
+  border: 1px solid var(--letter-line);
+  border-radius: 10px;
+  background: var(--letter-paper);
+  box-shadow: 0 10px 28px -24px #294b3a60;
 }
 .urlBox {
   display: grid;
   gap: 8px;
   min-width: 0;
-  margin-top: 6px;
+  margin-top: 16px;
   color: var(--text-mid);
 }
 .urlLabel,
 .urlStatus {
-  font-size: 14px;
+  font-size: 13px;
 }
 .urlText {
   width: 100%;
@@ -63,13 +64,12 @@
   border-radius: 8px;
   background: transparent;
   color: var(--green-deep);
-  font: inherit;
-  font-size: 16px;
+  font: 400 16px/1.5 var(--sans);
 }
 .shareActions {
   display: grid;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 16px;
 }
 .shareActionsPrimary {
   display: flex;
@@ -104,6 +104,11 @@
   background: transparent;
   color: var(--green-deep);
 }
+.shareActions > .copyBtnSecondary {
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .shareBtn:focus-visible,
 .copyBtn:focus-visible,
 .copyBtnSecondary:focus-visible {
@@ -122,15 +127,13 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px 18px;
-  margin-top: 6px;
   padding-top: 8px;
   border-top: 1px solid var(--letter-line);
 }
 .rerollBtn,
 .resetBtn,
 .cancelBtn,
-.fullRevealPreview,
-.previewSecretReveal {
+.fullRevealPreview {
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -140,8 +143,7 @@
   border: 0;
   background: transparent;
   color: var(--text-mid);
-  font: inherit;
-  font-size: 14px;
+  font: 400 14px/1.5 var(--sans);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -179,57 +181,10 @@
   white-space: pre-wrap;
 }
 .fullRevealPreview {
+  display: flex;
   width: fit-content;
-  margin: 0 auto 16px;
-}
-.previewDetails {
-  border-top: 1px solid var(--letter-line);
-}
-.previewDetails > summary {
-  min-height: 44px;
-  padding: 14px 0;
-  color: var(--text-mid);
+  margin: 8px auto 0;
   font-size: 13px;
-  cursor: pointer;
-}
-.previewSenderLine {
-  margin: 18px 0;
-  color: var(--text-mid);
-  font-size: 14px;
-  text-align: left;
-  overflow-wrap: anywhere;
-}
-.previewFromName {
-  font: italic 400 21px/1.5 var(--serif);
-}
-.previewMessage {
-  margin-bottom: 28px;
-}
-.previewMessageText {
-  font: 400 25px/1.55 var(--serif);
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-.previewSig {
-  margin-top: 20px;
-  font: italic 400 24px/1.3 var(--serif);
-  overflow-wrap: anywhere;
-}
-.previewSecret {
-  border-top: 1px solid var(--letter-line);
-  padding-top: 10px;
-  margin-top: 18px;
-}
-.previewSecretText {
-  margin-top: 10px;
-  color: var(--text-mid);
-  font: italic 400 18px/1.55 var(--serif);
-  overflow-wrap: anywhere;
-}
-.previewGrownOn {
-  margin-top: 18px;
-  color: var(--text-mid);
-  font-size: 12px;
 }
 @media (max-width: 600px) {
   .shareCard,
@@ -240,12 +195,14 @@
     font-size: 38px;
   }
   .paper,
-  .growingNote,
-  .previewMessage {
-    padding: 26px 24px;
+  .growingNote {
+    padding: 20px;
   }
   .shareMore {
     gap: 8px 12px;
+  }
+  .recipientPreview {
+    padding: 6px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -256,12 +213,9 @@
   }
 }
 @media print {
-  .paper,
-  .previewMessage {
+  .paper {
     box-shadow: none;
   }
-  .paper::after,
-  .previewMessage::after,
   .shareActions,
   .fullRevealPreview {
     display: none;

@@ -1,4 +1,5 @@
 .packet {
+  --gift-open-ms: 440ms;
   display: grid;
   justify-items: center;
   width: min(100%, 540px);
@@ -54,25 +55,52 @@
   color: var(--text-mid);
   font-size: 12px;
 }
+.contents {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  pointer-events: none;
+}
+:global([data-recipient-preview]) .packet {
+  padding: 8px 12px 18px;
+}
+:global([data-recipient-preview]) .action {
+  margin-top: 12px;
+}
+:global([data-recipient-preview]) .count {
+  margin-top: 8px;
+}
 .flap {
-  transform-origin: 180px 60px;
+  transform-origin: 180px 58px;
+}
+.letter {
+  transform-origin: 180px 190px;
 }
 .packet[data-opening='true'] .flap {
-  animation: unfold 280ms ease-in both;
+  animation: unfold var(--gift-open-ms) ease-in-out both;
 }
 .packet[data-opening='true'] .seal {
-  animation: unseal 200ms ease-out both;
+  animation: unseal 240ms ease-out both;
+}
+.packet[data-opening='true'] .letter {
+  animation: liftLetter var(--gift-open-ms) ease-out both;
 }
 @keyframes unfold {
   to {
-    transform: translateY(-22px) scaleY(0.2);
+    transform: translateY(-12px) scaleY(-0.6);
     opacity: 0;
   }
 }
 @keyframes unseal {
   to {
-    transform: translateY(12px);
+    transform: translateY(-10px) rotate(-8deg);
     opacity: 0;
+  }
+}
+@keyframes liftLetter {
+  to {
+    transform: translateY(-18px);
   }
 }
 @media (max-width: 440px) {
@@ -88,7 +116,8 @@
     transform: none;
   }
   .packet[data-opening='true'] .flap,
-  .packet[data-opening='true'] .seal {
+  .packet[data-opening='true'] .seal,
+  .packet[data-opening='true'] .letter {
     animation: none;
   }
 }

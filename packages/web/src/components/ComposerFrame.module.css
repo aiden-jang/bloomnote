@@ -81,18 +81,6 @@
   font-size: 13px;
   line-height: 1.4;
 }
-.preview {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-  min-width: 0;
-  max-width: 586px;
-  margin-inline: auto;
-}
-.preview > a {
-  min-height: 44px;
-}
 .writing {
   gap: 20px;
 }

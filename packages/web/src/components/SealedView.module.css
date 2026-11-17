@@ -26,12 +26,14 @@
 .paper {
   position: relative;
   padding: 32px;
+  border: 1px solid var(--letter-line);
+  border-radius: 12px;
   background: var(--letter-paper);
   box-shadow: 0 12px 28px -20px #294b3a80;
   text-align: center;
 }
 .paper::after {
-  content: '';
+  content: none;
   position: absolute;
   inset: auto 10px -5px;
   height: 5px;
@@ -40,13 +42,18 @@
 .plot {
   width: 100%;
   max-width: 280px;
-  aspect-ratio: 5 / 3;
+  aspect-ratio: 3 / 2;
   margin: 20px auto 28px;
 }
 .envelope {
   width: 100%;
   height: 100%;
   animation: breathe 4s ease-in-out infinite;
+}
+.envelope > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .greeting {
   font: 400 29px/1.25 var(--serif);

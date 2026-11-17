@@ -154,7 +154,7 @@ test.describe('compose → bloom → share → recipient', () => {
 
     await page.getByRole('button', { name: /grow .* garden/i }).click()
 
-    await page.getByText('the note and flower meanings', { exact: true }).click()
+    await page.getByRole('button', { name: 'preview the opening', exact: true }).click()
     await expect(page.getByText(NOTE)).toBeVisible()
     await expect(page.getByText('for the drive, and for not making it a thing.').first()).toBeVisible()
 
@@ -325,12 +325,11 @@ test.describe('compose → bloom → share → recipient', () => {
     await page.getByPlaceholder('their name').fill('Nadia')
     await page.getByLabel('your note').fill(NOTE)
     await page.getByRole('button', { name: /grow .* garden/i }).click()
-    await page.getByText('the note and flower meanings', { exact: true }).click()
+    await page.getByRole('button', { name: 'preview the opening', exact: true }).click()
     await expect(page.getByText(GARDEN.flowers[0]!.name, { exact: true }).first()).toBeVisible()
 
     await page.getByRole('button', { name: /different flowers/i }).click()
-    await expect(page.getByText('Bluebell', { exact: true })).toHaveCount(1)
-    await page.getByText('the note and flower meanings', { exact: true }).click()
+    await page.getByRole('button', { name: 'preview the opening', exact: true }).click()
     await expect(page.getByText('Bluebell', { exact: true }).first()).toBeVisible()
     await expect(page.getByText(GARDEN.flowers[0]!.name, { exact: true })).toHaveCount(0)
   })

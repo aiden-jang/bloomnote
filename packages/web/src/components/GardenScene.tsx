@@ -48,6 +48,7 @@ interface Props {
   journalGardenId?: string | undefined
   journalFrom?: string | undefined
   now?: Date
+  readOnly?: boolean
 }
 
 export default function GardenScene({
@@ -69,6 +70,7 @@ export default function GardenScene({
   journalGardenId,
   journalFrom,
   now = new Date(),
+  readOnly = false,
 }: Props) {
   const sky = gradientFor(occasion)
   /* Size to the tallest flower, never a constant: stems run to 160 and a fixed plot clips the heads. */
@@ -370,6 +372,7 @@ export default function GardenScene({
           journalGardenId={journalGardenId}
           journalFrom={journalFrom}
           onClose={closeAndRestoreFocus}
+          readOnly={readOnly}
         />
       )}
     </div>

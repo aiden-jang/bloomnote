@@ -1,10 +1,12 @@
-import type { ReactNode } from 'react'
+import type { GardenData } from '../garden'
+import { useEffect, useRef } from 'react'
+import ComposerPreview from './ComposerPreview'
 import styles from './GardenResult.module.css'
 
 interface Props {
-  scene: ReactNode
+  garden: GardenData
+  gardenId: string
   shareUrl: string
-  recipient: string
   copied: boolean
   shareStatus: 'sharing' | 'shared' | null
   imageStatus: 'saving' | 'shared' | 'downloaded' | null
@@ -13,8 +15,6 @@ interface Props {
   isRerolling: boolean
   errorText: string | null
   statusText: string
-  scheduleOpen: boolean
-  unlockLocal: string
   onShare: () => void
   onCopy: () => void
   onSaveImage: () => void
@@ -23,9 +23,9 @@ interface Props {
 }
 
 export default function ShareCard({
-  scene,
+  garden,
+  gardenId,
   shareUrl,
-  recipient,
   copied,
   shareStatus,
   imageStatus,
@@ -34,24 +34,47 @@ export default function ShareCard({
   isRerolling,
   errorText,
   statusText,
-  scheduleOpen,
-  unlockLocal,
   onShare,
   onCopy,
   onSaveImage,
   onReroll,
   onStartOver,
 }: Props) {
+  const recipient = garden.to?.trim() || ''
+  const unlockAt = garden.unlockAt
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      headingRef.current?.focus({ preventScroll: true })
+      headingRef.current?.scrollIntoView({ block: 'start' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [gardenId])
   return (
     <div className={styles.shareCard}>
-      <h2 className={styles.shareTitle}>
+      <h2 className={styles.shareTitle} ref={headingRef} tabIndex={-1}>
         {recipient ? `${recipient}’s garden` : 'Your garden'}
-        <em> {scheduleOpen ? 'opens later' : 'is ready'}</em>
+        <em> {unlockAt ? 'opens later' : 'is ready'}</em>
       </h2>
       <p className={styles.scheduleConfirm}>
-        Nothing has been sent. Share the link with {recipient.trim() || 'your person'} when you’re ready.
+        Share the link with {recipient.trim() || 'your person'} when you’re ready.
       </p>
-      <div className={styles.garden}>{scene}</div>
+      {unlockAt && (
+        <p className={styles.scheduleConfirm}>
+          Their link opens{' '}
+          {new Date(unlockAt).toLocaleString(undefined, {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            year: 'numeric',
+            timeZoneName: 'short',
+          })}
+          . You can preview the opening now.
+        </p>
+      )}
+      {!isRerolling && <ComposerPreview key={gardenId} garden={garden} gardenId={gardenId} />}
       <div className={styles.paper}>
         {/* Re-roll failures land here; idle-phase errors render in a different slot during composition. */}
         {(errorText || shareError) && (
@@ -59,20 +82,28 @@ export default function ShareCard({
             {errorText || shareError}
           </p>
         )}
-        {scheduleOpen && unlockLocal && (
-          <p className={styles.scheduleConfirm}>
-            opens{' '}
-            {new Date(unlockLocal).toLocaleString(undefined, {
-              weekday: 'long',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-              year: 'numeric',
-              timeZoneName: 'short',
-            })}
-          </p>
-        )}
+        <div className={styles.shareActionsPrimary}>
+          {canShare && (
+            <button
+              className={styles.shareBtn}
+              onClick={onShare}
+              disabled={isRerolling || shareStatus !== null}
+            >
+              {shareStatus === 'sharing'
+                ? 'opening sharing…'
+                : shareStatus === 'shared'
+                  ? 'share sheet closed'
+                  : 'share garden'}
+            </button>
+          )}
+          <button
+            className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
+            onClick={onCopy}
+            disabled={isRerolling}
+          >
+            {copied ? 'link copied' : 'copy link'}
+          </button>
+        </div>
         {isRerolling ? (
           <div className={styles.urlBox}>
             <span className={styles.urlStatus} role="status">
@@ -91,29 +122,6 @@ export default function ShareCard({
           </label>
         )}
         <div className={styles.shareActions}>
-          <div className={styles.shareActionsPrimary}>
-            {canShare && (
-              <button
-                className={styles.shareBtn}
-                onClick={onShare}
-                disabled={isRerolling || shareStatus !== null}
-              >
-                {shareStatus === 'sharing'
-                  ? 'opening sharing…'
-                  : shareStatus === 'shared'
-                    ? 'share sheet closed'
-                    : 'share'}
-              </button>
-            )}
-            <button
-              className={canShare ? styles.copyBtnSecondary : styles.copyBtn}
-              onClick={onCopy}
-              disabled={isRerolling}
-            >
-              {copied ? 'link copied' : 'copy link'}
-            </button>
-          </div>
-
           <button
             type="button"
             className={styles.copyBtnSecondary}
@@ -145,6 +153,15 @@ export default function ShareCard({
             </button>
           </div>
         </div>
+        <a
+          href={shareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-describedby="external-link-hint"
+          className={styles.fullRevealPreview}
+        >
+          open recipient link <span aria-hidden>↗</span>
+        </a>
       </div>
     </div>
   )

@@ -64,7 +64,7 @@ export function useShareActions(
       trackShareLinkCopied()
     } catch {
       if (currentUrl.current === shareUrl)
-        setShareError('Couldn’t copy the link. Select it above to copy it yourself, or try again.')
+        setShareError('Couldn’t copy the link. Select the garden link to copy it yourself, or try again.')
     }
   }, [shareUrl])
 

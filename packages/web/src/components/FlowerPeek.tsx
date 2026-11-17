@@ -17,9 +17,17 @@ type Props = {
   journalGardenId?: string | undefined
   journalFrom?: string | undefined
   onClose: () => void
+  readOnly?: boolean
 }
 
-export default function FlowerPeek({ flower, index, journalGardenId, journalFrom, onClose }: Props) {
+export default function FlowerPeek({
+  flower,
+  index,
+  journalGardenId,
+  journalFrom,
+  onClose,
+  readOnly = false,
+}: Props) {
   const [shareStatus, setShareStatus] = useState<ShareStatus>(null)
   const [imageStatus, setImageStatus] = useState<ImageStatus>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -128,7 +136,7 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
       <div className={styles.flowerPeekCopy}>
         <h2>{flower.name}</h2>
         <p className={styles.flowerMeaning}>{meaning}</p>
-        {journalGardenId && (
+        {journalGardenId && !readOnly && (
           <button
             type="button"
             className={styles.flowerPeekKeep}
@@ -138,36 +146,38 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
             {journal.saved ? 'edit journal memory' : 'keep in my flower journal'}
           </button>
         )}
-        <div className={styles.flowerPeekActions}>
-          <button
-            type="button"
-            className={styles.flowerPeekShare}
-            onClick={() => void share()}
-            disabled={shareStatus !== null}
-          >
-            {shareStatus === 'sharing'
-              ? 'opening sharing…'
-              : shareStatus === 'shared'
-                ? 'share sheet closed'
-                : shareStatus === 'copied'
-                  ? 'meaning copied'
-                  : 'share this flower'}
-          </button>
-          <button
-            type="button"
-            className={styles.flowerPeekShare}
-            onClick={() => void saveImage()}
-            disabled={imageStatus !== null}
-          >
-            {imageStatus === 'saving'
-              ? 'making image…'
-              : imageStatus === 'shared'
-                ? 'share sheet closed'
-                : imageStatus === 'downloaded'
-                  ? 'download started'
-                  : 'save a pressed-flower card'}
-          </button>
-        </div>
+        {!readOnly && (
+          <div className={styles.flowerPeekActions}>
+            <button
+              type="button"
+              className={styles.flowerPeekShare}
+              onClick={() => void share()}
+              disabled={shareStatus !== null}
+            >
+              {shareStatus === 'sharing'
+                ? 'opening sharing…'
+                : shareStatus === 'shared'
+                  ? 'share sheet closed'
+                  : shareStatus === 'copied'
+                    ? 'meaning copied'
+                    : 'share this flower'}
+            </button>
+            <button
+              type="button"
+              className={styles.flowerPeekShare}
+              onClick={() => void saveImage()}
+              disabled={imageStatus !== null}
+            >
+              {imageStatus === 'saving'
+                ? 'making image…'
+                : imageStatus === 'shared'
+                  ? 'share sheet closed'
+                  : imageStatus === 'downloaded'
+                    ? 'download started'
+                    : 'save a pressed-flower card'}
+            </button>
+          </div>
+        )}
         {actionError && (
           <div className={styles.flowerPeekError}>
             <p role="alert">{actionError}</p>
@@ -180,7 +190,7 @@ export default function FlowerPeek({ flower, index, journalGardenId, journalFrom
             />
           </div>
         )}
-        {journalGardenId && (
+        {journalGardenId && !readOnly && (
           <>
             {journalOpen && (
               <div className={styles.journalEditor}>

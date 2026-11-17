@@ -9,7 +9,6 @@ export default function ComposerFrame({
   intro,
   occasion,
   flowers,
-  preview,
   demo,
   writing,
   children,
@@ -18,7 +17,6 @@ export default function ComposerFrame({
   intro: string | undefined
   occasion: string
   flowers: FlowerSpec[]
-  preview: ReactNode
   demo: boolean
   writing: boolean
   children: ReactNode
@@ -58,7 +56,6 @@ export default function ComposerFrame({
           )}
           {children}
         </div>
-        {preview && <div className={styles.preview}>{preview}</div>}
       </div>
       {footer}
     </div>

@@ -143,7 +143,7 @@ const records = ['Sam', 'Jamie', 'Maya', 'Casey'].map((to, i) => ({
         }
         if (name === 'generated') {
           await page.getByRole('button', { name: /^grow .+ garden$/i }).click()
-          await page.getByRole('link', { name: /preview the full reveal/ }).waitFor()
+          await page.getByRole('link', { name: /open recipient link/ }).waitFor()
         }
         if (name.startsWith('recipient'))
           await page.getByRole('button', { name: 'open the garden', exact: true }).waitFor()

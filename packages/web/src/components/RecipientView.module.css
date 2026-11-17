@@ -473,3 +473,45 @@
     display: none !important;
   }
 }
+
+.inlinePreview {
+  width: 100%;
+  min-width: 0;
+}
+.inlinePreview .topLabel {
+  margin: 8px 0 16px;
+  padding-inline: 10px;
+}
+.inlinePreview .fromText {
+  font-size: clamp(30px, 6vw, 40px);
+}
+.inlinePreview .folio {
+  margin-top: 0;
+  gap: 20px;
+}
+.inlinePreview .letterSide {
+  padding-inline: 4px;
+}
+.inlinePreview .legendWrap {
+  padding-inline: 10px;
+}
+.previewBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-inline: 10px;
+  color: var(--text-mid);
+  font-size: 12px;
+}
+.previewBar button {
+  min-height: 44px;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--green-deep);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

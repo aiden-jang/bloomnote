@@ -1,5 +1,5 @@
-import StationeryArt from './StationeryArt'
-import GiftPacket from './GiftPacket'
+import GiftPacket, { GIFT_OPEN_MS } from './GiftPacket'
+import RecipientActions from './RecipientActions'
 import PaperFlower from './PaperFlower'
 import ReadingSize from './ReadingSize'
 import RecipientHeader from './RecipientHeader'
@@ -9,15 +9,13 @@ import { SecretEnvelope } from './SecretEnvelope'
 import GardenScene from './GardenScene'
 import FlowerLegend from './FlowerLegend'
 import MemoryTrail from './MemoryTrail'
-import FlowerJournalShelf from './FlowerJournalShelf'
 import LetterHeader from './LetterHeader'
 import Watering from './Watering'
-import { buildRemixUrl, type GardenData } from '../garden'
+import type { GardenData } from '../garden'
 import { prewarmGardenImage } from '../lib/gardenImage'
 import { useAuth } from '../auth/AuthContext'
 import { recordReceived } from '../lib/account'
-import { trackGardenBloomed, trackGardenOpened, trackReplyStarted } from '../lib/analytics'
-import { useRecipientKeepsakes } from '../lib/useRecipientKeepsakes'
+import { trackGardenBloomed, trackGardenOpened } from '../lib/analytics'
 import { formatGardenDate } from '../lib/formatDate'
 import { playChime } from '../sound'
 import { prefersReducedMotion } from '../lib/motion'
@@ -26,6 +24,7 @@ import styles from './RecipientView.module.css'
 interface Props {
   gardenData: GardenData
   gardenId: string
+  preview?: boolean
 }
 
 /* Long enough to cross the gap to the panel on purpose, short enough that leaving still feels
@@ -34,27 +33,16 @@ const FLOWER_PANEL_GRACE_MS = 260
 
 type Phase = 'sealed' | 'opening' | 'blooming'
 
-export default function RecipientView({ gardenData, gardenId }: Props) {
+export default function RecipientView({ gardenData, gardenId, preview = false }: Props) {
   const { flowers, message, secret, from, to, bouquetNote, previous, createdAt, occasion, mood } = gardenData
   const grownOn = formatGardenDate(createdAt)
 
-  const {
-    shareStatus,
-    imageStatus,
-    duetStatus,
-    noteCopied,
-    shareError,
-    handleSaveImage,
-    handleSaveDuet,
-    handleShareGarden,
-    handleCopyNote,
-  } = useRecipientKeepsakes(gardenData)
   const [secretRevealed, setSecretRevealed] = useState(false)
 
   const { user } = useAuth()
   const [savedFor, setSavedFor] = useState<{ accountId: string; gardenId: string } | null>(null)
   useEffect(() => {
-    if (!user || !gardenId) return
+    if (preview || !user || !gardenId) return
     let cancelled = false
     void recordReceived(gardenId).then((saved) => {
       if (saved && !cancelled) setSavedFor({ accountId: user.id, gardenId })
@@ -62,7 +50,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     return () => {
       cancelled = true
     }
-  }, [user, gardenId])
+  }, [user, gardenId, preview])
   const [phase, setPhase] = useState<Phase>('sealed')
   const [msgVisible, setMsgVisible] = useState(false)
   // Re-key rather than reverse: the bloom timeline is local animation state, and replaying
@@ -70,24 +58,26 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   const [bloomVersion, setBloomVersion] = useState(0)
 
   useEffect(() => {
+    if (preview) return
     trackGardenOpened({
       flowerCount: flowers.length,
       hasFromName: !!from,
       hasThread: !!previous,
     })
-  }, [flowers.length, from, previous])
+  }, [flowers.length, from, previous, preview])
 
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const packetRef = useRef<HTMLButtonElement>(null)
 
   const handleOpen = (): void => {
     setPhase(prefersReducedMotion() ? 'blooming' : 'opening')
     playChime()
-    trackGardenBloomed()
+    if (!preview) trackGardenBloomed()
   }
 
   useEffect(() => {
     if (phase === 'opening') {
-      const timer = setTimeout(() => setPhase('blooming'), 280)
+      const timer = setTimeout(() => setPhase('blooming'), GIFT_OPEN_MS)
       return () => clearTimeout(timer)
     }
     if (phase === 'blooming') headingRef.current?.focus()
@@ -99,10 +89,6 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
     setMsgVisible(false)
     setBloomVersion((version) => version + 1)
     playChime()
-  }
-
-  const handleReplyClick = (): void => {
-    trackReplyStarted()
   }
 
   const [focused, setFocused] = useState<number | null>(null)
@@ -148,9 +134,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
 
   /* Render the PNG before the tap: navigator.share needs the gesture still live. */
   useEffect(() => {
-    if (!msgVisible || flowers.length === 0) return
+    if (preview || !msgVisible || flowers.length === 0) return
     prewarmGardenImage({ flowers, from, to })
-  }, [msgVisible, flowers, from, to])
+  }, [msgVisible, flowers, from, to, preview])
 
   // A counter, not a flag, so the scene can replay the drops without this component timing a reset.
   const [wateredAt, setWateredAt] = useState(0)
@@ -166,14 +152,21 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
   }, [phase, bloomVersion])
   const handleAllBloomed = useCallback(() => setMsgVisible(true), [])
 
-  // The reply URL points at the SAME short id: `/g/abc123` and `/r/abc123` are two views of one
-  // KV record, not two writes.
-  const remixHref = buildRemixUrl(gardenId)
+  const rewrap = () => {
+    setPhase('sealed')
+    setMsgVisible(false)
+    focusFlower(null)
+    setSecretRevealed(false)
+    setFlowerTapped(false)
+    setBloomVersion((version) => version + 1)
+    requestAnimationFrame(() => packetRef.current?.focus())
+  }
 
   return (
     <div
-      data-letter-page="recipient"
-      className={styles.wrap}
+      data-letter-page={preview ? undefined : 'recipient'}
+      data-recipient-preview={preview || undefined}
+      className={preview ? styles.inlinePreview : styles.wrap}
       onPointerDownCapture={({ target }) => {
         if (target instanceof Element && target.closest('[data-flower-peek]')) panelPinned.current = true
       }}
@@ -181,13 +174,24 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
         if (target instanceof Element && target.closest('[data-flower-peek]')) panelPinned.current = true
       }}
     >
-      <LetterHeader />
-      <RecipientHeader
-        from={from}
-        to={to}
-        headingRef={headingRef}
-        saved={savedFor?.accountId === user?.id && savedFor?.gardenId === gardenId}
-      />
+      {!preview && <LetterHeader />}
+      {preview && phase === 'blooming' && (
+        <div className={styles.previewBar}>
+          <span>Recipient preview</span>
+          <button type="button" onClick={rewrap}>
+            wrap it back up
+          </button>
+        </div>
+      )}
+      {(!preview || phase === 'blooming') && (
+        <RecipientHeader
+          from={from}
+          to={to}
+          headingRef={headingRef}
+          saved={!preview && savedFor?.accountId === user?.id && savedFor?.gardenId === gardenId}
+          preview={preview}
+        />
+      )}
 
       <div className={styles.folio}>
         <div className={styles.gardenPlot}>
@@ -198,6 +202,9 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               count={flowers.length}
               opening={phase === 'opening'}
               onOpen={handleOpen}
+              buttonRef={packetRef}
+              flowers={preview ? flowers : undefined}
+              actionLabel={preview ? 'preview the opening' : 'open the garden'}
             />
           ) : (
             <GardenScene
@@ -209,7 +216,8 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               onFocus={focusFlower}
               onPreview={previewFlower}
               wateredAt={wateredAt}
-              journalGardenId={gardenId}
+              journalGardenId={preview ? undefined : gardenId}
+              readOnly={preview}
               journalFrom={from}
               occasion={occasion}
               mood={mood}
@@ -220,7 +228,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
             <p className={styles.tapHint}>tap a flower to see what it means</p>
           )}
 
-          {msgVisible && gardenId && (
+          {!preview && msgVisible && gardenId && (
             <Watering gardenId={gardenId} onWatered={() => setWateredAt((n) => n + 1)} />
           )}
         </div>
@@ -266,102 +274,14 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
                 {grownOn && <p className={styles.grownOn}>grown {grownOn}</p>}
               </div>
 
-              <div
-                className={`${styles.cta} ${msgVisible ? styles.visible : ''}`}
-                aria-hidden={!msgVisible}
-                style={{ visibility: msgVisible ? 'visible' : 'hidden' }}
-              >
-                {shareError && (
-                  <div className={styles.shareFallback}>
-                    <p role="alert">{shareError}</p>
-                    <label>
-                      Garden link
-                      <input
-                        readOnly
-                        value={window.location.href}
-                        onFocus={(event) => event.currentTarget.select()}
-                      />
-                    </label>
-                  </div>
-                )}
-                <a href={remixHref} className={styles.ctaBtn} onClick={handleReplyClick}>
-                  {from ? `grow ${from} a garden` : 'grow one back'}
-                </a>
-                <button
-                  type="button"
-                  className={styles.ctaShareBtn}
-                  onClick={(event) => void handleShareGarden(event.currentTarget)}
-                  disabled={shareStatus !== null}
-                >
-                  {shareStatus === 'sharing'
-                    ? 'opening sharing…'
-                    : shareStatus === 'shared'
-                      ? 'share sheet closed'
-                      : shareStatus === 'copied'
-                        ? 'link copied'
-                        : 'share this garden'}
-                </button>
-                <details className={styles.keepsake}>
-                  <summary>
-                    <StationeryArt kind="bookmark" />
-                    <span>keep this garden</span>
-                  </summary>
-                  <div className={styles.keepsakeActions}>
-                    {previous && (
-                      <button
-                        type="button"
-                        className={styles.keepsakeAction}
-                        onClick={() => void handleSaveDuet()}
-                        disabled={duetStatus !== null}
-                      >
-                        {duetStatus === 'saving'
-                          ? 'making image…'
-                          : duetStatus === 'shared'
-                            ? 'share sheet closed'
-                            : duetStatus === 'downloaded'
-                              ? 'download started'
-                              : 'save both gardens as an image'}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className={styles.keepsakeAction}
-                      onClick={() => void handleSaveImage()}
-                      disabled={imageStatus !== null}
-                    >
-                      {imageStatus === 'saving'
-                        ? 'making image…'
-                        : imageStatus === 'shared'
-                          ? 'share sheet closed'
-                          : imageStatus === 'downloaded'
-                            ? 'download started'
-                            : 'save it as an image'}
-                    </button>
-                    {message && (
-                      <button
-                        type="button"
-                        className={styles.keepsakeAction}
-                        onClick={() => void handleCopyNote()}
-                        disabled={noteCopied}
-                      >
-                        {noteCopied ? 'note copied' : 'copy the note'}
-                      </button>
-                    )}
-                    <button type="button" className={styles.keepsakeAction} onClick={() => window.print()}>
-                      print the garden
-                    </button>
-                    <button type="button" className={styles.keepsakeAction} onClick={handleReplayBloom}>
-                      watch it bloom again
-                    </button>
-                  </div>
-                  <FlowerJournalShelf currentGardenId={gardenId} />
-                </details>
-                <p className={styles.ctaSub}>
-                  <a href="/" className={styles.ctaSubLink}>
-                    write one for someone else
-                  </a>
-                </p>
-              </div>
+              {!preview && (
+                <RecipientActions
+                  gardenData={gardenData}
+                  gardenId={gardenId}
+                  msgVisible={msgVisible}
+                  onReplay={handleReplayBloom}
+                />
+              )}
             </div>
             <div
               className={`${styles.legendWrap} ${msgVisible ? styles.visible : ''}`}
@@ -377,7 +297,7 @@ export default function RecipientView({ gardenData, gardenId }: Props) {
               />
             </div>
 
-            {previous && (
+            {!preview && previous && (
               <div
                 className={`${styles.threadWrap} ${msgVisible ? styles.visible : ''}`}
                 aria-hidden={!msgVisible}

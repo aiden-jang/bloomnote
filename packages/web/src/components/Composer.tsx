@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import ComposerPreview from './ComposerPreview'
 import NoteField from './NoteField'
 import ExampleCarousel from './ExampleCarousel'
 import GardenScene from './GardenScene'
@@ -37,7 +36,7 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
   const [mineCount, setMineCount] = useState(() => countSentGardens())
   const draft = useComposerDraft({ remixSeed, idle: phase === 'idle' })
-  const { from, recipient, message, secret, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
+  const { from, recipient, message, occasion, mood, scheduleOpen, unlockLocal } = draft.fields
   const { hasDraft, undoDraft } = draft
 
   // Keyed on occasion only. Re-reading the clock every render would change the copy under
@@ -196,19 +195,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
               : 'Write someone a note. We’ll grow a garden from the details.'
           : undefined
       }
-      preview={
-        phase === 'designed' && garden && shareUrl ? (
-          <ComposerPreview
-            key={gardenId}
-            garden={garden}
-            shareUrl={shareUrl}
-            recipient={recipient}
-            from={from}
-            message={message}
-            secret={secret}
-          />
-        ) : null
-      }
       writing={phase === 'idle'}
       demo={showDemo}
       flowers={hero.flowers}
@@ -329,11 +315,11 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
 
       {phase === 'designed' && garden && <PetalFall key={gardenId ?? 'fall'} flowers={garden.flowers} />}
 
-      {phase === 'designed' && garden && shareUrl && (
+      {phase === 'designed' && garden && gardenId && shareUrl && (
         <ShareCard
-          scene={scene}
+          garden={garden}
+          gardenId={gardenId}
           shareUrl={shareUrl}
-          recipient={recipient}
           copied={copied}
           shareStatus={shareStatus}
           imageStatus={imageStatus}
@@ -342,8 +328,6 @@ export default function Composer({ remixSeed }: ComposerProps = {}) {
           isRerolling={isRerolling}
           errorText={errorText}
           statusText={statusText}
-          scheduleOpen={!!garden.unlockAt}
-          unlockLocal={garden.unlockAt ?? ''}
           onShare={handleShare}
           onCopy={handleCopy}
           onSaveImage={handleSaveImage}

@@ -1,75 +1,11 @@
-import { useState } from 'react'
-import BouquetNote from './BouquetNote'
-import FlowerLegend from './FlowerLegend'
-import { SecretEnvelope } from './SecretEnvelope'
-import type { DesignResult } from '../lib/designGarden'
-import { formatGardenDate } from '../lib/formatDate'
+import type { GardenData } from '../garden'
+import RecipientView from './RecipientView'
 import styles from './GardenResult.module.css'
 
-interface Props {
-  garden: DesignResult
-  shareUrl: string
-  recipient: string
-  from: string
-  message: string
-  secret: string
-}
-
-export default function ComposerPreview({ garden, shareUrl, recipient, from, message, secret }: Props) {
-  const [previewSecretRevealed, setPreviewSecretRevealed] = useState(false)
+export default function ComposerPreview({ garden, gardenId }: { garden: GardenData; gardenId: string }) {
   return (
-    <>
-      <a
-        href={shareUrl}
-        target="_blank"
-        aria-describedby="external-link-hint"
-        rel="noopener noreferrer"
-        className={styles.fullRevealPreview}
-      >
-        <span aria-hidden>◌</span>
-        preview the full reveal
-        <span aria-hidden>↗</span>
-      </a>
-      <details className={styles.previewDetails}>
-        <summary>the note and flower meanings</summary>
-        <p className={styles.previewSenderLine}>
-          {from.trim() ? (
-            <>
-              <span className={styles.previewFromName}>{from.trim()}</span>
-              {' grew '}
-              {recipient.trim() || 'them'}
-              {' a garden'}
-            </>
-          ) : (
-            `someone grew ${recipient.trim() || 'them'} a garden`
-          )}
-        </p>
-
-        {message.trim() && (
-          <div className={styles.previewMessage}>
-            <p className={styles.previewMessageText}>{message.trim()}</p>
-            {from.trim() && <p className={styles.previewSig}>{from.trim()}</p>}
-            {garden.bouquetNote && <BouquetNote note={garden.bouquetNote} />}
-            {secret.trim() && (
-              <div className={styles.previewSecret}>
-                <button
-                  type="button"
-                  className={styles.previewSecretReveal}
-                  onClick={() => setPreviewSecretRevealed((revealed) => !revealed)}
-                  aria-expanded={previewSecretRevealed}
-                >
-                  <SecretEnvelope open={previewSecretRevealed} />
-                  {previewSecretRevealed ? 'hide the secret' : 'a secret for you'}
-                </button>
-                {previewSecretRevealed && <p className={styles.previewSecretText}>{secret.trim()}</p>}
-              </div>
-            )}
-            <p className={styles.previewGrownOn}>grown {formatGardenDate(new Date().toISOString())}</p>
-          </div>
-        )}
-
-        <FlowerLegend flowers={garden.flowers} />
-      </details>
-    </>
+    <section className={styles.recipientPreview} aria-label="Recipient preview">
+      <RecipientView gardenData={garden} gardenId={gardenId} preview />
+    </section>
   )
 }

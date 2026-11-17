@@ -17,7 +17,7 @@ import { playSuccess, playWhoosh } from '../sound'
 import type { Draft } from './draft'
 
 export type Phase = 'idle' | 'designing' | 'designed'
-type GardenDesignResult = DesignResult & Pick<GardenData, 'unlockAt'>
+type GardenDesignResult = GardenData
 
 const SHORTEN_TIMEOUT_MS = 3000
 
@@ -121,9 +121,8 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
           onThinking: think,
         })
         ctrl.signal.throwIfAborted()
-        setGarden(result)
-
         const data = buildGardenData(fields, result)
+        setGarden(data)
 
         // Don't fall back to a self-contained URL here. It costs the user the garden they waited
         // five seconds for, but a share link that silently half-works is worse.
@@ -151,7 +150,7 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
 
         playSuccess()
         withViewTransition(() => {
-          setGarden({ ...result, unlockAt: data.unlockAt })
+          setGarden(data)
           setGardenId(shortId)
           if (fields.scheduleOpen && !data.unlockAt)
             setErrorText('The scheduled time passed while growing. This garden opens now.')
@@ -235,9 +234,8 @@ export function useGardenDesign(remixSeed: GardenData | undefined): GardenDesign
         })
         updateSentGardenId(previous.gardenId, buildMineRecord(shortId, data))
 
-        // No extra orchestration: GardenScene re-keys on the flower signature, so the new flowers
-        // re-bloom from sprout on their own.
-        setGarden({ ...result, unlockAt: data.unlockAt })
+        // A new saved id remounts the sender preview so each replacement starts wrapped.
+        setGarden(data)
         setGardenId(shortId)
         if (fields.scheduleOpen && !data.unlockAt)
           setErrorText('The scheduled time passed while growing. This garden opens now.')
